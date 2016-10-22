@@ -6,6 +6,8 @@ Orthanc for Whole-Slide Imaging
 General
 -------
 
+* Build under Apple OS X
+* Build under Microsoft Visual Studio
 * Doxygen Documentation
 * Support sparse tiling (both in encoder and decoder)
 
