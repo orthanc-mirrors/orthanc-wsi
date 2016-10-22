@@ -1,0 +1,53 @@
+/**
+ * Orthanc - A Lightweight, RESTful DICOM Store
+ * Copyright (C) 2012-2016 Sebastien Jodogne, Medical Physics
+ * Department, University Hospital of Liege, Belgium
+ *
+ * This program is free software: you can redistribute it and/or
+ * modify it under the terms of the GNU Affero General Public License
+ * as published by the Free Software Foundation, either version 3 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ **/
+
+
+#pragma once
+
+#include "Orthanc/Core/Images/Image.h"
+#include <memory>
+
+namespace OrthancWSI
+{
+  enum Jpeg2000Format
+  {
+    Jpeg2000Format_J2K,
+    Jpeg2000Format_JP2,
+    Jpeg2000Format_Unknown
+  };
+
+  class Jpeg2000Reader : 
+    public Orthanc::ImageAccessor,
+    public boost::noncopyable
+  {
+  private:
+    std::auto_ptr<Orthanc::ImageAccessor> image_;
+
+  public:
+    void ReadFromFile(const std::string& filename);
+
+    void ReadFromMemory(const void* buffer,
+                        size_t size);
+
+    void ReadFromMemory(const std::string& buffer);
+
+    static Jpeg2000Format DetectFormatFromMemory(const void* buffer,
+                                                 size_t size);
+  };
+}

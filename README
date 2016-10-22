@@ -1,0 +1,85 @@
+Orthanc for Whole-Slide Imaging
+===============================
+
+
+General Information
+-------------------
+
+This repository contains the source code of the official tools to
+introduce support of whole-slide microscopic imaging (WSI) in
+Orthanc. It is made of three separate components:
+
+(a) A command-line tool called "Dicomizer" that converts whole-slide
+    images to DICOM, according to Supplement 145. 
+
+    The input images of the Dicomizer can be either formatted as
+    standard hierarchical TIFF images, or as proprietary formats for
+    digital pathology. In the latter case, OpenSlide is used to decode
+    the input images.
+
+(b) An Orthanc plugin that extends Orthanc Explorer with a Web viewer
+    of whole-slide images.
+
+(c) A command-line tool called "DicomToTiff" that converts some
+    whole-slide image stored in an Orthanc server, into a standard
+    hierarchical TIFF file. This tool can be used to export DICOM
+    images to any post-processing framework.
+
+
+
+Dependencies
+------------
+
+The whole-slide imaging framework is notably based upon the following
+projects:
+
+* Orthanc, a lightweight Vendor Neutral Archive (DICOM server):
+  http://www.orthanc-server.com/
+
+* OpenSlide, a simple interface to read whole-slide images encoded
+  using proprietary file formats:
+  http://openslide.org/
+
+* OpenLayers, a framework to put a dynamic map in any web page:
+  https://openlayers.org/
+
+* OpenJpeg, an open-source JPEG 2000 codec:
+  http://www.openjpeg.org/
+
+
+
+Installation and usage
+----------------------
+
+Build instructions are similar to that of Orthanc:
+https://orthanc.chu.ulg.ac.be/book/faq/compiling.html
+
+The two command-line tools can be found in folder "Applications".
+They come with an extensive "--help" option.
+
+The Web viewer plugin can be found in folder "ViewerPlugin".
+
+
+
+Licensing
+---------
+
+The WSI toolbox for Orthanc is licensed under the AGPL license.
+
+We also kindly ask scientific works and clinical studies that make
+use of Orthanc to cite Orthanc in their associated publications.
+Similarly, we ask open-source and closed-source products that make
+use of Orthanc to warn us about this use. You can cite our work
+using the following BibTeX entry:
+
+@inproceedings{Jodogne:ISBI2013,
+  author = {Jodogne, S. and Bernard, C. and Devillers, M. and Lenaerts, E. and Coucke, P.},
+  title = {Orthanc -- {A} Lightweight, {REST}ful {DICOM} Server for Healthcare and Medical Research},
+  booktitle={Biomedical Imaging ({ISBI}), {IEEE} 10th International Symposium on}, 
+  year={2013}, 
+  pages={190-193}, 
+  ISSN={1945-7928},
+  month=apr,
+  url={http://ieeexplore.ieee.org/xpl/articleDetails.jsp?tp=&arnumber=6556444},
+  address={San Francisco, {CA}, {USA}}
+}

@@ -1,0 +1,17 @@
+Orthanc for Whole-Slide Imaging
+===============================
+
+
+-------
+General
+-------
+
+* Doxygen Documentation
+* Support sparse tiling (both in encoder and decoder)
+
+
+-----------
+Performance
+-----------
+
+* Larger cache with LRU recycling to improve viewer performance
