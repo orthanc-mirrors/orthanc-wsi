@@ -6,10 +6,27 @@ Orthanc for Whole-Slide Imaging
 General
 -------
 
+* Support sparse tiling (both in encoder and decoder)
+
+
+-------------
+Documentation
+-------------
+
+* Doxygen Documentation
+* Document the REST API in Orthanc Book
+  (/wsi/pyramids and /wsi/tiles)
+
+
+---------
+Packaging
+---------
+
+* Provide precompiled Windows binaries
 * Build under Apple OS X
 * Build under Microsoft Visual Studio
-* Doxygen Documentation
-* Support sparse tiling (both in encoder and decoder)
+* DebianMed
+* Docker
 
 
 -----------
