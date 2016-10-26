@@ -330,6 +330,12 @@ extern "C"
       return -1;
     }
 
+    if (!OrthancPlugins::CheckMinimalOrthancVersion(context_, 1, 1, 0))
+    {
+      // We need the "/instances/.../frames/.../raw" URI that was introduced in Orthanc 1.1.0
+      return -1;
+    }
+
     // Limit the number of PNG transcoders to the number of available
     // hardware threads (e.g. number of CPUs or cores or
     // hyperthreading units)
