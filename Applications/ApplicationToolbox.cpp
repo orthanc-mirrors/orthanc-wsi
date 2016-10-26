@@ -74,29 +74,35 @@ namespace OrthancWSI
     {
       if (threadsCount > 1)
       {
+        // Submit the tasks to a newly-created processor
         LOG(WARNING) << "Running " << tasks.GetSize() << " tasks";
         LOG(WARNING) << "Using " << threadsCount << " threads for the computation";
         Orthanc::BagOfTasksProcessor processor(threadsCount);
         std::auto_ptr<Orthanc::BagOfTasksProcessor::Handle> handle(processor.Submit(tasks));
 
+        // Start a thread to display the progress
         bool done = false;
         boost::thread progress(PrintProgress, handle.get(), &done);
 
-        if (handle->Join())
+        // Wait for the completion of the tasks
+        bool success = handle->Join();
+
+        // Stop the progress-printing thread
+        done = true;
+        
+        if (progress.joinable())
         {
-          done = true;
+          progress.join();
+        }
+
+        if (success)
+        {
           LOG(WARNING) << "All tasks have finished";
         }
         else
         {
-          done = true;
           LOG(ERROR) << "Error has occurred, aborting";
           throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
-        }
-                           
-        if (progress.joinable())
-        {
-          progress.join();
         }
       }
       else

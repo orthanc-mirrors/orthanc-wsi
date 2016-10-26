@@ -179,7 +179,15 @@ namespace OrthancWSI
     {
       if (writers_[i] != NULL)
       {
-        FlushInternal(*writers_[i], true);
+        try
+        {
+          FlushInternal(*writers_[i], true);
+        }
+        catch (Orthanc::OrthancException&)
+        {
+          LOG(ERROR) << "Cannot push the pending tiles to the DICOM pyramid while finalizing";
+        }
+
         delete writers_[i];
       }
     }

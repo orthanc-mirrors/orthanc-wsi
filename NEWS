@@ -1,3 +1,9 @@
+Pending changes in the mainline
+===============================
+
+* Fix freeze if the target Orthanc is not accepting images
+
+
 2016-10-22
 ==========
 
