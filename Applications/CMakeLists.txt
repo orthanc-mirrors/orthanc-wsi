@@ -199,6 +199,11 @@ add_executable(OrthancWSIDicomizer
 
 target_link_libraries(OrthancWSIDicomizer OrthancWSIFramework ${DCMTK_LIBRARIES})
 
+install(
+  TARGETS OrthancWSIDicomizer
+  RUNTIME DESTINATION bin
+  )
+
 
 #####################################################################
 ## Build the DICOM-to-TIFF conversion tool
@@ -210,6 +215,11 @@ add_executable(OrthancWSIDicomToTiff
   )
 
 target_link_libraries(OrthancWSIDicomToTiff OrthancWSIFramework ${DCMTK_LIBRARIES})
+
+install(
+  TARGETS OrthancWSIDicomToTiff
+  RUNTIME DESTINATION bin
+  )
 
 
 #####################################################################
