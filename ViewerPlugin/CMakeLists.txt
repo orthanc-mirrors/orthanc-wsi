@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 project(OrthancWSIPlugin)
 
-set(ORTHANC_WSI_VERSION "mainline")
-
 
 #####################################################################
 ## Parameters of the build
@@ -53,6 +51,8 @@ include(${ORTHANC_ROOT}/Resources/CMake/LibJpegConfiguration.cmake)
 include(${ORTHANC_ROOT}/Resources/CMake/LibPngConfiguration.cmake)
 include(${ORTHANC_ROOT}/Resources/CMake/ZlibConfiguration.cmake)
 
+# Include components specific to WSI
+include(${ORTHANC_WSI_DIR}/Resources/CMake/Version.cmake)
 include(${ORTHANC_WSI_DIR}/Resources/CMake/OpenJpegConfiguration.cmake)
 
 add_definitions(
@@ -191,8 +191,6 @@ add_library(OrthancWSI SHARED
   )
 
 message("Setting the version of the library to ${ORTHANC_WSI_VERSION}")
-add_definitions(-DORTHANC_WSI_VERSION="${ORTHANC_WSI_VERSION}")
-
 set_target_properties(OrthancWSI PROPERTIES 
   VERSION ${ORTHANC_WSI_VERSION} 
   SOVERSION ${ORTHANC_WSI_VERSION})

@@ -7,7 +7,6 @@ General
 -------
 
 * Support sparse tiling (both in encoder and decoder)
-* Add version in command-line tools
 
 
 -------------
@@ -25,9 +24,8 @@ Packaging
 
 * Provide precompiled Windows binaries
 * Build under Apple OS X
-* Build under Microsoft Visual Studio
+* Build using Microsoft Visual Studio
 * DebianMed
-* Docker
 
 
 -----------

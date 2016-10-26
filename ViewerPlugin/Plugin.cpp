@@ -352,7 +352,7 @@ extern "C"
     sprintf(info, "The whole-slide imaging plugin will use at most %d threads to transcode the tiles", threads);
     OrthancPluginLogWarning(context_, info);
 
-    OrthancPluginSetDescription(context, "Plugin to serve whole-slide microscopic images from Orthanc.");
+    OrthancPluginSetDescription(context, "Provides a Web viewer of whole-slide microscopic images within Orthanc.");
 
     orthanc_.reset(new OrthancWSI::PluginOrthancConnection(context));
     cache_.reset(new OrthancWSI::DicomPyramidCache(*orthanc_));

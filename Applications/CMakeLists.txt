@@ -66,6 +66,8 @@ include(${ORTHANC_ROOT}/Resources/CMake/LibJpegConfiguration.cmake)
 include(${ORTHANC_ROOT}/Resources/CMake/LibPngConfiguration.cmake)
 include(${ORTHANC_ROOT}/Resources/CMake/ZlibConfiguration.cmake)
 
+# Include components specific to WSI
+include(${ORTHANC_WSI_DIR}/Resources/CMake/Version.cmake)
 include(${ORTHANC_WSI_DIR}/Resources/CMake/BoostExtendedConfiguration.cmake)
 include(${ORTHANC_WSI_DIR}/Resources/CMake/OpenJpegConfiguration.cmake)
 include(${ORTHANC_WSI_DIR}/Resources/CMake/LibTiffConfiguration.cmake)

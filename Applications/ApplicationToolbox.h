@@ -40,5 +40,7 @@ namespace OrthancWSI
                     uint8_t& green,
                     uint8_t& blue,
                     const std::string& color);
+
+    void PrintVersion(const char* path);
   }
 }

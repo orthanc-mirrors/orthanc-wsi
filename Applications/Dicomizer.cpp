@@ -453,6 +453,7 @@ static bool ParseParameters(int& exitStatus,
   boost::program_options::options_description generic("Generic options");
   generic.add_options()
     ("help", "Display this help and exit")
+    ("version", "Output version information and exit")
     ("verbose", "Be verbose in logs")
     ("threads", boost::program_options::value<int>()->default_value(parameters.GetThreadsCount()), 
      "Number of processing threads to be used")
@@ -562,6 +563,7 @@ static bool ParseParameters(int& exitStatus,
 
   if (!error &&
       options.count("help") == 0 &&
+      options.count("version") == 0 &&
       options.count("input") != 1)
   {
     LOG(ERROR) << "No input file was specified";
@@ -585,6 +587,12 @@ static bool ParseParameters(int& exitStatus,
       exitStatus = -1;
     }
 
+    return false;
+  }
+
+  if (options.count("version")) 
+  { 
+    OrthancWSI::ApplicationToolbox::PrintVersion(argv[0]);
     return false;
   }
 

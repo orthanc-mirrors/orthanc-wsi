@@ -176,5 +176,19 @@ namespace OrthancWSI
         throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
       }
     }
+
+
+    void PrintVersion(const char* path)
+    {
+      std::cout
+        << path << " " << ORTHANC_WSI_VERSION << std::endl
+        << "Copyright (C) 2012-2016 Sebastien Jodogne, "
+        << "Medical Physics Department, University Hospital of Liege (Belgium)" << std::endl
+        << "Licensing AGPL: GNU AGPL version 3 or later <http://gnu.org/licenses/gpl.html>." << std::endl
+        << "This is free software: you are free to change and redistribute it." << std::endl
+        << "There is NO WARRANTY, to the extent permitted by law." << std::endl
+        << std::endl
+        << "Written by Sebastien Jodogne <s.jodogne@gmail.com>" << std::endl;
+    }
   }
 }
