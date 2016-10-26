@@ -14,8 +14,7 @@ Documentation
 -------------
 
 * Doxygen Documentation
-* Document the REST API in Orthanc Book
-  (/wsi/pyramids and /wsi/tiles)
+* Document the REST API in the Orthanc Book (/wsi/pyramids and /wsi/tiles)
 
 
 ---------
@@ -25,7 +24,7 @@ Packaging
 * Provide precompiled Windows binaries
 * Build under Apple OS X
 * Build using Microsoft Visual Studio
-* DebianMed
+* DebianMed (ITP #842168: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=842168)
 
 
 -----------
