@@ -26,6 +26,7 @@ Packaging
 * Build under Apple OS X
 * Build using Microsoft Visual Studio
 * DebianMed (ITP #842168: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=842168)
+* Automatic build in CIS
 
 
 -----------
