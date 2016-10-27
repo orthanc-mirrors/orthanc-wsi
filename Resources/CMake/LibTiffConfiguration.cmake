@@ -98,7 +98,7 @@ if (STATIC_BUILD OR NOT USE_SYSTEM_LIBTIFF)
       )
   endif()
 
-  source_group(ThirdParty\\LibTiff REGULAR_EXPRESSION ${LIBTIFF_SOURCES_DIR}/.*)
+  source_group(ThirdParty\\libtiff REGULAR_EXPRESSION ${LIBTIFF_SOURCES_DIR}/.*)
 
 else()
   CHECK_INCLUDE_FILE_CXX(tiff.h HAVE_LIBTIFF_H)
