@@ -171,7 +171,12 @@ set(ORTHANC_CORE_SOURCES
   ${ORTHANC_ROOT}/Resources/ThirdParty/base64/base64.cpp
   )
 
-source_group(ThirdParty\\OrthancCore REGULAR_EXPRESSION ${ORTHANC_ROOT}/.*)
+EmbedResources(
+  ${DCMTK_DICTIONARIES}
+  BRIGHTFIELD_OPTICAL_PATH  ${ORTHANC_WSI_DIR}/Resources/BrightfieldOpticalPath.json
+  SAMPLE_DATASET            ${ORTHANC_WSI_DIR}/Resources/SampleDataset.json
+  SRGB_ICC_PROFILE          ${ORTHANC_WSI_DIR}/Resources/sRGB.icc
+  )
 
 
 #####################################################################
@@ -186,20 +191,14 @@ if (MSVC)
 
   ADD_VISUAL_STUDIO_PRECOMPILED_HEADERS(
     "PrecompiledHeadersWSI.h" "${ORTHANC_WSI_DIR}/Framework/PrecompiledHeadersWSI.cpp" ORTHANC_WSI_SOURCES)
+
+  source_group(ThirdParty\\OrthancCore FILES ${ORTHANC_CORE_SOURCES})
 endif()
 
 
 #####################################################################
 ## Create the static library containing the framework
 #####################################################################
-
-EmbedResources(
-  ${DCMTK_DICTIONARIES}
-  BRIGHTFIELD_OPTICAL_PATH  ${ORTHANC_WSI_DIR}/Resources/BrightfieldOpticalPath.json
-  SAMPLE_DATASET            ${ORTHANC_WSI_DIR}/Resources/SampleDataset.json
-  SRGB_ICC_PROFILE          ${ORTHANC_WSI_DIR}/Resources/sRGB.icc
-  )
-
 
 add_library(OrthancWSIFramework STATIC
   ${ORTHANC_CORE_SOURCES}

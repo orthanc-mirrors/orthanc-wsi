@@ -190,8 +190,6 @@ set(ORTHANC_CORE_SOURCES
   ${ORTHANC_ROOT}/Plugins/Samples/Common/OrthancPluginCppWrapper.cpp
   )
 
-source_group(ThirdParty\\OrthancCore REGULAR_EXPRESSION ${ORTHANC_ROOT}/.*)
-
 
 #####################################################################
 ## Setup precompiled headers for Microsoft Visual Studio
@@ -205,6 +203,8 @@ if (MSVC)
 
   ADD_VISUAL_STUDIO_PRECOMPILED_HEADERS(
     "PrecompiledHeadersWSI.h" "${ORTHANC_WSI_DIR}/Framework/PrecompiledHeadersWSI.cpp" ORTHANC_WSI_SOURCES)
+
+  source_group(ThirdParty\\OrthancCore FILES ${ORTHANC_CORE_SOURCES})
 endif()
 
 

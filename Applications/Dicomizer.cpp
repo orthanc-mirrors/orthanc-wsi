@@ -299,8 +299,8 @@ static void SetupDimension(DcmDataset& dataset,
   if (!item->putAndInsertString(DCM_DimensionOrganizationUID, uid.c_str()).good() ||
       !a1->putTagVal(DCM_FrameContentSequence).good() ||
       !a2->putTagVal(DCM_DimensionIndexValues).good() ||
-      !item->insert(a1.release(), uid.c_str()).good() ||
-      !item->insert(a2.release(), uid.c_str()).good() ||
+      !item->insert(a1.release()).good() ||
+      !item->insert(a2.release()).good() ||
       !sequence->insert(item.release(), false, false).good() ||
       !dataset.insert(sequence.release(), true, false).good())
   {
