@@ -18,6 +18,7 @@
  **/
 
 
+#include "../PrecompiledHeadersWSI.h"
 #include "TruncatedPyramidWriter.h"
 
 #include "../Orthanc/Core/OrthancException.h"

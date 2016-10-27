@@ -18,6 +18,7 @@
  **/
 
 
+#include "../PrecompiledHeadersWSI.h"
 #include "OpenSlidePyramid.h"
 
 #include "../Orthanc/Core/Images/ImageProcessing.h"

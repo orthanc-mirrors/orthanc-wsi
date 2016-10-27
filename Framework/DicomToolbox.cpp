@@ -18,6 +18,7 @@
  **/
 
 
+#include "PrecompiledHeadersWSI.h"
 #include "DicomToolbox.h"
 
 #include "Orthanc/Core/Logging.h"

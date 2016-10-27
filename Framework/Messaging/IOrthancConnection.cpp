@@ -18,6 +18,7 @@
  **/
 
 
+#include "../PrecompiledHeadersWSI.h"
 #include "IOrthancConnection.h"
 
 #include "../Orthanc/Core/Logging.h"

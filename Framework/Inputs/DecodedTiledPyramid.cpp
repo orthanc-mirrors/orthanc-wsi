@@ -18,6 +18,7 @@
  **/
 
 
+#include "../PrecompiledHeadersWSI.h"
 #include "DecodedTiledPyramid.h"
 
 #include "../ImageToolbox.h"

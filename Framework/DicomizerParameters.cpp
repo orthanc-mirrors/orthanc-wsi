@@ -18,6 +18,7 @@
  **/
 
 
+#include "PrecompiledHeadersWSI.h"
 #include "DicomizerParameters.h"
 
 #include "Messaging/FolderTarget.h"

@@ -18,6 +18,7 @@
  **/
 
 
+#include "../PrecompiledHeadersWSI.h"
 #include "OrthancTarget.h"
 
 #include "CurlOrthancConnection.h"

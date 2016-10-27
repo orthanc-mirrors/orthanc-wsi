@@ -18,6 +18,7 @@
  **/
 
 
+#include "../Framework/PrecompiledHeadersWSI.h"
 #include "../Framework/Inputs/DicomPyramid.h"
 #include "../Framework/Jpeg2000Reader.h"
 #include "../Framework/Messaging/PluginOrthancConnection.h"

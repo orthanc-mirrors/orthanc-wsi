@@ -18,6 +18,7 @@
  **/
 
 
+#include "PrecompiledHeadersWSI.h"
 #include "ImageToolbox.h"
 
 #include "Jpeg2000Reader.h"

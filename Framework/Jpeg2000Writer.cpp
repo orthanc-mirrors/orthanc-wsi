@@ -18,6 +18,7 @@
  **/
 
 
+#include "PrecompiledHeadersWSI.h"
 #include "Jpeg2000Writer.h"
 
 #include "Orthanc/Core/ChunkedBuffer.h"

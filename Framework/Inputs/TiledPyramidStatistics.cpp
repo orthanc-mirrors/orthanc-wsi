@@ -18,6 +18,7 @@
  **/
 
 
+#include "../PrecompiledHeadersWSI.h"
 #include "TiledPyramidStatistics.h"
 
 #include "../Orthanc/Core/Logging.h"

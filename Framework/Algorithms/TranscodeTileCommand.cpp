@@ -18,6 +18,7 @@
  **/
 
 
+#include "../PrecompiledHeadersWSI.h"
 #include "TranscodeTileCommand.h"
 
 #include "../Orthanc/Core/OrthancException.h"

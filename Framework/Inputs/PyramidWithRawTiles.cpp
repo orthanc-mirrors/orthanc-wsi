@@ -18,6 +18,7 @@
  **/
 
 
+#include "../PrecompiledHeadersWSI.h"
 #include "PyramidWithRawTiles.h"
 
 #include "../Orthanc/Core/Images/PngReader.h"

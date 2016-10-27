@@ -18,6 +18,7 @@
  **/
 
 
+#include "../PrecompiledHeadersWSI.h"
 #include "CurlOrthancConnection.h"
 
 #include "../Orthanc/Core/OrthancException.h"

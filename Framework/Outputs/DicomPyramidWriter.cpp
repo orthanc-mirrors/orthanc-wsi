@@ -18,6 +18,7 @@
  **/
 
 
+#include "../PrecompiledHeadersWSI.h"
 #include "DicomPyramidWriter.h"
 
 #include "../DicomToolbox.h"

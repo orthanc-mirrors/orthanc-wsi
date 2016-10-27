@@ -18,24 +18,4 @@
  **/
 
 
-#include "../PrecompiledHeadersWSI.h"
-#include "OrthancConnectionBase.h"
-
-namespace OrthancWSI
-{
-  void OrthancConnectionBase::RestApiGet(std::string& result,
-                                         const std::string& uri)
-  {
-    boost::mutex::scoped_lock  lock_;
-    ApplyGet(result, uri);
-  }
-
-
-  void OrthancConnectionBase::RestApiPost(std::string& result,
-                                          const std::string& uri,
-                                          const std::string& body)
-  {
-    boost::mutex::scoped_lock  lock_;
-    ApplyPost(result, uri, body);
-  }
-}
+#include "PrecompiledHeadersWSI.h"

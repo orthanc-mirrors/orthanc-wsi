@@ -18,6 +18,7 @@
  **/
 
 
+#include "../PrecompiledHeadersWSI.h"
 #include "InMemoryTiledImage.h"
 
 #include "../ImageToolbox.h"

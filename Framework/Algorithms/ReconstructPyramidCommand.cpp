@@ -18,6 +18,7 @@
  **/
 
 
+#include "../PrecompiledHeadersWSI.h"
 #include "ReconstructPyramidCommand.h"
 
 #include "../ImageToolbox.h"

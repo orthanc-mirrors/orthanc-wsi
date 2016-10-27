@@ -18,6 +18,7 @@
  **/
 
 
+#include "../PrecompiledHeadersWSI.h"
 #include "MultiframeDicomWriter.h"
 
 #include "../Orthanc/Core/OrthancException.h"

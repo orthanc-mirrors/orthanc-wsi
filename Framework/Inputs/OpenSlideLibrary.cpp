@@ -18,6 +18,7 @@
  **/
 
 
+#include "../PrecompiledHeadersWSI.h"
 #include "OpenSlideLibrary.h"
 
 #include "../Orthanc/Core/Logging.h"

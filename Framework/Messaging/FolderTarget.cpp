@@ -18,6 +18,7 @@
  **/
 
 
+#include "../PrecompiledHeadersWSI.h"
 #include "FolderTarget.h"
 
 #include "../Orthanc/Core/Toolbox.h"

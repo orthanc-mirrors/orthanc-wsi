@@ -18,6 +18,7 @@
  **/
 
 
+#include "PrecompiledHeadersWSI.h"
 #include "Jpeg2000Reader.h"
 
 #include "Orthanc/Core/OrthancException.h"

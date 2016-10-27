@@ -18,6 +18,7 @@
  **/
 
 
+#include "../PrecompiledHeadersWSI.h"
 #include "PyramidWriterBase.h"
 
 #include "../ImageToolbox.h"

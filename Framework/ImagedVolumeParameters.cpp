@@ -18,6 +18,7 @@
  **/
 
 
+#include "PrecompiledHeadersWSI.h"
 #include "ImagedVolumeParameters.h"
 
 #include "Orthanc/Core/OrthancException.h"

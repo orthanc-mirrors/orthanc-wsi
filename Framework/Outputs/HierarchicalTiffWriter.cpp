@@ -18,6 +18,7 @@
  **/
 
 
+#include "../PrecompiledHeadersWSI.h"
 #include "HierarchicalTiffWriter.h"
 
 #include "../Orthanc/Core/Logging.h"

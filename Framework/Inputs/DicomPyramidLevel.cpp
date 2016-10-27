@@ -18,6 +18,7 @@
  **/
 
 
+#include "../PrecompiledHeadersWSI.h"
 #include "DicomPyramidLevel.h"
 
 #include "../Orthanc/Core/Logging.h"

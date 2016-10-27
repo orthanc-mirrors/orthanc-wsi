@@ -18,24 +18,17 @@
  **/
 
 
-#include "../PrecompiledHeadersWSI.h"
-#include "OrthancConnectionBase.h"
+#pragma once
 
-namespace OrthancWSI
-{
-  void OrthancConnectionBase::RestApiGet(std::string& result,
-                                         const std::string& uri)
-  {
-    boost::mutex::scoped_lock  lock_;
-    ApplyGet(result, uri);
-  }
+#if ORTHANC_USE_PRECOMPILED_HEADERS == 1
 
+#include "Orthanc/Core/PrecompiledHeaders.h"
 
-  void OrthancConnectionBase::RestApiPost(std::string& result,
-                                          const std::string& uri,
-                                          const std::string& body)
-  {
-    boost::mutex::scoped_lock  lock_;
-    ApplyPost(result, uri, body);
-  }
-}
+#include "DicomToolbox.h"
+#include "ImageToolbox.h"
+#include "Inputs/ITiledPyramid.h"
+#include "Messaging/IFileTarget.h"
+#include "Messaging/IOrthancConnection.h"
+#include "Outputs/IPyramidWriter.h"
+
+#endif
