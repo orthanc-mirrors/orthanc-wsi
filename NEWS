@@ -3,8 +3,17 @@ Pending changes in the mainline
 
 * Docker images are available
 * Provide "--version" flag in command-line tools
-* Windows resources for command-line tools
 * Fix freeze if the target Orthanc is not accepting images
+
+
+Maintenance
+-----------
+
+* Windows resources for command-line tools
+* Provide precompiled Windows binaries
+* Build under Apple OS X
+* Build using Microsoft Visual Studio
+
 
 
 2016-10-22
