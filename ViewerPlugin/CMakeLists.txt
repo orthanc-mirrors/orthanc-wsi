@@ -201,10 +201,10 @@ if (MSVC)
   add_definitions(-DORTHANC_USE_PRECOMPILED_HEADERS=1)
 
   ADD_VISUAL_STUDIO_PRECOMPILED_HEADERS(
-    "PrecompiledHeaders.h" "${ORTHANC_WSI_DIR}/Orthanc/Core/PrecompiledHeaders.cpp" ORTHANC_CORE_SOURCES)
+    "PrecompiledHeaders.h" "${ORTHANC_WSI_DIR}/Framework/Orthanc/Core/PrecompiledHeaders.cpp" ORTHANC_CORE_SOURCES)
 
   ADD_VISUAL_STUDIO_PRECOMPILED_HEADERS(
-    "PrecompiledHeadersWSI.h" "${ORTHANC_WSI_DIR}/PrecompiledHeadersWSI.cpp" ORTHANC_WSI_SOURCES)
+    "PrecompiledHeadersWSI.h" "${ORTHANC_WSI_DIR}/Framework/PrecompiledHeadersWSI.cpp" ORTHANC_WSI_SOURCES)
 endif()
 
 
