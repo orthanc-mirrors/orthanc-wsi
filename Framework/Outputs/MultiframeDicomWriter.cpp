@@ -33,6 +33,11 @@
 
 #include <boost/lexical_cast.hpp>
 
+#if DCMTK_VERSION_NUMBER <= 360
+#  define EXS_JPEGProcess1      EXS_JPEGProcess1TransferSyntax
+#endif
+
+
 namespace OrthancWSI
 {
   static void SaveDicomToMemory(std::string& target,
@@ -153,7 +158,7 @@ namespace OrthancWSI
 
       case ImageCompression_Jpeg:
         // Default transfer syntax for lossy JPEG 8bit compression
-        transferSyntax_ = EXS_JPEGProcess1TransferSyntax;
+        transferSyntax_ = EXS_JPEGProcess1;
         break;
 
       case ImageCompression_Jpeg2000:
