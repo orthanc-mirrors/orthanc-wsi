@@ -20,7 +20,7 @@ SET(USE_SYSTEM_ZLIB ON CACHE BOOL "Use the system version of ZLib")
 SET(USE_SYSTEM_ORTHANC_SDK ON CACHE BOOL "Use the system version of the Orthanc plugin SDK")
 
 # Parameters related to OpenLayers
-SET(USE_SYSTEM_OPENLAYERS OFF CACHE BOOL "Use the system version of OpenLayers")
+SET(USE_SYSTEM_OPENLAYERS ON CACHE BOOL "Use the system version of OpenLayers")
 SET(OPENLAYERS_CSS "" CACHE FILEPATH "Path to the system version of OpenLayers CSS")
 SET(OPENLAYERS_JS "" CACHE FILEPATH "Path to the system version of OpenLayers JavaScript")
 

@@ -110,11 +110,11 @@ if (STATIC_BUILD OR NOT USE_SYSTEM_OPENJPEG)
 
 else()
   find_path(OPENJPEG_INCLUDE_DIR 
-    NAMES openjpega.h
-    PATH
+    NAMES openjpeg.h
+    PATHS
     /usr/include/
+    /usr/include/openjpeg-2.1/
     /usr/local/include/
-    /usr/local/openjpeg-2.1/
     )
 
   CHECK_INCLUDE_FILE_CXX(${OPENJPEG_INCLUDE_DIR}/openjpeg.h HAVE_OPENJPEG_H)
@@ -123,28 +123,35 @@ else()
   endif()
 
   CHECK_LIBRARY_EXISTS(openjpeg opj_image_create "" HAVE_OPENJPEG_LIB)
-  if (NOT HAVE_OPENJPEG_LIB)
-    message(FATAL_ERROR "Please install the OpenJPEG development package")
-  endif()
-
-  # Autodetection of the version of OpenJpeg
-  file(STRINGS
-    "${OPENJPEG_INCLUDE_DIR}/openjpeg.h" 
-    OPENJPEG_VERSION REGEX
-    "#define OPENJPEG_VERSION")
-
-  string(REGEX REPLACE
-    ".*OPENJPEG_VERSION.*\"([0-9]*)\\.([0-9]*)\\.([0-9]*)\"$"
-    "\\1" 
-    OPENJPEG_MAJOR_VERSION ${OPENJPEG_VERSION})
-
-  if (OPENJPEG_MAJOR_VERSION EQUAL 1)
-    add_definitions(-DORTHANC_OPENJPEG_MAJOR_VERSION=1)
-  elseif (OPENJPEG_MAJOR_VERSION EQUAL 2)
-    add_definitions(-DORTHANC_OPENJPEG_MAJOR_VERSION=2)
+  if (HAVE_OPENJPEG_LIB)
   else()
-    message(FATAL_ERROR "Cannot parse the version of OpenJPEG")
+    # Search for alternative name "libopenjp2.so" that is notably used by Debian
+    CHECK_LIBRARY_EXISTS(openjp2 opj_image_create "" HAVE_OPENJP2_LIB)
+    
+    if (HAVE_OPENJP2_LIB)
+      set(OPENJPEG_LIB openjp2)
+    else()
+      message(FATAL_ERROR "Please install the OpenJPEG development package")
+    endif()
   endif()
 
-  link_libraries(openjpeg)
+  # Detection of the version of OpenJpeg
+  set(CMAKE_REQUIRED_INCLUDES ${OPENJPEG_INCLUDE_DIR})
+  set(CMAKE_REQUIRED_LIBRARIES ${OPENJPEG_LIB})
+  CHECK_SYMBOL_EXISTS(opj_destroy_decompress openjpeg.h HAVE_OPENJPEG_1)
+  if (HAVE_OPENJPEG_1)
+    message("Your system has OpenJPEG version 1")
+    add_definitions(-DORTHANC_OPENJPEG_MAJOR_VERSION=1)
+  else()
+    CHECK_SYMBOL_EXISTS(opj_destroy_codec openjpeg.h HAVE_OPENJPEG_2)
+    if (HAVE_OPENJPEG_2)
+      message("Your system has OpenJPEG version 2")
+      add_definitions(-DORTHANC_OPENJPEG_MAJOR_VERSION=2)
+    else()
+      message(FATAL_ERROR "Cannot detect your system version of OpenJPEG")
+    endif()
+  endif()
+    
+  link_libraries(${OPENJPEG_LIB})
+  include_directories(${OPENJPEG_INCLUDE_DIR})
 endif()
