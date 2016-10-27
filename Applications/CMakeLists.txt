@@ -207,17 +207,17 @@ add_library(OrthancWSIFramework STATIC
 
   # Mandatory components
   ${BOOST_SOURCES}
-  ${JSONCPP_SOURCES}
-  ${ZLIB_SOURCES}
-  ${LIBPNG_SOURCES}
-  ${LIBJPEG_SOURCES}
+  ${CURL_SOURCES}
   ${DCMTK_SOURCES}
+  ${JSONCPP_SOURCES}
+  ${LIBJPEG_SOURCES}
+  ${LIBPNG_SOURCES}
   ${LIBTIFF_SOURCES}
   ${OPENJPEG_SOURCES}
+  ${ZLIB_SOURCES}
 
   # Optional components
   ${OPENSSL_SOURCES}
-  ${CURL_SOURCES}
   )
 
 

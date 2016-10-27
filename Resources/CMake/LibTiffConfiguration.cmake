@@ -14,9 +14,14 @@ if (STATIC_BUILD OR NOT USE_SYSTEM_LIBTIFF)
 ")
     file(WRITE ${LIBTIFF_SOURCES_DIR}/libtiff/tiffconf.h "
 #if defined(_MSC_VER)
-#  define WIN32_LEAN_AND_MEAN
-#  include <windows.h>
-typedef SSIZE_T ssize_t;
+#  if !defined(ssize_t)
+#    define WIN32_LEAN_AND_MEAN
+#    include <windows.h>
+#    define ssize_t SSIZE_T
+#  endif
+#  if !defined(snprintf)
+#    define snprintf _snprintf
+#  endif
 #endif
 
 #include <stdint.h>
