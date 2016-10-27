@@ -13,13 +13,19 @@ if (STATIC_BUILD OR NOT USE_SYSTEM_LIBTIFF)
 #include <string.h>
 ")
     file(WRITE ${LIBTIFF_SOURCES_DIR}/libtiff/tiffconf.h "
+#if defined(_MSC_VER)
+#  define WIN32_LEAN_AND_MEAN
+#  include <windows.h>
+typedef SSIZE_T ssize_t;
+#endif
+
 #include <stdint.h>
 #include <sys/types.h>
 ")
   endif()
 
   set(TIFF_FILLORDER FILLORDER_MSB2LSB)
-  if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "i.*86.*" OR
+  if (CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "i.*86.*" OR
       CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "amd64.*" OR
       CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "x86_64.*")
     set(TIFF_FILLORDER FILLORDER_LSB2MSB)
