@@ -56,7 +56,7 @@ static bool ParseParameters(int& exitStatus,
   target.add_options()
     ("color", boost::program_options::value<std::string>(), "Color of the background for missing tiles (e.g. \"255,0,0\")")
     ("reencode", boost::program_options::value<bool>(), 
-     "Whether to reencode each tile in JPEG (no transcoding, much slower) (Boolean)")
+     "Whether to re-encode each tile in JPEG (no transcoding, much slower) (Boolean)")
     ("jpeg-quality", boost::program_options::value<int>(), "Set quality level for JPEG (0..100)")
     ;
 

@@ -466,7 +466,7 @@ static bool ParseParameters(int& exitStatus,
   source.add_options()
     ("dataset", boost::program_options::value<std::string>(), "Path to a JSON file containing the DICOM dataset")
     ("sample-dataset", "Display a minimalistic sample DICOM dataset in JSON format, then exit")
-    ("reencode", boost::program_options::value<bool>(), "Whether to reencode each tile (no transcoding, much slower) (Boolean)")
+    ("reencode", boost::program_options::value<bool>(), "Whether to re-encode each tile (no transcoding, much slower) (Boolean)")
     ("repaint", boost::program_options::value<bool>(), "Whether to repaint the background of the image (Boolean)")
     ("color", boost::program_options::value<std::string>(), "Color of the background (e.g. \"255,0,0\")")
     ;
