@@ -9,7 +9,6 @@ if (STATIC_BUILD OR NOT USE_SYSTEM_LIBTIFF)
     file(WRITE ${LIBTIFF_SOURCES_DIR}/libtiff/tif_config.h "
 #include <stdint.h>
 #include <stddef.h>
-#include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
 ")
