@@ -124,6 +124,7 @@ else()
 
   CHECK_LIBRARY_EXISTS(openjpeg opj_image_create "" HAVE_OPENJPEG_LIB)
   if (HAVE_OPENJPEG_LIB)
+      set(OPENJPEG_LIB openjpeg)
   else()
     # Search for alternative name "libopenjp2.so" that is notably used by Debian
     CHECK_LIBRARY_EXISTS(openjp2 opj_image_create "" HAVE_OPENJP2_LIB)
@@ -138,6 +139,7 @@ else()
   # Detection of the version of OpenJpeg
   set(CMAKE_REQUIRED_INCLUDES ${OPENJPEG_INCLUDE_DIR})
   set(CMAKE_REQUIRED_LIBRARIES ${OPENJPEG_LIB})
+
   CHECK_SYMBOL_EXISTS(opj_destroy_decompress openjpeg.h HAVE_OPENJPEG_1)
   if (HAVE_OPENJPEG_1)
     message("Your system has OpenJPEG version 1")
