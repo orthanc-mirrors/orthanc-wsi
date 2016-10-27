@@ -155,6 +155,22 @@ EmbedResources(
 ## precompiled headers
 #####################################################################
 
+set(ORTHANC_WSI_SOURCES
+  Plugin.cpp
+  ${ORTHANC_WSI_DIR}/Framework/DicomToolbox.cpp
+  ${ORTHANC_WSI_DIR}/Framework/Enumerations.cpp
+  ${ORTHANC_WSI_DIR}/Framework/ImageToolbox.cpp
+  ${ORTHANC_WSI_DIR}/Framework/Inputs/DicomPyramid.cpp
+  ${ORTHANC_WSI_DIR}/Framework/Inputs/DicomPyramidInstance.cpp
+  ${ORTHANC_WSI_DIR}/Framework/Inputs/DicomPyramidLevel.cpp
+  ${ORTHANC_WSI_DIR}/Framework/Inputs/PyramidWithRawTiles.cpp
+  ${ORTHANC_WSI_DIR}/Framework/Jpeg2000Reader.cpp
+  ${ORTHANC_WSI_DIR}/Framework/Jpeg2000Writer.cpp
+  ${ORTHANC_WSI_DIR}/Framework/Messaging/IOrthancConnection.cpp
+  ${ORTHANC_WSI_DIR}/Framework/Messaging/OrthancConnectionBase.cpp
+  ${ORTHANC_WSI_DIR}/Framework/Messaging/PluginOrthancConnection.cpp
+  )
+
 set(ORTHANC_CORE_SOURCES
   ${ORTHANC_ROOT}/Core/ChunkedBuffer.cpp
   ${ORTHANC_ROOT}/Core/Enumerations.cpp
@@ -174,21 +190,7 @@ set(ORTHANC_CORE_SOURCES
   ${ORTHANC_ROOT}/Plugins/Samples/Common/OrthancPluginCppWrapper.cpp
   )
 
-set(ORTHANC_WSI_SOURCES
-  Plugin.cpp
-  ${ORTHANC_WSI_DIR}/Framework/DicomToolbox.cpp
-  ${ORTHANC_WSI_DIR}/Framework/Enumerations.cpp
-  ${ORTHANC_WSI_DIR}/Framework/ImageToolbox.cpp
-  ${ORTHANC_WSI_DIR}/Framework/Inputs/DicomPyramid.cpp
-  ${ORTHANC_WSI_DIR}/Framework/Inputs/DicomPyramidInstance.cpp
-  ${ORTHANC_WSI_DIR}/Framework/Inputs/DicomPyramidLevel.cpp
-  ${ORTHANC_WSI_DIR}/Framework/Inputs/PyramidWithRawTiles.cpp
-  ${ORTHANC_WSI_DIR}/Framework/Jpeg2000Reader.cpp
-  ${ORTHANC_WSI_DIR}/Framework/Jpeg2000Writer.cpp
-  ${ORTHANC_WSI_DIR}/Framework/Messaging/IOrthancConnection.cpp
-  ${ORTHANC_WSI_DIR}/Framework/Messaging/OrthancConnectionBase.cpp
-  ${ORTHANC_WSI_DIR}/Framework/Messaging/PluginOrthancConnection.cpp
-  )
+source_group(ThirdParty\\OrthancCore REGULAR_EXPRESSION ${ORTHANC_ROOT}/.*)
 
 
 #####################################################################

@@ -105,37 +105,6 @@ endif()
 ## precompiled headers
 #####################################################################
 
-set(ORTHANC_CORE_SOURCES
-  ${ORTHANC_ROOT}/Core/ChunkedBuffer.cpp
-  ${ORTHANC_ROOT}/Core/DicomFormat/DicomArray.cpp
-  ${ORTHANC_ROOT}/Core/DicomFormat/DicomMap.cpp
-  ${ORTHANC_ROOT}/Core/DicomFormat/DicomTag.cpp
-  ${ORTHANC_ROOT}/Core/DicomFormat/DicomValue.cpp
-  ${ORTHANC_ROOT}/Core/Enumerations.cpp
-  ${ORTHANC_ROOT}/Core/HttpClient.cpp
-  ${ORTHANC_ROOT}/Core/Images/IImageWriter.cpp
-  ${ORTHANC_ROOT}/Core/Images/Image.cpp
-  ${ORTHANC_ROOT}/Core/Images/ImageAccessor.cpp
-  ${ORTHANC_ROOT}/Core/Images/ImageBuffer.cpp
-  ${ORTHANC_ROOT}/Core/Images/ImageProcessing.cpp
-  ${ORTHANC_ROOT}/Core/Images/JpegErrorManager.cpp
-  ${ORTHANC_ROOT}/Core/Images/JpegReader.cpp
-  ${ORTHANC_ROOT}/Core/Images/JpegWriter.cpp
-  ${ORTHANC_ROOT}/Core/Images/PngReader.cpp
-  ${ORTHANC_ROOT}/Core/Images/PngWriter.cpp
-  ${ORTHANC_ROOT}/Core/Logging.cpp
-  ${ORTHANC_ROOT}/Core/MultiThreading/BagOfTasksProcessor.cpp
-  ${ORTHANC_ROOT}/Core/MultiThreading/SharedMessageQueue.cpp
-  ${ORTHANC_ROOT}/Core/Toolbox.cpp
-  ${ORTHANC_ROOT}/Core/Uuid.cpp
-  ${ORTHANC_ROOT}/Core/WebServiceParameters.cpp
-  ${ORTHANC_ROOT}/OrthancServer/FromDcmtkBridge.cpp
-  ${ORTHANC_ROOT}/OrthancServer/ServerEnumerations.cpp
-  ${ORTHANC_ROOT}/OrthancServer/ToDcmtkBridge.cpp
-  ${ORTHANC_ROOT}/Plugins/Engine/SharedLibrary.cpp
-  ${ORTHANC_ROOT}/Resources/ThirdParty/base64/base64.cpp
-  )
-
 set(ORTHANC_WSI_SOURCES
   #${ORTHANC_WSI_DIR}/Framework/Messaging/PluginOrthancConnection.cpp
   ${ORTHANC_WSI_DIR}/Framework/Algorithms/PyramidReader.cpp
@@ -170,6 +139,39 @@ set(ORTHANC_WSI_SOURCES
   ${ORTHANC_WSI_DIR}/Framework/Outputs/PyramidWriterBase.cpp
   ${ORTHANC_WSI_DIR}/Framework/Outputs/TruncatedPyramidWriter.cpp
   )
+
+set(ORTHANC_CORE_SOURCES
+  ${ORTHANC_ROOT}/Core/ChunkedBuffer.cpp
+  ${ORTHANC_ROOT}/Core/DicomFormat/DicomArray.cpp
+  ${ORTHANC_ROOT}/Core/DicomFormat/DicomMap.cpp
+  ${ORTHANC_ROOT}/Core/DicomFormat/DicomTag.cpp
+  ${ORTHANC_ROOT}/Core/DicomFormat/DicomValue.cpp
+  ${ORTHANC_ROOT}/Core/Enumerations.cpp
+  ${ORTHANC_ROOT}/Core/HttpClient.cpp
+  ${ORTHANC_ROOT}/Core/Images/IImageWriter.cpp
+  ${ORTHANC_ROOT}/Core/Images/Image.cpp
+  ${ORTHANC_ROOT}/Core/Images/ImageAccessor.cpp
+  ${ORTHANC_ROOT}/Core/Images/ImageBuffer.cpp
+  ${ORTHANC_ROOT}/Core/Images/ImageProcessing.cpp
+  ${ORTHANC_ROOT}/Core/Images/JpegErrorManager.cpp
+  ${ORTHANC_ROOT}/Core/Images/JpegReader.cpp
+  ${ORTHANC_ROOT}/Core/Images/JpegWriter.cpp
+  ${ORTHANC_ROOT}/Core/Images/PngReader.cpp
+  ${ORTHANC_ROOT}/Core/Images/PngWriter.cpp
+  ${ORTHANC_ROOT}/Core/Logging.cpp
+  ${ORTHANC_ROOT}/Core/MultiThreading/BagOfTasksProcessor.cpp
+  ${ORTHANC_ROOT}/Core/MultiThreading/SharedMessageQueue.cpp
+  ${ORTHANC_ROOT}/Core/Toolbox.cpp
+  ${ORTHANC_ROOT}/Core/Uuid.cpp
+  ${ORTHANC_ROOT}/Core/WebServiceParameters.cpp
+  ${ORTHANC_ROOT}/OrthancServer/FromDcmtkBridge.cpp
+  ${ORTHANC_ROOT}/OrthancServer/ServerEnumerations.cpp
+  ${ORTHANC_ROOT}/OrthancServer/ToDcmtkBridge.cpp
+  ${ORTHANC_ROOT}/Plugins/Engine/SharedLibrary.cpp
+  ${ORTHANC_ROOT}/Resources/ThirdParty/base64/base64.cpp
+  )
+
+source_group(ThirdParty\\OrthancCore REGULAR_EXPRESSION ${ORTHANC_ROOT}/.*)
 
 
 #####################################################################
