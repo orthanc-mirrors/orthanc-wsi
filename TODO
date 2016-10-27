@@ -23,7 +23,7 @@ Packaging
 ---------
 
 * DebianMed (ITP #842168: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=842168)
-* Automatic build in CIS
+* Provide precompiled Windows binaries
 
 
 -----------

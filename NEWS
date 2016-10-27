@@ -10,9 +10,9 @@ Maintenance
 -----------
 
 * Windows resources for command-line tools
-* Provide precompiled Windows binaries
 * Build under Apple OS X
 * Build using Microsoft Visual Studio
+* Automatic build in CIS
 
 
 
