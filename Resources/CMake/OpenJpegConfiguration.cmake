@@ -106,19 +106,25 @@ if (STATIC_BUILD OR NOT USE_SYSTEM_OPENJPEG)
       )
   endif()
 
-  source_group(ThirdParty\\OpenJpeg REGULAR_EXPRESSION ${OPENJPEG_SOURCES_DIR}/.*)
+  source_group(ThirdParty\\OpenJPEG REGULAR_EXPRESSION ${OPENJPEG_SOURCES_DIR}/.*)
 
 else()
-  CHECK_INCLUDE_FILE_CXX(openjpeg.h HAVE_OPENJPEG_H)
-  if (NOT HAVE_OPENJPEG_H)
-    message(FATAL_ERROR "Please install the openjpeg-devel package")
-  endif()
+  find_path(OPENJPEG_INCLUDE_DIR 
+    NAMES openjpega.h
+    PATH
+    /usr/include/
+    /usr/local/include/
+    /usr/local/openjpeg-2.1/
+    )
 
-  find_path(OPENJPEG_INCLUDE_DIR openjpeg.h)
+  CHECK_INCLUDE_FILE_CXX(${OPENJPEG_INCLUDE_DIR}/openjpeg.h HAVE_OPENJPEG_H)
+  if (NOT HAVE_OPENJPEG_H)
+    message(FATAL_ERROR "Please install the OpenJPEG development package")
+  endif()
 
   CHECK_LIBRARY_EXISTS(openjpeg opj_image_create "" HAVE_OPENJPEG_LIB)
   if (NOT HAVE_OPENJPEG_LIB)
-    message(FATAL_ERROR "Please install the openjpeg-devel package")
+    message(FATAL_ERROR "Please install the OpenJPEG development package")
   endif()
 
   # Autodetection of the version of OpenJpeg
@@ -137,7 +143,7 @@ else()
   elseif (OPENJPEG_MAJOR_VERSION EQUAL 2)
     add_definitions(-DORTHANC_OPENJPEG_MAJOR_VERSION=2)
   else()
-    message(FATAL_ERROR "Cannot parse the version of OpenJpeg")
+    message(FATAL_ERROR "Cannot parse the version of OpenJPEG")
   endif()
 
   link_libraries(openjpeg)
