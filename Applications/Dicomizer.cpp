@@ -156,6 +156,7 @@ static void Recompress(OrthancWSI::IFileTarget& output,
                                         parameters.GetTargetTileHeight(source),
                                         parameters.GetDicomMaxFileSize(),
                                         volume);
+  target.SetJpegQuality(parameters.GetJpegQuality());
 
   LOG(WARNING) << "Size of target tiles: " << target.GetTileWidth() << "x" << target.GetTileHeight();
 
