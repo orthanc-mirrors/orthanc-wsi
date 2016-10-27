@@ -106,6 +106,10 @@ FILES = [
     'Resources/ThirdParty/VisualStudio/stdint.h',
     'Resources/ThirdParty/base64/base64.cpp',
     'Resources/ThirdParty/base64/base64.h',
+    'Resources/ThirdParty/patch/NOTES.txt',
+    'Resources/ThirdParty/patch/msys-1.0.dll',
+    'Resources/ThirdParty/patch/patch.exe',
+    'Resources/ThirdParty/patch/patch.exe.manifest',
     'Resources/WindowsResources.py',
     'Resources/WindowsResources.rc',
 ]
