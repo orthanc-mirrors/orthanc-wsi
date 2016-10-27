@@ -64,6 +64,7 @@ FILES = [
     'Core/MultiThreading/SharedMessageQueue.cpp',
     'Core/MultiThreading/SharedMessageQueue.h',
     'Core/OrthancException.h',
+    'Core/PrecompiledHeaders.cpp',
     'Core/PrecompiledHeaders.h',
     'Core/Toolbox.cpp',
     'Core/Toolbox.h',
