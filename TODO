@@ -10,6 +10,13 @@ General
 * Display physical scale in Web viewer
 
 
+-----------
+Performance
+-----------
+
+* Larger cache with LRU recycling to improve viewer performance
+
+
 -------------
 Documentation
 -------------
@@ -24,10 +31,3 @@ Packaging
 
 * DebianMed (ITP #842168: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=842168)
 * Provide precompiled Windows binaries
-
-
------------
-Performance
------------
-
-* Larger cache with LRU recycling to improve viewer performance

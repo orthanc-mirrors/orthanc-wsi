@@ -43,7 +43,7 @@ projects:
 * OpenLayers, a framework to put a dynamic map in any web page:
   https://openlayers.org/
 
-* OpenJpeg, an open-source JPEG 2000 codec:
+* OpenJPEG, an open-source JPEG 2000 codec:
   http://www.openjpeg.org/
 
 
@@ -57,7 +57,10 @@ https://orthanc.chu.ulg.ac.be/book/faq/compiling.html
 The two command-line tools can be found in folder "Applications".
 They come with an extensive "--help" option.
 
-The Web viewer plugin can be found in folder "ViewerPlugin".
+The Web viewer plugin can be found in folder "ViewerPlugin". It has no
+specific option, so you just have to make your "Plugins" configuration
+option of Orthanc point to the shared library containing the plugin:
+https://orthanc.chu.ulg.ac.be/book/users/configuration.html
 
 
 

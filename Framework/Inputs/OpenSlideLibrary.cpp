@@ -211,7 +211,7 @@ namespace OrthancWSI
   {
     if (globalLibrary_.get() == NULL)
     {
-      LOG(ERROR) << "OpenSlide has not been initialized";
+      LOG(ERROR) << "OpenSlide has not been initialized, use the \"--openslide\" command-line option";
       throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
     }
     else
