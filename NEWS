@@ -1,10 +1,14 @@
 Pending changes in the mainline
 ===============================
 
+
+
+Version 0.1 (2016/10/28)
+========================
+
 * Docker images are available
 * Provide "--version" flag in command-line tools
 * Fix freeze if the target Orthanc is not accepting images
-
 
 Maintenance
 -----------
@@ -13,7 +17,6 @@ Maintenance
 * Build under Apple OS X
 * Build using Microsoft Visual Studio
 * Automatic build in CIS
-
 
 
 2016-10-22
