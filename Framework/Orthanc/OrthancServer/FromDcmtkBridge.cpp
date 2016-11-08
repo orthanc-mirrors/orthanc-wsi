@@ -237,7 +237,8 @@ namespace Orthanc
                                               ValueRepresentation vr,
                                               const std::string& name,
                                               unsigned int minMultiplicity,
-                                              unsigned int maxMultiplicity)
+                                              unsigned int maxMultiplicity,
+                                              const std::string& privateCreator)
   {
     if (minMultiplicity < 1)
     {
@@ -261,20 +262,68 @@ namespace Orthanc
               << name << " (multiplicity: " << minMultiplicity << "-" 
               << (arbitrary ? "n" : boost::lexical_cast<std::string>(maxMultiplicity)) << ")";
 
-    std::auto_ptr<DcmDictEntry>  entry(new DcmDictEntry(tag.GetGroup(),
-                                                        tag.GetElement(),
-                                                        evr, name.c_str(),
-                                                        static_cast<int>(minMultiplicity),
-                                                        static_cast<int>(maxMultiplicity),
-                                                        NULL    /* version */,
-                                                        OFTrue  /* doCopyString */,
-                                                        NULL    /* private creator */));
+    std::auto_ptr<DcmDictEntry>  entry;
+    if (privateCreator.empty())
+    {
+      if (tag.GetGroup() % 2 == 1)
+      {
+        char buf[128];
+        sprintf(buf, "Warning: You are registering a private tag (%04x,%04x), "
+                "but no private creator was associated with it", 
+                tag.GetGroup(), tag.GetElement());
+        LOG(WARNING) << buf;
+      }
+
+      entry.reset(new DcmDictEntry(tag.GetGroup(),
+                                   tag.GetElement(),
+                                   evr, name.c_str(),
+                                   static_cast<int>(minMultiplicity),
+                                   static_cast<int>(maxMultiplicity),
+                                   NULL    /* version */,
+                                   OFTrue  /* doCopyString */,
+                                   NULL    /* private creator */));
+    }
+    else
+    {
+      // "Private Data Elements have an odd Group Number that is not
+      // (0001,eeee), (0003,eeee), (0005,eeee), (0007,eeee), or
+      // (FFFF,eeee)."
+      if (tag.GetGroup() % 2 == 0 /* even */ ||
+          tag.GetGroup() == 0x0001 ||
+          tag.GetGroup() == 0x0003 ||
+          tag.GetGroup() == 0x0005 ||
+          tag.GetGroup() == 0x0007 ||
+          tag.GetGroup() == 0xffff)
+      {
+        char buf[128];
+        sprintf(buf, "Trying to register private tag (%04x,%04x), but it must have an odd group >= 0x0009",
+                tag.GetGroup(), tag.GetElement());
+        LOG(ERROR) << buf;
+        throw OrthancException(ErrorCode_ParameterOutOfRange);
+      }
+
+      entry.reset(new DcmDictEntry(tag.GetGroup(),
+                                   tag.GetElement(),
+                                   evr, name.c_str(),
+                                   static_cast<int>(minMultiplicity),
+                                   static_cast<int>(maxMultiplicity),
+                                   "private" /* version */,
+                                   OFTrue    /* doCopyString */,
+                                   privateCreator.c_str()));
+    }
 
     entry->setGroupRangeRestriction(DcmDictRange_Unspecified);
     entry->setElementRangeRestriction(DcmDictRange_Unspecified);
 
     {
       DictionaryLocker locker;
+
+      if (locker->findEntry(name.c_str()))
+      {
+        LOG(ERROR) << "Cannot register two tags with the same symbolic name \"" << name << "\"";
+        throw OrthancException(ErrorCode_AlreadyExistingTag);
+      }
+
       locker->addEntry(entry.release());
     }
   }
@@ -314,10 +363,10 @@ namespace Orthanc
   }
 
 
-  void FromDcmtkBridge::Convert(DicomMap& target, 
-                                DcmItem& dataset,
-                                unsigned int maxStringLength,
-                                Encoding defaultEncoding)
+  void FromDcmtkBridge::ExtractDicomSummary(DicomMap& target, 
+                                            DcmItem& dataset,
+                                            unsigned int maxStringLength,
+                                            Encoding defaultEncoding)
   {
     Encoding encoding = DetectEncoding(dataset, defaultEncoding);
 
@@ -374,7 +423,7 @@ namespace Orthanc
         if (maxStringLength != 0 &&
             utf8.size() > maxStringLength)
         {
-          return new DicomValue;  // Create a NULL value
+          return new DicomValue;  // Too long, create a NULL value
         }
         else
         {
@@ -382,6 +431,47 @@ namespace Orthanc
         }
       }
     }
+
+
+    if (element.getVR() == EVR_UN)
+    {
+      // Unknown value representation: Lookup in the dictionary. This
+      // is notably the case for private tags registered with the
+      // "Dictionary" configuration option.
+      DictionaryLocker locker;
+      
+      const DcmDictEntry* entry = locker->findEntry(element.getTag().getXTag(), 
+                                                    element.getTag().getPrivateCreator());
+      if (entry != NULL && 
+          entry->getVR().isaString())
+      {
+        Uint8* data = NULL;
+
+        // At (*), we do not try and convert to UTF-8, as nothing says
+        // the encoding of the private tag is the same as that of the
+        // remaining of the DICOM dataset. Only go for ASCII strings.
+
+        if (element.getUint8Array(data) == EC_Normal &&
+            Toolbox::IsAsciiString(data, element.getLength()))   // (*)
+        {
+          if (data == NULL)
+          {
+            return new DicomValue("", false);   // Empty string
+          }
+          else if (maxStringLength != 0 &&
+                   element.getLength() > maxStringLength)
+          {
+            return new DicomValue;  // Too long, create a NULL value
+          }
+          else
+          {
+            std::string s(reinterpret_cast<const char*>(data), element.getLength());
+            return new DicomValue(s, false);
+          }
+        }
+      }
+    }
+
 
     try
     {
@@ -429,7 +519,7 @@ namespace Orthanc
         }
     
         /**
-         * Numberic types
+         * Numeric types
          **/ 
       
         case EVR_SL:  // signed long
@@ -571,7 +661,7 @@ namespace Orthanc
     }
 
     // This code gives access to the name of the private tags
-    const std::string tagName = FromDcmtkBridge::GetName(tag);
+    std::string tagName = FromDcmtkBridge::GetTagName(element);
     
     switch (format)
     {
@@ -692,20 +782,12 @@ namespace Orthanc
   }                              
 
 
-  static void DatasetToJson(Json::Value& parent,
-                            DcmItem& item,
-                            DicomToJsonFormat format,
-                            DicomToJsonFlags flags,
-                            unsigned int maxStringLength,
-                            Encoding encoding);
-
-
-  void FromDcmtkBridge::ToJson(Json::Value& parent,
-                               DcmElement& element,
-                               DicomToJsonFormat format,
-                               DicomToJsonFlags flags,
-                               unsigned int maxStringLength,
-                               Encoding encoding)
+  void FromDcmtkBridge::ElementToJson(Json::Value& parent,
+                                      DcmElement& element,
+                                      DicomToJsonFormat format,
+                                      DicomToJsonFlags flags,
+                                      unsigned int maxStringLength,
+                                      Encoding encoding)
   {
     if (parent.type() == Json::nullValue)
     {
@@ -717,7 +799,8 @@ namespace Orthanc
 
     if (element.isLeaf())
     {
-      std::auto_ptr<DicomValue> v(FromDcmtkBridge::ConvertLeafElement(element, flags, maxStringLength, encoding));
+      // The "0" below lets "LeafValueToJson()" take care of "TooLong" values
+      std::auto_ptr<DicomValue> v(FromDcmtkBridge::ConvertLeafElement(element, flags, 0, encoding));
       LeafValueToJson(target, *v, format, flags, maxStringLength);
     }
     else
@@ -740,12 +823,12 @@ namespace Orthanc
   }
 
 
-  static void DatasetToJson(Json::Value& parent,
-                            DcmItem& item,
-                            DicomToJsonFormat format,
-                            DicomToJsonFlags flags,
-                            unsigned int maxStringLength,
-                            Encoding encoding)
+  void FromDcmtkBridge::DatasetToJson(Json::Value& parent,
+                                      DcmItem& item,
+                                      DicomToJsonFormat format,
+                                      DicomToJsonFlags flags,
+                                      unsigned int maxStringLength,
+                                      Encoding encoding)
   {
     assert(parent.type() == Json::objectValue);
 
@@ -790,47 +873,53 @@ namespace Orthanc
         }
       }
 
-      FromDcmtkBridge::ToJson(parent, *element, format, flags, maxStringLength, encoding);
+      FromDcmtkBridge::ElementToJson(parent, *element, format, flags, maxStringLength, encoding);
     }
   }
 
 
-  void FromDcmtkBridge::ToJson(Json::Value& target, 
-                               DcmDataset& dataset,
-                               DicomToJsonFormat format,
-                               DicomToJsonFlags flags,
-                               unsigned int maxStringLength,
-                               Encoding defaultEncoding)
+  void FromDcmtkBridge::ExtractDicomAsJson(Json::Value& target, 
+                                           DcmDataset& dataset,
+                                           DicomToJsonFormat format,
+                                           DicomToJsonFlags flags,
+                                           unsigned int maxStringLength,
+                                           Encoding defaultEncoding)
   {
+    Encoding encoding = DetectEncoding(dataset, defaultEncoding);
+
     target = Json::objectValue;
-    DatasetToJson(target, dataset, format, flags, maxStringLength, DetectEncoding(dataset, defaultEncoding));
+    DatasetToJson(target, dataset, format, flags, maxStringLength, encoding);
   }
 
 
-  void FromDcmtkBridge::ToJson(Json::Value& target, 
-                               DcmMetaInfo& dataset,
-                               DicomToJsonFormat format,
-                               DicomToJsonFlags flags,
-                               unsigned int maxStringLength)
+  void FromDcmtkBridge::ExtractHeaderAsJson(Json::Value& target, 
+                                            DcmMetaInfo& dataset,
+                                            DicomToJsonFormat format,
+                                            DicomToJsonFlags flags,
+                                            unsigned int maxStringLength)
   {
     target = Json::objectValue;
     DatasetToJson(target, dataset, format, flags, maxStringLength, Encoding_Ascii);
   }
 
 
-  std::string FromDcmtkBridge::GetName(const DicomTag& t)
+
+  static std::string GetTagNameInternal(DcmTag& tag)
   {
-    // Some patches for important tags because of different DICOM
-    // dictionaries between DCMTK versions
-    std::string n = t.GetMainTagsName();
-    if (n.size() != 0)
     {
-      return n;
+      // Some patches for important tags because of different DICOM
+      // dictionaries between DCMTK versions
+      DicomTag tmp(tag.getGroup(), tag.getElement());
+      std::string n = tmp.GetMainTagsName();
+      if (n.size() != 0)
+      {
+        return n;
+      }
+      // End of patches
     }
-    // End of patches
 
 #if 0
-    DcmTagKey tag(t.GetGroup(), t.GetElement());
+    // This version explicitly calls the dictionary
     const DcmDataDictionary& dict = dcmDataDict.rdlock();
     const DcmDictEntry* entry = dict.findEntry(tag, NULL);
 
@@ -843,7 +932,6 @@ namespace Orthanc
     dcmDataDict.unlock();
     return s;
 #else
-    DcmTag tag(t.GetGroup(), t.GetElement());
     const char* name = tag.getTagName();
     if (name == NULL)
     {
@@ -855,6 +943,31 @@ namespace Orthanc
     }
 #endif
   }
+
+
+  std::string FromDcmtkBridge::GetTagName(const DicomTag& t,
+                                          const std::string& privateCreator)
+  {
+    DcmTag tag(t.GetGroup(), t.GetElement());
+
+    if (!privateCreator.empty())
+    {
+      tag.setPrivateCreator(privateCreator.c_str());
+    }
+
+    return GetTagNameInternal(tag);
+  }
+
+
+  std::string FromDcmtkBridge::GetTagName(const DcmElement& element)
+  {
+    // Copy the tag to ensure const-correctness of DcmElement. Note
+    // that the private creator information is also copied.
+    DcmTag tag(element.getTag());  
+
+    return GetTagNameInternal(tag);
+  }
+
 
 
   DicomTag FromDcmtkBridge::ParseTag(const char* name)
@@ -941,23 +1054,26 @@ namespace Orthanc
     for (DicomMap::Map::const_iterator 
            it = values.map_.begin(); it != values.map_.end(); ++it)
     {
+      // TODO Inject PrivateCreator if some is available in the DicomMap?
+      const std::string tagName = GetTagName(it->first, "");
+
       if (simplify)
       {
         if (it->second->IsNull())
         {
-          result[GetName(it->first)] = Json::nullValue;
+          result[tagName] = Json::nullValue;
         }
         else
         {
           // TODO IsBinary
-          result[GetName(it->first)] = it->second->GetContent();
+          result[tagName] = it->second->GetContent();
         }
       }
       else
       {
         Json::Value value = Json::objectValue;
 
-        value["Name"] = GetName(it->first);
+        value["Name"] = tagName;
 
         if (it->second->IsNull())
         {
