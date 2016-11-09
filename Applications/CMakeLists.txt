@@ -80,10 +80,10 @@ add_definitions(
   -DORTHANC_ENABLE_DCMTK=1
   -DORTHANC_ENABLE_LOGGING=1
   -DORTHANC_ENABLE_MD5=0
-  -DORTHANC_JPEG_ENABLED=0     # Disable DCMTK's support for JPEG
-  -DORTHANC_PKCS11_ENABLED=0
-  -DORTHANC_PLUGINS_ENABLED=1  # To enable class Orthanc::SharedLibrary
-  -DORTHANC_PUGIXML_ENABLED=0
+  -DORTHANC_ENABLE_JPEG=0     # Disable DCMTK's support for JPEG
+  -DORTHANC_ENABLE_PKCS11=0
+  -DORTHANC_ENABLE_PLUGINS=1  # To enable class Orthanc::SharedLibrary
+  -DORTHANC_ENABLE_PUGIXML=0
   )
 
 
@@ -93,10 +93,10 @@ add_definitions(
 
 if (ENABLE_SSL)
   set(ENABLE_PKCS11 OFF)
-  add_definitions(-DORTHANC_SSL_ENABLED=1)
+  add_definitions(-DORTHANC_ENABLE_SSL=1)
   include(${ORTHANC_ROOT}/Resources/CMake/OpenSslConfiguration.cmake)
 else()
-  add_definitions(-DORTHANC_SSL_ENABLED=0)
+  add_definitions(-DORTHANC_ENABLE_SSL=0)
 endif()
 
 
