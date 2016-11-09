@@ -21,7 +21,7 @@
 #include "../PrecompiledHeadersWSI.h"
 #include "FolderTarget.h"
 
-#include "../Orthanc/Core/Toolbox.h"
+#include "../Orthanc/Core/SystemToolbox.h"
 #include "../Orthanc/Core/Logging.h"
 
 #include <stdio.h>
@@ -40,6 +40,6 @@ namespace OrthancWSI
     }
 
     LOG(INFO) << "Writing file " << path;
-    Orthanc::Toolbox::WriteFile(file, path);
+    Orthanc::SystemToolbox::WriteFile(file, path);
   }
 }

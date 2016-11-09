@@ -23,6 +23,7 @@
 
 #include "Jpeg2000Reader.h"
 #include "Orthanc/Core/OrthancException.h"
+#include "Orthanc/Core/SystemToolbox.h"
 #include "Orthanc/Core/Toolbox.h"
 
 #include <string.h>
@@ -82,7 +83,7 @@ namespace OrthancWSI
   ImageCompression DetectFormatFromFile(const std::string& path)
   {
     std::string header;
-    Orthanc::Toolbox::ReadHeader(header, path, 256);
+    Orthanc::SystemToolbox::ReadHeader(header, path, 256);
 
     ImageCompression tmp = DetectFormatFromMemory(header.c_str(), header.size());
     if (tmp != ImageCompression_Unknown)

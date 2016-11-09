@@ -32,29 +32,37 @@
 
 #pragma once
 
-#if defined(_WIN32) && !defined(NOMINMAX)
-#define NOMINMAX
+#if !defined(ORTHANC_SANDBOXED)
+#  error The macro ORTHANC_SANDBOXED must be defined
 #endif
 
-#if ORTHANC_USE_PRECOMPILED_HEADERS == 1
-
-#include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/filesystem.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/locale.hpp>
-#include <boost/regex.hpp>
-#include <boost/thread.hpp>
-#include <boost/thread/shared_mutex.hpp>
-
-#include <json/value.h>
-
-#if ORTHANC_ENABLE_PUGIXML == 1
-#include <pugixml.hpp>
+#if ORTHANC_SANDBOXED == 1
+#  error The class TemporaryFile cannot be used in sandboxed environments
 #endif
 
-#include "Enumerations.h"
-#include "Logging.h"
-#include "OrthancException.h"
-#include "Toolbox.h"
+#include <string>
 
-#endif
+namespace Orthanc
+{
+  class TemporaryFile
+  {
+  private:
+    std::string path_;
+
+  public:
+    TemporaryFile();
+
+    TemporaryFile(const char* extension);
+
+    ~TemporaryFile();
+
+    const std::string& GetPath() const
+    {
+      return path_;
+    }
+
+    void Write(const std::string& content);
+
+    void Read(std::string& content) const;
+  };
+}

@@ -33,7 +33,14 @@
 #include "IImageWriter.h"
 
 #include "../OrthancException.h"
-#include "../Toolbox.h"
+
+#if !defined(ORTHANC_SANDBOXED)
+#  error The macro ORTHANC_SANDBOXED must be defined
+#endif
+
+#if ORTHANC_SANDBOXED == 0
+#  include "../SystemToolbox.h"
+#endif
 
 namespace Orthanc
 {
@@ -47,7 +54,7 @@ namespace Orthanc
 #if ORTHANC_SANDBOXED == 0
     std::string compressed;
     WriteToMemoryInternal(compressed, width, height, pitch, format, buffer);
-    Toolbox::WriteFile(compressed, path);
+    SystemToolbox::WriteFile(compressed, path);
 #else
     throw OrthancException(ErrorCode_CannotWriteFile);  // Unavailable in sandboxed environments
 #endif

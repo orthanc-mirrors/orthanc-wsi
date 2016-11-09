@@ -31,7 +31,7 @@
 #include "../Framework/Orthanc/Core/HttpClient.h"
 #include "../Framework/Orthanc/Core/Logging.h"
 #include "../Framework/Orthanc/Core/MultiThreading/BagOfTasksProcessor.h"
-#include "../Framework/Orthanc/Core/Toolbox.h"
+#include "../Framework/Orthanc/Core/SystemToolbox.h"
 #include "../Framework/Orthanc/OrthancServer/FromDcmtkBridge.h"
 #include "../Framework/Outputs/DicomPyramidWriter.h"
 #include "../Framework/Outputs/TruncatedPyramidWriter.h"
@@ -210,7 +210,7 @@ static DcmDataset* ParseDataset(const std::string& path)
   else
   {
     std::string content;
-    Orthanc::Toolbox::ReadFile(content, path);
+    Orthanc::SystemToolbox::ReadFile(content, path);
 
     Json::Reader reader;
     if (!reader.parse(content, json, false))
@@ -241,7 +241,7 @@ static DcmDataset* ParseDataset(const std::string& path)
   OrthancWSI::DicomToolbox::SetStringTag(*dataset, DCM_ImageOrientationSlide, "0\\-1\\0\\-1\\0\\0");
 
   std::string date, time;
-  Orthanc::Toolbox::GetNowDicom(date, time);
+  Orthanc::SystemToolbox::GetNowDicom(date, time);
   OrthancWSI::DicomToolbox::SetStringTag(*dataset, DCM_StudyDate, date);
   OrthancWSI::DicomToolbox::SetStringTag(*dataset, DCM_StudyTime, time);
   OrthancWSI::DicomToolbox::SetStringTag(*dataset, DCM_SeriesDate, date);
@@ -410,7 +410,7 @@ static void EnrichDataset(DcmDataset& dataset,
   }
   else
   {
-    Orthanc::Toolbox::ReadFile(profile, parameters.GetIccProfilePath());
+    Orthanc::SystemToolbox::ReadFile(profile, parameters.GetIccProfilePath());
   }
 
   

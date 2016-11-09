@@ -22,7 +22,7 @@
 #include "Jpeg2000Reader.h"
 
 #include "Orthanc/Core/OrthancException.h"
-#include "Orthanc/Core/Toolbox.h"
+#include "Orthanc/Core/SystemToolbox.h"
 #include "ImageToolbox.h"
 
 #include <cassert>
@@ -460,7 +460,7 @@ namespace OrthancWSI
     // TODO Use opj_stream_create_file_stream() ?
 
     std::string content;
-    Orthanc::Toolbox::ReadFile(content, filename);
+    Orthanc::SystemToolbox::ReadFile(content, filename);
   }
 
 

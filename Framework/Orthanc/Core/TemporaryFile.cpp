@@ -30,57 +30,65 @@
  **/
 
 
-#pragma once
+#include "PrecompiledHeaders.h"
+#include "TemporaryFile.h"
 
-#include <string>
-
-/**
- * GUID vs. UUID
- * The simple answer is: no difference, they are the same thing. Treat
- * them as a 16 byte (128 bits) value that is used as a unique
- * value. In Microsoft-speak they are called GUIDs, but call them
- * UUIDs when not using Microsoft-speak.
- * http://stackoverflow.com/questions/246930/is-there-any-difference-between-a-guid-and-a-uuid
- **/
-
+#include "SystemToolbox.h"
 #include "Toolbox.h"
+
+#include <boost/filesystem.hpp>
 
 namespace Orthanc
 {
-  namespace Toolbox
+  static std::string CreateTemporaryPath(const char* extension)
   {
-    std::string GenerateUuid();
+#if BOOST_HAS_FILESYSTEM_V3 == 1
+    boost::filesystem::path tmpDir = boost::filesystem::temp_directory_path();
+#elif defined(__linux__)
+    boost::filesystem::path tmpDir("/tmp");
+#else
+#error Support your platform here
+#endif
 
-    bool IsUuid(const std::string& str);
+    // We use UUID to create unique path to temporary files
+    std::string filename = "Orthanc-" + Orthanc::Toolbox::GenerateUuid();
 
-    bool StartsWithUuid(const std::string& str);
-
-    class TemporaryFile
+    if (extension != NULL)
     {
-    private:
-      std::string path_;
+      filename.append(extension);
+    }
 
-    public:
-      TemporaryFile();
+    tmpDir /= filename;
+    return tmpDir.string();
+  }
 
-      TemporaryFile(const char* extension);
 
-      ~TemporaryFile();
+  TemporaryFile::TemporaryFile() : 
+    path_(CreateTemporaryPath(NULL))
+  {
+  }
 
-      const std::string& GetPath() const
-      {
-        return path_;
-      }
 
-      void Write(const std::string& content)
-      {
-        Toolbox::WriteFile(content, path_);
-      }
+  TemporaryFile::TemporaryFile(const char* extension) :
+    path_(CreateTemporaryPath(extension))
+  {
+  }
 
-      void Read(std::string& content) const
-      {
-        Toolbox::ReadFile(content, path_);
-      }
-    };
+
+  TemporaryFile::~TemporaryFile()
+  {
+    boost::filesystem::remove(path_);
+  }
+
+
+  void TemporaryFile::Write(const std::string& content)
+  {
+    SystemToolbox::WriteFile(content, path_);
+  }
+
+
+  void TemporaryFile::Read(std::string& content) const
+  {
+    SystemToolbox::ReadFile(content, path_);
   }
 }

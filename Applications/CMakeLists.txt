@@ -84,6 +84,7 @@ add_definitions(
   -DORTHANC_ENABLE_PKCS11=0
   -DORTHANC_ENABLE_PLUGINS=1  # To enable class Orthanc::SharedLibrary
   -DORTHANC_ENABLE_PUGIXML=0
+  -DORTHANC_SANDBOXED=0
   )
 
 
@@ -161,8 +162,9 @@ set(ORTHANC_CORE_SOURCES
   ${ORTHANC_ROOT}/Core/Logging.cpp
   ${ORTHANC_ROOT}/Core/MultiThreading/BagOfTasksProcessor.cpp
   ${ORTHANC_ROOT}/Core/MultiThreading/SharedMessageQueue.cpp
+  ${ORTHANC_ROOT}/Core/SystemToolbox.cpp
+  ${ORTHANC_ROOT}/Core/TemporaryFile.cpp
   ${ORTHANC_ROOT}/Core/Toolbox.cpp
-  ${ORTHANC_ROOT}/Core/Uuid.cpp
   ${ORTHANC_ROOT}/Core/WebServiceParameters.cpp
   ${ORTHANC_ROOT}/OrthancServer/FromDcmtkBridge.cpp
   ${ORTHANC_ROOT}/OrthancServer/ServerEnumerations.cpp

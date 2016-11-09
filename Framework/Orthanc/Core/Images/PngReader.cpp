@@ -34,6 +34,7 @@
 #include "PngReader.h"
 
 #include "../OrthancException.h"
+#include "../SystemToolbox.h"
 #include "../Toolbox.h"
 
 #include <png.h>
@@ -49,7 +50,7 @@ namespace Orthanc
 
       FileRabi(const char* filename)
       {
-        fp_ = Toolbox::OpenFile(filename, FileMode_ReadBinary);
+        fp_ = SystemToolbox::OpenFile(filename, FileMode_ReadBinary);
         if (!fp_)
         {
           throw OrthancException(ErrorCode_InexistentFile);

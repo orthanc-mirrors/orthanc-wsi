@@ -64,6 +64,7 @@ add_definitions(
   -DORTHANC_ENABLE_LOGGING=0
   -DORTHANC_ENABLE_MD5=0
   -DORTHANC_ENABLE_PUGIXML=0
+  -DORTHANC_SANDBOXED=0
   -DHAS_ORTHANC_EXCEPTION=1
   )
 
@@ -187,6 +188,7 @@ set(ORTHANC_CORE_SOURCES
   ${ORTHANC_ROOT}/Core/Images/PngWriter.cpp
   ${ORTHANC_ROOT}/Core/Logging.cpp
   ${ORTHANC_ROOT}/Core/MultiThreading/Semaphore.cpp
+  ${ORTHANC_ROOT}/Core/SystemToolbox.cpp
   ${ORTHANC_ROOT}/Core/Toolbox.cpp
   ${ORTHANC_ROOT}/Plugins/Samples/Common/OrthancPluginCppWrapper.cpp
   )

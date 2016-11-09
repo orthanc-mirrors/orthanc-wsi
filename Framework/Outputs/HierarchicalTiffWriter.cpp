@@ -23,18 +23,18 @@
 
 #include "../Orthanc/Core/Logging.h"
 #include "../Orthanc/Core/OrthancException.h"
-#include "../Orthanc/Core/Uuid.h"
+#include "../Orthanc/Core/TemporaryFile.h"
 
 namespace OrthancWSI
 {
   class HierarchicalTiffWriter::PendingTile
   {
   private:
-    HierarchicalTiffWriter&          that_;
-    unsigned int                     level_;
-    unsigned int                     tileX_;
-    unsigned int                     tileY_;
-    Orthanc::Toolbox::TemporaryFile  file_;
+    HierarchicalTiffWriter&  that_;
+    unsigned int             level_;
+    unsigned int             tileX_;
+    unsigned int             tileY_;
+    Orthanc::TemporaryFile   file_;
       
   public:
     PendingTile(HierarchicalTiffWriter& that,
