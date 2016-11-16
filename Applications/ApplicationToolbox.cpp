@@ -38,7 +38,7 @@ namespace OrthancWSI
       Orthanc::Logging::Initialize();
       Orthanc::HttpClient::InitializeOpenSsl();
       Orthanc::HttpClient::GlobalInitialize();
-      Orthanc::FromDcmtkBridge::InitializeDictionary();
+      Orthanc::FromDcmtkBridge::InitializeDictionary(false /* don't load private dictionary */);
     }
 
 
