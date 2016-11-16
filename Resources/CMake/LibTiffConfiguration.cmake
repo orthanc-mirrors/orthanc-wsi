@@ -19,7 +19,7 @@ if (STATIC_BUILD OR NOT USE_SYSTEM_LIBTIFF)
 #    include <windows.h>
 #    define ssize_t SSIZE_T
 #  endif
-#  if !defined(snprintf)
+#  if !defined(snprintf) && (_MSC_VER < 1900)
 #    define snprintf _snprintf
 #  endif
 #endif
@@ -51,11 +51,22 @@ if (STATIC_BUILD OR NOT USE_SYSTEM_LIBTIFF)
     -DHAVE_SNPRINTF=1
     -DJPEG_SUPPORT=1
     -DLZW_SUPPORT=1
-
-    -DTIFF_INT64_FORMAT="%lld"
-    -DTIFF_UINT64_FORMAT="%llu"
-    -DTIFF_SSIZE_FORMAT="%d"
     )
+
+  if (MSVC)
+    # The "%" must be escaped if using Visual Studio
+    add_definitions(
+      -DTIFF_INT64_FORMAT="%%lld"
+      -DTIFF_UINT64_FORMAT="%%llu"
+      -DTIFF_SSIZE_FORMAT="%%d"
+      )
+  else()
+    add_definitions(
+      -DTIFF_INT64_FORMAT="%lld"
+      -DTIFF_UINT64_FORMAT="%llu"
+      -DTIFF_SSIZE_FORMAT="%d"
+      )
+  endif()
 
   set(LIBTIFF_SOURCES
     #${LIBTIFF_SOURCES_DIR}/libtiff/mkg3states.c
