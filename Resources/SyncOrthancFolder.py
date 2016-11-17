@@ -105,7 +105,6 @@ FILES = [
     'Resources/MinGWToolchain.cmake',
     'Resources/Patches/dcmtk-3.6.0-mingw64.patch',
     'Resources/Patches/dcmtk-3.6.0-speed.patch',
-    'Resources/Patches/dcmtk-3.6.1-private.dic',
     'Resources/Patches/dcmtk-3.6.1-speed.patch',
     'Resources/ThirdParty/VisualStudio/stdint.h',
     'Resources/ThirdParty/base64/base64.cpp',

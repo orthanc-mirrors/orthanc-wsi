@@ -47,6 +47,7 @@ SET(ENABLE_JPEG OFF)           # Disable DCMTK's support for JPEG, that clashes 
 SET(ENABLE_JPEG_LOSSLESS OFF)  # Disable DCMTK's support for JPEG-LS
 SET(ENABLE_DCMTK_NETWORK OFF)  # Disable DCMTK's support for DICOM networking
 SET(STANDALONE_BUILD ON)       # Embed DCMTK's dictionaries for static builds
+SET(USE_DCMTK_361_PRIVATE_DIC OFF)  # No need for private tags
 
 include(CheckIncludeFiles)
 include(CheckIncludeFileCXX)
