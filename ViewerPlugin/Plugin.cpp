@@ -22,6 +22,7 @@
 #include "../Framework/Inputs/DicomPyramid.h"
 #include "../Framework/Jpeg2000Reader.h"
 #include "../Framework/Messaging/PluginOrthancConnection.h"
+#include "../Framework/Orthanc/Core/Images/ImageProcessing.h"
 #include "../Framework/Orthanc/Core/Images/PngWriter.h"
 #include "../Framework/Orthanc/Core/MultiThreading/Semaphore.h"
 #include "../Framework/Orthanc/Core/OrthancException.h"
@@ -106,6 +107,26 @@ OrthancPluginContext* context_ = NULL;
 std::auto_ptr<OrthancWSI::PluginOrthancConnection>  orthanc_;
 std::auto_ptr<OrthancWSI::DicomPyramidCache>        cache_;
 std::auto_ptr<Orthanc::Semaphore>                   transcoderSemaphore_;
+std::string                                         sparseTile_;
+
+
+static void AnswerSparseTile(OrthancPluginRestOutput* output,
+                             unsigned int tileWidth,
+                             unsigned int tileHeight)
+{
+  Orthanc::Image tile(Orthanc::PixelFormat_RGB24, tileWidth, tileHeight, false);
+
+  // Black (TODO parameter)
+  uint8_t red = 0;
+  uint8_t green = 0;
+  uint8_t blue = 0;
+  Orthanc::ImageProcessing::Set(tile, red, green, blue, 255);
+
+  // TODO Cache the tile
+  OrthancPluginCompressAndAnswerPngImage(context_, output, OrthancPluginPixelFormat_RGB24, 
+                                         tile.GetWidth(), tile.GetHeight(), 
+                                         tile.GetPitch(), tile.GetBuffer());
+}
 
 
 static bool DisplayPerformanceWarning()
@@ -182,16 +203,17 @@ void ServeTile(OrthancPluginRestOutput* output,
   {
     OrthancWSI::DicomPyramidCache::Locker locker(*cache_, seriesId);
 
-    compression = locker.GetPyramid().GetImageCompression();
     format = locker.GetPyramid().GetPixelFormat();
     tileWidth = locker.GetPyramid().GetTileWidth();
     tileHeight = locker.GetPyramid().GetTileHeight();
 
-    if (!locker.GetPyramid().ReadRawTile(tile, 
+    if (!locker.GetPyramid().ReadRawTile(tile, compression, 
                                          static_cast<unsigned int>(level),
                                          static_cast<unsigned int>(tileX),
                                          static_cast<unsigned int>(tileY)))
     {
+      // Handling of missing tile (for sparse tiling): TODO parameter?
+      // AnswerSparseTile(output, tileWidth, tileHeight); return;
       throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
     }
   }

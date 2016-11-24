@@ -84,9 +84,9 @@ namespace OrthancWSI
       return tileHeight_;
     }
 
-    bool DownloadRawTile(ImageCompression& compression /* out */,
+    bool DownloadRawTile(std::string& raw /* out */,
                          Orthanc::PixelFormat& format /* out */,
-                         std::string& raw /* out */,
+                         ImageCompression& compression /* out */,
                          IOrthancConnection& orthanc,
                          unsigned int tileX,
                          unsigned int tileY) const;

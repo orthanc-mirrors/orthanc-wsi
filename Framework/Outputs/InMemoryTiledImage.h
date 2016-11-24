@@ -77,6 +77,7 @@ namespace OrthancWSI
     }
 
     virtual bool ReadRawTile(std::string& tile,
+                             ImageCompression& compression,
                              unsigned int level,
                              unsigned int tileX,
                              unsigned int tileY);
@@ -84,11 +85,6 @@ namespace OrthancWSI
     virtual Orthanc::ImageAccessor* DecodeTile(unsigned int level,
                                                unsigned int tileX,
                                                unsigned int tileY);
-
-    virtual ImageCompression GetImageCompression() const
-    {
-      return ImageCompression_None;
-    }
 
     virtual Orthanc::PixelFormat GetPixelFormat() const
     {

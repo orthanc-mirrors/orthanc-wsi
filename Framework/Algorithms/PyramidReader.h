@@ -56,7 +56,8 @@ namespace OrthancWSI
 
     void CheckTileSize(const Orthanc::ImageAccessor& tile) const;
 
-    void CheckTileSize(const std::string& tile) const;
+    void CheckTileSize(const std::string& tile,
+                       ImageCompression compression) const;
 
     SourceTile& AccessSourceTile(const Location& location);
 
@@ -77,17 +78,13 @@ namespace OrthancWSI
       return parameters_;
     }
 
-    ImageCompression GetImageCompression() const
-    {
-      return source_.GetImageCompression();
-    }
-
     Orthanc::PixelFormat GetPixelFormat() const
     {
       return source_.GetPixelFormat();
     }
 
-    const std::string* GetRawTile(unsigned int tileX,
+    const std::string* GetRawTile(ImageCompression& compression,
+                                  unsigned int tileX,
                                   unsigned int tileY);
 
     Orthanc::ImageAccessor GetDecodedTile(unsigned int tileX,

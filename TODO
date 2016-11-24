@@ -6,8 +6,9 @@ Orthanc for Whole-Slide Imaging
 General
 -------
 
-* Support sparse tiling (both in encoder and decoder)
+* Thoroughly test sparse tiling (both in encoder and decoder)
 * Display physical scale in Web viewer
+* Viewer: Configure how missing tiles are displayed for sparse tiling
 
 
 -----------
@@ -30,4 +31,3 @@ Packaging
 ---------
 
 * Move "Framework/Orthanc/" as "Resources/Orthanc/"
-* Publish history of code size on Web site

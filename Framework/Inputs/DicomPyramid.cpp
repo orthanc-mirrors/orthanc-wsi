@@ -200,32 +200,28 @@ namespace OrthancWSI
 
 
   bool DicomPyramid::ReadRawTile(std::string& tile,
+                                 ImageCompression& compression,
                                  unsigned int level,
                                  unsigned int tileX,
                                  unsigned int tileY)
   {
     CheckLevel(level);
       
-    ImageCompression compression;
     Orthanc::PixelFormat format;
       
-    if (levels_[level]->DownloadRawTile(compression, format, tile, orthanc_, tileX, tileY))
+    if (levels_[level]->DownloadRawTile(tile, format, compression, orthanc_, tileX, tileY))
     {
-      assert(compression == GetImageCompression() &&
-             format == GetPixelFormat());
+      if (format != GetPixelFormat())
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
+      }
+
       return true;
     }
     else
     {
       return false;
     }
-  }
-
-
-  ImageCompression DicomPyramid::GetImageCompression() const
-  {
-    assert(!instances_.empty() && instances_[0] != NULL);
-    return instances_[0]->GetImageCompression(orthanc_);
   }
 
 

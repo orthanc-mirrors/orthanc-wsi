@@ -133,7 +133,6 @@ static void Recompress(OrthancWSI::IFileTarget& output,
   OrthancWSI::TiledPyramidStatistics stats(source);
 
   LOG(WARNING) << "Size of source tiles: " << stats.GetTileWidth() << "x" << stats.GetTileHeight();
-  LOG(WARNING) << "Source image compression: " << OrthancWSI::EnumerationToString(stats.GetImageCompression());
   LOG(WARNING) << "Pixel format: " << Orthanc::EnumerationToString(stats.GetPixelFormat());
   LOG(WARNING) << "Smoothing is " << (parameters.IsSmoothEnabled() ? "enabled" : "disabled");
 
@@ -338,12 +337,13 @@ static void SetupDimension(DcmDataset& dataset,
 
 static void EnrichDataset(DcmDataset& dataset,
                           const OrthancWSI::ITiledPyramid& source,
+                          OrthancWSI::ImageCompression sourceCompression,
                           const OrthancWSI::DicomizerParameters& parameters,
                           const OrthancWSI::ImagedVolumeParameters& volume)
 {
   Orthanc::Encoding encoding = Orthanc::FromDcmtkBridge::DetectEncoding(dataset, Orthanc::Encoding_Latin1);
 
-  if (source.GetImageCompression() == OrthancWSI::ImageCompression_Jpeg ||
+  if (sourceCompression == OrthancWSI::ImageCompression_Jpeg ||
       parameters.GetTargetCompression() == OrthancWSI::ImageCompression_Jpeg)
   {
     // Takes as estimation a 1:10 compression ratio
@@ -796,7 +796,8 @@ static bool ParseParameters(int& exitStatus,
 }
 
 
-OrthancWSI::ITiledPyramid* OpenInputPyramid(const std::string& path,
+OrthancWSI::ITiledPyramid* OpenInputPyramid(OrthancWSI::ImageCompression& sourceCompression,
+                                            const std::string& path,
                                             const OrthancWSI::DicomizerParameters& parameters)
 {
   LOG(WARNING) << "The input image is: " << path;
@@ -807,20 +808,28 @@ OrthancWSI::ITiledPyramid* OpenInputPyramid(const std::string& path,
   switch (format)
   {
     case OrthancWSI::ImageCompression_Png:
+    {
+      sourceCompression = OrthancWSI::ImageCompression_Unknown;
       return new OrthancWSI::TiledPngImage(path, 
                                            parameters.GetTargetTileWidth(512), 
                                            parameters.GetTargetTileHeight(512));
+    }
 
     case OrthancWSI::ImageCompression_Jpeg:
+    {
+      sourceCompression = OrthancWSI::ImageCompression_Unknown;
       return new OrthancWSI::TiledJpegImage(path, 
                                             parameters.GetTargetTileWidth(512), 
                                             parameters.GetTargetTileHeight(512));
+    }
 
     case OrthancWSI::ImageCompression_Tiff:
     {
       try
       {
-        return new OrthancWSI::HierarchicalTiff(path);
+        std::auto_ptr<OrthancWSI::HierarchicalTiff> tiff(new OrthancWSI::HierarchicalTiff(path));
+        sourceCompression = tiff->GetImageCompression();
+        return tiff.release();
       }
       catch (Orthanc::OrthancException&)
       {
@@ -835,6 +844,7 @@ OrthancWSI::ITiledPyramid* OpenInputPyramid(const std::string& path,
   try
   {
     LOG(WARNING) << "Trying to open the input pyramid with OpenSlide";
+    sourceCompression = OrthancWSI::ImageCompression_Unknown;
     return new OrthancWSI::OpenSlidePyramid(path, 
                                             parameters.GetTargetTileWidth(512), 
                                             parameters.GetTargetTileHeight(512));
@@ -860,15 +870,20 @@ int main(int argc, char* argv[])
 
     if (ParseParameters(exitStatus, parameters, volume, argc, argv))
     {
-      std::auto_ptr<OrthancWSI::ITiledPyramid> source(OpenInputPyramid(parameters.GetInputFile(), parameters));
+      OrthancWSI::ImageCompression sourceCompression;
+      std::auto_ptr<OrthancWSI::ITiledPyramid> source;
+
+      source.reset(OpenInputPyramid(sourceCompression, parameters.GetInputFile(), parameters));
       if (source.get() == NULL)
       {
         throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
       }
+
+      LOG(WARNING) << "Compression of the individual source tiles: " << OrthancWSI::EnumerationToString(sourceCompression);
       
       // Create the shared DICOM tags
       std::auto_ptr<DcmDataset> dataset(ParseDataset(parameters.GetDatasetPath()));
-      EnrichDataset(*dataset, *source, parameters, volume);
+      EnrichDataset(*dataset, *source, sourceCompression, parameters, volume);
 
       std::auto_ptr<OrthancWSI::IFileTarget> output(parameters.CreateTarget());
       Recompress(*output, *source, *dataset, parameters, volume);

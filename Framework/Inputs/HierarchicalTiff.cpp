@@ -245,6 +245,7 @@ namespace OrthancWSI
 
 
   bool HierarchicalTiff::ReadRawTile(std::string& tile,
+                                     ImageCompression& compression,
                                      unsigned int level,
                                      unsigned int tileX,
                                      unsigned int tileY)
@@ -252,6 +253,8 @@ namespace OrthancWSI
     boost::mutex::scoped_lock lock(mutex_);
 
     CheckLevel(level);
+
+    compression = compression_;
 
     // Make the TIFF context point to the level of interest
     if (!TIFFSetDirectory(tiff_, levels_[level].directory_))

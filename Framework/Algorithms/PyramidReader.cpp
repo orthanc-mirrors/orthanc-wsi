@@ -32,11 +32,12 @@ namespace OrthancWSI
   class PyramidReader::SourceTile : public boost::noncopyable
   {
   private: 
-    PyramidReader&  that_;
-    unsigned int    tileX_;
-    unsigned int    tileY_;
-    bool            hasRawTile_;
-    std::string     rawTile_;
+    PyramidReader&    that_;
+    unsigned int      tileX_;
+    unsigned int      tileY_;
+    bool              hasRawTile_;
+    std::string       rawTile_;
+    ImageCompression  rawTileCompression_;
 
     std::auto_ptr<Orthanc::ImageAccessor>  decoded_;
 
@@ -96,7 +97,7 @@ namespace OrthancWSI
     {
       if (!that_.parameters_.IsForceReencode() &&
           !IsRepaintNeeded() &&
-          that_.source_.ReadRawTile(rawTile_, that_.level_, tileX, tileY))
+          that_.source_.ReadRawTile(rawTile_, rawTileCompression_, that_.level_, tileX, tileY))
       {
         hasRawTile_ = true;
       }
@@ -113,9 +114,17 @@ namespace OrthancWSI
       }
     }
 
-    bool HasRawTile() const
+    bool HasRawTile(ImageCompression& compression) const
     {
-      return hasRawTile_;
+      if (hasRawTile_)
+      {
+        compression = rawTileCompression_;
+        return true;
+      }
+      else
+      {
+        return false;
+      }
     }
 
     const std::string& GetRawTile() const
@@ -139,7 +148,7 @@ namespace OrthancWSI
           throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
         }
 
-        decoded_.reset(ImageToolbox::DecodeTile(rawTile_, that_.source_.GetImageCompression()));
+        decoded_.reset(ImageToolbox::DecodeTile(rawTile_, rawTileCompression_));
         if (decoded_.get() == NULL)
         {
           throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
@@ -180,11 +189,12 @@ namespace OrthancWSI
   }
 
 
-  void PyramidReader::CheckTileSize(const std::string& tile) const
+  void PyramidReader::CheckTileSize(const std::string& tile,
+                                    ImageCompression compression) const
   {
     if (parameters_.IsSafetyCheck())
     {
-      std::auto_ptr<Orthanc::ImageAccessor> decoded(ImageToolbox::DecodeTile(tile, source_.GetImageCompression()));
+      std::auto_ptr<Orthanc::ImageAccessor> decoded(ImageToolbox::DecodeTile(tile, compression));
       CheckTileSize(*decoded);
     }
   }
@@ -225,9 +235,9 @@ namespace OrthancWSI
     levelHeight_(source.GetLevelHeight(level)),
     sourceTileWidth_(source.GetTileWidth()),
     sourceTileHeight_(source.GetTileHeight()),
-                                                                         targetTileWidth_(targetTileWidth),
-                                                                         targetTileHeight_(targetTileHeight),
-                                                                         parameters_(parameters)
+    targetTileWidth_(targetTileWidth),
+    targetTileHeight_(targetTileHeight),
+    parameters_(parameters)
   {
     if (sourceTileWidth_ % targetTileWidth_ != 0 ||
         sourceTileHeight_ % targetTileHeight_ != 0)
@@ -248,7 +258,8 @@ namespace OrthancWSI
   }
 
 
-  const std::string* PyramidReader::GetRawTile(unsigned int tileX,
+  const std::string* PyramidReader::GetRawTile(ImageCompression& compression,
+                                               unsigned int tileX,
                                                unsigned int tileY)
   {
     if (sourceTileWidth_ != targetTileWidth_ ||
@@ -258,9 +269,10 @@ namespace OrthancWSI
     }
 
     SourceTile& source = AccessSourceTile(MapTargetToSourceLocation(tileX, tileY));
-    if (source.HasRawTile())
+
+    if (source.HasRawTile(compression))
     {
-      CheckTileSize(source.GetRawTile());
+      CheckTileSize(source.GetRawTile(), compression);
       return &source.GetRawTile();
     }
     else

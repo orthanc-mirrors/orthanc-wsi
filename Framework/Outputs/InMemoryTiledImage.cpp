@@ -88,6 +88,7 @@ namespace OrthancWSI
 
 
   bool InMemoryTiledImage::ReadRawTile(std::string& tile,
+                                       ImageCompression& compression,
                                        unsigned int level,
                                        unsigned int tileX,
                                        unsigned int tileY)

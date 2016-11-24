@@ -51,12 +51,13 @@ namespace OrthancWSI
     {
       result.reset(new Orthanc::ImageAccessor(source_.GetDecodedTile(x, y)));
 
-      const std::string* rawTile = source_.GetRawTile(x, y);
+      ImageCompression compression;
+      const std::string* rawTile = source_.GetRawTile(compression, x, y);
 
       if (rawTile != NULL)
       {
         // Simple transcoding
-        target_.WriteRawTile(*rawTile, source_.GetImageCompression(), level + shiftTargetLevel_, x, y);
+        target_.WriteRawTile(*rawTile, compression, level + shiftTargetLevel_, x, y);
       }
       else
       {

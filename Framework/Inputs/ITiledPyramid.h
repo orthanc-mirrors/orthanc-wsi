@@ -52,6 +52,7 @@ namespace OrthancWSI
     virtual unsigned int GetTileHeight() const = 0;
 
     virtual bool ReadRawTile(std::string& tile,
+                             ImageCompression& compression,
                              unsigned int level,
                              unsigned int tileX,
                              unsigned int tileY) = 0;
@@ -59,9 +60,6 @@ namespace OrthancWSI
     virtual Orthanc::ImageAccessor* DecodeTile(unsigned int level,
                                                unsigned int tileX,
                                                unsigned int tileY) = 0;
-
-    // Only makes sense for images with raw access to tiles
-    virtual ImageCompression GetImageCompression() const = 0;
 
     virtual Orthanc::PixelFormat GetPixelFormat() const = 0;
   };

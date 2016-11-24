@@ -43,11 +43,12 @@ namespace OrthancWSI
 
 
   bool TiledPyramidStatistics::ReadRawTile(std::string& tile,
+                                           ImageCompression& compression,
                                            unsigned int level,
                                            unsigned int tileX,
                                            unsigned int tileY)
   {
-    if (source_.ReadRawTile(tile, level, tileX, tileY))
+    if (source_.ReadRawTile(tile, compression, level, tileX, tileY))
     {
       boost::mutex::scoped_lock lock(mutex_);
       countRawAccesses_++;

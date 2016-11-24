@@ -9,6 +9,7 @@ project(OrthancWSIApplications)
 # Generic parameters
 SET(STATIC_BUILD OFF CACHE BOOL "Static build of the third-party libraries (necessary for Windows)")
 SET(ALLOW_DOWNLOADS OFF CACHE BOOL "Allow CMake to download packages")
+SET(ENABLE_PROFILING OFF CACHE BOOL "Whether to enable the generation of profiling information with gprof")
 
 # Optional components
 SET(ENABLE_SSL OFF CACHE BOOL "Include support for SSL")
@@ -314,3 +315,23 @@ if (DOXYGEN_FOUND)
 else()
   message("Doxygen not found. The documentation will not be built.")
 endif()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_executable(Hello
+  Hello.cpp
+  ApplicationToolbox.cpp
+  )
+
+target_link_libraries(Hello OrthancWSIFramework ${DCMTK_LIBRARIES})

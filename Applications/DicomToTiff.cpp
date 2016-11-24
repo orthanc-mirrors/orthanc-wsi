@@ -21,6 +21,7 @@
 #include "../Framework/DicomToolbox.h"
 #include "../Framework/ImageToolbox.h"
 #include "../Framework/Inputs/DicomPyramid.h"
+#include "../Framework/Inputs/TiledPyramidStatistics.h"
 #include "../Framework/Messaging/CurlOrthancConnection.h"
 #include "../Framework/Orthanc/Core/Logging.h"
 #include "../Framework/Orthanc/Core/OrthancException.h"
@@ -114,7 +115,8 @@ static bool ParseParameters(int& exitStatus,
               << std::endl
               << "Orthanc, lightweight, RESTful DICOM server for healthcare and medical research."
               << std::endl << std::endl
-              << "Convert a DICOM for digital pathology stored in some Orthanc server as a standard hierarchical TIFF."
+              << "Convert a DICOM image for digital pathology stored in some Orthanc server as a" << std::endl
+              << "standard hierarchical TIFF (whose tiles are all encoded using JPEG)."
               << std::endl;
 
     std::cout << allWithoutHidden << "\n";
@@ -167,62 +169,17 @@ static Orthanc::ImageAccessor* CreateEmptyTile(const OrthancWSI::IPyramidWriter&
 
 
 
-static void RunTranscode(OrthancWSI::ITiledPyramid& source,
-                         const boost::program_options::variables_map& options)
-{
-  OrthancWSI::HierarchicalTiffWriter target(options["output"].as<std::string>(),
-                                            source.GetPixelFormat(), 
-                                            source.GetImageCompression(), 
-                                            source.GetTileWidth(), 
-                                            source.GetTileHeight());
-
-  std::auto_ptr<Orthanc::ImageAccessor> empty(CreateEmptyTile(target, options));
-
-  for (unsigned int level = 0; level < source.GetLevelCount(); level++)
-  {
-    LOG(WARNING) << "Creating level " << level << " of size " 
-                 << source.GetLevelWidth(level) << "x" << source.GetLevelHeight(level);
-    target.AddLevel(source.GetLevelWidth(level), source.GetLevelHeight(level));
-  }
-
-  for (unsigned int level = 0; level < source.GetLevelCount(); level++)
-  {
-    LOG(WARNING) << "Transcoding level " << level;
-
-    unsigned int countX = OrthancWSI::CeilingDivision(source.GetLevelWidth(level), source.GetTileWidth());
-    unsigned int countY = OrthancWSI::CeilingDivision(source.GetLevelHeight(level), source.GetTileHeight());
-
-    for (unsigned int tileY = 0; tileY < countY; tileY++)
-    {
-      for (unsigned int tileX = 0; tileX < countX; tileX++)
-      {
-        LOG(INFO) << "Dealing with tile (" << tileX << "," << tileY << ") at level " << level;
-        std::string tile;
-
-        if (source.ReadRawTile(tile, level, tileX, tileY))
-        {
-          target.WriteRawTile(tile, source.GetImageCompression(), level, tileX, tileY);
-        }
-        else
-        {
-          target.EncodeTile(*empty, level, tileX, tileY);
-        }
-      }        
-    }
-
-    target.Flush();
-  }
-}
-
-
-static void RunReencode(OrthancWSI::ITiledPyramid& source,
-                        const boost::program_options::variables_map& options)
+static void Run(OrthancWSI::ITiledPyramid& source,
+                const boost::program_options::variables_map& options)
 {
   OrthancWSI::HierarchicalTiffWriter target(options["output"].as<std::string>(),
                                             source.GetPixelFormat(), 
                                             OrthancWSI::ImageCompression_Jpeg,
                                             source.GetTileWidth(), 
                                             source.GetTileHeight());
+
+  bool reencode = (options.count("reencode") &&
+                   options["reencode"].as<bool>());
 
   if (options.count("jpeg-quality"))
   {
@@ -240,7 +197,7 @@ static void RunReencode(OrthancWSI::ITiledPyramid& source,
 
   for (unsigned int level = 0; level < source.GetLevelCount(); level++)
   {
-    LOG(WARNING) << "Reencoding level " << level;
+    LOG(WARNING) << std::string(reencode ? "Reencoding" : "Transcoding") << " level " << level;
 
     unsigned int countX = OrthancWSI::CeilingDivision(source.GetLevelWidth(level), source.GetTileWidth());
     unsigned int countY = OrthancWSI::CeilingDivision(source.GetLevelHeight(level), source.GetTileHeight());
@@ -251,14 +208,58 @@ static void RunReencode(OrthancWSI::ITiledPyramid& source,
       {
         LOG(INFO) << "Dealing with tile (" << tileX << "," << tileY << ") at level " << level;
 
-        std::auto_ptr<Orthanc::ImageAccessor> tile(source.DecodeTile(level, tileX, tileY));
-        if (tile.get() == NULL)
+        bool missing = false;
+        bool success = true;
+
+        // Give a first try to get the raw tile
+        std::string tile;
+        OrthancWSI::ImageCompression compression;
+        if (source.ReadRawTile(tile, compression, level, tileX, tileY))
         {
-          target.EncodeTile(*empty, level, tileX, tileY);
+          if (reencode ||
+              compression == OrthancWSI::ImageCompression_Jpeg)
+          {
+            target.WriteRawTile(tile, compression, level, tileX, tileY);
+          }
+          else
+          {
+            success = false;  // Re-encoding is mandatory
+          }
         }
         else
         {
-          target.EncodeTile(*tile, level, tileX, tileY);
+          // Give a second try to get the decoded tile
+          compression = OrthancWSI::ImageCompression_Unknown;
+
+          std::auto_ptr<Orthanc::ImageAccessor> tile(source.DecodeTile(level, tileX, tileY));
+          if (tile.get() == NULL)
+          {
+            // Unable to read the raw tile or to decode it: The tile is missing (sparse tiling)
+            missing = true;
+          }
+          else if (reencode)
+          {
+            target.EncodeTile(*empty, level, tileX, tileY);
+          }
+          else
+          {
+            success = false;  // Re-encoding is mandatory
+          }
+        }
+
+        if (!success)
+        {
+          LOG(WARNING) << "Cannot transcode a DICOM image that is not encoded using JPEG (it is " 
+                       << OrthancWSI::EnumerationToString(compression) 
+                       << "), please use the --reencode=1 option";
+          throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
+        }
+        
+        if (missing)
+        {
+          LOG(WARNING) << "Sparse tiling: Using an empty image for missing tile ("
+                       << tileX << "," << tileY << ") at level " << level;
+          target.EncodeTile(*empty, level, tileX, tileY);
         }
       }        
     }
@@ -300,15 +301,8 @@ int main(int argc, char* argv[])
       OrthancWSI::CurlOrthancConnection orthanc(params);
       OrthancWSI::DicomPyramid source(orthanc, options["input"].as<std::string>());
 
-      if (options.count("reencode") &&
-          options["reencode"].as<bool>())
-      {
-        RunReencode(source, options);
-      }
-      else
-      {
-        RunTranscode(source, options);
-      }
+      OrthancWSI::TiledPyramidStatistics stats(source);
+      Run(stats, options);
     }
   }
   catch (Orthanc::OrthancException& e)

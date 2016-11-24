@@ -30,7 +30,7 @@ namespace OrthancWSI
   {
   private:
     boost::mutex   mutex_;
-    ITiledPyramid& source_;
+    ITiledPyramid& source_;  // This is a facade design pattern
     unsigned int   countRawAccesses_;
     unsigned int   countDecodedTiles_;
 
@@ -64,17 +64,13 @@ namespace OrthancWSI
       return source_.GetTileHeight();
     }
 
-    virtual ImageCompression GetImageCompression() const
-    {
-      return source_.GetImageCompression();
-    }
-
     virtual Orthanc::PixelFormat GetPixelFormat() const
     {
       return source_.GetPixelFormat();
     }
 
     virtual bool ReadRawTile(std::string& tile,
+                             ImageCompression& compression,
                              unsigned int level,
                              unsigned int tileX,
                              unsigned int tileY);

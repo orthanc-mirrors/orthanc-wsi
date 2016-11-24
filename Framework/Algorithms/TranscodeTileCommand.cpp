@@ -61,12 +61,14 @@ namespace OrthancWSI
       for (unsigned int y = y_; y < y_ + countTilesY_; y++)
       {
         LOG(INFO) << "Adding tile (" << x << "," << y << ") at level " << level_;
-        const std::string* rawTile = source_.GetRawTile(x, y);
+
+        ImageCompression compression;
+        const std::string* rawTile = source_.GetRawTile(compression, x, y);
 
         if (rawTile != NULL)
         {
           // Simple transcoding
-          target_.WriteRawTile(*rawTile, source_.GetImageCompression(), level_, x, y);
+          target_.WriteRawTile(*rawTile, compression, level_, x, y);
         }
         else
         {

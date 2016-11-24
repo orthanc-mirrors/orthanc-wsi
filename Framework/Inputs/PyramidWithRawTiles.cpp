@@ -33,14 +33,16 @@ namespace OrthancWSI
                                                           unsigned int tileY)
   {
     std::string tile;
-    if (!ReadRawTile(tile, level, tileX, tileY))
+    ImageCompression compression;
+
+    if (!ReadRawTile(tile, compression, level, tileX, tileY))
     {
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+      return NULL;
     }
 
     std::auto_ptr<Orthanc::ImageAccessor> result;
 
-    switch (GetImageCompression())
+    switch (compression)
     {
       case ImageCompression_None:
         result.reset(new Orthanc::ImageAccessor);
