@@ -315,23 +315,3 @@ if (DOXYGEN_FOUND)
 else()
   message("Doxygen not found. The documentation will not be built.")
 endif()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-add_executable(Hello
-  Hello.cpp
-  ApplicationToolbox.cpp
-  )
-
-target_link_libraries(Hello OrthancWSIFramework ${DCMTK_LIBRARIES})
