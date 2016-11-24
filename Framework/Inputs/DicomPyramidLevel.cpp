@@ -28,21 +28,36 @@
 
 namespace OrthancWSI
 {
+  DicomPyramidLevel::TileContent& DicomPyramidLevel::GetTileContent(unsigned int tileX,
+                                                                    unsigned int tileY)
+  {
+    if (tileX >= countTilesX_ ||
+        tileY >= countTilesY_)
+    {
+      LOG(ERROR) << "Tile location (" << tileX << "," << tileY << ") is outside the image";
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
+    }
+
+    return tiles_[tileY * countTilesX_ + tileX];
+  }
+
   void DicomPyramidLevel::RegisterFrame(const DicomPyramidInstance& instance,
                                         unsigned int frame)
   {
-    TileLocation location(instance.GetFrameLocationX(frame), 
-                          instance.GetFrameLocationY(frame));
+    unsigned int tileX = instance.GetFrameLocationX(frame);
+    unsigned int tileY = instance.GetFrameLocationY(frame);
+    TileContent& tile = GetTileContent(tileX, tileY);
 
-    if (tiles_.find(location) != tiles_.end())
+    if (tile.instance_ != NULL)
     {
-      LOG(ERROR) << "Tile with location (" << location.first << "," 
-                 << location.second << ") is indexed twice in level of size "
+      LOG(ERROR) << "Tile with location (" << tileX << "," 
+                 << tileY << ") is indexed twice in level of size "
                  << totalWidth_ << "x" << totalHeight_;
       throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
     }
 
-    tiles_[location] = std::make_pair(&instance, frame);
+    tile.instance_ = &instance;
+    tile.frame_ = frame;
   }
 
 
@@ -50,14 +65,15 @@ namespace OrthancWSI
                                      unsigned int tileX,
                                      unsigned int tileY) const
   {
-    Tiles::const_iterator found = tiles_.find(std::make_pair(tileX, tileY));
-    if (found == tiles_.end())
+    const TileContent& tmp = const_cast<DicomPyramidLevel&>(*this).GetTileContent(tileX, tileY);
+
+    if (tmp.instance_ == NULL)
     {
       return false;
     }
     else
     {
-      tile = found->second;
+      tile = tmp;
       return true;
     }
   }
@@ -74,6 +90,10 @@ namespace OrthancWSI
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
     }
+
+    countTilesX_ = CeilingDivision(totalWidth_, tileWidth_);
+    countTilesY_ = CeilingDivision(totalHeight_, tileHeight_);
+    tiles_.resize(countTilesX_ * countTilesY_);
       
     AddInstance(instance);
   }
@@ -88,8 +108,6 @@ namespace OrthancWSI
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_IncompatibleImageSize);
     }
-
-    instances_.push_back(&instance);
 
     for (size_t frame = 0; frame < instance.GetFrameCount(); frame++)
     {
@@ -108,11 +126,11 @@ namespace OrthancWSI
     TileContent tile;
     if (LookupTile(tile, tileX, tileY))
     {
-      assert(tile.first != NULL);
-      const DicomPyramidInstance& instance = *tile.first;
+      assert(tile.instance_ != NULL);
+      const DicomPyramidInstance& instance = *tile.instance_;
 
       std::string uri = ("/instances/" + instance.GetInstanceId() + 
-                         "/frames/" + boost::lexical_cast<std::string>(tile.second) + "/raw");
+                         "/frames/" + boost::lexical_cast<std::string>(tile.frame_) + "/raw");
 
       orthanc.RestApiGet(raw, uri);
 

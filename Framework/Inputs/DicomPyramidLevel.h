@@ -29,17 +29,28 @@ namespace OrthancWSI
   class DicomPyramidLevel : public boost::noncopyable
   {
   private:
-    typedef std::pair<unsigned int, unsigned int>                 TileLocation;
-    typedef std::pair<const DicomPyramidInstance*, unsigned int>  TileContent;
-    typedef std::map<TileLocation, TileContent>                   Tiles;
-    typedef std::list<const DicomPyramidInstance*>                Instances;
+    struct TileContent
+    {
+      const DicomPyramidInstance*  instance_;
+      unsigned int                 frame_;
 
-    unsigned int   totalWidth_;
-    unsigned int   totalHeight_;
-    unsigned int   tileWidth_;
-    unsigned int   tileHeight_;
-    Instances      instances_;
-    Tiles          tiles_;
+      TileContent() : 
+        instance_(NULL),
+        frame_(0)
+      {
+      }
+    };
+
+    unsigned int             totalWidth_;
+    unsigned int             totalHeight_;
+    unsigned int             tileWidth_;
+    unsigned int             tileHeight_;
+    unsigned int             countTilesX_;
+    unsigned int             countTilesY_;
+    std::vector<TileContent> tiles_;
+
+    TileContent& GetTileContent(unsigned int tileX,
+                                unsigned int tileY);
 
     void RegisterFrame(const DicomPyramidInstance& instance,
                        unsigned int frame);
