@@ -34,14 +34,18 @@
 #include "PngReader.h"
 
 #include "../OrthancException.h"
-#include "../SystemToolbox.h"
 #include "../Toolbox.h"
+
+#if ORTHANC_SANDBOXED == 0
+#  include "../SystemToolbox.h"
+#endif
 
 #include <png.h>
 #include <string.h>  // For memcpy()
 
 namespace Orthanc
 {
+#if ORTHANC_SANDBOXED == 0
   namespace 
   {
     struct FileRabi
@@ -66,6 +70,7 @@ namespace Orthanc
       }
     };
   }
+#endif
 
 
   struct PngReader::PngRabi
@@ -207,6 +212,8 @@ namespace Orthanc
     AssignWritable(format, width, height, pitch, &data_[0]);
   }
 
+
+#if ORTHANC_SANDBOXED == 0
   void PngReader::ReadFromFile(const std::string& filename)
   {
     FileRabi f(filename.c_str());
@@ -231,6 +238,7 @@ namespace Orthanc
 
     Read(rabi);
   }
+#endif
 
 
   namespace

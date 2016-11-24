@@ -35,9 +35,11 @@
 
 #include "../OrthancException.h"
 #include "../Logging.h"
-#include "../SystemToolbox.h"
-
 #include "JpegErrorManager.h"
+
+#if ORTHANC_SANDBOXED == 0
+#  include "../SystemToolbox.h"
+#endif
 
 #include <stdlib.h>
 #include <vector>
@@ -112,6 +114,7 @@ namespace Orthanc
   }
 
 
+#if ORTHANC_SANDBOXED == 0
   void JpegWriter::WriteToFileInternal(const std::string& filename,
                                        unsigned int width,
                                        unsigned int height,
@@ -155,6 +158,7 @@ namespace Orthanc
 
     fclose(fp);
   }
+#endif
 
 
   void JpegWriter::WriteToMemoryInternal(std::string& jpeg,

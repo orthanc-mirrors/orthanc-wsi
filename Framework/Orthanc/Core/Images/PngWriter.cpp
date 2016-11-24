@@ -39,7 +39,10 @@
 #include "../OrthancException.h"
 #include "../ChunkedBuffer.h"
 #include "../Toolbox.h"
-#include "../SystemToolbox.h"
+
+#if ORTHANC_SANDBOXED == 0
+#  include "../SystemToolbox.h"
+#endif
 
 
 // http://www.libpng.org/pub/png/libpng-1.2.5-manual.html#section-4
@@ -203,6 +206,7 @@ namespace Orthanc
   }
 
 
+#if ORTHANC_SANDBOXED == 0
   void PngWriter::WriteToFileInternal(const std::string& filename,
                                       unsigned int width,
                                       unsigned int height,
@@ -230,7 +234,7 @@ namespace Orthanc
 
     fclose(fp);
   }
-
+#endif
 
 
   static void MemoryCallback(png_structp png_ptr, 

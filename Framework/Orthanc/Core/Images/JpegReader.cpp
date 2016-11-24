@@ -36,7 +36,11 @@
 #include "JpegErrorManager.h"
 #include "../OrthancException.h"
 #include "../Logging.h"
-#include "../SystemToolbox.h"
+
+#if ORTHANC_SANDBOXED == 0
+#  include "../SystemToolbox.h"
+#endif
+
 
 namespace Orthanc
 {
@@ -94,6 +98,7 @@ namespace Orthanc
   }
 
 
+#if ORTHANC_SANDBOXED == 0
   void JpegReader::ReadFromFile(const std::string& filename)
   {
     FILE* fp = SystemToolbox::OpenFile(filename, FileMode_ReadBinary);
@@ -135,6 +140,7 @@ namespace Orthanc
     jpeg_destroy_decompress(&cinfo);
     fclose(fp);
   }
+#endif
 
 
   void JpegReader::ReadFromMemory(const void* buffer,

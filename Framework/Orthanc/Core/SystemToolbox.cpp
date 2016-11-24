@@ -35,28 +35,43 @@
 
 
 #if BOOST_HAS_DATE_TIME == 1
-#include <boost/date_time/posix_time/posix_time.hpp>
+#  include <boost/date_time/posix_time/posix_time.hpp>
 #endif
 
 
 #if defined(_WIN32)
-#include <windows.h>
-#include <process.h>   // For "_spawnvp()" and "_getpid()"
+#  include <windows.h>
+#  include <process.h>   // For "_spawnvp()" and "_getpid()"
 #else
-#include <unistd.h>    // For "execvp()"
-#include <sys/wait.h>  // For "waitpid()"
+#  include <unistd.h>    // For "execvp()"
+#  include <sys/wait.h>  // For "waitpid()"
 #endif
+
 
 #if defined(__APPLE__) && defined(__MACH__)
-#include <mach-o/dyld.h> /* _NSGetExecutablePath */
-#include <limits.h>      /* PATH_MAX */
+#  include <mach-o/dyld.h> /* _NSGetExecutablePath */
+#  include <limits.h>      /* PATH_MAX */
 #endif
 
+
 #if defined(__linux__) || defined(__FreeBSD_kernel__) || defined(__FreeBSD__)
-#include <limits.h>      /* PATH_MAX */
-#include <signal.h>
-#include <unistd.h>
+#  include <limits.h>      /* PATH_MAX */
+#  include <signal.h>
+#  include <unistd.h>
 #endif
+
+
+// Inclusions for UUID
+// http://stackoverflow.com/a/1626302
+
+extern "C"
+{
+#ifdef WIN32
+#  include <rpc.h>
+#else
+#  include <uuid/uuid.h>
+#endif
+}
 
 
 #include "Logging.h"
@@ -474,6 +489,28 @@ namespace Orthanc
     }
 
     return fopen(path.c_str(), m);
+  }
+
+
+  std::string SystemToolbox::GenerateUuid()
+  {
+#ifdef WIN32
+    UUID uuid;
+    UuidCreate ( &uuid );
+
+    unsigned char * str;
+    UuidToStringA ( &uuid, &str );
+
+    std::string s( ( char* ) str );
+
+    RpcStringFreeA ( &str );
+#else
+    uuid_t uuid;
+    uuid_generate_random ( uuid );
+    char s[37];
+    uuid_unparse ( uuid, s );
+#endif
+    return s;
   }
 
 
