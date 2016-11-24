@@ -108,8 +108,7 @@ namespace OrthancWSI
     {
       const DicomPyramidInstance& b = *instances_[i];
 
-      if (a.GetImageCompression() != b.GetImageCompression() ||
-          a.GetPixelFormat() != b.GetPixelFormat() ||
+      if (a.GetPixelFormat() != b.GetPixelFormat() ||
           a.GetTileWidth() != b.GetTileWidth() ||
           a.GetTileHeight() != b.GetTileHeight() ||
           a.GetTotalWidth() < b.GetTotalWidth() ||
@@ -226,7 +225,7 @@ namespace OrthancWSI
   ImageCompression DicomPyramid::GetImageCompression() const
   {
     assert(!instances_.empty() && instances_[0] != NULL);
-    return instances_[0]->GetImageCompression();
+    return instances_[0]->GetImageCompression(orthanc_);
   }
 
 

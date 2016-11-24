@@ -31,8 +31,8 @@ namespace OrthancWSI
   private:
     struct TileContent
     {
-      const DicomPyramidInstance*  instance_;
-      unsigned int                 frame_;
+      DicomPyramidInstance*  instance_;
+      unsigned int           frame_;
 
       TileContent() : 
         instance_(NULL),
@@ -52,7 +52,7 @@ namespace OrthancWSI
     TileContent& GetTileContent(unsigned int tileX,
                                 unsigned int tileY);
 
-    void RegisterFrame(const DicomPyramidInstance& instance,
+    void RegisterFrame(DicomPyramidInstance& instance,
                        unsigned int frame);
 
     bool LookupTile(TileContent& tile,
@@ -60,9 +60,9 @@ namespace OrthancWSI
                     unsigned int tileY) const;
 
   public:
-    DicomPyramidLevel(const DicomPyramidInstance& instance);
+    DicomPyramidLevel(DicomPyramidInstance& instance);
 
-    void AddInstance(const DicomPyramidInstance& instance);
+    void AddInstance(DicomPyramidInstance& instance);
 
     unsigned int GetTotalWidth() const
     {

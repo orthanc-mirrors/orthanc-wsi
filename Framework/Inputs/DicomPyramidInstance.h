@@ -34,6 +34,7 @@ namespace OrthancWSI
     typedef std::pair<unsigned int, unsigned int>  FrameLocation;
 
     std::string                 instanceId_;
+    bool                        hasCompression_;
     ImageCompression            compression_;
     Orthanc::PixelFormat        format_;
     unsigned int                tileWidth_;
@@ -51,10 +52,7 @@ namespace OrthancWSI
       return instanceId_;
     }
 
-    ImageCompression GetImageCompression() const
-    {
-      return compression_;
-    }
+    ImageCompression GetImageCompression(IOrthancConnection& orthanc);
 
     Orthanc::PixelFormat GetPixelFormat() const
     {

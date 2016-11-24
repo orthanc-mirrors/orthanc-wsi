@@ -91,14 +91,38 @@ namespace OrthancWSI
     }
   }
 
+
+  ImageCompression  DicomPyramidInstance::GetImageCompression(IOrthancConnection& orthanc)
+  {
+    /**
+     * Lazy detection of the image compression using the transfer
+     * syntax stored inside the DICOM header. Given the fact that
+     * reading the header is a time-consuming operation (it implies
+     * the decoding of the DICOM image by Orthanc, whereas the "/tags"
+     * endpoint only reads the "DICOM-as-JSON" attachment), the
+     * "/header" REST call is delayed until it is really required.
+     **/
+
+    if (!hasCompression_)
+    {
+      Json::Value header;
+      IOrthancConnection::RestApiGet(header, orthanc, "/instances/" + instanceId_ + "/header?simplify");
+
+      hasCompression_ = true;
+      compression_ = DetectImageCompression(header);
+    }
+
+    return compression_;
+  }
+
   
   DicomPyramidInstance::DicomPyramidInstance(IOrthancConnection&  orthanc,
                                              const std::string& instanceId) :
-    instanceId_(instanceId)
+    instanceId_(instanceId),
+    hasCompression_(false)
   {
-    Json::Value dicom, header;
+    Json::Value dicom;
     IOrthancConnection::RestApiGet(dicom, orthanc, "/instances/" + instanceId + "/tags?simplify");
-    IOrthancConnection::RestApiGet(header, orthanc, "/instances/" + instanceId + "/header?simplify");
 
     if (DicomToolbox::GetMandatoryStringTag(dicom, "SOPClassUID") != "1.2.840.10008.5.1.4.1.1.77.1.6" ||
         DicomToolbox::GetMandatoryStringTag(dicom, "Modality") != "SM")
@@ -106,7 +130,6 @@ namespace OrthancWSI
       throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
     }
 
-    compression_ = DetectImageCompression(header);
     format_ = DetectPixelFormat(dicom);
     tileWidth_ = DicomToolbox::GetUnsignedIntegerTag(dicom, "Columns");
     tileHeight_ = DicomToolbox::GetUnsignedIntegerTag(dicom, "Rows");

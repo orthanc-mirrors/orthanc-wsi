@@ -41,7 +41,7 @@ namespace OrthancWSI
     return tiles_[tileY * countTilesX_ + tileX];
   }
 
-  void DicomPyramidLevel::RegisterFrame(const DicomPyramidInstance& instance,
+  void DicomPyramidLevel::RegisterFrame(DicomPyramidInstance& instance,
                                         unsigned int frame)
   {
     unsigned int tileX = instance.GetFrameLocationX(frame);
@@ -79,7 +79,7 @@ namespace OrthancWSI
   }
 
 
-  DicomPyramidLevel::DicomPyramidLevel(const DicomPyramidInstance& instance) :
+  DicomPyramidLevel::DicomPyramidLevel(DicomPyramidInstance& instance) :
     totalWidth_(instance.GetTotalWidth()),
     totalHeight_(instance.GetTotalHeight()),
     tileWidth_(instance.GetTileWidth()),
@@ -99,7 +99,7 @@ namespace OrthancWSI
   }
 
 
-  void DicomPyramidLevel::AddInstance(const DicomPyramidInstance& instance)
+  void DicomPyramidLevel::AddInstance(DicomPyramidInstance& instance)
   {
     if (instance.GetTotalWidth() != totalWidth_ ||
         instance.GetTotalHeight() != totalHeight_ ||
@@ -127,14 +127,14 @@ namespace OrthancWSI
     if (LookupTile(tile, tileX, tileY))
     {
       assert(tile.instance_ != NULL);
-      const DicomPyramidInstance& instance = *tile.instance_;
+      DicomPyramidInstance& instance = *tile.instance_;
 
       std::string uri = ("/instances/" + instance.GetInstanceId() + 
                          "/frames/" + boost::lexical_cast<std::string>(tile.frame_) + "/raw");
 
       orthanc.RestApiGet(raw, uri);
 
-      compression = instance.GetImageCompression();
+      compression = instance.GetImageCompression(orthanc);
       format = instance.GetPixelFormat();
 
       return true;
