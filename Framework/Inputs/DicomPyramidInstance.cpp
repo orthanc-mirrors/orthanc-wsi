@@ -124,10 +124,8 @@ namespace OrthancWSI
   }
 
   
-  DicomPyramidInstance::DicomPyramidInstance(OrthancPlugins::IOrthancConnection&  orthanc,
-                                             const std::string& instanceId) :
-    instanceId_(instanceId),
-    hasCompression_(false)
+  void DicomPyramidInstance::Load(OrthancPlugins::IOrthancConnection&  orthanc,
+                                  const std::string& instanceId)
   {
     using namespace OrthancPlugins;
 
@@ -194,6 +192,15 @@ namespace OrthancWSI
   }
 
 
+  DicomPyramidInstance::DicomPyramidInstance(OrthancPlugins::IOrthancConnection&  orthanc,
+                                             const std::string& instanceId) :
+    instanceId_(instanceId),
+    hasCompression_(false)
+  {
+    Load(orthanc, instanceId);
+  }
+
+
   unsigned int DicomPyramidInstance::GetFrameLocationX(size_t frame) const
   {
     assert(frame < frames_.size());
@@ -220,15 +227,96 @@ namespace OrthancWSI
       frames.append(frame);
     }
 
-    Json::Value value;
-    value["PixelFormat"] = Orthanc::EnumerationToString(format_);
-    value["TileHeight"] = tileHeight_;
-    value["TileWidth"] = tileWidth_;
-    value["TotalHeight"] = totalHeight_;
-    value["TotalWidth"] = totalWidth_;    
-    value["Frames"] = frames;
+    Json::Value content;
+    content["Frames"] = frames;
+    content["TileHeight"] = tileHeight_;
+    content["TileWidth"] = tileWidth_;
+    content["TotalHeight"] = totalHeight_;
+    content["TotalWidth"] = totalWidth_;    
+
+    switch (format_)
+    {
+      case Orthanc::PixelFormat_RGB24:
+        content["PixelFormat"] = 0;
+        break;
+
+      case Orthanc::PixelFormat_Grayscale8:
+        content["PixelFormat"] = 1;
+        break;
+
+      default:
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
+    }
 
     Json::FastWriter writer;
-    result = writer.write(value);
+    result = writer.write(content);
+  }
+
+
+  void DicomPyramidInstance::Deserialize(const std::string& s)
+  {
+    hasCompression_ = false;
+
+    Json::Value content;
+    OrthancPlugins::IOrthancConnection::ParseJson(content, s);
+
+    if (content.type() != Json::objectValue ||
+        !content.isMember("Frames") ||
+        !content.isMember("PixelFormat") ||
+        !content.isMember("TileHeight") ||
+        !content.isMember("TileWidth") ||
+        !content.isMember("TotalHeight") ||
+        !content.isMember("TotalWidth") ||
+        content["Frames"].type() != Json::arrayValue ||
+        content["PixelFormat"].type() != Json::intValue ||
+        content["TileHeight"].type() != Json::intValue ||
+        content["TileWidth"].type() != Json::intValue ||
+        content["TotalHeight"].type() != Json::intValue ||
+        content["TotalWidth"].type() != Json::intValue ||
+        content["TileHeight"].asInt() < 0 ||
+        content["TileWidth"].asInt() < 0 ||
+        content["TotalHeight"].asInt() < 0 ||
+        content["TotalWidth"].asInt() < 0)
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
+    }
+
+    switch (content["Frames"].asInt())
+    {
+      case 0:
+        format_ = Orthanc::PixelFormat_RGB24;
+        break;
+
+      case 1:
+        format_ = Orthanc::PixelFormat_Grayscale8;
+        break;
+
+      default:
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
+    }
+
+    tileHeight_ = static_cast<unsigned int>(content["TileHeight"].asInt());
+    tileWidth_ = static_cast<unsigned int>(content["TileWidth"].asInt());
+    totalHeight_ = static_cast<unsigned int>(content["TotalHeight"].asInt());
+    totalWidth_ = static_cast<unsigned int>(content["TotalWidth"].asInt());
+
+    const Json::Value f = content["Frames"];
+    frames_.resize(f.size());
+
+    for (Json::Value::ArrayIndex i = 0; i < f.size(); i++)
+    {
+      if (f[i].type() != Json::arrayValue ||
+          f[i].size() != 2 ||
+          f[i][0].type() != Json::intValue ||
+          f[i][1].type() != Json::intValue ||
+          f[i][0].asInt() < 0 ||
+          f[i][1].asInt() < 0)
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
+      }
+
+      frames_[i].first = f[i][0].asInt();
+      frames_[i].second = f[i][1].asInt();
+    }
   }
 }

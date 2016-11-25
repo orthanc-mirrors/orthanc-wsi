@@ -27,8 +27,7 @@
 #include "DicomToolbox.h"
 #include "ImageToolbox.h"
 #include "Inputs/ITiledPyramid.h"
-#include "Messaging/IFileTarget.h"
-#include "Messaging/IOrthancConnection.h"
+#include "Targets/IFileTarget.h"
 #include "Outputs/IPyramidWriter.h"
 
 #endif

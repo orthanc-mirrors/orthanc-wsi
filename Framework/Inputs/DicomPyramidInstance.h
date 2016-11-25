@@ -43,6 +43,11 @@ namespace OrthancWSI
     unsigned int                totalHeight_;
     std::vector<FrameLocation>  frames_;
 
+    void Load(OrthancPlugins::IOrthancConnection&  orthanc,
+              const std::string& instanceId);
+
+    void Deserialize(const std::string& content);
+
   public:
     DicomPyramidInstance(OrthancPlugins::IOrthancConnection&  orthanc,
                          const std::string& instanceId);
