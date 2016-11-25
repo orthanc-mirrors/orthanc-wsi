@@ -213,16 +213,20 @@ namespace OrthancWSI
       }
       catch (Orthanc::OrthancException&)
       {
+        // No cached information yet
       }
     }
 
-    // No cached information, compute it from scratch
+    // Compute information about this instance from scratch
     Load(orthanc, instanceId);
 
-    // Serialize the computed information and cache it as a metadata
-    std::string serialized, tmp;
-    Serialize(serialized);
-    orthanc.RestApiPut(tmp, "/instances/" + instanceId + "/metadata/" + SERIALIZED_METADATA, serialized);
+    if (useCache)
+    {
+      // Serialize the computed information and cache it as a metadata
+      std::string serialized, tmp;
+      Serialize(serialized);
+      orthanc.RestApiPut(tmp, "/instances/" + instanceId + "/metadata/" + SERIALIZED_METADATA, serialized);
+    }
   }
 
 
