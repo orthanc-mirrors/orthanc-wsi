@@ -87,5 +87,7 @@ namespace OrthancWSI
     unsigned int GetFrameLocationX(size_t frame) const;
 
     unsigned int GetFrameLocationY(size_t frame) const;
+
+    void Serialize(std::string& result) const;
   };
 }

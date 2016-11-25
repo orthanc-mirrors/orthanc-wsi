@@ -29,6 +29,7 @@
 #include "../DicomToolbox.h"
 
 #include <cassert>
+#include <json/writer.h>
 
 namespace OrthancWSI
 {
@@ -204,5 +205,30 @@ namespace OrthancWSI
   {
     assert(frame < frames_.size());
     return frames_[frame].second;
+  }
+
+  
+  void DicomPyramidInstance::Serialize(std::string& result) const
+  {
+    Json::Value frames = Json::arrayValue;
+    for (size_t i = 0; i < frames_.size(); i++)
+    {
+      Json::Value frame = Json::arrayValue;
+      frame.append(frames_[i].first);
+      frame.append(frames_[i].second);
+
+      frames.append(frame);
+    }
+
+    Json::Value value;
+    value["PixelFormat"] = Orthanc::EnumerationToString(format_);
+    value["TileHeight"] = tileHeight_;
+    value["TileWidth"] = tileWidth_;
+    value["TotalHeight"] = totalHeight_;
+    value["TotalWidth"] = totalWidth_;    
+    value["Frames"] = frames;
+
+    Json::FastWriter writer;
+    result = writer.write(value);
   }
 }
