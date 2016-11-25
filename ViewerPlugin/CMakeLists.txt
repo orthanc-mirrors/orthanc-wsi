@@ -187,6 +187,9 @@ set(ORTHANC_CORE_SOURCES
   ${ORTHANC_ROOT}/Core/MultiThreading/Semaphore.cpp
   ${ORTHANC_ROOT}/Core/SystemToolbox.cpp
   ${ORTHANC_ROOT}/Core/Toolbox.cpp
+  ${ORTHANC_ROOT}/Plugins/Samples/Common/DicomDatasetReader.cpp
+  ${ORTHANC_ROOT}/Plugins/Samples/Common/DicomPath.cpp
+  ${ORTHANC_ROOT}/Plugins/Samples/Common/FullOrthancDataset.cpp
   ${ORTHANC_ROOT}/Plugins/Samples/Common/IOrthancConnection.cpp
   ${ORTHANC_ROOT}/Plugins/Samples/Common/OrthancPluginConnection.cpp
   ${ORTHANC_ROOT}/Plugins/Samples/Common/OrthancPluginCppWrapper.cpp

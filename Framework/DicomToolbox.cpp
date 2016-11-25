@@ -30,8 +30,6 @@
 #  include <dcmtk/dcmdata/dcsequen.h>
 #endif
 
-#include <boost/lexical_cast.hpp>
-
 namespace OrthancWSI
 {
   namespace DicomToolbox
@@ -160,92 +158,5 @@ namespace OrthancWSI
       }
     }
 #endif
-
-
-    bool GetStringTag(std::string& result,
-                      const Json::Value& simplifiedTags,
-                      const std::string& tagName,
-                      const std::string& defaultValue)
-    {
-      if (simplifiedTags.type() != Json::objectValue)
-      {
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
-      }
-
-      if (!simplifiedTags.isMember(tagName))
-      {
-        result = defaultValue;
-        return false;
-      }
-      else if (simplifiedTags[tagName].type() != Json::stringValue)
-      {
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
-      }
-      else
-      {
-        result = simplifiedTags[tagName].asString();
-        return true;
-      }
-    }
-
-
-    std::string GetMandatoryStringTag(const Json::Value& simplifiedTags,
-                                      const std::string& tagName)
-    {
-      std::string s;
-      if (GetStringTag(s, simplifiedTags, tagName, ""))
-      {
-        return s;
-      }
-      else
-      {
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_InexistentTag);        
-      }
-    }
-
-
-    const Json::Value& GetSequenceTag(const Json::Value& simplifiedTags,
-                                      const std::string& tagName)
-    {
-      if (simplifiedTags.type() != Json::objectValue ||
-          !simplifiedTags.isMember(tagName) ||
-          simplifiedTags[tagName].type() != Json::arrayValue)
-      {
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
-      }
-
-      return simplifiedTags[tagName];
-    }
-
-
-    int GetIntegerTag(const Json::Value& simplifiedTags,
-                      const std::string& tagName)
-    {
-      try
-      {
-        std::string s = Orthanc::Toolbox::StripSpaces(GetMandatoryStringTag(simplifiedTags, tagName));
-        return boost::lexical_cast<int>(s);
-      }
-      catch (boost::bad_lexical_cast&)
-      {
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);        
-      }
-    }
-
-
-    unsigned int GetUnsignedIntegerTag(const Json::Value& simplifiedTags,
-                                       const std::string& tagName)
-    {
-      int value = GetIntegerTag(simplifiedTags, tagName);
-
-      if (value >= 0)
-      {
-        return static_cast<unsigned int>(value);
-      }
-      else
-      {
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
-      }
-    }
   }
 }

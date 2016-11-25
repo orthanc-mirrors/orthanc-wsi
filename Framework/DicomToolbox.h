@@ -62,22 +62,5 @@ namespace OrthancWSI
     std::string GetStringTag(DcmItem& dataset,
                              const DcmTagKey& key);
 #endif
-
-    bool GetStringTag(std::string& result,
-                      const Json::Value& simplifiedTags,
-                      const std::string& tagName,
-                      const std::string& defaultValue);
-
-    std::string GetMandatoryStringTag(const Json::Value& simplifiedTags,
-                                      const std::string& tagName);
-
-    const Json::Value& GetSequenceTag(const Json::Value& simplifiedTags,
-                                      const std::string& tagName);
-
-    int GetIntegerTag(const Json::Value& simplifiedTags,
-                      const std::string& tagName);
-
-    unsigned int GetUnsignedIntegerTag(const Json::Value& simplifiedTags,
-                                       const std::string& tagName);
   }
 }

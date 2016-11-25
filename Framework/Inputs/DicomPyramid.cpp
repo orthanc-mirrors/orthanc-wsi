@@ -65,12 +65,14 @@ namespace OrthancWSI
     Json::Value series;
     OrthancPlugins::IOrthancConnection::RestApiGet(series, orthanc_, "/series/" + seriesId);
 
-    if (series.type() != Json::objectValue)
+    if (series.type() != Json::objectValue ||
+        !series.isMember("Instances") ||
+        series["Instances"].type() != Json::arrayValue)
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_NetworkProtocol);
     }
 
-    const Json::Value& instances = DicomToolbox::GetSequenceTag(series, "Instances");
+    const Json::Value& instances = series["Instances"];
     instances_.reserve(instances.size());
 
     for (Json::Value::ArrayIndex i = 0; i < instances.size(); i++)

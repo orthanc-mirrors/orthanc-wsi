@@ -40,14 +40,28 @@ namespace OrthancWSI
     Json::Value result;
     OrthancPlugins::IOrthancConnection::RestApiPost(result, *orthanc_, "/instances", file);
 
-    std::string instanceId = DicomToolbox::GetMandatoryStringTag(result, "ID");
+    if (result.type() != Json::objectValue ||
+        !result.isMember("ID") ||
+        result["ID"].type() != Json::stringValue)
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_NetworkProtocol);
+    }
+
+    std::string instanceId = result["ID"].asString();
 
     if (first_)
     {
       Json::Value instance;
       OrthancPlugins::IOrthancConnection::RestApiGet(instance, *orthanc_, "/instances/" + instanceId);
 
-      std::string seriesId = DicomToolbox::GetMandatoryStringTag(instance, "ParentSeries");
+      if (instance.type() != Json::objectValue ||
+          !instance.isMember("ParentSeries") ||
+          instance["ParentSeries"].type() != Json::stringValue)
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_NetworkProtocol);
+      }
+
+      std::string seriesId = instance["ParentSeries"].asString();
 
       LOG(WARNING) << "ID of the whole-slide image series in Orthanc: " << seriesId;
       first_ = false;

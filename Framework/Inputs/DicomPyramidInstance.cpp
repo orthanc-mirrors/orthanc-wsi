@@ -24,16 +24,24 @@
 #include "../../Resources/Orthanc/Core/Logging.h"
 #include "../../Resources/Orthanc/Core/OrthancException.h"
 #include "../../Resources/Orthanc/Core/Toolbox.h"
+#include "../../Resources/Orthanc/Plugins/Samples/Common/DicomDatasetReader.h"
+#include "../../Resources/Orthanc/Plugins/Samples/Common/FullOrthancDataset.h"
 #include "../DicomToolbox.h"
 
 #include <cassert>
 
 namespace OrthancWSI
 {
-  static ImageCompression DetectImageCompression(const Json::Value& header)
+  static ImageCompression DetectImageCompression(OrthancPlugins::IOrthancConnection& orthanc,
+                                                 const std::string& instanceId)
   {
+    using namespace OrthancPlugins;
+
+    DicomDatasetReader header(new FullOrthancDataset
+                              (orthanc, "/instances/" + instanceId + "/header"));
+
     std::string s = Orthanc::Toolbox::StripSpaces
-      (DicomToolbox::GetMandatoryStringTag(header, "TransferSyntaxUID"));
+      (header.GetMandatoryStringValue(DICOM_TAG_TRANSFER_SYNTAX_UID));
 
     if (s == "1.2.840.10008.1.2" ||
         s == "1.2.840.10008.1.2.1")
@@ -57,10 +65,12 @@ namespace OrthancWSI
   }
 
 
-  static Orthanc::PixelFormat DetectPixelFormat(const Json::Value& dicom)
+  static Orthanc::PixelFormat DetectPixelFormat(OrthancPlugins::DicomDatasetReader& reader)
   {
+    using namespace OrthancPlugins;
+
     std::string photometric = Orthanc::Toolbox::StripSpaces
-      (DicomToolbox::GetMandatoryStringTag(dicom, "PhotometricInterpretation"));
+      (reader.GetMandatoryStringValue(DICOM_TAG_PHOTOMETRIC_INTERPRETATION));
 
     if (photometric == "PALETTE")
     {
@@ -68,9 +78,9 @@ namespace OrthancWSI
       throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
     }
 
-    unsigned int bitsStored = DicomToolbox::GetUnsignedIntegerTag(dicom, "BitsStored");
-    unsigned int samplesPerPixel = DicomToolbox::GetUnsignedIntegerTag(dicom, "SamplesPerPixel");
-    bool isSigned = (DicomToolbox::GetUnsignedIntegerTag(dicom, "PixelRepresentation") != 0);
+    unsigned int bitsStored = reader.GetUnsignedIntegerValue(DICOM_TAG_BITS_STORED);
+    unsigned int samplesPerPixel = reader.GetUnsignedIntegerValue(DICOM_TAG_SAMPLES_PER_PIXEL);
+    bool isSigned = (reader.GetUnsignedIntegerValue(DICOM_TAG_PIXEL_REPRESENTATION) != 0);
 
     if (bitsStored == 8 &&
         samplesPerPixel == 1 &&
@@ -105,12 +115,8 @@ namespace OrthancWSI
 
     if (!hasCompression_)
     {
-      Json::Value header;
-      OrthancPlugins::IOrthancConnection::RestApiGet
-        (header, orthanc, "/instances/" + instanceId_ + "/header?simplify");
-
+      compression_ = DetectImageCompression(orthanc, instanceId_);
       hasCompression_ = true;
-      compression_ = DetectImageCompression(header);
     }
 
     return compression_;
@@ -122,43 +128,49 @@ namespace OrthancWSI
     instanceId_(instanceId),
     hasCompression_(false)
   {
-    Json::Value dicom;
-    OrthancPlugins::IOrthancConnection::RestApiGet
-      (dicom, orthanc, "/instances/" + instanceId + "/tags?simplify");
+    using namespace OrthancPlugins;
 
-    if (DicomToolbox::GetMandatoryStringTag(dicom, "SOPClassUID") != "1.2.840.10008.5.1.4.1.1.77.1.6" ||
-        DicomToolbox::GetMandatoryStringTag(dicom, "Modality") != "SM")
+    DicomDatasetReader reader(new FullOrthancDataset(orthanc, "/instances/" + instanceId + "/tags"));
+
+    if (reader.GetMandatoryStringValue(DICOM_TAG_SOP_CLASS_UID) != "1.2.840.10008.5.1.4.1.1.77.1.6" ||
+        reader.GetMandatoryStringValue(DICOM_TAG_MODALITY) != "SM")
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
     }
 
-    format_ = DetectPixelFormat(dicom);
-    tileWidth_ = DicomToolbox::GetUnsignedIntegerTag(dicom, "Columns");
-    tileHeight_ = DicomToolbox::GetUnsignedIntegerTag(dicom, "Rows");
-    totalWidth_ = DicomToolbox::GetUnsignedIntegerTag(dicom, "TotalPixelMatrixColumns");
-    totalHeight_ = DicomToolbox::GetUnsignedIntegerTag(dicom, "TotalPixelMatrixRows");
+    format_ = DetectPixelFormat(reader);
+    tileWidth_ = reader.GetUnsignedIntegerValue(DICOM_TAG_COLUMNS);
+    tileHeight_ = reader.GetUnsignedIntegerValue(DICOM_TAG_ROWS);
+    totalWidth_ = reader.GetUnsignedIntegerValue(DICOM_TAG_TOTAL_PIXEL_MATRIX_COLUMNS);
+    totalHeight_ = reader.GetUnsignedIntegerValue(DICOM_TAG_TOTAL_PIXEL_MATRIX_ROWS);
 
-    const Json::Value& frames = DicomToolbox::GetSequenceTag(dicom, "PerFrameFunctionalGroupsSequence");
+    size_t countFrames;
+    if (!reader.GetDataset().GetSequenceSize(countFrames, DICOM_TAG_PER_FRAME_FUNCTIONAL_GROUPS_SEQUENCE))
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
+    }
 
-    if (frames.size() != DicomToolbox::GetUnsignedIntegerTag(dicom, "NumberOfFrames"))
+    if (countFrames != reader.GetUnsignedIntegerValue(DICOM_TAG_NUMBER_OF_FRAMES))
     {
       LOG(ERROR) << "Mismatch between the number of frames in instance: " << instanceId;
       throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
     }
 
-    frames_.resize(frames.size());
+    frames_.resize(countFrames);
 
-    for (Json::Value::ArrayIndex i = 0; i < frames.size(); i++)
+    for (size_t i = 0; i < countFrames; i++)
     {
-      const Json::Value& frame = DicomToolbox::GetSequenceTag(frames[i], "PlanePositionSlideSequence");
-      if (frame.size() != 1)
-      {
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
-      }
+      int xx = reader.GetIntegerValue(DicomPath(DICOM_TAG_PER_FRAME_FUNCTIONAL_GROUPS_SEQUENCE, i,
+                                                DICOM_TAG_PLANE_POSITION_SLIDE_SEQUENCE, 0,
+                                                DICOM_TAG_COLUMN_POSITION_IN_TOTAL_IMAGE_PIXEL_MATRIX));
+
+      int yy = reader.GetIntegerValue(DicomPath(DICOM_TAG_PER_FRAME_FUNCTIONAL_GROUPS_SEQUENCE, i,
+                                                DICOM_TAG_PLANE_POSITION_SLIDE_SEQUENCE, 0,
+                                                DICOM_TAG_ROW_POSITION_IN_TOTAL_IMAGE_PIXEL_MATRIX));
 
       // "-1", because coordinates are shifted by 1 in DICOM
-      int xx = DicomToolbox::GetIntegerTag(frame[0], "ColumnPositionInTotalImagePixelMatrix") - 1;
-      int yy = DicomToolbox::GetIntegerTag(frame[0], "RowPositionInTotalImagePixelMatrix") - 1;
+      xx -= 1;
+      yy -= 1;
 
       unsigned int x = static_cast<unsigned int>(xx);
       unsigned int y = static_cast<unsigned int>(yy);
