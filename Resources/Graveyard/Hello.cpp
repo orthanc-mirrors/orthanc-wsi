@@ -66,7 +66,7 @@ namespace OrthancPlugins
     }
 
 #else
-    OrthancWSI::DicomPyramid pyramid(orthanc, "68bc53a6-8bd5b470-05072b43-af144cf8-665c54fd");
+    OrthancWSI::DicomPyramid pyramid(orthanc, "09d0cca4-a8f0cd78-5480c690-ed14eb3b-a6614d14", true);
     //OrthancWSI::DicomPyramid pyramid(orthanc, "4fdff9b9-8b81bc8f-04a3f903-4d44bd57-cc3bf42c");
 #endif
   }

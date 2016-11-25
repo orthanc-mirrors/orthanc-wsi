@@ -300,7 +300,8 @@ int main(int argc, char* argv[])
       }
 
       OrthancPlugins::OrthancHttpConnection orthanc(params);
-      OrthancWSI::DicomPyramid source(orthanc, options["input"].as<std::string>());
+      OrthancWSI::DicomPyramid source(orthanc, options["input"].as<std::string>(), 
+                                      false /* don't use cached metadata */);
 
       OrthancWSI::TiledPyramidStatistics stats(source);
       Run(stats, options);

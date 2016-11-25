@@ -60,7 +60,8 @@ namespace OrthancWSI
   }
 
 
-  void DicomPyramid::RegisterInstances(const std::string& seriesId)
+  void DicomPyramid::RegisterInstances(const std::string& seriesId,
+                                       bool useCache)
   {
     Json::Value series;
     OrthancPlugins::IOrthancConnection::RestApiGet(series, orthanc_, "/series/" + seriesId);
@@ -86,7 +87,7 @@ namespace OrthancWSI
 
       try
       {
-        instances_.push_back(new DicomPyramidInstance(orthanc_, instance));
+        instances_.push_back(new DicomPyramidInstance(orthanc_, instance, useCache));
       }
       catch (Orthanc::OrthancException&)
       {
@@ -138,11 +139,12 @@ namespace OrthancWSI
 
 
   DicomPyramid::DicomPyramid(OrthancPlugins::IOrthancConnection& orthanc,
-                             const std::string& seriesId) :
+                             const std::string& seriesId,
+                             bool useCache) :
     orthanc_(orthanc),
     seriesId_(seriesId)
   {
-    RegisterInstances(seriesId);
+    RegisterInstances(seriesId, useCache);
 
     // Sort the instances of the pyramid by decreasing total widths
     std::sort(instances_.begin(), instances_.end(), Comparator());

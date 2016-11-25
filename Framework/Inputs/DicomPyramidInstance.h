@@ -50,7 +50,8 @@ namespace OrthancWSI
 
   public:
     DicomPyramidInstance(OrthancPlugins::IOrthancConnection&  orthanc,
-                         const std::string& instanceId);
+                         const std::string& instanceId,
+                         bool useCache);
 
     const std::string& GetInstanceId() const
     {

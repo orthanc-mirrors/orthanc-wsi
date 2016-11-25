@@ -38,7 +38,8 @@ namespace OrthancWSI
 
     void Clear();
 
-    void RegisterInstances(const std::string& seriesId);
+    void RegisterInstances(const std::string& seriesId,
+                           bool useCache);
 
     void Check(const std::string& seriesId) const;
 
@@ -46,7 +47,8 @@ namespace OrthancWSI
 
   public:
     DicomPyramid(OrthancPlugins::IOrthancConnection& orthanc,
-                 const std::string& seriesId);
+                 const std::string& seriesId,
+                 bool useCache);
 
     virtual ~DicomPyramid()
     {

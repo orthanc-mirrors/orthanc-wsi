@@ -52,7 +52,7 @@ namespace OrthancWSI
       if (pyramid_.get() == NULL ||
           pyramid_->GetSeriesId() != seriesId)
       {
-        pyramid_.reset(new DicomPyramid(orthanc_, seriesId));
+        pyramid_.reset(new DicomPyramid(orthanc_, seriesId, true /* use metadata cache */));
       }
 
       if (pyramid_.get() == NULL)

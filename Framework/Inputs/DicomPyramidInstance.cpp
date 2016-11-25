@@ -31,6 +31,8 @@
 #include <cassert>
 #include <json/writer.h>
 
+#define SERIALIZED_METADATA  "4200"
+
 namespace OrthancWSI
 {
   static ImageCompression DetectImageCompression(OrthancPlugins::IOrthancConnection& orthanc,
@@ -137,6 +139,7 @@ namespace OrthancWSI
       throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
     }
 
+    hasCompression_ = false;
     format_ = DetectPixelFormat(reader);
     tileWidth_ = reader.GetUnsignedIntegerValue(DICOM_TAG_COLUMNS);
     tileHeight_ = reader.GetUnsignedIntegerValue(DICOM_TAG_ROWS);
@@ -193,11 +196,33 @@ namespace OrthancWSI
 
 
   DicomPyramidInstance::DicomPyramidInstance(OrthancPlugins::IOrthancConnection&  orthanc,
-                                             const std::string& instanceId) :
+                                             const std::string& instanceId,
+                                             bool useCache) :
     instanceId_(instanceId),
     hasCompression_(false)
   {
+    if (useCache)
+    {
+      try
+      {
+        // Try and deserialized the cached information about this instance
+        std::string serialized;
+        orthanc.RestApiGet(serialized, "/instances/" + instanceId + "/metadata/" + SERIALIZED_METADATA);
+        Deserialize(serialized);
+        return;  // Success
+      }
+      catch (Orthanc::OrthancException&)
+      {
+      }
+    }
+
+    // No cached information, compute it from scratch
     Load(orthanc, instanceId);
+
+    // Serialize the computed information and cache it as a metadata
+    std::string serialized, tmp;
+    Serialize(serialized);
+    orthanc.RestApiPut(tmp, "/instances/" + instanceId + "/metadata/" + SERIALIZED_METADATA, serialized);
   }
 
 
@@ -281,7 +306,7 @@ namespace OrthancWSI
       throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
     }
 
-    switch (content["Frames"].asInt())
+    switch (content["PixelFormat"].asInt())
     {
       case 0:
         format_ = Orthanc::PixelFormat_RGB24;
@@ -295,6 +320,7 @@ namespace OrthancWSI
         throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
     }
 
+    hasCompression_ = false;
     tileHeight_ = static_cast<unsigned int>(content["TileHeight"].asInt());
     tileWidth_ = static_cast<unsigned int>(content["TileWidth"].asInt());
     totalHeight_ = static_cast<unsigned int>(content["TotalHeight"].asInt());
