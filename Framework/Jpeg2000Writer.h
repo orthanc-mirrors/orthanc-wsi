@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include "Orthanc/Core/Images/IImageWriter.h"
+#include "../Resources/Orthanc/Core/Images/IImageWriter.h"
 
 namespace OrthancWSI
 {

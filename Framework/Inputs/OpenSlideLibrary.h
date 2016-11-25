@@ -20,8 +20,8 @@
 
 #pragma once
 
-#include "../Orthanc/Plugins/Engine/SharedLibrary.h"
-#include "../Orthanc/Core/Images/ImageAccessor.h"
+#include "../../Resources/Orthanc/Plugins/Engine/SharedLibrary.h"
+#include "../../Resources/Orthanc/Core/Images/ImageAccessor.h"
 
 #include <vector>
 

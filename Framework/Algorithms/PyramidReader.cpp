@@ -22,8 +22,8 @@
 #include "PyramidReader.h"
 
 #include "../ImageToolbox.h"
-#include "../Orthanc/Core/Logging.h"
-#include "../Orthanc/Core/OrthancException.h"
+#include "../../Resources/Orthanc/Core/Logging.h"
+#include "../../Resources/Orthanc/Core/OrthancException.h"
 
 #include <cassert>
 

@@ -42,7 +42,7 @@ SET(DCMTK_DICTIONARY_DIR "" CACHE PATH "Directory containing the DCMTK dictionar
 #####################################################################
 
 SET(ORTHANC_WSI_DIR ${CMAKE_CURRENT_LIST_DIR}/..)
-SET(ORTHANC_ROOT ${ORTHANC_WSI_DIR}/Framework/Orthanc)
+SET(ORTHANC_ROOT ${ORTHANC_WSI_DIR}/Resources/Orthanc)
 SET(USE_OPENJPEG_JP2 ON)
 SET(ENABLE_JPEG OFF)           # Disable DCMTK's support for JPEG, that clashes with libtiff
 SET(ENABLE_JPEG_LOSSLESS OFF)  # Disable DCMTK's support for JPEG-LS

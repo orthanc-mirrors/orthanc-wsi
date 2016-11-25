@@ -22,7 +22,7 @@
 
 #include "OrthancConnectionBase.h"
 
-#include "../Orthanc/Core/HttpClient.h"
+#include "../../Resources/Orthanc/Core/HttpClient.h"
 
 namespace OrthancWSI
 {

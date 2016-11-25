@@ -21,8 +21,8 @@
 #include "PrecompiledHeadersWSI.h"
 #include "Jpeg2000Writer.h"
 
-#include "Orthanc/Core/ChunkedBuffer.h"
-#include "Orthanc/Core/OrthancException.h"
+#include "../Resources/Orthanc/Core/ChunkedBuffer.h"
+#include "../Resources/Orthanc/Core/OrthancException.h"
 
 #include <openjpeg.h>
 #include <string.h>

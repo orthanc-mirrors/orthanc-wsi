@@ -28,13 +28,14 @@
 #include "../Framework/Inputs/TiledJpegImage.h"
 #include "../Framework/Inputs/TiledPngImage.h"
 #include "../Framework/Inputs/TiledPyramidStatistics.h"
-#include "../Framework/Orthanc/Core/HttpClient.h"
-#include "../Framework/Orthanc/Core/Logging.h"
-#include "../Framework/Orthanc/Core/MultiThreading/BagOfTasksProcessor.h"
-#include "../Framework/Orthanc/Core/SystemToolbox.h"
-#include "../Framework/Orthanc/OrthancServer/FromDcmtkBridge.h"
 #include "../Framework/Outputs/DicomPyramidWriter.h"
 #include "../Framework/Outputs/TruncatedPyramidWriter.h"
+
+#include "../Resources/Orthanc/Core/HttpClient.h"
+#include "../Resources/Orthanc/Core/Logging.h"
+#include "../Resources/Orthanc/Core/MultiThreading/BagOfTasksProcessor.h"
+#include "../Resources/Orthanc/Core/SystemToolbox.h"
+#include "../Resources/Orthanc/OrthancServer/FromDcmtkBridge.h"
 
 #include "ApplicationToolbox.h"
 

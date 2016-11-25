@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include "Orthanc/Core/Images/Image.h"
+#include "../Resources/Orthanc/Core/Images/Image.h"
 #include <memory>
 
 namespace OrthancWSI

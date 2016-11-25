@@ -22,7 +22,7 @@
 
 #include "SingleLevelDecodedPyramid.h"
 
-#include "../Orthanc/Core/Images/PngReader.h"
+#include "../../Resources/Orthanc/Core/Images/PngReader.h"
 
 namespace OrthancWSI
 {

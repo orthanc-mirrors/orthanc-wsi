@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include "../Framework/Orthanc/Core/MultiThreading/BagOfTasks.h"
+#include "../Resources/Orthanc/Core/MultiThreading/BagOfTasks.h"
 
 #include <string>
 #include <stdint.h>

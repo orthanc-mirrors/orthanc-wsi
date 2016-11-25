@@ -21,10 +21,10 @@
 #include "ApplicationToolbox.h"
 
 #include "../Framework/Inputs/OpenSlideLibrary.h"
-#include "../Framework/Orthanc/Core/HttpClient.h"
-#include "../Framework/Orthanc/Core/Logging.h"
-#include "../Framework/Orthanc/Core/MultiThreading/BagOfTasksProcessor.h"
-#include "../Framework/Orthanc/OrthancServer/FromDcmtkBridge.h"
+#include "../Resources/Orthanc/Core/HttpClient.h"
+#include "../Resources/Orthanc/Core/Logging.h"
+#include "../Resources/Orthanc/Core/MultiThreading/BagOfTasksProcessor.h"
+#include "../Resources/Orthanc/OrthancServer/FromDcmtkBridge.h"
 
 #include <boost/lexical_cast.hpp>
 #include <boost/regex.hpp>

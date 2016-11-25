@@ -24,7 +24,7 @@
 #include "Messaging/FolderTarget.h"
 #include "Messaging/OrthancTarget.h"
 
-#include "Orthanc/Core/OrthancException.h"
+#include "../Resources/Orthanc/Core/OrthancException.h"
 
 #include <boost/thread.hpp>
 #include <boost/lexical_cast.hpp>

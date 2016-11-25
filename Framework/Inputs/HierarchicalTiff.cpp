@@ -21,8 +21,8 @@
 #include "../PrecompiledHeadersWSI.h"
 #include "HierarchicalTiff.h"
 
-#include "../Orthanc/Core/Logging.h"
-#include "../Orthanc/Core/OrthancException.h"
+#include "../../Resources/Orthanc/Core/Logging.h"
+#include "../../Resources/Orthanc/Core/OrthancException.h"
 
 #include <iostream>
 #include <algorithm>

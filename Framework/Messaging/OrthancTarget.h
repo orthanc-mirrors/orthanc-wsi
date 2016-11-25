@@ -22,7 +22,7 @@
 
 #include "IFileTarget.h"
 #include "IOrthancConnection.h"
-#include "../Orthanc/Core/WebServiceParameters.h"
+#include "../../Resources/Orthanc/Core/WebServiceParameters.h"
 
 #include <memory>
 

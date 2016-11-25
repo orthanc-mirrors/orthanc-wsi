@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include "Orthanc/Core/Enumerations.h"
+#include "../Resources/Orthanc/Core/Enumerations.h"
 
 #include <stdint.h>
 #include <string>

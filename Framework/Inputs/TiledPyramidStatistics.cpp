@@ -21,7 +21,7 @@
 #include "../PrecompiledHeadersWSI.h"
 #include "TiledPyramidStatistics.h"
 
-#include "../Orthanc/Core/Logging.h"
+#include "../../Resources/Orthanc/Core/Logging.h"
 
 
 namespace OrthancWSI

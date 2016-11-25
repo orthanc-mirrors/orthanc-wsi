@@ -30,7 +30,7 @@ SET(OPENLAYERS_JS "" CACHE FILEPATH "Path to the system version of OpenLayers Ja
 #####################################################################
 
 SET(ORTHANC_WSI_DIR ${CMAKE_CURRENT_LIST_DIR}/..)
-SET(ORTHANC_ROOT ${ORTHANC_WSI_DIR}/Framework/Orthanc)
+SET(ORTHANC_ROOT ${ORTHANC_WSI_DIR}/Resources/Orthanc)
 
 SET(USE_OPENJPEG_JP2 ON)
 

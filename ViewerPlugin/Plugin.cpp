@@ -22,11 +22,12 @@
 #include "../Framework/Inputs/DicomPyramid.h"
 #include "../Framework/Jpeg2000Reader.h"
 #include "../Framework/Messaging/PluginOrthancConnection.h"
-#include "../Framework/Orthanc/Core/Images/ImageProcessing.h"
-#include "../Framework/Orthanc/Core/Images/PngWriter.h"
-#include "../Framework/Orthanc/Core/MultiThreading/Semaphore.h"
-#include "../Framework/Orthanc/Core/OrthancException.h"
-#include "../Framework/Orthanc/Plugins/Samples/Common/OrthancPluginCppWrapper.h"
+
+#include "../Resources/Orthanc/Core/Images/ImageProcessing.h"
+#include "../Resources/Orthanc/Core/Images/PngWriter.h"
+#include "../Resources/Orthanc/Core/MultiThreading/Semaphore.h"
+#include "../Resources/Orthanc/Core/OrthancException.h"
+#include "../Resources/Orthanc/Plugins/Samples/Common/OrthancPluginCppWrapper.h"
 
 #include <EmbeddedResources.h>
 

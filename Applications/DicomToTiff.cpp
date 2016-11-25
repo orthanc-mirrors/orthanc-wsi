@@ -23,9 +23,10 @@
 #include "../Framework/Inputs/DicomPyramid.h"
 #include "../Framework/Inputs/TiledPyramidStatistics.h"
 #include "../Framework/Messaging/CurlOrthancConnection.h"
-#include "../Framework/Orthanc/Core/Logging.h"
-#include "../Framework/Orthanc/Core/OrthancException.h"
 #include "../Framework/Outputs/HierarchicalTiffWriter.h"
+
+#include "../Resources/Orthanc/Core/Logging.h"
+#include "../Resources/Orthanc/Core/OrthancException.h"
 
 #include "ApplicationToolbox.h"
 

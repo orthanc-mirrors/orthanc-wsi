@@ -21,9 +21,9 @@
 #include "../PrecompiledHeadersWSI.h"
 #include "PyramidWithRawTiles.h"
 
-#include "../Orthanc/Core/Images/PngReader.h"
-#include "../Orthanc/Core/Images/JpegReader.h"
-#include "../Orthanc/Core/OrthancException.h"
+#include "../../Resources/Orthanc/Core/Images/PngReader.h"
+#include "../../Resources/Orthanc/Core/Images/JpegReader.h"
+#include "../../Resources/Orthanc/Core/OrthancException.h"
 #include "../Jpeg2000Reader.h"
 
 namespace OrthancWSI

@@ -21,9 +21,9 @@
 #include "../PrecompiledHeadersWSI.h"
 #include "OpenSlidePyramid.h"
 
-#include "../Orthanc/Core/Images/ImageProcessing.h"
-#include "../Orthanc/Core/OrthancException.h"
-#include "../Orthanc/Core/Logging.h"
+#include "../../Resources/Orthanc/Core/Images/ImageProcessing.h"
+#include "../../Resources/Orthanc/Core/OrthancException.h"
+#include "../../Resources/Orthanc/Core/Logging.h"
 
 namespace OrthancWSI
 {
