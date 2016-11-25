@@ -36,6 +36,7 @@
 
 #include <boost/noncopyable.hpp>
 #include <string>
+#include <json/value.h>
 
 namespace OrthancPlugins
 {
@@ -52,5 +53,17 @@ namespace OrthancPlugins
     virtual void RestApiPost(std::string& result,
                              const std::string& uri,
                              const std::string& body) = 0;
+
+    static void ParseJson(Json::Value& result,
+                          const std::string& content);
+
+    static void RestApiGet(Json::Value& result,
+                           IOrthancConnection& orthanc,
+                           const std::string& uri);
+
+    static void RestApiPost(Json::Value& result,
+                            IOrthancConnection& orthanc,
+                            const std::string& uri,
+                            const std::string& body);
   };
 }

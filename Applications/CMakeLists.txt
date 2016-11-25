@@ -87,6 +87,7 @@ add_definitions(
   -DORTHANC_ENABLE_PLUGINS=1  # To enable class Orthanc::SharedLibrary
   -DORTHANC_ENABLE_PUGIXML=0
   -DORTHANC_SANDBOXED=0
+  -DHAS_ORTHANC_EXCEPTION=1
   )
 
 
@@ -109,7 +110,6 @@ endif()
 #####################################################################
 
 set(ORTHANC_WSI_SOURCES
-  #${ORTHANC_WSI_DIR}/Framework/Messaging/PluginOrthancConnection.cpp
   ${ORTHANC_WSI_DIR}/Framework/Algorithms/PyramidReader.cpp
   ${ORTHANC_WSI_DIR}/Framework/Algorithms/ReconstructPyramidCommand.cpp
   ${ORTHANC_WSI_DIR}/Framework/Algorithms/TranscodeTileCommand.cpp
@@ -130,11 +130,8 @@ set(ORTHANC_WSI_SOURCES
   ${ORTHANC_WSI_DIR}/Framework/Inputs/TiledPyramidStatistics.cpp
   ${ORTHANC_WSI_DIR}/Framework/Jpeg2000Reader.cpp
   ${ORTHANC_WSI_DIR}/Framework/Jpeg2000Writer.cpp
-  ${ORTHANC_WSI_DIR}/Framework/Messaging/CurlOrthancConnection.cpp
-  ${ORTHANC_WSI_DIR}/Framework/Messaging/FolderTarget.cpp
-  ${ORTHANC_WSI_DIR}/Framework/Messaging/IOrthancConnection.cpp
-  ${ORTHANC_WSI_DIR}/Framework/Messaging/OrthancConnectionBase.cpp
-  ${ORTHANC_WSI_DIR}/Framework/Messaging/OrthancTarget.cpp
+  ${ORTHANC_WSI_DIR}/Framework/Targets/FolderTarget.cpp
+  ${ORTHANC_WSI_DIR}/Framework/Targets/OrthancTarget.cpp
   ${ORTHANC_WSI_DIR}/Framework/Outputs/DicomPyramidWriter.cpp
   ${ORTHANC_WSI_DIR}/Framework/Outputs/HierarchicalTiffWriter.cpp
   ${ORTHANC_WSI_DIR}/Framework/Outputs/InMemoryTiledImage.cpp
@@ -171,7 +168,18 @@ set(ORTHANC_CORE_SOURCES
   ${ORTHANC_ROOT}/OrthancServer/FromDcmtkBridge.cpp
   ${ORTHANC_ROOT}/OrthancServer/ServerEnumerations.cpp
   ${ORTHANC_ROOT}/OrthancServer/ToDcmtkBridge.cpp
+
   ${ORTHANC_ROOT}/Plugins/Engine/SharedLibrary.cpp
+  ${ORTHANC_ROOT}/Plugins/Samples/Common/OrthancPluginCppWrapper.cpp
+  ${ORTHANC_ROOT}/Plugins/Samples/Common/DicomDatasetReader.cpp
+  ${ORTHANC_ROOT}/Plugins/Samples/Common/DicomPath.cpp
+  ${ORTHANC_ROOT}/Plugins/Samples/Common/DicomTag.cpp
+  ${ORTHANC_ROOT}/Plugins/Samples/Common/FullOrthancDataset.cpp
+  ${ORTHANC_ROOT}/Plugins/Samples/Common/IOrthancConnection.cpp
+  ${ORTHANC_ROOT}/Plugins/Samples/Common/OrthancHttpConnection.cpp
+  ${ORTHANC_ROOT}/Plugins/Samples/Common/OrthancPluginConnection.cpp
+  ${ORTHANC_ROOT}/Plugins/Samples/Common/SimplifiedOrthancDataset.cpp
+
   ${ORTHANC_ROOT}/Resources/ThirdParty/base64/base64.cpp
   )
 

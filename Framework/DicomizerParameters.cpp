@@ -21,8 +21,8 @@
 #include "PrecompiledHeadersWSI.h"
 #include "DicomizerParameters.h"
 
-#include "Messaging/FolderTarget.h"
-#include "Messaging/OrthancTarget.h"
+#include "Targets/FolderTarget.h"
+#include "Targets/OrthancTarget.h"
 
 #include "../Resources/Orthanc/Core/OrthancException.h"
 

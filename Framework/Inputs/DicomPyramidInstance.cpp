@@ -92,7 +92,7 @@ namespace OrthancWSI
   }
 
 
-  ImageCompression  DicomPyramidInstance::GetImageCompression(IOrthancConnection& orthanc)
+  ImageCompression  DicomPyramidInstance::GetImageCompression(OrthancPlugins::IOrthancConnection& orthanc)
   {
     /**
      * Lazy detection of the image compression using the transfer
@@ -106,7 +106,8 @@ namespace OrthancWSI
     if (!hasCompression_)
     {
       Json::Value header;
-      IOrthancConnection::RestApiGet(header, orthanc, "/instances/" + instanceId_ + "/header?simplify");
+      OrthancPlugins::IOrthancConnection::RestApiGet
+        (header, orthanc, "/instances/" + instanceId_ + "/header?simplify");
 
       hasCompression_ = true;
       compression_ = DetectImageCompression(header);
@@ -116,13 +117,14 @@ namespace OrthancWSI
   }
 
   
-  DicomPyramidInstance::DicomPyramidInstance(IOrthancConnection&  orthanc,
+  DicomPyramidInstance::DicomPyramidInstance(OrthancPlugins::IOrthancConnection&  orthanc,
                                              const std::string& instanceId) :
     instanceId_(instanceId),
     hasCompression_(false)
   {
     Json::Value dicom;
-    IOrthancConnection::RestApiGet(dicom, orthanc, "/instances/" + instanceId + "/tags?simplify");
+    OrthancPlugins::IOrthancConnection::RestApiGet
+      (dicom, orthanc, "/instances/" + instanceId + "/tags?simplify");
 
     if (DicomToolbox::GetMandatoryStringTag(dicom, "SOPClassUID") != "1.2.840.10008.5.1.4.1.1.77.1.6" ||
         DicomToolbox::GetMandatoryStringTag(dicom, "Modality") != "SM")

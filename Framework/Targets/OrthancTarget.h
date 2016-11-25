@@ -20,32 +20,29 @@
 
 #pragma once
 
-#include "IOrthancConnection.h"
+#include "IFileTarget.h"
+#include "../../Resources/Orthanc/Core/WebServiceParameters.h"
+#include "../../Resources/Orthanc/Plugins/Samples/Common/IOrthancConnection.h"
 
-#include <boost/thread/mutex.hpp>
+#include <memory>
 
 namespace OrthancWSI
 {
-  class OrthancConnectionBase : public IOrthancConnection
+  class OrthancTarget : public IFileTarget
   {
   private:
-    boost::mutex  mutex_;
-
-  protected:
-    // Will be invoked in mutual exclusion
-    virtual void ApplyGet(std::string& result,
-                          const std::string& uri) = 0;
-
-    virtual void ApplyPost(std::string& result,
-                           const std::string& uri,
-                           const std::string& body) = 0;
+    std::auto_ptr<OrthancPlugins::IOrthancConnection>  orthanc_;
+    bool  first_;
 
   public:
-    virtual void RestApiGet(std::string& result,
-                            const std::string& uri);
+    OrthancTarget(const Orthanc::WebServiceParameters& parameters);
 
-    virtual void RestApiPost(std::string& result, 
-                             const std::string& uri,
-                             const std::string& body);
+    OrthancTarget(OrthancPlugins::IOrthancConnection* orthanc) :   // Takes ownership
+      orthanc_(orthanc),
+      first_(true)
+    {
+    }
+
+    virtual void Write(const std::string& file);
   };
 }

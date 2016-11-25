@@ -22,7 +22,7 @@
 
 #include "Inputs/ITiledPyramid.h"
 #include "Outputs/IPyramidWriter.h"
-#include "Messaging/IFileTarget.h"
+#include "Targets/IFileTarget.h"
 #include "DicomToolbox.h"
 #include "../Resources/Orthanc/Core/WebServiceParameters.h"
 

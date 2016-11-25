@@ -22,7 +22,7 @@
 
 #include "PyramidWriterBase.h"
 #include "MultiframeDicomWriter.h"
-#include "../Messaging/IFileTarget.h"
+#include "../Targets/IFileTarget.h"
 #include "../ImagedVolumeParameters.h"
 
 namespace OrthancWSI

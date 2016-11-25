@@ -21,7 +21,7 @@
 #pragma once
 
 #include "../Enumerations.h"
-#include "../Messaging/IOrthancConnection.h"
+#include "../../Resources/Orthanc/Plugins/Samples/Common/IOrthancConnection.h"
 
 #include <boost/noncopyable.hpp>
 #include <vector>
@@ -44,7 +44,7 @@ namespace OrthancWSI
     std::vector<FrameLocation>  frames_;
 
   public:
-    DicomPyramidInstance(IOrthancConnection&  orthanc,
+    DicomPyramidInstance(OrthancPlugins::IOrthancConnection&  orthanc,
                          const std::string& instanceId);
 
     const std::string& GetInstanceId() const
@@ -52,7 +52,7 @@ namespace OrthancWSI
       return instanceId_;
     }
 
-    ImageCompression GetImageCompression(IOrthancConnection& orthanc);
+    ImageCompression GetImageCompression(OrthancPlugins::IOrthancConnection& orthanc);
 
     Orthanc::PixelFormat GetPixelFormat() const
     {

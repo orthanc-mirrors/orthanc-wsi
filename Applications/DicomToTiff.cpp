@@ -22,11 +22,11 @@
 #include "../Framework/ImageToolbox.h"
 #include "../Framework/Inputs/DicomPyramid.h"
 #include "../Framework/Inputs/TiledPyramidStatistics.h"
-#include "../Framework/Messaging/CurlOrthancConnection.h"
 #include "../Framework/Outputs/HierarchicalTiffWriter.h"
 
 #include "../Resources/Orthanc/Core/Logging.h"
 #include "../Resources/Orthanc/Core/OrthancException.h"
+#include "../Resources/Orthanc/Plugins/Samples/Common/OrthancHttpConnection.h"
 
 #include "ApplicationToolbox.h"
 
@@ -299,7 +299,7 @@ int main(int argc, char* argv[])
         params.SetPassword(options["password"].as<std::string>());
       }
 
-      OrthancWSI::CurlOrthancConnection orthanc(params);
+      OrthancPlugins::OrthancHttpConnection orthanc(params);
       OrthancWSI::DicomPyramid source(orthanc, options["input"].as<std::string>());
 
       OrthancWSI::TiledPyramidStatistics stats(source);

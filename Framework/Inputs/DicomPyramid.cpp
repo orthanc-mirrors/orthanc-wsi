@@ -63,7 +63,7 @@ namespace OrthancWSI
   void DicomPyramid::RegisterInstances(const std::string& seriesId)
   {
     Json::Value series;
-    IOrthancConnection::RestApiGet(series, orthanc_, "/series/" + seriesId);
+    OrthancPlugins::IOrthancConnection::RestApiGet(series, orthanc_, "/series/" + seriesId);
 
     if (series.type() != Json::objectValue)
     {
@@ -135,7 +135,7 @@ namespace OrthancWSI
   }
 
 
-  DicomPyramid::DicomPyramid(IOrthancConnection& orthanc,
+  DicomPyramid::DicomPyramid(OrthancPlugins::IOrthancConnection& orthanc,
                              const std::string& seriesId) :
     orthanc_(orthanc),
     seriesId_(seriesId)

@@ -168,9 +168,6 @@ set(ORTHANC_WSI_SOURCES
   ${ORTHANC_WSI_DIR}/Framework/Inputs/PyramidWithRawTiles.cpp
   ${ORTHANC_WSI_DIR}/Framework/Jpeg2000Reader.cpp
   ${ORTHANC_WSI_DIR}/Framework/Jpeg2000Writer.cpp
-  ${ORTHANC_WSI_DIR}/Framework/Messaging/IOrthancConnection.cpp
-  ${ORTHANC_WSI_DIR}/Framework/Messaging/OrthancConnectionBase.cpp
-  ${ORTHANC_WSI_DIR}/Framework/Messaging/PluginOrthancConnection.cpp
   )
 
 set(ORTHANC_CORE_SOURCES
@@ -190,6 +187,8 @@ set(ORTHANC_CORE_SOURCES
   ${ORTHANC_ROOT}/Core/MultiThreading/Semaphore.cpp
   ${ORTHANC_ROOT}/Core/SystemToolbox.cpp
   ${ORTHANC_ROOT}/Core/Toolbox.cpp
+  ${ORTHANC_ROOT}/Plugins/Samples/Common/IOrthancConnection.cpp
+  ${ORTHANC_ROOT}/Plugins/Samples/Common/OrthancPluginConnection.cpp
   ${ORTHANC_ROOT}/Plugins/Samples/Common/OrthancPluginCppWrapper.cpp
   )
 

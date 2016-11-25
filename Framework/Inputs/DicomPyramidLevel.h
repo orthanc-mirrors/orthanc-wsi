@@ -87,7 +87,7 @@ namespace OrthancWSI
     bool DownloadRawTile(std::string& raw /* out */,
                          Orthanc::PixelFormat& format /* out */,
                          ImageCompression& compression /* out */,
-                         IOrthancConnection& orthanc,
+                         OrthancPlugins::IOrthancConnection& orthanc,
                          unsigned int tileX,
                          unsigned int tileY) const;
   };

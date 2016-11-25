@@ -21,13 +21,13 @@
 #include "../Framework/PrecompiledHeadersWSI.h"
 #include "../Framework/Inputs/DicomPyramid.h"
 #include "../Framework/Jpeg2000Reader.h"
-#include "../Framework/Messaging/PluginOrthancConnection.h"
 
 #include "../Resources/Orthanc/Core/Images/ImageProcessing.h"
 #include "../Resources/Orthanc/Core/Images/PngWriter.h"
 #include "../Resources/Orthanc/Core/MultiThreading/Semaphore.h"
 #include "../Resources/Orthanc/Core/OrthancException.h"
 #include "../Resources/Orthanc/Plugins/Samples/Common/OrthancPluginCppWrapper.h"
+#include "../Resources/Orthanc/Plugins/Samples/Common/OrthancPluginConnection.h"
 
 #include <EmbeddedResources.h>
 
@@ -41,9 +41,9 @@ namespace OrthancWSI
   class DicomPyramidCache : public boost::noncopyable
   {
   private:
-    boost::mutex                  mutex_;
-    IOrthancConnection&           orthanc_;
-    std::auto_ptr<DicomPyramid>   pyramid_;
+    boost::mutex                         mutex_;
+    OrthancPlugins::IOrthancConnection&  orthanc_;
+    std::auto_ptr<DicomPyramid>          pyramid_;
 
     DicomPyramid& GetPyramid(const std::string& seriesId)
     {
@@ -64,7 +64,7 @@ namespace OrthancWSI
     }
 
   public:
-    DicomPyramidCache(IOrthancConnection& orthanc) :
+    DicomPyramidCache(OrthancPlugins::IOrthancConnection& orthanc) :
       orthanc_(orthanc)
     {
     }
@@ -105,10 +105,9 @@ namespace OrthancWSI
 
 OrthancPluginContext* context_ = NULL;
 
-std::auto_ptr<OrthancWSI::PluginOrthancConnection>  orthanc_;
-std::auto_ptr<OrthancWSI::DicomPyramidCache>        cache_;
-std::auto_ptr<Orthanc::Semaphore>                   transcoderSemaphore_;
-std::string                                         sparseTile_;
+std::auto_ptr<OrthancPlugins::OrthancPluginConnection>  orthanc_;
+std::auto_ptr<OrthancWSI::DicomPyramidCache>            cache_;
+std::auto_ptr<Orthanc::Semaphore>                       transcoderSemaphore_;
 
 
 static void AnswerSparseTile(OrthancPluginRestOutput* output,
@@ -378,7 +377,7 @@ extern "C"
 
     OrthancPluginSetDescription(context, "Provides a Web viewer of whole-slide microscopic images within Orthanc.");
 
-    orthanc_.reset(new OrthancWSI::PluginOrthancConnection(context));
+    orthanc_.reset(new OrthancPlugins::OrthancPluginConnection(context));
     cache_.reset(new OrthancWSI::DicomPyramidCache(*orthanc_));
 
     OrthancPluginRegisterOnChangeCallback(context_, OnChangeCallback);

@@ -96,6 +96,7 @@ FILES = [
     'Plugins/Samples/Common/FullOrthancDataset.cpp',
     'Plugins/Samples/Common/FullOrthancDataset.h',
     'Plugins/Samples/Common/IDicomDataset.h',
+    'Plugins/Samples/Common/IOrthancConnection.cpp',
     'Plugins/Samples/Common/IOrthancConnection.h',
     'Plugins/Samples/Common/OrthancHttpConnection.cpp',
     'Plugins/Samples/Common/OrthancHttpConnection.h',

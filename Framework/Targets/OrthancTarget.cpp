@@ -21,15 +21,15 @@
 #include "../PrecompiledHeadersWSI.h"
 #include "OrthancTarget.h"
 
-#include "CurlOrthancConnection.h"
 #include "../DicomToolbox.h"
 #include "../../Resources/Orthanc/Core/OrthancException.h"
 #include "../../Resources/Orthanc/Core/Logging.h"
+#include "../../Resources/Orthanc/Plugins/Samples/Common/OrthancHttpConnection.h"
 
 namespace OrthancWSI
 {
   OrthancTarget::OrthancTarget(const Orthanc::WebServiceParameters& parameters) :
-    orthanc_(new CurlOrthancConnection(parameters)),
+    orthanc_(new OrthancPlugins::OrthancHttpConnection(parameters)),
     first_(true)
   {
   }
@@ -38,14 +38,14 @@ namespace OrthancWSI
   void OrthancTarget::Write(const std::string& file)
   {
     Json::Value result;
-    IOrthancConnection::RestApiPost(result, *orthanc_, "/instances", file);
+    OrthancPlugins::IOrthancConnection::RestApiPost(result, *orthanc_, "/instances", file);
 
     std::string instanceId = DicomToolbox::GetMandatoryStringTag(result, "ID");
 
     if (first_)
     {
       Json::Value instance;
-      IOrthancConnection::RestApiGet(instance, *orthanc_, "/instances/" + instanceId);
+      OrthancPlugins::IOrthancConnection::RestApiGet(instance, *orthanc_, "/instances/" + instanceId);
 
       std::string seriesId = DicomToolbox::GetMandatoryStringTag(instance, "ParentSeries");
 
