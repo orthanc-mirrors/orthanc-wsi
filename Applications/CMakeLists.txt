@@ -33,6 +33,7 @@ SET(USE_SYSTEM_LIBTIFF ON CACHE BOOL "Use the system version of libtiff")
 SET(USE_SYSTEM_OPENJPEG ON CACHE BOOL "Use the system version of OpenJpeg")
 SET(USE_SYSTEM_OPENSSL ON CACHE BOOL "Use the system version of OpenSSL")
 SET(USE_SYSTEM_ZLIB ON CACHE BOOL "Use the system version of ZLib")
+SET(USE_SYSTEM_ORTHANC_SDK ON CACHE BOOL "Use the system version of the Orthanc plugin SDK")
 
 SET(DCMTK_DICTIONARY_DIR "" CACHE PATH "Directory containing the DCMTK dictionaries \"dicom.dic\" and \"private.dic\" (only when using system version of DCMTK)") 
 
@@ -89,6 +90,20 @@ add_definitions(
   -DORTHANC_SANDBOXED=0
   -DHAS_ORTHANC_EXCEPTION=1
   )
+
+
+#####################################################################
+## Find the Orthanc SDK
+#####################################################################
+
+if (STATIC_BUILD OR NOT USE_SYSTEM_ORTHANC_SDK)
+  include_directories(${ORTHANC_ROOT}/Sdk-1.0.0)
+else ()
+  CHECK_INCLUDE_FILE_CXX(orthanc/OrthancCPlugin.h HAVE_ORTHANC_H)
+  if (NOT HAVE_ORTHANC_H)
+    message(FATAL_ERROR "Please install the headers of the Orthanc plugins SDK")
+  endif()
+endif()
 
 
 #####################################################################
@@ -199,7 +214,7 @@ if (MSVC)
   add_definitions(-DORTHANC_USE_PRECOMPILED_HEADERS=1)
 
   ADD_VISUAL_STUDIO_PRECOMPILED_HEADERS(
-    "PrecompiledHeaders.h" "${ORTHANC_WSI_DIR}/Framework/Orthanc/Core/PrecompiledHeaders.cpp" ORTHANC_CORE_SOURCES)
+    "PrecompiledHeaders.h" "${ORTHANC_WSI_DIR}/Resources/Orthanc/Core/PrecompiledHeaders.cpp" ORTHANC_CORE_SOURCES)
 
   ADD_VISUAL_STUDIO_PRECOMPILED_HEADERS(
     "PrecompiledHeadersWSI.h" "${ORTHANC_WSI_DIR}/Framework/PrecompiledHeadersWSI.cpp" ORTHANC_WSI_SOURCES)
