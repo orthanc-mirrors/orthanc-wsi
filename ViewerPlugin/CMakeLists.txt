@@ -158,6 +158,7 @@ EmbedResources(
 #####################################################################
 
 set(ORTHANC_WSI_SOURCES
+  DicomPyramidCache.cpp
   Plugin.cpp
   ${ORTHANC_WSI_DIR}/Framework/DicomToolbox.cpp
   ${ORTHANC_WSI_DIR}/Framework/Enumerations.cpp

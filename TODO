@@ -15,7 +15,6 @@ General
 Performance
 -----------
 
-* Larger cache with LRU recycling to improve viewer performance
 * Check out rapidjson: https://github.com/miloyip/nativejson-benchmark
 
 

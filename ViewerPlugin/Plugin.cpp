@@ -19,7 +19,8 @@
 
 
 #include "../Framework/PrecompiledHeadersWSI.h"
-#include "../Framework/Inputs/DicomPyramid.h"
+
+#include "DicomPyramidCache.h"
 #include "../Framework/Jpeg2000Reader.h"
 
 #include "../Resources/Orthanc/Core/Images/ImageProcessing.h"
@@ -32,76 +33,6 @@
 #include <EmbeddedResources.h>
 
 #include <cassert>
-
-
-
-namespace OrthancWSI
-{
-  // TODO Add LRU recycling policy
-  class DicomPyramidCache : public boost::noncopyable
-  {
-  private:
-    boost::mutex                         mutex_;
-    OrthancPlugins::IOrthancConnection&  orthanc_;
-    std::auto_ptr<DicomPyramid>          pyramid_;
-
-    DicomPyramid& GetPyramid(const std::string& seriesId)
-    {
-      // Mutex is assumed to be locked
-
-      if (pyramid_.get() == NULL ||
-          pyramid_->GetSeriesId() != seriesId)
-      {
-        pyramid_.reset(new DicomPyramid(orthanc_, seriesId, true /* use metadata cache */));
-      }
-
-      if (pyramid_.get() == NULL)
-      {
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
-      }
-
-      return *pyramid_;
-    }
-
-  public:
-    DicomPyramidCache(OrthancPlugins::IOrthancConnection& orthanc) :
-      orthanc_(orthanc)
-    {
-    }
-
-    void Invalidate(const std::string& seriesId)
-    {
-      boost::mutex::scoped_lock  lock(mutex_);
-
-      if (pyramid_.get() != NULL &&
-          pyramid_->GetSeriesId() == seriesId)
-      {
-        pyramid_.reset(NULL);
-      }
-    }
-
-    class Locker : public boost::noncopyable
-    {
-    private:
-      boost::mutex::scoped_lock  lock_;
-      DicomPyramid&              pyramid_;
-
-    public:
-      Locker(DicomPyramidCache& cache,
-             const std::string& seriesId) :
-        lock_(cache.mutex_),
-        pyramid_(cache.GetPyramid(seriesId))
-      {
-      }
-
-      DicomPyramid& GetPyramid() const
-      {
-        return pyramid_;
-      }
-    };
-  };
-}
-
 
 OrthancPluginContext* context_ = NULL;
 
@@ -151,23 +82,41 @@ void ServePyramid(OrthancPluginRestOutput* output,
 
   OrthancWSI::DicomPyramidCache::Locker locker(*cache_, seriesId);
 
+  unsigned int tileWidth = locker.GetPyramid().GetTileWidth();
+  unsigned int tileHeight = locker.GetPyramid().GetTileHeight();
   unsigned int totalWidth = locker.GetPyramid().GetLevelWidth(0);
   unsigned int totalHeight = locker.GetPyramid().GetLevelHeight(0);
 
+  Json::Value sizes = Json::arrayValue;
   Json::Value resolutions = Json::arrayValue;
+  Json::Value tilesCount = Json::arrayValue;
   for (unsigned int i = 0; i < locker.GetPyramid().GetLevelCount(); i++)
   {
-    resolutions.append(static_cast<float>(totalWidth) /
-                       static_cast<float>(locker.GetPyramid().GetLevelWidth(i)));
+    unsigned int levelWidth = locker.GetPyramid().GetLevelWidth(i);
+    unsigned int levelHeight = locker.GetPyramid().GetLevelHeight(i);
+
+    resolutions.append(static_cast<float>(totalWidth) / static_cast<float>(levelWidth));
+    
+    Json::Value s = Json::arrayValue;
+    s.append(levelWidth);
+    s.append(levelHeight);
+    sizes.append(s);
+
+    s = Json::arrayValue;
+    s.append(OrthancWSI::CeilingDivision(levelWidth, tileWidth));
+    s.append(OrthancWSI::CeilingDivision(levelHeight, tileHeight));
+    tilesCount.append(s);
   }
 
   Json::Value result;
   result["ID"] = seriesId;
-  result["TotalWidth"] = totalWidth;
-  result["TotalHeight"] = totalHeight;
-  result["TileWidth"] = locker.GetPyramid().GetTileWidth();
-  result["TileHeight"] = locker.GetPyramid().GetTileHeight();
   result["Resolutions"] = resolutions;
+  result["Sizes"] = sizes;
+  result["TileHeight"] = tileHeight;
+  result["TileWidth"] = tileWidth;
+  result["TilesCount"] = tilesCount;
+  result["TotalHeight"] = totalHeight;
+  result["TotalWidth"] = totalWidth;
 
   std::string s = result.toStyledString();
   OrthancPluginAnswerBuffer(context_, output, s.c_str(), s.size(), "application/json");
@@ -378,7 +327,7 @@ extern "C"
     OrthancPluginSetDescription(context, "Provides a Web viewer of whole-slide microscopic images within Orthanc.");
 
     orthanc_.reset(new OrthancPlugins::OrthancPluginConnection(context));
-    cache_.reset(new OrthancWSI::DicomPyramidCache(*orthanc_));
+    cache_.reset(new OrthancWSI::DicomPyramidCache(*orthanc_, 10 /* Number of pyramids to be cached - TODO parameter */));
 
     OrthancPluginRegisterOnChangeCallback(context_, OnChangeCallback);
 
