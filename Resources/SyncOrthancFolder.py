@@ -15,6 +15,7 @@ PLUGIN_SDK_VERSION = '1.0.0'
 REPOSITORY = 'http://bitbucket.org/sjodogne/orthanc/raw'
 
 FILES = [
+    'Core/Cache/LeastRecentlyUsedIndex.h',
     'Core/ChunkedBuffer.cpp',
     'Core/ChunkedBuffer.h',
     'Core/DicomFormat/DicomArray.cpp',
