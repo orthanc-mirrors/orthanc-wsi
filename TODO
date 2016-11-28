@@ -30,4 +30,3 @@ Documentation
 Packaging
 ---------
 
-* Debian: Rename "Framework/Orthanc/" as "Resources/Orthanc/" in "debian/copyright"
