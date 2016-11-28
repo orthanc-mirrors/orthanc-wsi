@@ -1,12 +1,16 @@
 Pending changes in the mainline
 ===============================
 
+
+Version 0.2 (2016/11/28)
+========================
+
 * Huge speed-up in the whole-slide imaging Web viewer plugin:
   - Reduction of the number of calls to the Orthanc REST API
   - Cache pre-computed information for each instance as metadata
   - Larger cache with LRU recycling to improve viewer performance
 * "OrthancWSIClearCache.py" companion script to clear the WSI cache
-* Refactorings
+* Various refactorings
 
 
 Version 0.1 (2016/10/28)
