@@ -121,7 +121,7 @@ endif()
 if (STATIC_BUILD OR NOT USE_SYSTEM_OPENLAYERS)
   DownloadPackage(
     "77e57aad873c2d4deea8bb1446e9b87a"
-    "http://www.montefiore.ulg.ac.be/~jodogne/Orthanc/ThirdPartyDownloads/WSI/openlayers-3.19.0-dist.zip"
+    "http://www.orthanc-server.com/downloads/third-party/WSI/openlayers-3.19.0-dist.zip"
     "v3.19.0-dist")
   
   set(OPENLAYERS_RESOURCES
