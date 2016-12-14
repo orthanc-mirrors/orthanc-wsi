@@ -100,6 +100,7 @@ namespace Orthanc
   static const DicomTag DICOM_TAG_SERIES_INSTANCE_UID(0x0020, 0x000e);
   static const DicomTag DICOM_TAG_STUDY_INSTANCE_UID(0x0020, 0x000d);
   static const DicomTag DICOM_TAG_PIXEL_DATA(0x7fe0, 0x0010);
+  static const DicomTag DICOM_TAG_TRANSFER_SYNTAX_UID(0x0002, 0x0010);
 
   static const DicomTag DICOM_TAG_IMAGE_INDEX(0x0054, 0x1330);
   static const DicomTag DICOM_TAG_INSTANCE_NUMBER(0x0020, 0x0013);
@@ -127,6 +128,7 @@ namespace Orthanc
   static const DicomTag DICOM_TAG_TEMPORAL_POSITION_IDENTIFIER(0x0020, 0x0100);
 
   // Tags for C-FIND and C-MOVE
+  static const DicomTag DICOM_TAG_MESSAGE_ID(0x0000, 0x0110);
   static const DicomTag DICOM_TAG_SPECIFIC_CHARACTER_SET(0x0008, 0x0005);
   static const DicomTag DICOM_TAG_QUERY_RETRIEVE_LEVEL(0x0008, 0x0052);
   static const DicomTag DICOM_TAG_MODALITIES_IN_STUDY(0x0008, 0x0061);

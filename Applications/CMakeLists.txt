@@ -78,14 +78,16 @@ include(${ORTHANC_WSI_DIR}/Resources/CMake/OpenJpegConfiguration.cmake)
 include(${ORTHANC_WSI_DIR}/Resources/CMake/LibTiffConfiguration.cmake)
 
 add_definitions(
+  -DORTHANC_BUILD_UNIT_TESTS=0  # For FromDcmtkBridge
   -DORTHANC_ENABLE_BASE64=1
   -DORTHANC_ENABLE_CURL=1
   -DORTHANC_ENABLE_DCMTK=1
+  -DORTHANC_ENABLE_JPEG=0       # Disable DCMTK's support for JPEG
   -DORTHANC_ENABLE_LOGGING=1
+  -DORTHANC_ENABLE_LUA=0        # For FromDcmtkBridge
   -DORTHANC_ENABLE_MD5=0
-  -DORTHANC_ENABLE_JPEG=0     # Disable DCMTK's support for JPEG
   -DORTHANC_ENABLE_PKCS11=0
-  -DORTHANC_ENABLE_PLUGINS=1  # To enable class Orthanc::SharedLibrary
+  -DORTHANC_ENABLE_PLUGINS=1    # To enable class Orthanc::SharedLibrary
   -DORTHANC_ENABLE_PUGIXML=0
   -DORTHANC_SANDBOXED=0
   -DHAS_ORTHANC_EXCEPTION=1

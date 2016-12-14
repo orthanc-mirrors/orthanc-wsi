@@ -1646,7 +1646,9 @@ namespace Orthanc
 
     if (!ok)
     {
-      throw OrthancException(ErrorCode_InternalError);
+      LOG(ERROR) << "While creating a DICOM instance, tag (" << tag.Format()
+                 << ") has out-of-range value: \"" << *decoded << "\"";
+      throw OrthancException(ErrorCode_BadFileFormat);
     }
   }
 
@@ -1663,6 +1665,11 @@ namespace Orthanc
       case Json::stringValue:
         element.reset(CreateElementForTag(tag));
         FillElementWithString(*element, tag, value.asString(), decodeDataUriScheme, dicomEncoding);
+        break;
+
+      case Json::nullValue:
+        element.reset(CreateElementForTag(tag));
+        FillElementWithString(*element, tag, "", decodeDataUriScheme, dicomEncoding);
         break;
 
       case Json::arrayValue:
@@ -1742,10 +1749,16 @@ namespace Orthanc
       {
         const Json::Value& value = json[tags[i]];
         if (value.type() != Json::stringValue ||
-            !GetDicomEncoding(encoding, value.asCString()))
+            (value.asString().length() != 0 &&
+             !GetDicomEncoding(encoding, value.asCString())))
         {
           LOG(ERROR) << "Unknown encoding while creating DICOM from JSON: " << value;
           throw OrthancException(ErrorCode_BadRequest);
+        }
+
+        if (value.asString().length() == 0)
+        {
+          return defaultEncoding;
         }
       }
     }
@@ -1897,4 +1910,108 @@ namespace Orthanc
       target.SetValue(ParseTag(members[i]), value.asString(), false);
     }
   }
+
+
+  void FromDcmtkBridge::ChangeStringEncoding(DcmItem& dataset,
+                                             Encoding source,
+                                             Encoding target)
+  {
+    // Recursive exploration of a dataset to change the encoding of
+    // each string-like element
+
+    if (source == target)
+    {
+      return;
+    }
+
+    for (unsigned long i = 0; i < dataset.card(); i++)
+    {
+      DcmElement* element = dataset.getElement(i);
+      if (element)
+      {
+        if (element->isLeaf())
+        {
+          char *c = NULL;
+          if (element->isaString() &&
+              element->getString(c).good() && 
+              c != NULL)
+          {
+            std::string a = Toolbox::ConvertToUtf8(c, source);
+            std::string b = Toolbox::ConvertFromUtf8(a, target);
+            element->putString(b.c_str());
+          }
+        }
+        else
+        {
+          // "All subclasses of DcmElement except for DcmSequenceOfItems
+          // are leaf nodes, while DcmSequenceOfItems, DcmItem, DcmDataset
+          // etc. are not." The following dynamic_cast is thus OK.
+          DcmSequenceOfItems& sequence = dynamic_cast<DcmSequenceOfItems&>(*element);
+
+          for (unsigned long j = 0; j < sequence.card(); j++)
+          {
+            ChangeStringEncoding(*sequence.getItem(j), source, target);
+          }
+        }
+      }
+    }
+  }
+
+
+  bool FromDcmtkBridge::LookupTransferSyntax(std::string& result,
+                                             DcmFileFormat& dicom)
+  {
+    const char* value = NULL;
+
+    if (dicom.getMetaInfo() != NULL &&
+        dicom.getMetaInfo()->findAndGetString(DCM_TransferSyntaxUID, value).good() &&
+        value != NULL)
+    {
+      result.assign(value);
+      return true;
+    }
+    else
+    {
+      return false;
+    }
+  }
+
+
+#if ORTHANC_ENABLE_LUA == 1
+  void FromDcmtkBridge::ExecuteToDicom(DicomMap& target,
+                                       LuaFunctionCall& call)
+  {
+    Json::Value output;
+    call.ExecuteToJson(output, true /* keep strings */);
+
+    target.Clear();
+
+    if (output.type() == Json::arrayValue &&
+        output.size() == 0)
+    {
+      // This case happens for empty tables
+      return;
+    }
+
+    if (output.type() != Json::objectValue)
+    {
+      LOG(ERROR) << "Lua: IncomingFindRequestFilter must return a table";
+      throw OrthancException(ErrorCode_LuaBadOutput);
+    }
+
+    Json::Value::Members members = output.getMemberNames();
+
+    for (size_t i = 0; i < members.size(); i++)
+    {
+      if (output[members[i]].type() != Json::stringValue)
+      {
+        LOG(ERROR) << "Lua: IncomingFindRequestFilter must return a table mapping names of DICOM tags to strings";
+        throw OrthancException(ErrorCode_LuaBadOutput);
+      }
+
+      DicomTag tag(ParseTag(members[i]));
+      target.SetValue(tag, output[members[i]].asString(), false);
+    }
+  }
+#endif
 }
