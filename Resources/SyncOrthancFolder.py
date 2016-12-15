@@ -121,6 +121,7 @@ FILES = [
     'Resources/MinGW-W64-Toolchain32.cmake',
     'Resources/MinGW-W64-Toolchain64.cmake',
     'Resources/MinGWToolchain.cmake',
+    'Resources/Patches/dcmtk-3.6.0-dulparse-vulnerability.patch',
     'Resources/Patches/dcmtk-3.6.0-mingw64.patch',
     'Resources/Patches/dcmtk-3.6.0-speed.patch',
     'Resources/Patches/dcmtk-3.6.1-speed.patch',
