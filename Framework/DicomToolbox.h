@@ -47,6 +47,10 @@ namespace OrthancWSI
                       const DcmTagKey& key,
                       uint32_t value);
 
+    void SetAttributeTag(DcmItem& dataset,
+                         const DcmTagKey& key,
+                         const DcmTagKey& value);
+
     DcmItem* ExtractSingleSequenceItem(DcmItem& dataset,
                                        const DcmTagKey& key);
 

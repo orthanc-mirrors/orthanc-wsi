@@ -28,6 +28,7 @@
 #if ORTHANC_ENABLE_DCMTK == 1
 #  include <dcmtk/dcmdata/dcelem.h>
 #  include <dcmtk/dcmdata/dcsequen.h>
+#  include <dcmtk/dcmdata/dcvrat.h>
 #endif
 
 namespace OrthancWSI
@@ -66,6 +67,23 @@ namespace OrthancWSI
           !dataset.putAndInsertUint32(key, value).good())
       {
         throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+      }
+    }
+
+
+    void SetAttributeTag(DcmItem& dataset,
+                         const DcmTagKey& key,
+                         const DcmTagKey& value)
+    {
+      if (!dataset.tagExists(key))
+      {
+        std::auto_ptr<DcmAttributeTag> tag(new DcmAttributeTag(key));
+        
+        if (!tag->putTagVal(value).good() ||
+            !dataset.insert(tag.release()).good())
+        {
+          throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+        }
       }
     }
 

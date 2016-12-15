@@ -260,78 +260,87 @@ static void SetupDimension(DcmDataset& dataset,
                            const OrthancWSI::ITiledPyramid& source,
                            const OrthancWSI::ImagedVolumeParameters& volume)
 {
-  std::string uid;
+  // Extract the identifier of the Dimension Organization, if provided
+  std::string organization;
   DcmItem* previous = OrthancWSI::DicomToolbox::ExtractSingleSequenceItem(dataset, DCM_DimensionOrganizationSequence);
 
-  if (previous != NULL)
+  if (previous != NULL &&
+      previous->tagExists(DCM_DimensionOrganizationUID))
   {
-    const char* tmp = NULL;
-    if (previous->findAndGetString(DCM_DimensionOrganizationUID, tmp).good() &&
-        tmp != NULL)
+    organization = OrthancWSI::DicomToolbox::GetStringTag(*previous, DCM_DimensionOrganizationUID);
+  }
+  else
+  {
+    // No Dimension Organization provided: Generate an unique identifier
+    organization = Orthanc::FromDcmtkBridge::GenerateUniqueIdentifier(Orthanc::ResourceType_Instance);
+  }
+
+
+  {
+    // Construct tag "Dimension Organization Sequence" (0020,9221)
+    std::auto_ptr<DcmItem> item(new DcmItem);
+    OrthancWSI::DicomToolbox::SetStringTag(*item, DCM_DimensionOrganizationUID, organization);
+    
+    std::auto_ptr<DcmSequenceOfItems> sequence(new DcmSequenceOfItems(DCM_DimensionOrganizationSequence));
+
+    if (!sequence->insert(item.release(), false, false).good() ||
+        !dataset.insert(sequence.release(), true /* replace */, false).good())
     {
-      uid.assign(tmp);
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
     }
   }
 
-  if (uid.empty())
+
   {
-    // Generate an unique identifier for the Dimension Organization
-    uid = Orthanc::FromDcmtkBridge::GenerateUniqueIdentifier(Orthanc::ResourceType_Instance);
+    // Construct tag "Dimension Index Sequence" (0020,9222)
+    std::auto_ptr<DcmItem> item(new DcmItem);
+    OrthancWSI::DicomToolbox::SetStringTag(*item, DCM_DimensionOrganizationUID, organization);
+    OrthancWSI::DicomToolbox::SetAttributeTag(*item, DCM_FunctionalGroupPointer, DCM_FrameContentSequence);
+    OrthancWSI::DicomToolbox::SetAttributeTag(*item, DCM_DimensionIndexPointer, DCM_DimensionIndexValues);
+
+    std::auto_ptr<DcmSequenceOfItems> sequence(new DcmSequenceOfItems(DCM_DimensionIndexSequence));
+
+    if (!sequence->insert(item.release(), false, false).good() ||
+        !dataset.insert(sequence.release(), true /* replace */, false).good())
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+    }
   }
 
-  dataset.remove(DCM_DimensionIndexSequence);
 
-  std::auto_ptr<DcmItem> item(new DcmItem);
-  std::auto_ptr<DcmSequenceOfItems> sequence(new DcmSequenceOfItems(DCM_DimensionOrganizationSequence));
-
-  if (!item->putAndInsertString(DCM_DimensionOrganizationUID, uid.c_str()).good() ||
-      !sequence->insert(item.release(), false, false).good() ||
-      !dataset.insert(sequence.release(), true, false).good())
   {
-    throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
-  }
+    // Construct tag "Shared Functional Groups Sequence" (5200,9229)
 
-  item.reset(new DcmItem);
-  sequence.reset(new DcmSequenceOfItems(DCM_DimensionIndexSequence));
+    // In the 2 lines below, remember to switch X/Y when going from physical to pixel coordinates!
+    float spacingX = volume.GetWidth() / static_cast<float>(source.GetLevelHeight(0));
+    float spacingY = volume.GetHeight() / static_cast<float>(source.GetLevelWidth(0));
 
-  std::auto_ptr<DcmAttributeTag> a1(new DcmAttributeTag(DCM_FunctionalGroupPointer));
-  std::auto_ptr<DcmAttributeTag> a2(new DcmAttributeTag(DCM_DimensionIndexPointer));
+    std::string spacing = (boost::lexical_cast<std::string>(spacingX) + '\\' +
+                           boost::lexical_cast<std::string>(spacingY));
 
-  if (!item->putAndInsertString(DCM_DimensionOrganizationUID, uid.c_str()).good() ||
-      !a1->putTagVal(DCM_FrameContentSequence).good() ||
-      !a2->putTagVal(DCM_DimensionIndexValues).good() ||
-      !item->insert(a1.release()).good() ||
-      !item->insert(a2.release()).good() ||
-      !sequence->insert(item.release(), false, false).good() ||
-      !dataset.insert(sequence.release(), true, false).good())
-  {
-    throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
-  }
+    std::auto_ptr<DcmItem> item(new DcmItem);
 
-  float spacingX = volume.GetWidth() / static_cast<float>(source.GetLevelHeight(0));  // Remember to switch X/Y!
-  float spacingY = volume.GetHeight() / static_cast<float>(source.GetLevelWidth(0));  // Remember to switch X/Y!
-  std::string spacing = (boost::lexical_cast<std::string>(spacingX) + '\\' +
-                         boost::lexical_cast<std::string>(spacingY));
+    std::auto_ptr<DcmItem> item2(new DcmItem);
+    OrthancWSI::DicomToolbox::SetStringTag(*item2, DCM_SliceThickness, 
+                                           boost::lexical_cast<std::string>(volume.GetDepth()));
+    OrthancWSI::DicomToolbox::SetStringTag(*item2, DCM_PixelSpacing, spacing);
 
-  item.reset(new DcmItem);
-  sequence.reset(new DcmSequenceOfItems(DCM_SharedFunctionalGroupsSequence));
-  std::auto_ptr<DcmItem> item2(new DcmItem);
-  std::auto_ptr<DcmItem> item3(new DcmItem);
-  std::auto_ptr<DcmSequenceOfItems> sequence2(new DcmSequenceOfItems(DCM_PixelMeasuresSequence));
-  std::auto_ptr<DcmSequenceOfItems> sequence3(new DcmSequenceOfItems(DCM_OpticalPathIdentificationSequence));
+    std::auto_ptr<DcmItem> item3(new DcmItem);
+    OrthancWSI::DicomToolbox::SetStringTag(*item3, DCM_OpticalPathIdentifier, opticalPathId);
 
-  OrthancWSI::DicomToolbox::SetStringTag(*item2, DCM_SliceThickness, boost::lexical_cast<std::string>(volume.GetDepth()));
-  OrthancWSI::DicomToolbox::SetStringTag(*item2, DCM_PixelSpacing, spacing);
-  OrthancWSI::DicomToolbox::SetStringTag(*item3, DCM_OpticalPathIdentifier, opticalPathId);
+    std::auto_ptr<DcmSequenceOfItems> sequence(new DcmSequenceOfItems(DCM_SharedFunctionalGroupsSequence));
+    std::auto_ptr<DcmSequenceOfItems> sequence2(new DcmSequenceOfItems(DCM_PixelMeasuresSequence));
+    std::auto_ptr<DcmSequenceOfItems> sequence3(new DcmSequenceOfItems(DCM_OpticalPathIdentificationSequence));
 
-  if (!sequence2->insert(item2.release(), false, false).good() ||
-      !sequence3->insert(item3.release(), false, false).good() ||
-      !item->insert(sequence2.release(), false, false).good() ||
-      !item->insert(sequence3.release(), false, false).good() ||
-      !sequence->insert(item.release(), false, false).good() ||
-      !dataset.insert(sequence.release(), true, false).good())
-  {
-    throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+    if (!sequence2->insert(item2.release(), false, false).good() ||
+        !sequence3->insert(item3.release(), false, false).good() ||
+        !item->insert(sequence2.release(), false, false).good() ||
+        !item->insert(sequence3.release(), false, false).good() ||
+        !sequence->insert(item.release(), false, false).good() ||
+        !dataset.insert(sequence.release(), true /* replace */, false).good())
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+    }
   }
 }
 
