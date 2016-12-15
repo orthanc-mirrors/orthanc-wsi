@@ -295,12 +295,18 @@ static void SetupDimension(DcmDataset& dataset,
     // Construct tag "Dimension Index Sequence" (0020,9222)
     std::auto_ptr<DcmItem> item(new DcmItem);
     OrthancWSI::DicomToolbox::SetStringTag(*item, DCM_DimensionOrganizationUID, organization);
-    OrthancWSI::DicomToolbox::SetAttributeTag(*item, DCM_FunctionalGroupPointer, DCM_FrameContentSequence);
-    OrthancWSI::DicomToolbox::SetAttributeTag(*item, DCM_DimensionIndexPointer, DCM_DimensionIndexValues);
+    OrthancWSI::DicomToolbox::SetAttributeTag(*item, DCM_FunctionalGroupPointer, DCM_PlanePositionSlideSequence);
+    OrthancWSI::DicomToolbox::SetAttributeTag(*item, DCM_DimensionIndexPointer, DCM_ColumnPositionInTotalImagePixelMatrix);
+
+    std::auto_ptr<DcmItem> item2(new DcmItem);
+    OrthancWSI::DicomToolbox::SetStringTag(*item2, DCM_DimensionOrganizationUID, organization);
+    OrthancWSI::DicomToolbox::SetAttributeTag(*item2, DCM_FunctionalGroupPointer, DCM_PlanePositionSlideSequence);
+    OrthancWSI::DicomToolbox::SetAttributeTag(*item2, DCM_DimensionIndexPointer, DCM_RowPositionInTotalImagePixelMatrix);
 
     std::auto_ptr<DcmSequenceOfItems> sequence(new DcmSequenceOfItems(DCM_DimensionIndexSequence));
 
     if (!sequence->insert(item.release(), false, false).good() ||
+        !sequence->insert(item2.release(), false, false).good() ||
         !dataset.insert(sequence.release(), true /* replace */, false).good())
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);

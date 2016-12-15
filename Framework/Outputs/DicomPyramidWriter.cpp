@@ -61,9 +61,14 @@ namespace OrthancWSI
     std::string tmpX = boost::lexical_cast<std::string>(physicalX);
     std::string tmpY = boost::lexical_cast<std::string>(physicalY);
     std::string tmpZ = boost::lexical_cast<std::string>(physicalZ);
+    
+    // NB: Method DcmItem::putAndInsertUint32Array() should be used at
+    // this point, but it is missing in DCMTK 3.6.0
+    std::string index = (boost::lexical_cast<std::string>(x / GetTileWidth() + 1) + "\\" + 
+                         boost::lexical_cast<std::string>(y / GetTileHeight() + 1));
 
     std::auto_ptr<DcmItem> dimension(new DcmItem);
-    if (!dimension->putAndInsertUint32(DCM_DimensionIndexValues, frame).good())
+    if (!dimension->putAndInsertString(DCM_DimensionIndexValues, index.c_str()).good())
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
     }
