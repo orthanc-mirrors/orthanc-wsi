@@ -87,6 +87,7 @@ FILES = [
     'Plugins/Samples/Common/ExportedSymbols.list',
     'Plugins/Samples/Common/OrthancPluginCppWrapper.cpp',
     'Plugins/Samples/Common/OrthancPluginCppWrapper.h',
+    'Plugins/Samples/Common/OrthancPluginException.h',
     'Plugins/Samples/Common/VersionScript.map',
     'Plugins/Samples/Common/DicomDatasetReader.cpp',
     'Plugins/Samples/Common/DicomDatasetReader.h',
