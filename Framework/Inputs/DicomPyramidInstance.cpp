@@ -81,9 +81,16 @@ namespace OrthancWSI
       throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
     }
 
-    unsigned int bitsStored = reader.GetUnsignedIntegerValue(DICOM_TAG_BITS_STORED);
-    unsigned int samplesPerPixel = reader.GetUnsignedIntegerValue(DICOM_TAG_SAMPLES_PER_PIXEL);
-    bool isSigned = (reader.GetUnsignedIntegerValue(DICOM_TAG_PIXEL_REPRESENTATION) != 0);
+    unsigned int bitsStored, samplesPerPixel, tmp;
+
+    if (!reader.GetUnsignedIntegerValue(bitsStored, DICOM_TAG_BITS_STORED) ||
+        !reader.GetUnsignedIntegerValue(samplesPerPixel, DICOM_TAG_SAMPLES_PER_PIXEL) ||
+        !reader.GetUnsignedIntegerValue(tmp, DICOM_TAG_PIXEL_REPRESENTATION))
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_InexistentTag);
+    }
+
+    bool isSigned = (tmp != 0);
 
     if (bitsStored == 8 &&
         samplesPerPixel == 1 &&
@@ -142,10 +149,16 @@ namespace OrthancWSI
 
     hasCompression_ = false;
     format_ = DetectPixelFormat(reader);
-    tileWidth_ = reader.GetUnsignedIntegerValue(DICOM_TAG_COLUMNS);
-    tileHeight_ = reader.GetUnsignedIntegerValue(DICOM_TAG_ROWS);
-    totalWidth_ = reader.GetUnsignedIntegerValue(DICOM_TAG_TOTAL_PIXEL_MATRIX_COLUMNS);
-    totalHeight_ = reader.GetUnsignedIntegerValue(DICOM_TAG_TOTAL_PIXEL_MATRIX_ROWS);
+
+    unsigned int tmp;
+    if (!reader.GetUnsignedIntegerValue(tileWidth_, DICOM_TAG_COLUMNS) ||
+        !reader.GetUnsignedIntegerValue(tileHeight_, DICOM_TAG_ROWS) ||
+        !reader.GetUnsignedIntegerValue(totalWidth_, DICOM_TAG_TOTAL_PIXEL_MATRIX_COLUMNS) ||
+        !reader.GetUnsignedIntegerValue(totalHeight_, DICOM_TAG_TOTAL_PIXEL_MATRIX_ROWS) ||
+        !reader.GetUnsignedIntegerValue(tmp, DICOM_TAG_NUMBER_OF_FRAMES))
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
+    }
 
     size_t countFrames;
     if (!reader.GetDataset().GetSequenceSize(countFrames, DICOM_TAG_PER_FRAME_FUNCTIONAL_GROUPS_SEQUENCE))
@@ -153,7 +166,7 @@ namespace OrthancWSI
       throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
     }
 
-    if (countFrames != reader.GetUnsignedIntegerValue(DICOM_TAG_NUMBER_OF_FRAMES))
+    if (countFrames != tmp)
     {
       LOG(ERROR) << "Mismatch between the number of frames in instance: " << instanceId;
       throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
@@ -163,13 +176,20 @@ namespace OrthancWSI
 
     for (size_t i = 0; i < countFrames; i++)
     {
-      int xx = reader.GetIntegerValue(DicomPath(DICOM_TAG_PER_FRAME_FUNCTIONAL_GROUPS_SEQUENCE, i,
-                                                DICOM_TAG_PLANE_POSITION_SLIDE_SEQUENCE, 0,
-                                                DICOM_TAG_COLUMN_POSITION_IN_TOTAL_IMAGE_PIXEL_MATRIX));
+      DicomPath pathX(DICOM_TAG_PER_FRAME_FUNCTIONAL_GROUPS_SEQUENCE, i,
+                      DICOM_TAG_PLANE_POSITION_SLIDE_SEQUENCE, 0,
+                      DICOM_TAG_COLUMN_POSITION_IN_TOTAL_IMAGE_PIXEL_MATRIX);
 
-      int yy = reader.GetIntegerValue(DicomPath(DICOM_TAG_PER_FRAME_FUNCTIONAL_GROUPS_SEQUENCE, i,
-                                                DICOM_TAG_PLANE_POSITION_SLIDE_SEQUENCE, 0,
-                                                DICOM_TAG_ROW_POSITION_IN_TOTAL_IMAGE_PIXEL_MATRIX));
+      DicomPath pathY(DICOM_TAG_PER_FRAME_FUNCTIONAL_GROUPS_SEQUENCE, i,
+                      DICOM_TAG_PLANE_POSITION_SLIDE_SEQUENCE, 0,
+                      DICOM_TAG_ROW_POSITION_IN_TOTAL_IMAGE_PIXEL_MATRIX);
+
+      int xx, yy;
+      if (!reader.GetIntegerValue(xx, pathX) ||
+          !reader.GetIntegerValue(yy, pathY))
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_InexistentTag);
+      }
 
       // "-1", because coordinates are shifted by 1 in DICOM
       xx -= 1;
