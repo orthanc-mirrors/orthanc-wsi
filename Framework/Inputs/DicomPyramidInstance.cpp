@@ -40,8 +40,8 @@ namespace OrthancWSI
   {
     using namespace OrthancPlugins;
 
-    DicomDatasetReader header(new FullOrthancDataset
-                              (orthanc, "/instances/" + instanceId + "/header"));
+    FullOrthancDataset dataset(orthanc, "/instances/" + instanceId + "/header");
+    DicomDatasetReader header(dataset);
 
     std::string s = Orthanc::Toolbox::StripSpaces
       (header.GetMandatoryStringValue(DICOM_TAG_TRANSFER_SYNTAX_UID));
@@ -131,7 +131,8 @@ namespace OrthancWSI
   {
     using namespace OrthancPlugins;
 
-    DicomDatasetReader reader(new FullOrthancDataset(orthanc, "/instances/" + instanceId + "/tags"));
+    FullOrthancDataset dataset(orthanc, "/instances/" + instanceId + "/tags");
+    DicomDatasetReader reader(dataset);
 
     if (reader.GetMandatoryStringValue(DICOM_TAG_SOP_CLASS_UID) != "1.2.840.10008.5.1.4.1.1.77.1.6" ||
         reader.GetMandatoryStringValue(DICOM_TAG_MODALITY) != "SM")

@@ -221,9 +221,11 @@ namespace OrthancWSI
                                  unsigned int y,
                                  unsigned int channel,
                                  int offsetX,
-                                 int offsetY)
+                                 int offsetY,
+                                 unsigned int bytesPerPixel)
     {
-      assert(channel < source.GetBytesPerPixel());
+      assert(bytesPerPixel == source.GetBytesPerPixel());
+      assert(channel < bytesPerPixel);
       assert(source.GetFormat() == Orthanc::PixelFormat_Grayscale8 ||
              source.GetFormat() == Orthanc::PixelFormat_RGB24 ||
              source.GetFormat() == Orthanc::PixelFormat_RGBA32);  // 16bpp is unsupported
@@ -255,14 +257,15 @@ namespace OrthancWSI
       }
 
       return *(reinterpret_cast<const uint8_t*>(source.GetConstBuffer()) +
-               y * source.GetPitch() + x * source.GetBytesPerPixel() + channel);
+               y * source.GetPitch() + x * bytesPerPixel + channel);
     }
 
 
     static uint8_t SmoothPixelValue(const Orthanc::ImageAccessor& source,
                                     unsigned int x,
                                     unsigned int y,
-                                    unsigned int channel)
+                                    unsigned int channel,
+                                    unsigned int bytesPerPixel)
     {
       static const uint32_t kernel[5] = { 1, 4, 6, 4, 1 };
       static const uint32_t normalization = 2 * (1 + 4 + 6 + 4 + 1);
@@ -272,13 +275,13 @@ namespace OrthancWSI
       // Horizontal smoothing
       for (int offset = -2; offset <= 2; offset++)
       {
-        accumulator += kernel[offset + 2] * GetPixelValue(source, x, y, channel, offset, 0);
+        accumulator += kernel[offset + 2] * GetPixelValue(source, x, y, channel, offset, 0, bytesPerPixel);
       }
 
       // Vertical smoothing
       for (int offset = -2; offset <= 2; offset++)
       {
-        accumulator += kernel[offset + 2] * GetPixelValue(source, x, y, channel, 0, offset);
+        accumulator += kernel[offset + 2] * GetPixelValue(source, x, y, channel, 0, offset, bytesPerPixel);
       }
 
       return static_cast<uint8_t>(accumulator / normalization);
@@ -307,6 +310,8 @@ namespace OrthancWSI
                                                             source.GetWidth() / 2, 
                                                             source.GetHeight() / 2));
 
+      unsigned int bytesPerPixel = source.GetBytesPerPixel();
+
       for (unsigned int y = 0; y < source.GetHeight() / 2; y++)
       {
         uint8_t* q = reinterpret_cast<uint8_t*>(result->GetRow(y));
@@ -317,11 +322,11 @@ namespace OrthancWSI
           {
             if (smooth)
             {
-              q[c] = SmoothPixelValue(source, 2 * x, 2 * y, c);
+              q[c] = SmoothPixelValue(source, 2 * x, 2 * y, c, bytesPerPixel);
             }
             else
             {
-              q[c] = GetPixelValue(source, 2 * x, 2 * y, c, 0, 0);
+              q[c] = GetPixelValue(source, 2 * x, 2 * y, c, 0, 0, bytesPerPixel);
             }
           }
         }

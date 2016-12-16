@@ -28,6 +28,17 @@
 
 #include <boost/lexical_cast.hpp>
 #include <boost/regex.hpp>
+#include <cassert>
+
+
+static bool DisplayPerformanceWarning()
+{
+  (void) DisplayPerformanceWarning;   // Disable warning about unused function
+  LOG(WARNING) << "Performance warning in whole-slide imaging: "
+               << "Non-release build, runtime debug assertions are turned on";
+  return true;
+}
+
 
 namespace OrthancWSI
 {
@@ -39,6 +50,7 @@ namespace OrthancWSI
       Orthanc::HttpClient::InitializeOpenSsl();
       Orthanc::HttpClient::GlobalInitialize();
       Orthanc::FromDcmtkBridge::InitializeDictionary(false /* don't load private dictionary */);
+      assert(DisplayPerformanceWarning());
     }
 
 

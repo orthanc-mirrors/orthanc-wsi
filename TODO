@@ -16,6 +16,7 @@ Performance
 -----------
 
 * Check out rapidjson: https://github.com/miloyip/nativejson-benchmark
+* Optimize ImageToolbox::Set() and ImageToolbox::Halve()
 
 
 -------------
