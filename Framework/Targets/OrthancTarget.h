@@ -35,9 +35,9 @@ namespace OrthancWSI
     bool  first_;
 
   public:
-    OrthancTarget(const Orthanc::WebServiceParameters& parameters);
+    explicit OrthancTarget(const Orthanc::WebServiceParameters& parameters);
 
-    OrthancTarget(OrthancPlugins::IOrthancConnection* orthanc) :   // Takes ownership
+    explicit OrthancTarget(OrthancPlugins::IOrthancConnection* orthanc) :   // Takes ownership
       orthanc_(orthanc),
       first_(true)
     {

@@ -34,7 +34,7 @@ namespace OrthancWSI
     std::string   pattern_;
 
   public:
-    FolderTarget(const std::string& pattern) : 
+    explicit FolderTarget(const std::string& pattern) : 
       count_(0),
       pattern_(pattern)
     {

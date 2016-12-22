@@ -53,24 +53,26 @@ namespace OrthancWSI
   }
 
 
-  DicomizerParameters::DicomizerParameters()
+  DicomizerParameters::DicomizerParameters() :
+    safetyCheck_(false),
+    repaintBackground_(false),
+    targetCompression_(ImageCompression_Jpeg),
+    hasTargetTileSize_(false),
+    targetTileWidth_(512),
+    targetTileHeight_(512),
+    maxDicomFileSize_(10 * 1024 * 1024),   // 10MB
+    reconstructPyramid_(false),
+    pyramidLevelsCount_(0),
+    pyramidLowerLevelsCount_(0),
+    smooth_(false),
+    jpegQuality_(90),
+    forceReencode_(false),
+    opticalPath_(OpticalPath_Brightfield)
   {
-    safetyCheck_ = false;
-    repaintBackground_ = false;
     backgroundColor_[0] = 255;
     backgroundColor_[1] = 255;
     backgroundColor_[2] = 255;
-    targetCompression_ = ImageCompression_Jpeg;
-    hasTargetTileSize_ = false;
     threadsCount_ = ChooseNumberOfThreads();
-    maxDicomFileSize_ = 10 * 1024 * 1024;   // 10MB
-    reconstructPyramid_ = false;
-    pyramidLevelsCount_ = 0;
-    pyramidLowerLevelsCount_ = 0;
-    smooth_ = false;
-    jpegQuality_ = 90;
-    forceReencode_ = false;
-    opticalPath_ = OpticalPath_Brightfield;
   }
 
 
@@ -146,7 +148,7 @@ namespace OrthancWSI
 
   void DicomizerParameters::SetPyramidLevelsCount(unsigned int count)
   {
-    if (count <= 0)
+    if (count == 0)
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
     }
@@ -195,7 +197,7 @@ namespace OrthancWSI
 
   void DicomizerParameters::SetPyramidLowerLevelsCount(unsigned int count)
   {
-    if (count <= 0)
+    if (count == 0)
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
     }
