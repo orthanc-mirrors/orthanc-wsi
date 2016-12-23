@@ -274,6 +274,7 @@ static void Run(OrthancWSI::ITiledPyramid& source,
 int main(int argc, char* argv[])
 {
   OrthancWSI::ApplicationToolbox::GlobalInitialize();
+  OrthancWSI::ApplicationToolbox::ShowVersionInLog(argv[0]);
 
   int exitStatus = 0;
   boost::program_options::variables_map options;

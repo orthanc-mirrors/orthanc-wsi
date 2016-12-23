@@ -42,5 +42,7 @@ namespace OrthancWSI
                     const std::string& color);
 
     void PrintVersion(const char* path);
+
+    void ShowVersionInLog(const char* path);
   }
 }

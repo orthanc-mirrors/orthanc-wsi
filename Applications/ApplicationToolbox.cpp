@@ -24,10 +24,13 @@
 #include "../Resources/Orthanc/Core/HttpClient.h"
 #include "../Resources/Orthanc/Core/Logging.h"
 #include "../Resources/Orthanc/Core/MultiThreading/BagOfTasksProcessor.h"
+#include "../Resources/Orthanc/Core/SystemToolbox.h"
 #include "../Resources/Orthanc/OrthancServer/FromDcmtkBridge.h"
 
+#include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/regex.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 #include <cassert>
 
 
@@ -201,6 +204,28 @@ namespace OrthancWSI
         << "There is NO WARRANTY, to the extent permitted by law." << std::endl
         << std::endl
         << "Written by Sebastien Jodogne <s.jodogne@gmail.com>" << std::endl;
+    }
+
+
+    void ShowVersionInLog(const char* path)
+    {
+      std::string version(ORTHANC_WSI_VERSION);
+
+      if (version == "mainline")
+      {
+        try
+        {
+          boost::filesystem::path exe(Orthanc::SystemToolbox::GetPathToExecutable());
+          std::time_t creation = boost::filesystem::last_write_time(exe);
+          boost::posix_time::ptime converted(boost::posix_time::from_time_t(creation));
+          version += " (" + boost::posix_time::to_iso_string(converted) + ")";
+        }
+        catch (...)
+        {
+        }
+      }
+
+      LOG(WARNING) << "Orthanc WSI version: " << version;
     }
   }
 }

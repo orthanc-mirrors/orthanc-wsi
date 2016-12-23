@@ -4,6 +4,8 @@ Pending changes in the mainline
 * Thanks to David Clunie's feedback:
   - Fix generation of tag "Dimension Index Sequence" (0020,9222)
   - Fix generation of tag "Dimension Index Values" (0020,9157)
+* Improved logging in the viewer plugin
+* Display version of the framework in the logs
 
 
 Version 0.2 (2016/11/28)
