@@ -1,4 +1,4 @@
-set(ORTHANC_WSI_VERSION "mainline")
+set(ORTHANC_WSI_VERSION "0.3")
 
 add_definitions(
   -DORTHANC_WSI_VERSION="${ORTHANC_WSI_VERSION}"
