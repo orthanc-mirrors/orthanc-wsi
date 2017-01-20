@@ -191,7 +191,7 @@ namespace OrthancWSI
     CheckLevel(level);
 
     // Create a new image, with minimal pitch so as to be compatible with OpenSlide API
-    std::auto_ptr<Orthanc::ImageAccessor> region(new Orthanc::Image(Orthanc::PixelFormat_RGBA32, width, height, true));
+    std::auto_ptr<Orthanc::ImageAccessor> region(new Orthanc::Image(Orthanc::PixelFormat_BGRA32, width, height, true));
 
     if (region->GetWidth() != 0 &&
         region->GetHeight() != 0)
