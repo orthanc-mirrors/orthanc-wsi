@@ -1,10 +1,14 @@
 Pending changes in the mainline
 ===============================
 
+
+Version 0.4 (2017-03-01)
+========================
+
 * Fix issue #30: Bad colorspace if using OpenSlide
 
 
-Version 0.3 (2016/12/23)
+Version 0.3 (2016-12-23)
 ========================
 
 * Thanks to David Clunie's feedback:
@@ -14,7 +18,7 @@ Version 0.3 (2016/12/23)
 * Display version of the framework in the logs
 
 
-Version 0.2 (2016/11/28)
+Version 0.2 (2016-11-28)
 ========================
 
 * Huge speed-up in the whole-slide imaging Web viewer plugin:
@@ -25,7 +29,7 @@ Version 0.2 (2016/11/28)
 * Various refactorings
 
 
-Version 0.1 (2016/10/28)
+Version 0.1 (2016-10-28)
 ========================
 
 * Docker images are available
