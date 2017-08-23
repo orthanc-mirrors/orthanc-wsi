@@ -27,6 +27,7 @@ SET(USE_SYSTEM_BOOST ON CACHE BOOL "Use the system version of Boost")
 SET(USE_SYSTEM_CURL ON CACHE BOOL "Use the system version of LibCurl")
 SET(USE_SYSTEM_DCMTK ON CACHE BOOL "Use the system version of DCMTK")
 SET(USE_SYSTEM_JSONCPP ON CACHE BOOL "Use the system version of JsonCpp")
+SET(USE_SYSTEM_LIBICONV ON CACHE BOOL "Use the system version of libiconv")
 SET(USE_SYSTEM_LIBJPEG ON CACHE BOOL "Use the system version of libjpeg")
 SET(USE_SYSTEM_LIBPNG ON CACHE BOOL "Use the system version of libpng")
 SET(USE_SYSTEM_LIBTIFF ON CACHE BOOL "Use the system version of libtiff")
@@ -36,6 +37,9 @@ SET(USE_SYSTEM_ZLIB ON CACHE BOOL "Use the system version of ZLib")
 SET(USE_SYSTEM_ORTHANC_SDK ON CACHE BOOL "Use the system version of the Orthanc plugin SDK")
 
 SET(DCMTK_DICTIONARY_DIR "" CACHE PATH "Directory containing the DCMTK dictionaries \"dicom.dic\" and \"private.dic\" (only when using system version of DCMTK)") 
+
+SET(USE_BOOST_ICONV ON CACHE BOOL "Use iconv instead of wconv (Windows only)")
+mark_as_advanced(USE_BOOST_ICONV)
 
 
 #####################################################################
@@ -48,9 +52,11 @@ SET(USE_OPENJPEG_JP2 ON)
 SET(ENABLE_JPEG OFF)           # Disable DCMTK's support for JPEG, that clashes with libtiff
 SET(ENABLE_JPEG_LOSSLESS OFF)  # Disable DCMTK's support for JPEG-LS
 SET(ENABLE_DCMTK_NETWORK OFF)  # Disable DCMTK's support for DICOM networking
+SET(ENABLE_LOCALE ON)          # Enable support for locales (notably in Boost)
 SET(STANDALONE_BUILD ON)       # Embed DCMTK's dictionaries for static builds
 SET(USE_DCMTK_361_PRIVATE_DIC OFF)  # No need for private tags
 
+include(CheckFunctionExists)
 include(CheckIncludeFiles)
 include(CheckIncludeFileCXX)
 include(CheckLibraryExists)
@@ -67,6 +73,7 @@ include(${ORTHANC_ROOT}/Resources/CMake/VisualStudioPrecompiledHeaders.cmake)
 include(${ORTHANC_ROOT}/Resources/CMake/DcmtkConfiguration.cmake)
 include(${ORTHANC_ROOT}/Resources/CMake/JsonCppConfiguration.cmake)
 include(${ORTHANC_ROOT}/Resources/CMake/LibCurlConfiguration.cmake)
+include(${ORTHANC_ROOT}/Resources/CMake/LibIconvConfiguration.cmake)
 include(${ORTHANC_ROOT}/Resources/CMake/LibJpegConfiguration.cmake)
 include(${ORTHANC_ROOT}/Resources/CMake/LibPngConfiguration.cmake)
 include(${ORTHANC_ROOT}/Resources/CMake/ZlibConfiguration.cmake)
@@ -83,6 +90,7 @@ add_definitions(
   -DORTHANC_ENABLE_CURL=1
   -DORTHANC_ENABLE_DCMTK=1
   -DORTHANC_ENABLE_JPEG=0       # Disable DCMTK's support for JPEG
+  -DORTHANC_ENABLE_LOCALE=1
   -DORTHANC_ENABLE_LOGGING=1
   -DORTHANC_ENABLE_LOGGING_PLUGIN=0
   -DORTHANC_ENABLE_LUA=0        # For FromDcmtkBridge
@@ -240,6 +248,7 @@ add_library(OrthancWSIFramework STATIC
   ${CURL_SOURCES}
   ${DCMTK_SOURCES}
   ${JSONCPP_SOURCES}
+  ${LIBICONV_SOURCES}
   ${LIBJPEG_SOURCES}
   ${LIBPNG_SOURCES}
   ${LIBTIFF_SOURCES}

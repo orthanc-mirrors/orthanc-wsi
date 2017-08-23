@@ -181,6 +181,8 @@ namespace Orthanc
 
   void FromDcmtkBridge::InitializeDictionary(bool loadPrivateDictionary)
   {
+    LOG(INFO) << "Using DCTMK version: " << DCMTK_VERSION_NUMBER;
+    
     {
       DictionaryLocker locker;
 
@@ -207,7 +209,7 @@ namespace Orthanc
         LOG(INFO) << "The dictionary of private tags has not been loaded";
       }
 
-#elif defined(__linux__) || defined(__FreeBSD_kernel__)
+#elif defined(__linux__) || defined(__FreeBSD_kernel__) || defined(__FreeBSD__) || defined(__OpenBSD__)
       std::string path = DCMTK_DICTIONARY_DIR;
 
       const char* env = std::getenv(DCM_DICT_ENVIRONMENT_VARIABLE);
@@ -1681,7 +1683,7 @@ namespace Orthanc
           throw OrthancException(ErrorCode_BadParameterType);
         }
 
-        DcmSequenceOfItems* sequence = new DcmSequenceOfItems(key, value.size());
+        DcmSequenceOfItems* sequence = new DcmSequenceOfItems(key);
         element.reset(sequence);
         
         for (Json::Value::ArrayIndex i = 0; i < value.size(); i++)

@@ -91,7 +91,7 @@ namespace Orthanc
 
     void Initialize(OrthancPluginContext* context)
     {
-      context_ = context_;
+      context_ = context;
     }
 
     InternalLogger::InternalLogger(const char* level,
@@ -116,6 +116,11 @@ namespace Orthanc
         else if (level_ == "INFO")
         {
           OrthancPluginLogInfo(context_, message_.c_str());
+        }
+        else
+        {
+          std::string s = "Unknown log level (" + level_ + ") for message: " + message_;
+          OrthancPluginLogError(context_, s.c_str());
         }
       }
     }
@@ -156,12 +161,7 @@ namespace Orthanc
 #include <fstream>
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
-
-#if BOOST_HAS_DATE_TIME == 1
-#  include <boost/date_time/posix_time/posix_time.hpp>
-#else
-#  error Boost::date_time is required
-#endif
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 
 namespace

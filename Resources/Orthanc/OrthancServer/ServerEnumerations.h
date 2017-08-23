@@ -59,13 +59,11 @@ namespace Orthanc
   enum ModalityManufacturer
   {
     ModalityManufacturer_Generic,
+    ModalityManufacturer_GenericNoWildcardInDates,
+    ModalityManufacturer_GenericNoUniversalWildcard,
     ModalityManufacturer_StoreScp,
     ModalityManufacturer_ClearCanvas,
-    ModalityManufacturer_MedInria,
     ModalityManufacturer_Dcm4Chee,
-    ModalityManufacturer_SyngoVia,
-    ModalityManufacturer_AgfaImpax,
-    ModalityManufacturer_EFilm2,
     ModalityManufacturer_Vitrea
   };
 
@@ -135,6 +133,12 @@ namespace Orthanc
     IdentifierConstraintType_Wildcard        /* Case sensitive, "*" or "?" are the only allowed wildcards */
   };
 
+  enum DicomVersion
+  {
+    DicomVersion_2008,
+    DicomVersion_2017c
+  };
+
 
   /**
    * WARNING: Do not change the explicit values in the enumerations
@@ -146,7 +150,8 @@ namespace Orthanc
   {
     GlobalProperty_DatabaseSchemaVersion = 1,   // Unused in the Orthanc core as of Orthanc 0.9.5
     GlobalProperty_FlushSleep = 2,
-    GlobalProperty_AnonymizationSequence = 3
+    GlobalProperty_AnonymizationSequence = 3,
+    GlobalProperty_DatabasePatchLevel = 4       // Reserved for internal use of the database plugins
   };
 
   enum MetadataType
@@ -229,7 +234,11 @@ namespace Orthanc
 
   const char* EnumerationToString(TransferSyntax syntax);
 
+  const char* EnumerationToString(DicomVersion version);
+
   ModalityManufacturer StringToModalityManufacturer(const std::string& manufacturer);
+
+  DicomVersion StringToDicomVersion(const std::string& version);
 
   bool IsUserMetadata(MetadataType type);
 }
