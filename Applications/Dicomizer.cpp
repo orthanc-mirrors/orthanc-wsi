@@ -505,7 +505,7 @@ static bool ParseParameters(int& exitStatus,
     ("compression", boost::program_options::value<std::string>(), 
      "Compression of the target image (\"none\", \"jpeg\" or \"jpeg2000\")")
     ("jpeg-quality", boost::program_options::value<int>(), "Set quality level for JPEG (0..100)")
-    ("max-size", boost::program_options::value<int>()->default_value(10), "Maximum size per DICOM instance (in MB)")
+    ("max-size", boost::program_options::value<int>()->default_value(10), "Maximum size per DICOM instance (in MB), 0 means no limit on the file size")
     ("folder", boost::program_options::value<std::string>(),
      "Folder where to store the output DICOM instances")
     ("folder-pattern", boost::program_options::value<std::string>()->default_value("wsi-%06d.dcm"),

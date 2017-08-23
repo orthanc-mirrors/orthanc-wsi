@@ -163,6 +163,11 @@ namespace OrthancWSI
       bool ok = false;
       boost::cmatch what;
 
+      // Set white as the default color to avoid compiler warnings
+      red = 255;
+      green = 255;
+      blue = 255;
+
       try
       {
         if (regex_match(color.c_str(), what, pattern))
