@@ -138,11 +138,6 @@ namespace OrthancWSI
 
   void DicomizerParameters::SetDicomMaxFileSize(unsigned int size)
   {
-    if (size <= 1024)
-    {
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
-    }
-
     maxDicomFileSize_ = size;
   }
 
