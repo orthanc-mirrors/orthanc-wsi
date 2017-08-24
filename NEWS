@@ -2,7 +2,7 @@ Pending changes in the mainline
 ===============================
 
 * "--max-size=0" allowed to create a single instance per pyramid level
-* Support for OpenBSD
+* Support of OpenBSD and FreeBSD
 
 
 Version 0.4 (2017-03-01)
