@@ -114,6 +114,7 @@ else()
     PATHS
     /usr/include/
     /usr/include/openjpeg-2.1/
+    /usr/include/openjpeg-2.2/
     /usr/local/include/
     )
 
