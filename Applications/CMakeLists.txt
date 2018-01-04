@@ -33,8 +33,9 @@ SET(USE_SYSTEM_LIBPNG ON CACHE BOOL "Use the system version of libpng")
 SET(USE_SYSTEM_LIBTIFF ON CACHE BOOL "Use the system version of libtiff")
 SET(USE_SYSTEM_OPENJPEG ON CACHE BOOL "Use the system version of OpenJpeg")
 SET(USE_SYSTEM_OPENSSL ON CACHE BOOL "Use the system version of OpenSSL")
-SET(USE_SYSTEM_ZLIB ON CACHE BOOL "Use the system version of ZLib")
 SET(USE_SYSTEM_ORTHANC_SDK ON CACHE BOOL "Use the system version of the Orthanc plugin SDK")
+SET(USE_SYSTEM_ZLIB ON CACHE BOOL "Use the system version of ZLib")
+set(USE_SYSTEM_UUID ON CACHE BOOL "Use the system version of the uuid library from e2fsprogs")
 
 SET(DCMTK_DICTIONARY_DIR "" CACHE PATH "Directory containing the DCMTK dictionaries \"dicom.dic\" and \"private.dic\" (only when using system version of DCMTK)") 
 
@@ -57,9 +58,11 @@ SET(STANDALONE_BUILD ON)       # Embed DCMTK's dictionaries for static builds
 SET(USE_DCMTK_361_PRIVATE_DIC OFF)  # No need for private tags
 
 include(CheckFunctionExists)
+include(CheckIncludeFile)
 include(CheckIncludeFiles)
 include(CheckIncludeFileCXX)
 include(CheckLibraryExists)
+include(CheckStructHasMember)
 include(FindPythonInterp)
 include(FindPkgConfig)
 include(CheckSymbolExists)
@@ -76,6 +79,7 @@ include(${ORTHANC_ROOT}/Resources/CMake/LibCurlConfiguration.cmake)
 include(${ORTHANC_ROOT}/Resources/CMake/LibIconvConfiguration.cmake)
 include(${ORTHANC_ROOT}/Resources/CMake/LibJpegConfiguration.cmake)
 include(${ORTHANC_ROOT}/Resources/CMake/LibPngConfiguration.cmake)
+include(${ORTHANC_ROOT}/Resources/CMake/UuidConfiguration.cmake)
 include(${ORTHANC_ROOT}/Resources/CMake/ZlibConfiguration.cmake)
 
 # Include components specific to WSI
@@ -85,11 +89,15 @@ include(${ORTHANC_WSI_DIR}/Resources/CMake/OpenJpegConfiguration.cmake)
 include(${ORTHANC_WSI_DIR}/Resources/CMake/LibTiffConfiguration.cmake)
 
 add_definitions(
+  -DHAS_ORTHANC_EXCEPTION=1
   -DORTHANC_BUILD_UNIT_TESTS=0  # For FromDcmtkBridge
+  -DORTHANC_DEFAULT_DICOM_ENCODING=Encoding_Latin1
   -DORTHANC_ENABLE_BASE64=1
   -DORTHANC_ENABLE_CURL=1
   -DORTHANC_ENABLE_DCMTK=1
-  -DORTHANC_ENABLE_JPEG=0       # Disable DCMTK's support for JPEG
+  -DORTHANC_ENABLE_DCMTK_JPEG=0           # Disable DCMTK's support for JPEG
+  -DORTHANC_ENABLE_DCMTK_JPEG_LOSSLESS=0  # Disable DCMTK's support for JPEG-LS
+  -DORTHANC_ENABLE_JPEG=1
   -DORTHANC_ENABLE_LOCALE=1
   -DORTHANC_ENABLE_LOGGING=1
   -DORTHANC_ENABLE_LOGGING_PLUGIN=0
@@ -97,9 +105,10 @@ add_definitions(
   -DORTHANC_ENABLE_MD5=0
   -DORTHANC_ENABLE_PKCS11=0
   -DORTHANC_ENABLE_PLUGINS=1    # To enable class Orthanc::SharedLibrary
+  -DORTHANC_ENABLE_PNG=1
   -DORTHANC_ENABLE_PUGIXML=0
+  -DORTHANC_MAXIMUM_TAG_LENGTH=256
   -DORTHANC_SANDBOXED=0
-  -DHAS_ORTHANC_EXCEPTION=1
   )
 
 
@@ -172,6 +181,8 @@ set(ORTHANC_CORE_SOURCES
   ${ORTHANC_ROOT}/Core/DicomFormat/DicomMap.cpp
   ${ORTHANC_ROOT}/Core/DicomFormat/DicomTag.cpp
   ${ORTHANC_ROOT}/Core/DicomFormat/DicomValue.cpp
+  ${ORTHANC_ROOT}/Core/DicomParsing/FromDcmtkBridge.cpp
+  ${ORTHANC_ROOT}/Core/DicomParsing/ToDcmtkBridge.cpp
   ${ORTHANC_ROOT}/Core/Enumerations.cpp
   ${ORTHANC_ROOT}/Core/HttpClient.cpp
   ${ORTHANC_ROOT}/Core/Images/IImageWriter.cpp
@@ -191,9 +202,6 @@ set(ORTHANC_CORE_SOURCES
   ${ORTHANC_ROOT}/Core/TemporaryFile.cpp
   ${ORTHANC_ROOT}/Core/Toolbox.cpp
   ${ORTHANC_ROOT}/Core/WebServiceParameters.cpp
-  ${ORTHANC_ROOT}/OrthancServer/FromDcmtkBridge.cpp
-  ${ORTHANC_ROOT}/OrthancServer/ServerEnumerations.cpp
-  ${ORTHANC_ROOT}/OrthancServer/ToDcmtkBridge.cpp
 
   ${ORTHANC_ROOT}/Plugins/Engine/SharedLibrary.cpp
   ${ORTHANC_ROOT}/Plugins/Samples/Common/OrthancPluginCppWrapper.cpp
@@ -253,6 +261,7 @@ add_library(OrthancWSIFramework STATIC
   ${LIBPNG_SOURCES}
   ${LIBTIFF_SOURCES}
   ${OPENJPEG_SOURCES}
+  ${UUID_SOURCES}
   ${ZLIB_SOURCES}
 
   # Optional components

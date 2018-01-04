@@ -2,7 +2,7 @@
  * Orthanc - A Lightweight, RESTful DICOM Store
  * Copyright (C) 2012-2016 Sebastien Jodogne, Medical Physics
  * Department, University Hospital of Liege, Belgium
- * Copyright (C) 2017 Osimis, Belgium
+ * Copyright (C) 2017-2018 Osimis S.A., Belgium
  *
  * This program is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -173,6 +173,17 @@ namespace Orthanc
   static const DicomTag DICOM_TAG_ACQUISITION_DEVICE_PROCESSING_DESCRIPTION(0x0018, 0x1400);
   static const DicomTag DICOM_TAG_CONTRAST_BOLUS_AGENT(0x0018, 0x0010);
 
+  // Tags used within the Stone of Orthanc
+  static const DicomTag DICOM_TAG_FRAME_INCREMENT_POINTER(0x0028, 0x0009);
+  static const DicomTag DICOM_TAG_GRID_FRAME_OFFSET_VECTOR(0x3004, 0x000c);
+  static const DicomTag DICOM_TAG_PIXEL_SPACING(0x0028, 0x0030);
+  static const DicomTag DICOM_TAG_RESCALE_INTERCEPT(0x0028, 0x1052);
+  static const DicomTag DICOM_TAG_RESCALE_SLOPE(0x0028, 0x1053);
+  static const DicomTag DICOM_TAG_SLICE_THICKNESS(0x0018, 0x0050);
+  static const DicomTag DICOM_TAG_WINDOW_CENTER(0x0028, 0x1050);
+  static const DicomTag DICOM_TAG_WINDOW_WIDTH(0x0028, 0x1051);
+  static const DicomTag DICOM_TAG_DOSE_GRID_SCALING(0x3004, 0x000e);
+                                    
   // Counting patients, studies and series
   // https://www.medicalconnections.co.uk/kb/Counting_Studies_Series_and_Instances
   static const DicomTag DICOM_TAG_NUMBER_OF_PATIENT_RELATED_STUDIES(0x0020, 0x1200);  

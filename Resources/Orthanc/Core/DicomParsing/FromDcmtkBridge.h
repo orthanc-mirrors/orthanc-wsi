@@ -2,7 +2,7 @@
  * Orthanc - A Lightweight, RESTful DICOM Store
  * Copyright (C) 2012-2016 Sebastien Jodogne, Medical Physics
  * Department, University Hospital of Liege, Belgium
- * Copyright (C) 2017 Osimis, Belgium
+ * Copyright (C) 2017-2018 Osimis S.A., Belgium
  *
  * This program is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -33,10 +33,8 @@
 
 #pragma once
 
-#include "ServerEnumerations.h"
-
-#include "../Core/DicomFormat/DicomElement.h"
-#include "../Core/DicomFormat/DicomMap.h"
+#include "../DicomFormat/DicomElement.h"
+#include "../DicomFormat/DicomMap.h"
 
 #include <dcmtk/dcmdata/dcdatset.h>
 #include <dcmtk/dcmdata/dcmetinf.h>
@@ -44,12 +42,12 @@
 #include <dcmtk/dcmdata/dcfilefo.h>
 #include <json/json.h>
 
-#if !defined(ORTHANC_BUILD_UNIT_TESTS)
-#  error The macro ORTHANC_BUILD_UNIT_TESTS must be defined
-#endif
-
 #if !defined(ORTHANC_ENABLE_LUA)
 #  error The macro ORTHANC_ENABLE_LUA must be defined
+#endif
+
+#if ORTHANC_ENABLE_DCMTK != 1
+#  error The macro ORTHANC_ENABLE_DCMTK must be set to 1
 #endif
 
 #if ORTHANC_BUILD_UNIT_TESTS == 1
@@ -57,7 +55,15 @@
 #endif
 
 #if ORTHANC_ENABLE_LUA == 1
-#  include "../Core/Lua/LuaFunctionCall.h"
+#  include "../Lua/LuaFunctionCall.h"
+#endif
+
+#if !defined(ORTHANC_ENABLE_DCMTK_JPEG)
+#  error The macro ORTHANC_ENABLE_DCMTK_JPEG must be defined
+#endif
+
+#if !defined(ORTHANC_ENABLE_DCMTK_JPEG_LOSSLESS)
+#  error The macro ORTHANC_ENABLE_DCMTK_JPEG_LOSSLESS must be defined
 #endif
 
 
@@ -70,7 +76,6 @@ namespace Orthanc
 #endif
 
     friend class ParsedDicomFile;
-    friend class Configuration;
 
   private:
     FromDcmtkBridge();  // Pure static class
@@ -85,21 +90,24 @@ namespace Orthanc
                               DicomToJsonFormat format,
                               DicomToJsonFlags flags,
                               unsigned int maxStringLength,
-                              Encoding encoding);
+                              Encoding encoding,
+                              const std::set<DicomTag>& ignoreTagLength);
 
     static void ElementToJson(Json::Value& parent,
                               DcmElement& element,
                               DicomToJsonFormat format,
                               DicomToJsonFlags flags,
                               unsigned int maxStringLength,
-                              Encoding dicomEncoding);
+                              Encoding dicomEncoding,
+                              const std::set<DicomTag>& ignoreTagLength);
 
     static void ExtractDicomAsJson(Json::Value& target, 
                                    DcmDataset& dataset,
                                    DicomToJsonFormat format,
                                    DicomToJsonFlags flags,
                                    unsigned int maxStringLength,
-                                   Encoding defaultEncoding);
+                                   Encoding defaultEncoding,
+                                   const std::set<DicomTag>& ignoreTagLength);
 
     static void ChangeStringEncoding(DcmItem& dataset,
                                      Encoding source,
@@ -127,7 +135,8 @@ namespace Orthanc
     static DicomValue* ConvertLeafElement(DcmElement& element,
                                           DicomToJsonFlags flags,
                                           unsigned int maxStringLength,
-                                          Encoding encoding);
+                                          Encoding encoding,
+                                          const std::set<DicomTag>& ignoreTagLength);
 
     static void ExtractHeaderAsJson(Json::Value& target, 
                                     DcmMetaInfo& header,
@@ -220,5 +229,16 @@ namespace Orthanc
     static void ExecuteToDicom(DicomMap& target,
                                LuaFunctionCall& call);
 #endif
+
+    static void ExtractDicomSummary(DicomMap& target, 
+                                    DcmItem& dataset);
+
+    static void ExtractDicomAsJson(Json::Value& target, 
+                                   DcmDataset& dataset,
+                                   const std::set<DicomTag>& ignoreTagLength);
+
+    static void InitializeCodecs();
+
+    static void FinalizeCodecs();
   };
 }

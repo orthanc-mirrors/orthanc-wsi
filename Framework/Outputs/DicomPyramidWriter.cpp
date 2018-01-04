@@ -26,7 +26,7 @@
 
 #include "../../Resources/Orthanc/Core/Logging.h"
 #include "../../Resources/Orthanc/Core/OrthancException.h"
-#include "../../Resources/Orthanc/OrthancServer/FromDcmtkBridge.h"
+#include "../../Resources/Orthanc/Core/DicomParsing/FromDcmtkBridge.h"
 
 #include <dcmtk/dcmdata/dcdeftag.h>
 #include <boost/lexical_cast.hpp>

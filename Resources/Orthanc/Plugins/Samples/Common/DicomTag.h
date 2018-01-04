@@ -2,7 +2,7 @@
  * Orthanc - A Lightweight, RESTful DICOM Store
  * Copyright (C) 2012-2016 Sebastien Jodogne, Medical Physics
  * Department, University Hospital of Liege, Belgium
- * Copyright (C) 2017 Osimis, Belgium
+ * Copyright (C) 2017-2018 Osimis S.A., Belgium
  *
  * This program is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -94,8 +94,10 @@ namespace OrthancPlugins
   static const DicomTag DICOM_TAG_ROWS(0x0028, 0x0010);
   static const DicomTag DICOM_TAG_ROW_POSITION_IN_TOTAL_IMAGE_PIXEL_MATRIX(0x0048, 0x021f);
   static const DicomTag DICOM_TAG_SAMPLES_PER_PIXEL(0x0028, 0x0002);
+  static const DicomTag DICOM_TAG_SERIES_INSTANCE_UID(0x0020, 0x000e);
   static const DicomTag DICOM_TAG_SLICE_THICKNESS(0x0018, 0x0050);
   static const DicomTag DICOM_TAG_SOP_CLASS_UID(0x0008, 0x0016);
+  static const DicomTag DICOM_TAG_SOP_INSTANCE_UID(0x0008, 0x0018);
   static const DicomTag DICOM_TAG_TOTAL_PIXEL_MATRIX_COLUMNS(0x0048, 0x0006);
   static const DicomTag DICOM_TAG_TOTAL_PIXEL_MATRIX_ROWS(0x0048, 0x0007);
   static const DicomTag DICOM_TAG_TRANSFER_SYNTAX_UID(0x0002, 0x0010);

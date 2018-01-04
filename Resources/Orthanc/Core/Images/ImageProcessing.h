@@ -2,7 +2,7 @@
  * Orthanc - A Lightweight, RESTful DICOM Store
  * Copyright (C) 2012-2016 Sebastien Jodogne, Medical Physics
  * Department, University Hospital of Liege, Belgium
- * Copyright (C) 2017 Osimis, Belgium
+ * Copyright (C) 2017-2018 Osimis S.A., Belgium
  *
  * This program is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -60,9 +60,13 @@ namespace Orthanc
     static void ShiftRight(ImageAccessor& target,
                            unsigned int shift);
 
-    static void GetMinMaxValue(int64_t& minValue,
-                               int64_t& maxValue,
-                               const ImageAccessor& image);
+    static void GetMinMaxIntegerValue(int64_t& minValue,
+                                      int64_t& maxValue,
+                                      const ImageAccessor& image);
+
+    static void GetMinMaxFloatValue(float& minValue,
+                                    float& maxValue,
+                                    const ImageAccessor& image);
 
     static void AddConstant(ImageAccessor& image,
                             int64_t value);

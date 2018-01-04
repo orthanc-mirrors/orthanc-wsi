@@ -2,7 +2,7 @@
  * Orthanc - A Lightweight, RESTful DICOM Store
  * Copyright (C) 2012-2016 Sebastien Jodogne, Medical Physics
  * Department, University Hospital of Liege, Belgium
- * Copyright (C) 2017 Osimis, Belgium
+ * Copyright (C) 2017-2018 Osimis S.A., Belgium
  *
  * This program is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -36,7 +36,9 @@
 
 #include <stdio.h>
 #include <memory>
+
 #include "../Endianness.h"
+#include "../Logging.h"
 #include "../OrthancException.h"
 
 
@@ -780,5 +782,194 @@ namespace Orthanc
     }
 
     return true;
+  }
+
+
+  static std::string ValueAsString(const DicomMap& summary,
+                                   const DicomTag& tag)
+  {
+    const DicomValue& value = summary.GetValue(tag);
+    if (value.IsNull())
+    {
+      return "(null)";
+    }
+    else
+    {
+      return value.GetContent();
+    }
+  }
+
+
+  void DicomMap::LogMissingTagsForStore() const
+  {
+    std::string s, t;
+
+    if (HasTag(DICOM_TAG_PATIENT_ID))
+    {
+      if (t.size() > 0)
+        t += ", ";
+      t += "PatientID=" + ValueAsString(*this, DICOM_TAG_PATIENT_ID);
+    }
+    else
+    {
+      if (s.size() > 0)
+        s += ", ";
+      s += "PatientID";
+    }
+
+    if (HasTag(DICOM_TAG_STUDY_INSTANCE_UID))
+    {
+      if (t.size() > 0)
+        t += ", ";
+      t += "StudyInstanceUID=" + ValueAsString(*this, DICOM_TAG_STUDY_INSTANCE_UID);
+    }
+    else
+    {
+      if (s.size() > 0)
+        s += ", ";
+      s += "StudyInstanceUID";
+    }
+
+    if (HasTag(DICOM_TAG_SERIES_INSTANCE_UID))
+    {
+      if (t.size() > 0)
+        t += ", ";
+      t += "SeriesInstanceUID=" + ValueAsString(*this, DICOM_TAG_SERIES_INSTANCE_UID);
+    }
+    else
+    {
+      if (s.size() > 0)
+        s += ", ";
+      s += "SeriesInstanceUID";
+    }
+
+    if (HasTag(DICOM_TAG_SOP_INSTANCE_UID))
+    {
+      if (t.size() > 0)
+        t += ", ";
+      t += "SOPInstanceUID=" + ValueAsString(*this, DICOM_TAG_SOP_INSTANCE_UID);
+    }
+    else
+    {
+      if (s.size() > 0)
+        s += ", ";
+      s += "SOPInstanceUID";
+    }
+
+    if (t.size() == 0)
+    {
+      LOG(ERROR) << "Store has failed because all the required tags (" << s << ") are missing (is it a DICOMDIR file?)";
+    }
+    else
+    {
+      LOG(ERROR) << "Store has failed because required tags (" << s << ") are missing for the following instance: " << t;
+    }
+  }
+
+
+  bool DicomMap::CopyToString(std::string& result,
+                              const DicomTag& tag,
+                              bool allowBinary) const
+  {
+    const DicomValue* value = TestAndGetValue(tag);
+
+    if (value == NULL)
+    {
+      return false;
+    }
+    else
+    {
+      return value->CopyToString(result, allowBinary);
+    }
+  }
+    
+  bool DicomMap::ParseInteger32(int32_t& result,
+                                const DicomTag& tag) const
+  {
+    const DicomValue* value = TestAndGetValue(tag);
+
+    if (value == NULL)
+    {
+      return false;
+    }
+    else
+    {
+      return value->ParseInteger32(result);
+    }
+  }
+
+  bool DicomMap::ParseInteger64(int64_t& result,
+                                const DicomTag& tag) const
+  {
+    const DicomValue* value = TestAndGetValue(tag);
+
+    if (value == NULL)
+    {
+      return false;
+    }
+    else
+    {
+      return value->ParseInteger64(result);
+    }
+  }
+
+  bool DicomMap::ParseUnsignedInteger32(uint32_t& result,
+                                        const DicomTag& tag) const
+  {
+    const DicomValue* value = TestAndGetValue(tag);
+
+    if (value == NULL)
+    {
+      return false;
+    }
+    else
+    {
+      return value->ParseUnsignedInteger32(result);
+    }
+  }
+
+  bool DicomMap::ParseUnsignedInteger64(uint64_t& result,
+                                        const DicomTag& tag) const
+  {
+    const DicomValue* value = TestAndGetValue(tag);
+
+    if (value == NULL)
+    {
+      return false;
+    }
+    else
+    {
+      return value->ParseUnsignedInteger64(result);
+    }
+  }
+
+  bool DicomMap::ParseFloat(float& result,
+                            const DicomTag& tag) const
+  {
+    const DicomValue* value = TestAndGetValue(tag);
+
+    if (value == NULL)
+    {
+      return false;
+    }
+    else
+    {
+      return value->ParseFloat(result);
+    }
+  }
+
+  bool DicomMap::ParseDouble(double& result,
+                             const DicomTag& tag) const
+  {
+    const DicomValue* value = TestAndGetValue(tag);
+
+    if (value == NULL)
+    {
+      return false;
+    }
+    else
+    {
+      return value->ParseDouble(result);
+    }
   }
 }

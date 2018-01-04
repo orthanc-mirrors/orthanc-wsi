@@ -2,7 +2,7 @@
  * Orthanc - A Lightweight, RESTful DICOM Store
  * Copyright (C) 2012-2016 Sebastien Jodogne, Medical Physics
  * Department, University Hospital of Liege, Belgium
- * Copyright (C) 2017 Osimis, Belgium
+ * Copyright (C) 2017-2018 Osimis S.A., Belgium
  *
  * This program is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -31,7 +31,7 @@
  **/
 
 
-#include "PrecompiledHeadersServer.h"
+#include "../PrecompiledHeaders.h"
 
 #ifndef NOMINMAX
 #define NOMINMAX
@@ -39,11 +39,11 @@
 
 #include "FromDcmtkBridge.h"
 #include "ToDcmtkBridge.h"
-#include "../Core/Logging.h"
-#include "../Core/SystemToolbox.h"
-#include "../Core/Toolbox.h"
-#include "../Core/TemporaryFile.h"
-#include "../Core/OrthancException.h"
+#include "../Logging.h"
+#include "../SystemToolbox.h"
+#include "../Toolbox.h"
+#include "../TemporaryFile.h"
+#include "../OrthancException.h"
 
 #include <list>
 #include <limits>
@@ -84,9 +84,16 @@
 #include <dcmtk/dcmdata/dcvrus.h>
 #include <dcmtk/dcmdata/dcvrut.h>
 
-
 #if DCMTK_USE_EMBEDDED_DICTIONARIES == 1
-#include <EmbeddedResources.h>
+#  include <EmbeddedResources.h>
+#endif
+
+#if ORTHANC_ENABLE_DCMTK_JPEG == 1
+#  include <dcmtk/dcmjpeg/djdecode.h>
+#endif
+
+#if ORTHANC_ENABLE_DCMTK_JPEG_LOSSLESS == 1
+#  include <dcmtk/dcmjpls/djdecode.h>
 #endif
 
 
@@ -388,6 +395,8 @@ namespace Orthanc
                                             unsigned int maxStringLength,
                                             Encoding defaultEncoding)
   {
+    std::set<DicomTag> ignoreTagLength;
+    
     Encoding encoding = DetectEncoding(dataset, defaultEncoding);
 
     target.Clear();
@@ -398,7 +407,8 @@ namespace Orthanc
       {
         target.SetValue(element->getTag().getGTag(),
                         element->getTag().getETag(),
-                        ConvertLeafElement(*element, DicomToJsonFlags_Default, maxStringLength, encoding));
+                        ConvertLeafElement(*element, DicomToJsonFlags_Default,
+                                           maxStringLength, encoding, ignoreTagLength));
       }
     }
   }
@@ -419,7 +429,8 @@ namespace Orthanc
   DicomValue* FromDcmtkBridge::ConvertLeafElement(DcmElement& element,
                                                   DicomToJsonFlags flags,
                                                   unsigned int maxStringLength,
-                                                  Encoding encoding)
+                                                  Encoding encoding,
+                                                  const std::set<DicomTag>& ignoreTagLength)
   {
     if (!element.isLeaf())
     {
@@ -441,7 +452,8 @@ namespace Orthanc
         std::string utf8 = Toolbox::ConvertToUtf8(s, encoding);
 
         if (maxStringLength != 0 &&
-            utf8.size() > maxStringLength)
+            utf8.size() > maxStringLength &&
+            ignoreTagLength.find(GetTag(element)) == ignoreTagLength.end())
         {
           return new DicomValue;  // Too long, create a NULL value
         }
@@ -479,7 +491,8 @@ namespace Orthanc
             return new DicomValue("", false);   // Empty string
           }
           else if (maxStringLength != 0 &&
-                   element.getLength() > maxStringLength)
+                   element.getLength() > maxStringLength &&
+                   ignoreTagLength.find(GetTag(element)) == ignoreTagLength.end())
           {
             return new DicomValue;  // Too long, create a NULL value
           }
@@ -492,7 +505,7 @@ namespace Orthanc
       }
     }
 
-
+    
     try
     {
       // http://support.dcmtk.org/docs/dcvr_8h-source.html
@@ -807,7 +820,8 @@ namespace Orthanc
                                       DicomToJsonFormat format,
                                       DicomToJsonFlags flags,
                                       unsigned int maxStringLength,
-                                      Encoding encoding)
+                                      Encoding encoding,
+                                      const std::set<DicomTag>& ignoreTagLength)
   {
     if (parent.type() == Json::nullValue)
     {
@@ -820,8 +834,17 @@ namespace Orthanc
     if (element.isLeaf())
     {
       // The "0" below lets "LeafValueToJson()" take care of "TooLong" values
-      std::auto_ptr<DicomValue> v(FromDcmtkBridge::ConvertLeafElement(element, flags, 0, encoding));
-      LeafValueToJson(target, *v, format, flags, maxStringLength);
+      std::auto_ptr<DicomValue> v(FromDcmtkBridge::ConvertLeafElement
+                                  (element, flags, 0, encoding, ignoreTagLength));
+
+      if (ignoreTagLength.find(GetTag(element)) == ignoreTagLength.end())
+      {
+        LeafValueToJson(target, *v, format, flags, maxStringLength);
+      }
+      else
+      {
+        LeafValueToJson(target, *v, format, flags, 0);
+      }
     }
     else
     {
@@ -837,7 +860,7 @@ namespace Orthanc
       {
         DcmItem* child = sequence.getItem(i);
         Json::Value& v = target.append(Json::objectValue);
-        DatasetToJson(v, *child, format, flags, maxStringLength, encoding);
+        DatasetToJson(v, *child, format, flags, maxStringLength, encoding, ignoreTagLength);
       }
     }
   }
@@ -848,7 +871,8 @@ namespace Orthanc
                                       DicomToJsonFormat format,
                                       DicomToJsonFlags flags,
                                       unsigned int maxStringLength,
-                                      Encoding encoding)
+                                      Encoding encoding,
+                                      const std::set<DicomTag>& ignoreTagLength)
   {
     assert(parent.type() == Json::objectValue);
 
@@ -893,7 +917,8 @@ namespace Orthanc
         }
       }
 
-      FromDcmtkBridge::ElementToJson(parent, *element, format, flags, maxStringLength, encoding);
+      FromDcmtkBridge::ElementToJson(parent, *element, format, flags,
+                                     maxStringLength, encoding, ignoreTagLength);
     }
   }
 
@@ -903,12 +928,13 @@ namespace Orthanc
                                            DicomToJsonFormat format,
                                            DicomToJsonFlags flags,
                                            unsigned int maxStringLength,
-                                           Encoding defaultEncoding)
+                                           Encoding defaultEncoding,
+                                           const std::set<DicomTag>& ignoreTagLength)
   {
     Encoding encoding = DetectEncoding(dataset, defaultEncoding);
 
     target = Json::objectValue;
-    DatasetToJson(target, dataset, format, flags, maxStringLength, encoding);
+    DatasetToJson(target, dataset, format, flags, maxStringLength, encoding, ignoreTagLength);
   }
 
 
@@ -918,8 +944,9 @@ namespace Orthanc
                                             DicomToJsonFlags flags,
                                             unsigned int maxStringLength)
   {
+    std::set<DicomTag> ignoreTagLength;
     target = Json::objectValue;
-    DatasetToJson(target, dataset, format, flags, maxStringLength, Encoding_Ascii);
+    DatasetToJson(target, dataset, format, flags, maxStringLength, Encoding_Ascii, ignoreTagLength);
   }
 
 
@@ -1879,6 +1906,7 @@ namespace Orthanc
     result->transferInit();
     if (!result->read(is).good())
     {
+      LOG(ERROR) << "Cannot parse an invalid DICOM file (size: " << size << " bytes)";
       throw OrthancException(ErrorCode_BadFileFormat);
     }
 
@@ -2017,4 +2045,54 @@ namespace Orthanc
     }
   }
 #endif
+
+
+  void FromDcmtkBridge::ExtractDicomSummary(DicomMap& target, 
+                                            DcmItem& dataset)
+  {
+    ExtractDicomSummary(target, dataset,
+                        ORTHANC_MAXIMUM_TAG_LENGTH,
+                        GetDefaultDicomEncoding());
+  }
+
+  
+  void FromDcmtkBridge::ExtractDicomAsJson(Json::Value& target, 
+                                           DcmDataset& dataset,
+                                           const std::set<DicomTag>& ignoreTagLength)
+  {
+    ExtractDicomAsJson(target, dataset, 
+                       DicomToJsonFormat_Full,
+                       DicomToJsonFlags_Default, 
+                       ORTHANC_MAXIMUM_TAG_LENGTH,
+                       GetDefaultDicomEncoding(),
+                       ignoreTagLength);
+  }
+
+
+  void FromDcmtkBridge::InitializeCodecs()
+  {
+#if ORTHANC_ENABLE_DCMTK_JPEG_LOSSLESS == 1
+    LOG(WARNING) << "Registering JPEG Lossless codecs in DCMTK";
+    DJLSDecoderRegistration::registerCodecs();    
+#endif
+
+#if ORTHANC_ENABLE_DCMTK_JPEG == 1
+    LOG(WARNING) << "Registering JPEG codecs in DCMTK";
+    DJDecoderRegistration::registerCodecs(); 
+#endif
+  }
+
+
+  void FromDcmtkBridge::FinalizeCodecs()
+  {
+#if ORTHANC_ENABLE_DCMTK_JPEG_LOSSLESS == 1
+    // Unregister JPEG-LS codecs
+    DJLSDecoderRegistration::cleanup();
+#endif
+
+#if ORTHANC_ENABLE_DCMTK_JPEG == 1
+    // Unregister JPEG codecs
+    DJDecoderRegistration::cleanup();
+#endif
+  }
 }

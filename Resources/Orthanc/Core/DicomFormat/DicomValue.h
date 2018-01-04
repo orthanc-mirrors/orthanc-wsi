@@ -2,7 +2,7 @@
  * Orthanc - A Lightweight, RESTful DICOM Store
  * Copyright (C) 2012-2016 Sebastien Jodogne, Medical Physics
  * Department, University Hospital of Liege, Belgium
- * Copyright (C) 2017 Osimis, Belgium
+ * Copyright (C) 2017-2018 Osimis S.A., Belgium
  *
  * This program is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -33,6 +33,7 @@
 
 #pragma once
 
+#include <stdint.h>
 #include <string>
 #include <boost/noncopyable.hpp>
 
@@ -93,5 +94,20 @@ namespace Orthanc
       FormatDataUriScheme(target, "application/octet-stream");
     }
 #endif
+
+    bool CopyToString(std::string& result,
+                      bool allowBinary) const;
+    
+    bool ParseInteger32(int32_t& result) const;
+
+    bool ParseInteger64(int64_t& result) const;                                
+
+    bool ParseUnsignedInteger32(uint32_t& result) const;
+
+    bool ParseUnsignedInteger64(uint64_t& result) const;                                
+
+    bool ParseFloat(float& result) const;                                
+
+    bool ParseDouble(double& result) const;                                
   };
 }

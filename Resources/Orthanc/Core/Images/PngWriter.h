@@ -2,7 +2,7 @@
  * Orthanc - A Lightweight, RESTful DICOM Store
  * Copyright (C) 2012-2016 Sebastien Jodogne, Medical Physics
  * Department, University Hospital of Liege, Belgium
- * Copyright (C) 2017 Osimis, Belgium
+ * Copyright (C) 2017-2018 Osimis S.A., Belgium
  *
  * This program is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -32,6 +32,14 @@
 
 
 #pragma once
+
+#if !defined(ORTHANC_ENABLE_PNG)
+#  error The macro ORTHANC_ENABLE_PNG must be defined
+#endif
+
+#if ORTHANC_ENABLE_PNG != 1
+#  error PNG support must be enabled to include this file
+#endif
 
 #include "IImageWriter.h"
 
