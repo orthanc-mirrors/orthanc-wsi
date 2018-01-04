@@ -79,7 +79,6 @@ FILES = [
     'Core/Toolbox.h',
     'Core/WebServiceParameters.cpp',
     'Core/WebServiceParameters.h',
-    'OrthancServer/PrecompiledHeadersServer.h',
     'Plugins/Engine/SharedLibrary.cpp',
     'Plugins/Engine/SharedLibrary.h',
     'Plugins/Samples/Common/DicomDatasetReader.cpp',
@@ -148,6 +147,16 @@ EXE = [
     'Resources/EmbedResources.py',
     'Resources/WindowsResources.py',
 ]
+
+
+# Create an empty "Resources/Orthanc/OrthancServer/PrecompiledHeadersServer.h" file
+try:
+    os.makedirs(os.path.join(TARGET, 'OrthancServer'))
+except:
+    pass
+
+with open(os.path.join(TARGET, 'OrthancServer', 'PrecompiledHeadersServer.h'), 'w') as f:
+    f.write('')
 
 
 def Download(x):
