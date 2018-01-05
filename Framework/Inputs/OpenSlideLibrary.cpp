@@ -24,6 +24,7 @@
 
 #include "../../Resources/Orthanc/Core/Logging.h"
 #include "../../Resources/Orthanc/Core/Images/Image.h"
+#include "../../Resources/Orthanc/Core/OrthancException.h"
 
 namespace OrthancWSI
 {

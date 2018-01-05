@@ -71,6 +71,8 @@ FILES = [
     'Core/OrthancException.h',
     'Core/PrecompiledHeaders.cpp',
     'Core/PrecompiledHeaders.h',
+    'Core/SharedLibrary.cpp',
+    'Core/SharedLibrary.h',
     'Core/SystemToolbox.cpp',
     'Core/SystemToolbox.h',
     'Core/TemporaryFile.cpp',
@@ -79,8 +81,6 @@ FILES = [
     'Core/Toolbox.h',
     'Core/WebServiceParameters.cpp',
     'Core/WebServiceParameters.h',
-    'Plugins/Engine/SharedLibrary.cpp',
-    'Plugins/Engine/SharedLibrary.h',
     'Plugins/Samples/Common/DicomDatasetReader.cpp',
     'Plugins/Samples/Common/DicomDatasetReader.h',
     'Plugins/Samples/Common/DicomPath.cpp',
@@ -118,10 +118,10 @@ FILES = [
     'Resources/CMake/VisualStudioPrecompiledHeaders.cmake',
     'Resources/CMake/ZlibConfiguration.cmake',
     'Resources/EmbedResources.py',
+    'Resources/LinuxStandardBaseToolchain.cmake',
     'Resources/MinGW-W64-Toolchain32.cmake',
     'Resources/MinGW-W64-Toolchain64.cmake',
     'Resources/MinGWToolchain.cmake',
-    'Resources/LinuxStandardBaseToolchain.cmake',
     'Resources/Patches/boost-1.65.1-linux-standard-base.patch',
     'Resources/Patches/curl-7.57.0-cmake.patch',
     'Resources/Patches/dcmtk-3.6.0-dulparse-vulnerability.patch',
@@ -147,16 +147,6 @@ EXE = [
     'Resources/EmbedResources.py',
     'Resources/WindowsResources.py',
 ]
-
-
-# Create an empty "Resources/Orthanc/OrthancServer/PrecompiledHeadersServer.h" file
-try:
-    os.makedirs(os.path.join(TARGET, 'OrthancServer'))
-except:
-    pass
-
-with open(os.path.join(TARGET, 'OrthancServer', 'PrecompiledHeadersServer.h'), 'w') as f:
-    f.write('')
 
 
 def Download(x):

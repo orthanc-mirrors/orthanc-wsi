@@ -21,8 +21,8 @@
 
 #pragma once
 
-#include "../../Resources/Orthanc/Plugins/Engine/SharedLibrary.h"
 #include "../../Resources/Orthanc/Core/Images/ImageAccessor.h"
+#include "../../Resources/Orthanc/Core/SharedLibrary.h"
 
 #include <vector>
 

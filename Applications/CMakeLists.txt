@@ -104,7 +104,6 @@ add_definitions(
   -DORTHANC_ENABLE_LUA=0        # For FromDcmtkBridge
   -DORTHANC_ENABLE_MD5=0
   -DORTHANC_ENABLE_PKCS11=0
-  -DORTHANC_ENABLE_PLUGINS=1    # To enable class Orthanc::SharedLibrary
   -DORTHANC_ENABLE_PNG=1
   -DORTHANC_ENABLE_PUGIXML=0
   -DORTHANC_MAXIMUM_TAG_LENGTH=256
@@ -198,12 +197,12 @@ set(ORTHANC_CORE_SOURCES
   ${ORTHANC_ROOT}/Core/Logging.cpp
   ${ORTHANC_ROOT}/Core/MultiThreading/BagOfTasksProcessor.cpp
   ${ORTHANC_ROOT}/Core/MultiThreading/SharedMessageQueue.cpp
+  ${ORTHANC_ROOT}/Core/SharedLibrary.cpp
   ${ORTHANC_ROOT}/Core/SystemToolbox.cpp
   ${ORTHANC_ROOT}/Core/TemporaryFile.cpp
   ${ORTHANC_ROOT}/Core/Toolbox.cpp
   ${ORTHANC_ROOT}/Core/WebServiceParameters.cpp
 
-  ${ORTHANC_ROOT}/Plugins/Engine/SharedLibrary.cpp
   ${ORTHANC_ROOT}/Plugins/Samples/Common/OrthancPluginCppWrapper.cpp
   ${ORTHANC_ROOT}/Plugins/Samples/Common/DicomDatasetReader.cpp
   ${ORTHANC_ROOT}/Plugins/Samples/Common/DicomPath.cpp
