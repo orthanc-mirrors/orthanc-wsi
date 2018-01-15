@@ -386,11 +386,11 @@ namespace OrthancWSI
         unsigned int height = static_cast<unsigned int>(image_->y1);
 
         Orthanc::PixelFormat format;
-        if (image_->numcomps == 1 && image_->color_space != OPJ_CLRSPC_GRAY)
+        if (image_->numcomps == 1 /*&& image_->color_space != OPJ_CLRSPC_GRAY*/)
         {
           format = Orthanc::PixelFormat_Grayscale8;
         }
-        else if (image_->numcomps == 3 && image_->color_space != OPJ_CLRSPC_SRGB)
+        else if (image_->numcomps == 3 /*&& image_->color_space == OPJ_CLRSPC_SRGB*/)
         {
           format = Orthanc::PixelFormat_RGB24;
         }
