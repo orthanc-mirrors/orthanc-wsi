@@ -48,6 +48,38 @@
 #include <dcmtk/dcmdata/dcvrat.h>
 
 
+static const char* OPTION_COLOR = "color";
+static const char* OPTION_COMPRESSION = "compression";
+static const char* OPTION_DATASET = "dataset";
+static const char* OPTION_FOLDER = "folder";
+static const char* OPTION_FOLDER_PATTERN = "folder-pattern";
+static const char* OPTION_HELP = "help";
+static const char* OPTION_ICC_PROFILE = "icc-profile";
+static const char* OPTION_IMAGED_DEPTH = "imaged-depth";
+static const char* OPTION_IMAGED_HEIGHT = "imaged-height";
+static const char* OPTION_IMAGED_WIDTH = "imaged-width";
+static const char* OPTION_INPUT = "input";
+static const char* OPTION_JPEG_QUALITY = "jpeg-quality";
+static const char* OPTION_LEVELS = "levels";
+static const char* OPTION_LOWER_LEVELS = "lower-levels";
+static const char* OPTION_MAX_SIZE = "max-size";
+static const char* OPTION_OFFSET_X = "offset-x";
+static const char* OPTION_OFFSET_Y = "offset-y";
+static const char* OPTION_OPENSLIDE = "openslide";
+static const char* OPTION_OPTICAL_PATH = "optical-path";
+static const char* OPTION_PYRAMID = "pyramid";
+static const char* OPTION_REENCODE = "reencode";
+static const char* OPTION_REPAINT = "repaint";
+static const char* OPTION_SAFETY = "safety";
+static const char* OPTION_SAMPLE_DATASET = "sample-dataset";
+static const char* OPTION_SMOOTH = "smooth";
+static const char* OPTION_THREADS = "threads";
+static const char* OPTION_TILE_HEIGHT = "tile-height";
+static const char* OPTION_TILE_WIDTH = "tile-width";
+static const char* OPTION_VERBOSE = "verbose";
+static const char* OPTION_VERSION = "version";
+
+
 static void TranscodePyramid(OrthancWSI::PyramidWriterBase& target,
                              OrthancWSI::ITiledPyramid& source,
                              const OrthancWSI::DicomizerParameters& parameters)
@@ -161,18 +193,21 @@ static void Recompress(OrthancWSI::IFileTarget& output,
 
   if (target.GetImageCompression() == OrthancWSI::ImageCompression_Jpeg)
   {
-    LOG(WARNING) << "Target image compression: Jpeg with quality " << static_cast<int>(target.GetJpegQuality());
+    LOG(WARNING) << "Target image compression: Jpeg with quality "
+                 << static_cast<int>(target.GetJpegQuality());
     target.SetJpegQuality(target.GetJpegQuality());
   }
   else
   {
-    LOG(WARNING) << "Target image compression: " << OrthancWSI::EnumerationToString(target.GetImageCompression());
+    LOG(WARNING) << "Target image compression: "
+                 << OrthancWSI::EnumerationToString(target.GetImageCompression());
   }
 
   if (stats.GetTileWidth() % target.GetTileWidth() != 0 ||
       stats.GetTileHeight() % target.GetTileHeight() != 0)
   {
-    LOG(ERROR) << "When resampling the tile size, it must be a integer divisor of the original tile size";
+    LOG(ERROR) << "When resampling the tile size, "
+               << "it must be a integer divisor of the original tile size";
     throw Orthanc::OrthancException(Orthanc::ErrorCode_IncompatibleImageSize);
   }
 
@@ -468,45 +503,58 @@ static bool ParseParameters(int& exitStatus,
   // Declare the supported parameters
   boost::program_options::options_description generic("Generic options");
   generic.add_options()
-    ("help", "Display this help and exit")
-    ("version", "Output version information and exit")
-    ("verbose", "Be verbose in logs")
-    ("threads", boost::program_options::value<int>()->default_value(parameters.GetThreadsCount()), 
+    (OPTION_HELP,    "Display this help and exit")
+    (OPTION_VERSION, "Output version information and exit")
+    (OPTION_VERBOSE, "Be verbose in logs")
+    (OPTION_THREADS,
+     boost::program_options::value<int>()->default_value(parameters.GetThreadsCount()), 
      "Number of processing threads to be used")
-    ("openslide", boost::program_options::value<std::string>(), 
-     "Path to the shared library of OpenSlide (not necessary if converting from standard hierarchical TIFF)")
+    (OPTION_OPENSLIDE, boost::program_options::value<std::string>(), 
+     "Path to the shared library of OpenSlide "
+     "(not necessary if converting from standard hierarchical TIFF)")
     ;
 
   boost::program_options::options_description source("Options for the source image");
   source.add_options()
-    ("dataset", boost::program_options::value<std::string>(), "Path to a JSON file containing the DICOM dataset")
-    ("sample-dataset", "Display a minimalistic sample DICOM dataset in JSON format, then exit")
-    ("reencode", boost::program_options::value<bool>(), "Whether to re-encode each tile (no transcoding, much slower) (Boolean)")
-    ("repaint", boost::program_options::value<bool>(), "Whether to repaint the background of the image (Boolean)")
-    ("color", boost::program_options::value<std::string>(), "Color of the background (e.g. \"255,0,0\")")
+    (OPTION_DATASET, boost::program_options::value<std::string>(),
+     "Path to a JSON file containing the DICOM dataset")
+    (OPTION_SAMPLE_DATASET,
+     "Display a minimalistic sample DICOM dataset in JSON format, then exit")
+    (OPTION_REENCODE, boost::program_options::value<bool>(),
+     "Whether to re-encode each tile (no transcoding, much slower) (Boolean)")
+    (OPTION_REPAINT, boost::program_options::value<bool>(),
+     "Whether to repaint the background of the image (Boolean)")
+    (OPTION_COLOR, boost::program_options::value<std::string>(),
+     "Color of the background (e.g. \"255,0,0\")")
     ;
 
   boost::program_options::options_description pyramid("Options to construct the pyramid");
   pyramid.add_options()
-    ("pyramid", boost::program_options::value<bool>()->default_value(false), 
+    (OPTION_PYRAMID, boost::program_options::value<bool>()->default_value(false), 
      "Reconstruct the full pyramid (slow) (Boolean)")
-    ("smooth", boost::program_options::value<bool>()->default_value(false), 
+    (OPTION_SMOOTH, boost::program_options::value<bool>()->default_value(false), 
      "Apply smoothing when reconstructing the pyramid "
      "(slower, but higher quality) (Boolean)")
-    ("levels", boost::program_options::value<int>(), "Number of levels in the target pyramid")
+    (OPTION_LEVELS, boost::program_options::value<int>(),
+     "Number of levels in the target pyramid")
     ;
 
   boost::program_options::options_description target("Options for the target image");
   target.add_options()
-    ("tile-width", boost::program_options::value<int>(), "Width of the tiles in the target image")
-    ("tile-height", boost::program_options::value<int>(), "Height of the tiles in the target image")
-    ("compression", boost::program_options::value<std::string>(), 
+    (OPTION_TILE_WIDTH, boost::program_options::value<int>(),
+     "Width of the tiles in the target image")
+    (OPTION_TILE_HEIGHT, boost::program_options::value<int>(),
+     "Height of the tiles in the target image")
+    (OPTION_COMPRESSION, boost::program_options::value<std::string>(), 
      "Compression of the target image (\"none\", \"jpeg\" or \"jpeg2000\")")
-    ("jpeg-quality", boost::program_options::value<int>(), "Set quality level for JPEG (0..100)")
-    ("max-size", boost::program_options::value<int>()->default_value(10), "Maximum size per DICOM instance (in MB), 0 means no limit on the file size")
-    ("folder", boost::program_options::value<std::string>(),
+    (OPTION_JPEG_QUALITY, boost::program_options::value<int>(),
+     "Set quality level for JPEG (0..100)")
+    (OPTION_MAX_SIZE, boost::program_options::value<int>()->default_value(10),
+     "Maximum size per DICOM instance (in MB), 0 means no limit on the file size")
+    (OPTION_FOLDER, boost::program_options::value<std::string>(),
      "Folder where to store the output DICOM instances")
-    ("folder-pattern", boost::program_options::value<std::string>()->default_value("wsi-%06d.dcm"),
+    (OPTION_FOLDER_PATTERN,
+     boost::program_options::value<std::string>()->default_value("wsi-%06d.dcm"),
      "Pattern for the files in the output folder")
     ("orthanc", boost::program_options::value<std::string>()->default_value("http://localhost:8042/"),
      "URL to the REST API of the target Orthanc server")
@@ -514,33 +562,39 @@ static bool ParseParameters(int& exitStatus,
 
   boost::program_options::options_description volumeOptions("Description of the imaged volume");
   volumeOptions.add_options()
-    ("imaged-width", boost::program_options::value<float>()->default_value(15), "With of the specimen (in mm)")
-    ("imaged-height", boost::program_options::value<float>()->default_value(15), "Height of the specimen (in mm)")
-    ("imaged-depth", boost::program_options::value<float>()->default_value(1), "Depth of the specimen (in mm)")
-    ("offset-x", boost::program_options::value<float>()->default_value(20), 
+    (OPTION_IMAGED_WIDTH, boost::program_options::value<float>()->default_value(15),
+     "Width of the specimen (in mm)")
+    (OPTION_IMAGED_HEIGHT, boost::program_options::value<float>()->default_value(15),
+     "Height of the specimen (in mm)")
+    (OPTION_IMAGED_DEPTH, boost::program_options::value<float>()->default_value(1),
+     "Depth of the specimen (in mm)")
+    (OPTION_OFFSET_X, boost::program_options::value<float>()->default_value(20), 
      "X offset the specimen, wrt. slide coordinates origin (in mm)")
-    ("offset-y", boost::program_options::value<float>()->default_value(40), 
+    (OPTION_OFFSET_Y, boost::program_options::value<float>()->default_value(40), 
      "Y offset the specimen, wrt. slide coordinates origin (in mm)")
     ;
 
-  boost::program_options::options_description restOptions("HTTP/HTTPS client configuration to access the Orthanc REST API");
+  boost::program_options::options_description restOptions
+    ("HTTP/HTTPS client configuration to access the Orthanc REST API");
   OrthancWSI::ApplicationToolbox::AddRestApiOptions(restOptions);
 
   boost::program_options::options_description advancedOptions("Advanced options");
   advancedOptions.add_options()
-    ("optical-path", boost::program_options::value<std::string>()->default_value("brightfield"), 
+    (OPTION_OPTICAL_PATH, boost::program_options::value<std::string>()->default_value("brightfield"), 
      "Optical path to be automatically added to the DICOM dataset (\"none\" or \"brightfield\")")
-    ("icc-profile", boost::program_options::value<std::string>(), 
+    (OPTION_ICC_PROFILE, boost::program_options::value<std::string>(), 
      "Path to the ICC profile to be included. If empty, a default sRGB profile will be added.")
-    ("safety", boost::program_options::value<bool>()->default_value(true), 
+    (OPTION_SAFETY, boost::program_options::value<bool>()->default_value(true), 
      "Whether to do additional checks to verify the source image is supported (might slow down) (Boolean)")
-    ("lower-levels", boost::program_options::value<int>(), "Number of pyramid levels up to which multithreading "
+    (OPTION_LOWER_LEVELS, boost::program_options::value<int>(),
+     "Number of pyramid levels up to which multithreading "
      "should be applied (only for performance/memory tuning)")
     ;
 
   boost::program_options::options_description hidden;
   hidden.add_options()
-    ("input", boost::program_options::value<std::string>(), "Input file");
+    (OPTION_INPUT, boost::program_options::value<std::string>(),
+     "Input file");
   ;
 
   boost::program_options::options_description allWithoutHidden;
@@ -557,7 +611,7 @@ static bool ParseParameters(int& exitStatus,
   all.add(hidden);
 
   boost::program_options::positional_options_description positional;
-  positional.add("input", 1);
+  positional.add(OPTION_INPUT, 1);
 
   boost::program_options::variables_map options;
   bool error = false;
@@ -575,7 +629,7 @@ static bool ParseParameters(int& exitStatus,
   }
 
   if (!error &&
-      options.count("sample-dataset"))
+      options.count(OPTION_SAMPLE_DATASET))
   {
     std::string sample;
     Orthanc::EmbeddedResources::GetFileResource(sample, Orthanc::EmbeddedResources::SAMPLE_DATASET);
@@ -586,15 +640,15 @@ static bool ParseParameters(int& exitStatus,
   }
 
   if (!error &&
-      options.count("help") == 0 &&
-      options.count("version") == 0 &&
-      options.count("input") != 1)
+      options.count(OPTION_HELP) == 0 &&
+      options.count(OPTION_VERSION) == 0 &&
+      options.count(OPTION_INPUT) != 1)
   {
     LOG(ERROR) << "No input file was specified";
     error = true;
   }
 
-  if (error || options.count("help")) 
+  if (error || options.count(OPTION_HELP)) 
   {
     std::cout << std::endl
               << "Usage: " << argv[0] << " [OPTION]... [INPUT]"
@@ -614,65 +668,65 @@ static bool ParseParameters(int& exitStatus,
     return false;
   }
 
-  if (options.count("version")) 
+  if (options.count(OPTION_VERSION)) 
   { 
     OrthancWSI::ApplicationToolbox::PrintVersion(argv[0]);
     return false;
   }
 
-  if (options.count("verbose"))
+  if (options.count(OPTION_VERBOSE))
   {
     Orthanc::Logging::EnableInfoLevel(true);
   }
 
-  if (options.count("openslide"))
+  if (options.count(OPTION_OPENSLIDE))
   {
-    OrthancWSI::OpenSlideLibrary::Initialize(options["openslide"].as<std::string>());
+    OrthancWSI::OpenSlideLibrary::Initialize(options[OPTION_OPENSLIDE].as<std::string>());
   }
 
-  if (options.count("pyramid") &&
-      options["pyramid"].as<bool>())
+  if (options.count(OPTION_PYRAMID) &&
+      options[OPTION_PYRAMID].as<bool>())
   {
     parameters.SetReconstructPyramid(true);
   }
 
-  if (options.count("smooth") &&
-      options["smooth"].as<bool>())
+  if (options.count(OPTION_SMOOTH) &&
+      options[OPTION_SMOOTH].as<bool>())
   {
     parameters.SetSmoothEnabled(true);
   }
 
-  if (options.count("safety") &&
-      options["safety"].as<bool>())
+  if (options.count(OPTION_SAFETY) &&
+      options[OPTION_SAFETY].as<bool>())
   {
     parameters.SetSafetyCheck(true);
   }
 
-  if (options.count("reencode") &&
-      options["reencode"].as<bool>())
+  if (options.count(OPTION_REENCODE) &&
+      options[OPTION_REENCODE].as<bool>())
   {
     parameters.SetForceReencode(true);
   }
 
-  if (options.count("repaint") &&
-      options["repaint"].as<bool>())
+  if (options.count(OPTION_REPAINT) &&
+      options[OPTION_REPAINT].as<bool>())
   {
     parameters.SetRepaintBackground(true);
   }
 
-  if (options.count("tile-width") ||
-      options.count("tile-height"))
+  if (options.count(OPTION_TILE_WIDTH) ||
+      options.count(OPTION_TILE_HEIGHT))
   {
     int w = 0;
-    if (options.count("tile-width"))
+    if (options.count(OPTION_TILE_WIDTH))
     {
-      w = options["tile-width"].as<int>();
+      w = options[OPTION_TILE_WIDTH].as<int>();
     }
 
     unsigned int h = 0;
-    if (options.count("tile-height"))
+    if (options.count(OPTION_TILE_HEIGHT))
     {
-      h = options["tile-height"].as<int>();
+      h = options[OPTION_TILE_HEIGHT].as<int>();
     }
 
     if (w < 0 || h < 0)
@@ -684,18 +738,18 @@ static bool ParseParameters(int& exitStatus,
     parameters.SetTargetTileSize(w, h);
   }
 
-  parameters.SetInputFile(options["input"].as<std::string>());
+  parameters.SetInputFile(options[OPTION_INPUT].as<std::string>());
 
-  if (options.count("color"))
+  if (options.count(OPTION_COLOR))
   {
     uint8_t r, g, b;
-    OrthancWSI::ApplicationToolbox::ParseColor(r, g, b, options["color"].as<std::string>());
+    OrthancWSI::ApplicationToolbox::ParseColor(r, g, b, options[OPTION_COLOR].as<std::string>());
     parameters.SetBackgroundColor(r, g, b);
   }
 
-  if (options.count("compression"))
+  if (options.count(OPTION_COMPRESSION))
   {
-    std::string s = options["compression"].as<std::string>();
+    std::string s = options[OPTION_COMPRESSION].as<std::string>();
     if (s == "none")
     {
       parameters.SetTargetCompression(OrthancWSI::ImageCompression_None);
@@ -715,76 +769,76 @@ static bool ParseParameters(int& exitStatus,
     }
   }
 
-  if (options.count("jpeg-quality"))
+  if (options.count(OPTION_JPEG_QUALITY))
   {
-    parameters.SetJpegQuality(options["jpeg-quality"].as<int>());
+    parameters.SetJpegQuality(options[OPTION_JPEG_QUALITY].as<int>());
   }
 
-  if (options.count("levels"))
+  if (options.count(OPTION_LEVELS))
   {
-    parameters.SetPyramidLevelsCount(options["levels"].as<int>());
+    parameters.SetPyramidLevelsCount(options[OPTION_LEVELS].as<int>());
   }
 
-  if (options.count("lower-levels"))
+  if (options.count(OPTION_LOWER_LEVELS))
   {
-    parameters.SetPyramidLowerLevelsCount(options["lower-levels"].as<int>());
+    parameters.SetPyramidLowerLevelsCount(options[OPTION_LOWER_LEVELS].as<int>());
   }
 
-  if (options.count("threads"))
+  if (options.count(OPTION_THREADS))
   {
-    parameters.SetThreadsCount(options["threads"].as<int>());
+    parameters.SetThreadsCount(options[OPTION_THREADS].as<int>());
   }
 
-  if (options.count("max-size"))
+  if (options.count(OPTION_MAX_SIZE))
   {
-    parameters.SetDicomMaxFileSize(options["max-size"].as<int>() * 1024 * 1024);
+    parameters.SetDicomMaxFileSize(options[OPTION_MAX_SIZE].as<int>() * 1024 * 1024);
   }
 
-  if (options.count("folder"))
+  if (options.count(OPTION_FOLDER))
   {
-    parameters.SetTargetFolder(options["folder"].as<std::string>());
+    parameters.SetTargetFolder(options[OPTION_FOLDER].as<std::string>());
   }
 
-  if (options.count("folder-pattern"))
+  if (options.count(OPTION_FOLDER_PATTERN))
   {
-    parameters.SetTargetFolderPattern(options["folder-pattern"].as<std::string>());
+    parameters.SetTargetFolderPattern(options[OPTION_FOLDER_PATTERN].as<std::string>());
   }
 
   OrthancWSI::ApplicationToolbox::SetupRestApi(parameters.GetOrthancParameters(), options);
 
-  if (options.count("dataset"))
+  if (options.count(OPTION_DATASET))
   {
-    parameters.SetDatasetPath(options["dataset"].as<std::string>());
+    parameters.SetDatasetPath(options[OPTION_DATASET].as<std::string>());
   }
 
-  if (options.count("imaged-width"))
+  if (options.count(OPTION_IMAGED_WIDTH))
   {
-    volume.SetWidth(options["imaged-width"].as<float>());
+    volume.SetWidth(options[OPTION_IMAGED_WIDTH].as<float>());
   }
 
-  if (options.count("imaged-height"))
+  if (options.count(OPTION_IMAGED_HEIGHT))
   {
-    volume.SetHeight(options["imaged-height"].as<float>());
+    volume.SetHeight(options[OPTION_IMAGED_HEIGHT].as<float>());
   }
 
-  if (options.count("imaged-depth"))
+  if (options.count(OPTION_IMAGED_DEPTH))
   {
-    volume.SetDepth(options["imaged-depth"].as<float>());
+    volume.SetDepth(options[OPTION_IMAGED_DEPTH].as<float>());
   }
 
-  if (options.count("offset-x"))
+  if (options.count(OPTION_OFFSET_X))
   {
-    volume.SetOffsetX(options["offset-x"].as<float>());
+    volume.SetOffsetX(options[OPTION_OFFSET_X].as<float>());
   }
 
-  if (options.count("offset-y"))
+  if (options.count(OPTION_OFFSET_Y))
   {
-    volume.SetOffsetY(options["offset-y"].as<float>());
+    volume.SetOffsetY(options[OPTION_OFFSET_Y].as<float>());
   }
 
-  if (options.count("optical-path"))
+  if (options.count(OPTION_OPTICAL_PATH))
   {
-    std::string s = options["optical-path"].as<std::string>();
+    std::string s = options[OPTION_OPTICAL_PATH].as<std::string>();
     if (s == "none")
     {
       parameters.SetOpticalPath(OrthancWSI::OpticalPath_None);
@@ -800,9 +854,9 @@ static bool ParseParameters(int& exitStatus,
     }
   }
 
-  if (options.count("icc-profile"))
+  if (options.count(OPTION_ICC_PROFILE))
   {
-    parameters.SetIccProfilePath(options["icc-profile"].as<std::string>());
+    parameters.SetIccProfilePath(options[OPTION_ICC_PROFILE].as<std::string>());
   }
 
   return true;
