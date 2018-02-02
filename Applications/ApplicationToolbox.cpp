@@ -36,6 +36,16 @@
 #include <cassert>
 
 
+static const char* OPTION_URL = "orthanc";
+static const char* OPTION_USERNAME = "username";
+static const char* OPTION_PASSWORD = "password";
+static const char* OPTION_TIMEOUT = "timeout";
+static const char* OPTION_PROXY = "proxy";
+static const char* OPTION_VERIFY_PEERS = "verify-peers";
+static const char* OPTION_CA_CERTIFICATES = "ca-certificates";
+      
+
+
 static bool DisplayPerformanceWarning()
 {
   (void) DisplayPerformanceWarning;   // Disable warning about unused function
@@ -241,12 +251,18 @@ namespace OrthancWSI
     void AddRestApiOptions(boost::program_options::options_description& section)
     {
       section.add_options()
-        ("username", boost::program_options::value<std::string>(), "Username for the target Orthanc server")
-        ("password", boost::program_options::value<std::string>(), "Password for the target Orthanc server")
-        ("proxy", boost::program_options::value<std::string>(), "HTTP proxy to be used")
-        ("timeout", boost::program_options::value<int>()->default_value(0), "HTTP timeout (in seconds, 0 means no timeout)")
-        ("verify-peers", boost::program_options::value<bool>()->default_value(true), "Enable the verification of the peers during HTTPS requests")
-        ("ca-certificates", boost::program_options::value<std::string>()->default_value(""), "Path to the CA (certification authority) certificates to validate peers in HTTPS requests")
+        (OPTION_USERNAME, boost::program_options::value<std::string>(),
+         "Username for the target Orthanc server")
+        (OPTION_PASSWORD, boost::program_options::value<std::string>(),
+         "Password for the target Orthanc server")
+        (OPTION_PROXY, boost::program_options::value<std::string>(),
+         "HTTP proxy to be used")
+        (OPTION_TIMEOUT, boost::program_options::value<int>()->default_value(0),
+         "HTTP timeout (in seconds, 0 means no timeout)")
+        (OPTION_VERIFY_PEERS, boost::program_options::value<bool>()->default_value(true),
+         "Enable the verification of the peers during HTTPS requests")
+        (OPTION_CA_CERTIFICATES, boost::program_options::value<std::string>()->default_value(""),
+         "Path to the CA (certification authority) certificates to validate peers in HTTPS requests")
         ;
     }
 
@@ -254,21 +270,21 @@ namespace OrthancWSI
     void SetupRestApi(Orthanc::WebServiceParameters& parameters,
                       const boost::program_options::variables_map& options)
     {
-      if (options.count("orthanc"))
+      if (options.count(OPTION_URL))
       {
-        parameters.SetUrl(options["orthanc"].as<std::string>());
+        parameters.SetUrl(options[OPTION_URL].as<std::string>());
       }
 
-      if (options.count("username") &&
-          options.count("password"))
+      if (options.count(OPTION_USERNAME) &&
+          options.count(OPTION_PASSWORD))
       {
-        parameters.SetUsername(options["username"].as<std::string>());
-        parameters.SetPassword(options["password"].as<std::string>());
+        parameters.SetUsername(options[OPTION_USERNAME].as<std::string>());
+        parameters.SetPassword(options[OPTION_PASSWORD].as<std::string>());
       }
 
-      if (options.count("timeout"))
+      if (options.count(OPTION_TIMEOUT))
       {
-        int timeout = options["timeout"].as<int>();
+        int timeout = options[OPTION_TIMEOUT].as<int>();
         if (timeout < 0)
         {
           LOG(ERROR) << "Timeouts cannot be negative: " << timeout;
@@ -279,18 +295,18 @@ namespace OrthancWSI
           Orthanc::HttpClient::SetDefaultTimeout(timeout);
         }
 
-        if (options.count("proxy"))
+        if (options.count(OPTION_PROXY))
         {
-          Orthanc::HttpClient::SetDefaultProxy(options["proxy"].as<std::string>());
+          Orthanc::HttpClient::SetDefaultProxy(options[OPTION_PROXY].as<std::string>());
         }
       }
 
 #if ORTHANC_ENABLE_SSL == 1
-      if (options.count("verify-peers") ||
-          options.count("ca-certificates"))
+      if (options.count(OPTION_VERIFY_PEERS) ||
+          options.count(OPTION_CA_CERTIFICATES))
       {
-        Orthanc::HttpClient::ConfigureSsl(options["verify-peers"].as<bool>(),
-                                          options["ca-certificates"].as<std::string>());
+        Orthanc::HttpClient::ConfigureSsl(options[OPTION_VERIFY_PEERS].as<bool>(),
+                                          options[OPTION_CA_CERTIFICATES].as<std::string>());
       }
 #endif
     }
