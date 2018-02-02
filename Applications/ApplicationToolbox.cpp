@@ -36,13 +36,13 @@
 #include <cassert>
 
 
+static const char* OPTION_CA_CERTIFICATES = "ca-certificates";
+static const char* OPTION_PASSWORD = "password";
+static const char* OPTION_PROXY = "proxy";
+static const char* OPTION_TIMEOUT = "timeout";
 static const char* OPTION_URL = "orthanc";
 static const char* OPTION_USERNAME = "username";
-static const char* OPTION_PASSWORD = "password";
-static const char* OPTION_TIMEOUT = "timeout";
-static const char* OPTION_PROXY = "proxy";
 static const char* OPTION_VERIFY_PEERS = "verify-peers";
-static const char* OPTION_CA_CERTIFICATES = "ca-certificates";
       
 
 

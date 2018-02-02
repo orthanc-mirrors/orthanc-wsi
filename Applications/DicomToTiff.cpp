@@ -32,6 +32,15 @@
 #include "ApplicationToolbox.h"
 
 
+static const char* OPTION_COLOR = "color";
+static const char* OPTION_HELP = "help";
+static const char* OPTION_INPUT = "input";
+static const char* OPTION_JPEG_QUALITY = "jpeg-quality";
+static const char* OPTION_OUTPUT = "output";
+static const char* OPTION_REENCODE = "reencode";
+static const char* OPTION_VERBOSE = "verbose";
+static const char* OPTION_VERSION = "version";
+
 static bool ParseParameters(int& exitStatus,
                             boost::program_options::variables_map& options,
                             int argc, 
@@ -40,9 +49,9 @@ static bool ParseParameters(int& exitStatus,
   // Declare the supported parameters
   boost::program_options::options_description generic("Generic options");
   generic.add_options()
-    ("help", "Display this help and exit")
-    ("version", "Output version information and exit")
-    ("verbose", "Be verbose in logs")
+    (OPTION_HELP,    "Display this help and exit")
+    (OPTION_VERSION, "Output version information and exit")
+    (OPTION_VERBOSE, "Be verbose in logs")
     ;
 
   boost::program_options::options_description source("Options for the source DICOM image");
@@ -54,17 +63,20 @@ static bool ParseParameters(int& exitStatus,
 
   boost::program_options::options_description target("Options for the target TIFF image");
   target.add_options()
-    ("color", boost::program_options::value<std::string>(), "Color of the background for missing tiles (e.g. \"255,0,0\")")
-    ("reencode", boost::program_options::value<bool>(), 
+    (OPTION_COLOR, boost::program_options::value<std::string>(),
+     "Color of the background for missing tiles (e.g. \"255,0,0\")")
+    (OPTION_REENCODE, boost::program_options::value<bool>(), 
      "Whether to re-encode each tile in JPEG (no transcoding, much slower) (Boolean)")
-    ("jpeg-quality", boost::program_options::value<int>(), "Set quality level for JPEG (0..100)")
+    (OPTION_JPEG_QUALITY, boost::program_options::value<int>(),
+     "Set quality level for JPEG (0..100)")
     ;
 
   boost::program_options::options_description hidden;
   hidden.add_options()
-    ("input", boost::program_options::value<std::string>(), "Orthanc identifier of the input series of interest")
-    ("output", boost::program_options::value<std::string>(), "Output TIFF file");
-  ;
+    (OPTION_INPUT, boost::program_options::value<std::string>(),
+     "Orthanc identifier of the input series of interest")
+    (OPTION_OUTPUT, boost::program_options::value<std::string>(),
+     "Output TIFF file");
 
   boost::program_options::options_description allWithoutHidden;
   allWithoutHidden.add(generic).add(source).add(target);
@@ -73,8 +85,8 @@ static bool ParseParameters(int& exitStatus,
   all.add(hidden);
 
   boost::program_options::positional_options_description positional;
-  positional.add("input", 1);
-  positional.add("output", 1);
+  positional.add(OPTION_INPUT, 1);
+  positional.add(OPTION_OUTPUT, 1);
 
   bool error = false;
 
@@ -91,23 +103,23 @@ static bool ParseParameters(int& exitStatus,
   }
 
   if (!error &&
-      options.count("help") == 0 &&
-      options.count("version") == 0)
+      options.count(OPTION_HELP) == 0 &&
+      options.count(OPTION_VERSION) == 0)
   {
-    if (options.count("input") != 1)
+    if (options.count(OPTION_INPUT) != 1)
     {
       LOG(ERROR) << "No input series was specified";
       error = true;
     }
 
-    if (options.count("output") != 1)
+    if (options.count(OPTION_OUTPUT) != 1)
     {
       LOG(ERROR) << "No output file was specified";
       error = true;
     }
   }
 
-  if (error || options.count("help")) 
+  if (error || options.count(OPTION_HELP)) 
   {
     std::cout << std::endl
               << "Usage: " << argv[0] << " [OPTION]... [INPUT] [OUTPUT]"
@@ -128,13 +140,13 @@ static bool ParseParameters(int& exitStatus,
     return false;
   }
 
-  if (options.count("version")) 
+  if (options.count(OPTION_VERSION)) 
   { 
     OrthancWSI::ApplicationToolbox::PrintVersion(argv[0]);
     return false;
   }
 
-  if (options.count("verbose"))
+  if (options.count(OPTION_VERBOSE))
   {
     Orthanc::Logging::EnableInfoLevel(true);
   }
@@ -156,9 +168,9 @@ static Orthanc::ImageAccessor* CreateEmptyTile(const OrthancWSI::IPyramidWriter&
   uint8_t green = 255;
   uint8_t blue = 255;
 
-  if (options.count("color"))
+  if (options.count(OPTION_COLOR))
   {
-    OrthancWSI::ApplicationToolbox::ParseColor(red, green, blue, options["color"].as<std::string>());
+    OrthancWSI::ApplicationToolbox::ParseColor(red, green, blue, options[OPTION_COLOR].as<std::string>());
   }
 
   OrthancWSI::ImageToolbox::Set(*tile, red, green, blue);
@@ -171,18 +183,18 @@ static Orthanc::ImageAccessor* CreateEmptyTile(const OrthancWSI::IPyramidWriter&
 static void Run(OrthancWSI::ITiledPyramid& source,
                 const boost::program_options::variables_map& options)
 {
-  OrthancWSI::HierarchicalTiffWriter target(options["output"].as<std::string>(),
+  OrthancWSI::HierarchicalTiffWriter target(options[OPTION_OUTPUT].as<std::string>(),
                                             source.GetPixelFormat(), 
                                             OrthancWSI::ImageCompression_Jpeg,
                                             source.GetTileWidth(), 
                                             source.GetTileHeight());
 
-  bool reencode = (options.count("reencode") &&
-                   options["reencode"].as<bool>());
+  bool reencode = (options.count(OPTION_REENCODE) &&
+                   options[OPTION_REENCODE].as<bool>());
 
-  if (options.count("jpeg-quality"))
+  if (options.count(OPTION_JPEG_QUALITY))
   {
-    target.SetJpegQuality(options["jpeg-quality"].as<int>());
+    target.SetJpegQuality(options[OPTION_JPEG_QUALITY].as<int>());
   }
 
   std::auto_ptr<Orthanc::ImageAccessor> empty(CreateEmptyTile(target, options));
@@ -196,10 +208,14 @@ static void Run(OrthancWSI::ITiledPyramid& source,
 
   for (unsigned int level = 0; level < source.GetLevelCount(); level++)
   {
-    LOG(WARNING) << std::string(reencode ? "Reencoding" : "Transcoding") << " level " << level;
+    LOG(WARNING) << std::string(reencode ? "Reencoding" : "Transcoding")
+                 << " level " << level;
 
-    unsigned int countX = OrthancWSI::CeilingDivision(source.GetLevelWidth(level), source.GetTileWidth());
-    unsigned int countY = OrthancWSI::CeilingDivision(source.GetLevelHeight(level), source.GetTileHeight());
+    unsigned int countX = OrthancWSI::CeilingDivision
+      (source.GetLevelWidth(level), source.GetTileWidth());
+
+    unsigned int countY = OrthancWSI::CeilingDivision
+      (source.GetLevelHeight(level), source.GetTileHeight());
 
     for (unsigned int tileY = 0; tileY < countY; tileY++)
     {
@@ -250,7 +266,7 @@ static void Run(OrthancWSI::ITiledPyramid& source,
         {
           LOG(WARNING) << "Cannot transcode a DICOM image that is not encoded using JPEG (it is " 
                        << OrthancWSI::EnumerationToString(compression) 
-                       << "), please use the --reencode=1 option";
+                       << "), please use the --" << OPTION_REENCODE << "=1 option";
           throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
         }
         
@@ -286,7 +302,7 @@ int main(int argc, char* argv[])
       OrthancWSI::ApplicationToolbox::SetupRestApi(params, options);
 
       OrthancPlugins::OrthancHttpConnection orthanc(params);
-      OrthancWSI::DicomPyramid source(orthanc, options["input"].as<std::string>(), 
+      OrthancWSI::DicomPyramid source(orthanc, options[OPTION_INPUT].as<std::string>(), 
                                       false /* don't use cached metadata */);
 
       OrthancWSI::TiledPyramidStatistics stats(source);
@@ -297,9 +313,9 @@ int main(int argc, char* argv[])
   {
     LOG(ERROR) << "Terminating on exception: " << e.What();
 
-    if (options.count("reencode") == 0)
+    if (options.count(OPTION_REENCODE) == 0)
     {
-      LOG(ERROR) << "Consider using option \"--reencode\"";
+      LOG(ERROR) << "Consider using option \"--" << OPTION_REENCODE << "\"";
     }
     
     exitStatus = -1;
