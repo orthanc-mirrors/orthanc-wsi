@@ -235,5 +235,64 @@ namespace OrthancWSI
 
       LOG(WARNING) << "Orthanc WSI version: " << version;
     }
+
+
+  
+    void AddRestApiOptions(boost::program_options::options_description& section)
+    {
+      section.add_options()
+        ("username", boost::program_options::value<std::string>(), "Username for the target Orthanc server")
+        ("password", boost::program_options::value<std::string>(), "Password for the target Orthanc server")
+        ("proxy", boost::program_options::value<std::string>(), "HTTP proxy to be used")
+        ("timeout", boost::program_options::value<int>()->default_value(0), "HTTP timeout (in seconds, 0 means no timeout)")
+        ("verify-peers", boost::program_options::value<bool>()->default_value(true), "Enable the verification of the peers during HTTPS requests")
+        ("ca-certificates", boost::program_options::value<std::string>()->default_value(""), "Path to the CA (certification authority) certificates to validate peers in HTTPS requests")
+        ;
+    }
+
+
+    void SetupRestApi(Orthanc::WebServiceParameters& parameters,
+                      const boost::program_options::variables_map& options)
+    {
+      if (options.count("orthanc"))
+      {
+        parameters.SetUrl(options["orthanc"].as<std::string>());
+      }
+
+      if (options.count("username") &&
+          options.count("password"))
+      {
+        parameters.SetUsername(options["username"].as<std::string>());
+        parameters.SetPassword(options["password"].as<std::string>());
+      }
+
+      if (options.count("timeout"))
+      {
+        int timeout = options["timeout"].as<int>();
+        if (timeout < 0)
+        {
+          LOG(ERROR) << "Timeouts cannot be negative: " << timeout;
+          throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
+        }
+        else
+        {
+          Orthanc::HttpClient::SetDefaultTimeout(timeout);
+        }
+
+        if (options.count("proxy"))
+        {
+          Orthanc::HttpClient::SetDefaultProxy(options["proxy"].as<std::string>());
+        }
+      }
+
+#if ORTHANC_ENABLE_SSL == 1
+      if (options.count("verify-peers") ||
+          options.count("ca-certificates"))
+      {
+        Orthanc::HttpClient::ConfigureSsl(options["verify-peers"].as<bool>(),
+                                          options["ca-certificates"].as<std::string>());
+      }
+#endif
+    }
   }
 }

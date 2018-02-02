@@ -12,7 +12,7 @@ SET(ALLOW_DOWNLOADS OFF CACHE BOOL "Allow CMake to download packages")
 SET(ENABLE_PROFILING OFF CACHE BOOL "Whether to enable the generation of profiling information with gprof")
 
 # Optional components
-SET(ENABLE_SSL OFF CACHE BOOL "Include support for SSL")
+SET(ENABLE_SSL ON CACHE BOOL "Include support for SSL")
 SET(USE_DCMTK_361 OFF CACHE BOOL "Use forthcoming DCMTK version 3.6.1 in static builds (instead of 3.6.0)")
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")

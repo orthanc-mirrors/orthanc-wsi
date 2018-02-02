@@ -31,8 +31,6 @@
 
 #include "ApplicationToolbox.h"
 
-#include <boost/program_options.hpp>
-
 
 static bool ParseParameters(int& exitStatus,
                             boost::program_options::variables_map& options,
@@ -51,9 +49,8 @@ static bool ParseParameters(int& exitStatus,
   source.add_options()
     ("orthanc", boost::program_options::value<std::string>()->default_value("http://localhost:8042/"),
      "URL to the REST API of the target Orthanc server")
-    ("username", boost::program_options::value<std::string>(), "Username for the target Orthanc server")
-    ("password", boost::program_options::value<std::string>(), "Password for the target Orthanc server")
     ;
+  OrthancWSI::ApplicationToolbox::AddRestApiOptions(source);
 
   boost::program_options::options_description target("Options for the target TIFF image");
   target.add_options()
@@ -286,20 +283,7 @@ int main(int argc, char* argv[])
     {
       Orthanc::WebServiceParameters params;
 
-      if (options.count("orthanc"))
-      {
-        params.SetUrl(options["orthanc"].as<std::string>());
-      }
-
-      if (options.count("username"))
-      {
-        params.SetUsername(options["username"].as<std::string>());
-      }
-
-      if (options.count("password"))
-      {
-        params.SetPassword(options["password"].as<std::string>());
-      }
+      OrthancWSI::ApplicationToolbox::SetupRestApi(params, options);
 
       OrthancPlugins::OrthancHttpConnection orthanc(params);
       OrthancWSI::DicomPyramid source(orthanc, options["input"].as<std::string>(), 

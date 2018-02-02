@@ -33,7 +33,6 @@
 #include "../Framework/Outputs/TruncatedPyramidWriter.h"
 
 #include "../Resources/Orthanc/Core/DicomParsing/FromDcmtkBridge.h"
-#include "../Resources/Orthanc/Core/HttpClient.h"
 #include "../Resources/Orthanc/Core/Logging.h"
 #include "../Resources/Orthanc/Core/MultiThreading/BagOfTasksProcessor.h"
 #include "../Resources/Orthanc/Core/OrthancException.h"
@@ -42,8 +41,6 @@
 #include "ApplicationToolbox.h"
 
 #include <EmbeddedResources.h>
-
-#include <boost/program_options.hpp>
 
 #include <dcmtk/dcmdata/dcdeftag.h>
 #include <dcmtk/dcmdata/dcuid.h>
@@ -513,8 +510,6 @@ static bool ParseParameters(int& exitStatus,
      "Pattern for the files in the output folder")
     ("orthanc", boost::program_options::value<std::string>()->default_value("http://localhost:8042/"),
      "URL to the REST API of the target Orthanc server")
-    ("username", boost::program_options::value<std::string>(), "Username for the target Orthanc server")
-    ("password", boost::program_options::value<std::string>(), "Password for the target Orthanc server")
     ;
 
   boost::program_options::options_description volumeOptions("Description of the imaged volume");
@@ -527,6 +522,9 @@ static bool ParseParameters(int& exitStatus,
     ("offset-y", boost::program_options::value<float>()->default_value(40), 
      "Y offset the specimen, wrt. slide coordinates origin (in mm)")
     ;
+
+  boost::program_options::options_description restOptions("HTTP/HTTPS client configuration to access the Orthanc REST API");
+  OrthancWSI::ApplicationToolbox::AddRestApiOptions(restOptions);
 
   boost::program_options::options_description advancedOptions("Advanced options");
   advancedOptions.add_options()
@@ -546,7 +544,14 @@ static bool ParseParameters(int& exitStatus,
   ;
 
   boost::program_options::options_description allWithoutHidden;
-  allWithoutHidden.add(generic).add(source).add(pyramid).add(target).add(volumeOptions).add(advancedOptions);
+  allWithoutHidden
+    .add(generic)
+    .add(source)
+    .add(pyramid)
+    .add(target)
+    .add(volumeOptions)
+    .add(restOptions)
+    .add(advancedOptions);
 
   boost::program_options::options_description all = allWithoutHidden;
   all.add(hidden);
@@ -745,17 +750,7 @@ static bool ParseParameters(int& exitStatus,
     parameters.SetTargetFolderPattern(options["folder-pattern"].as<std::string>());
   }
 
-  if (options.count("orthanc"))
-  {
-    parameters.GetOrthancParameters().SetUrl(options["orthanc"].as<std::string>());
-
-    if (options.count("username") &&
-        options.count("password"))
-    {
-      parameters.GetOrthancParameters().SetUsername(options["username"].as<std::string>());
-      parameters.GetOrthancParameters().SetPassword(options["password"].as<std::string>());
-    }
-  }
+  OrthancWSI::ApplicationToolbox::SetupRestApi(parameters.GetOrthancParameters(), options);
 
   if (options.count("dataset"))
   {

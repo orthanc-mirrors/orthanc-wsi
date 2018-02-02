@@ -22,9 +22,11 @@
 #pragma once
 
 #include "../Resources/Orthanc/Core/MultiThreading/BagOfTasks.h"
+#include "../Resources/Orthanc/Core/WebServiceParameters.h"
 
 #include <string>
 #include <stdint.h>
+#include <boost/program_options.hpp>
 
 namespace OrthancWSI
 {
@@ -45,5 +47,10 @@ namespace OrthancWSI
     void PrintVersion(const char* path);
 
     void ShowVersionInLog(const char* path);
+
+    void AddRestApiOptions(boost::program_options::options_description& section);
+
+    void SetupRestApi(Orthanc::WebServiceParameters& parameters,
+                      const boost::program_options::variables_map& options);
   }
 }

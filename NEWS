@@ -3,6 +3,7 @@ Pending changes in the mainline
 
 * "--max-size=0" allowed to create a single instance per pyramid level
 * Support more colorspaces with JPEG2k
+* SSL is enabled by default for HTTPS transfers
 * Fix Debian #876807 (orthanc-wsi FTBFS with libopenjp2-7-dev 2.2.0-1)
 * Support of OpenBSD and FreeBSD
 * Support of Linux Standard Base
