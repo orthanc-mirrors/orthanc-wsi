@@ -275,7 +275,7 @@ static DcmDataset* ParseDataset(const std::string& path)
   OrthancWSI::DicomToolbox::SetStringTag(*dataset, DCM_ImageOrientationSlide, "0\\-1\\0\\-1\\0\\0");
 
   std::string date, time;
-  Orthanc::SystemToolbox::GetNowDicom(date, time);
+  Orthanc::SystemToolbox::GetNowDicom(date, time, true /* use UTC time (not local time) */);
   OrthancWSI::DicomToolbox::SetStringTag(*dataset, DCM_StudyDate, date);
   OrthancWSI::DicomToolbox::SetStringTag(*dataset, DCM_StudyTime, time);
   OrthancWSI::DicomToolbox::SetStringTag(*dataset, DCM_SeriesDate, date);

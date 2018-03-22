@@ -15,6 +15,7 @@ PLUGIN_SDK_VERSION = '1.0.0'
 REPOSITORY = 'http://bitbucket.org/sjodogne/orthanc/raw'
 
 FILES = [
+    'NEWS',
     'Core/Cache/LeastRecentlyUsedIndex.h',
     'Core/ChunkedBuffer.cpp',
     'Core/ChunkedBuffer.h',
@@ -55,6 +56,7 @@ FILES = [
     'Core/Images/JpegReader.h',
     'Core/Images/JpegWriter.cpp',
     'Core/Images/JpegWriter.h',
+    'Core/Images/PixelTraits.h',
     'Core/Images/PngReader.cpp',
     'Core/Images/PngReader.h',
     'Core/Images/PngWriter.cpp',
