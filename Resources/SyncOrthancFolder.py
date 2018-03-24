@@ -28,6 +28,7 @@ FILES = [
     'Core/DicomFormat/DicomTag.h',
     'Core/DicomFormat/DicomValue.cpp',
     'Core/DicomFormat/DicomValue.h',
+    'Core/DicomParsing/ITagVisitor.h',
     'Core/DicomParsing/FromDcmtkBridge.cpp',
     'Core/DicomParsing/FromDcmtkBridge.h',
     'Core/DicomParsing/ToDcmtkBridge.cpp',
