@@ -100,14 +100,26 @@ if (STATIC_BUILD OR NOT USE_SYSTEM_DCMTK)
     message("The patches for DCMTK have already been applied")
   endif()
 
+
   IF (CMAKE_CROSSCOMPILING)
     if (CMAKE_COMPILER_IS_GNUCXX AND
-        ${CMAKE_SYSTEM_NAME} STREQUAL "Windows")  # MinGW
+        CMAKE_SYSTEM_NAME STREQUAL "Windows")  # MinGW
       SET(C_CHAR_UNSIGNED 1 CACHE INTERNAL "Whether char is unsigned.")
+
+    elseif(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")  # WebAssembly or asm.js
+
+      # Check out "../WebAssembly/ArithmeticTests/" to regenerate the
+      # "arith.h" file
+      configure_file(
+        ${ORTHANC_ROOT}/Resources/WebAssembly/arith.h
+        ${DCMTK_SOURCES_DIR}/config/include/dcmtk/config/arith.h
+        COPYONLY)
+
     else()
       message(FATAL_ERROR "Support your platform here")
     endif()
   ENDIF()
+
   
   if ("${CMAKE_SYSTEM_VERSION}" STREQUAL "LinuxStandardBase")
     SET(DCMTK_ENABLE_CHARSET_CONVERSION "iconv" CACHE STRING "")
@@ -128,6 +140,35 @@ if (STATIC_BUILD OR NOT USE_SYSTEM_DCMTK)
   SET(DCMTK_SOURCE_DIR ${DCMTK_SOURCES_DIR})
   include(${DCMTK_SOURCES_DIR}/CMake/CheckFunctionWithHeaderExists.cmake)
   include(${DCMTK_SOURCES_DIR}/CMake/GenerateDCMTKConfigure.cmake)
+
+
+  if (CMAKE_SYSTEM_NAME STREQUAL "Emscripten")  # WebAssembly or
+    # asm.js The macros below are not properly discovered by DCMTK
+    # when using WebAssembly. Check out "../WebAssembly/arith.h" for
+    # how we produced these values. This step MUST be after
+    # "GenerateDCMTKConfigure" and before the generation of
+    # "osconfig.h".
+    UNSET(SIZEOF_VOID_P   CACHE)
+    UNSET(SIZEOF_CHAR     CACHE)
+    UNSET(SIZEOF_DOUBLE   CACHE)
+    UNSET(SIZEOF_FLOAT    CACHE)
+    UNSET(SIZEOF_INT      CACHE)
+    UNSET(SIZEOF_LONG     CACHE)
+    UNSET(SIZEOF_SHORT    CACHE)
+    UNSET(SIZEOF_VOID_P   CACHE)
+    UNSET(C_CHAR_UNSIGNED CACHE)
+
+    SET(SIZEOF_VOID_P 4   CACHE INTERNAL "")
+    SET(SIZEOF_CHAR 1     CACHE INTERNAL "")
+    SET(SIZEOF_DOUBLE 8   CACHE INTERNAL "")
+    SET(SIZEOF_FLOAT 4    CACHE INTERNAL "")
+    SET(SIZEOF_INT 4      CACHE INTERNAL "")
+    SET(SIZEOF_LONG 4     CACHE INTERNAL "")
+    SET(SIZEOF_SHORT 2    CACHE INTERNAL "")
+    SET(SIZEOF_VOID_P 4   CACHE INTERNAL "")
+    SET(C_CHAR_UNSIGNED 0 CACHE INTERNAL "")
+  endif()
+
 
   set(DCMTK_PACKAGE_VERSION_SUFFIX "")
   set(DCMTK_PACKAGE_VERSION_NUMBER ${DCMTK_VERSION_NUMBER})
@@ -151,7 +192,9 @@ if (STATIC_BUILD OR NOT USE_SYSTEM_DCMTK)
     endif()
 
     # This step must be after the generation of "osconfig.h"
-    INSPECT_FUNDAMENTAL_ARITHMETIC_TYPES()
+    if (NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+      INSPECT_FUNDAMENTAL_ARITHMETIC_TYPES()
+    endif()
   endif()
 
   AUX_SOURCE_DIRECTORY(${DCMTK_SOURCES_DIR}/dcmdata/libsrc DCMTK_SOURCES)
@@ -218,7 +261,8 @@ if (STATIC_BUILD OR NOT USE_SYSTEM_DCMTK)
       ${CMAKE_SYSTEM_NAME} STREQUAL "Darwin" OR
       ${CMAKE_SYSTEM_NAME} STREQUAL "FreeBSD" OR
       ${CMAKE_SYSTEM_NAME} STREQUAL "kFreeBSD" OR
-      ${CMAKE_SYSTEM_NAME} STREQUAL "OpenBSD")
+      ${CMAKE_SYSTEM_NAME} STREQUAL "OpenBSD" OR
+      ${CMAKE_SYSTEM_NAME} STREQUAL "Emscripten")
     list(REMOVE_ITEM DCMTK_SOURCES 
       ${DCMTK_SOURCES_DIR}/oflog/libsrc/clfsap.cc
       ${DCMTK_SOURCES_DIR}/oflog/libsrc/windebap.cc
@@ -248,17 +292,25 @@ if (STATIC_BUILD OR NOT USE_SYSTEM_DCMTK)
     endif()
   endif()
 
+
+  if (NOT USE_DCMTK_360 AND
+      ORTHANC_SANDBOXED)
+    configure_file(
+      ${ORTHANC_ROOT}/Resources/WebAssembly/dcdict.h
+      ${DCMTK_SOURCES_DIR}/dcmdata/include/dcmtk/dcmdata/dcdict.h
+      COPYONLY)
+    
+    configure_file(
+      ${ORTHANC_ROOT}/Resources/WebAssembly/dcdict.cc
+      ${DCMTK_SOURCES_DIR}/dcmdata/libsrc/dcdict.cc
+      COPYONLY)
+  endif()
+
+  
   list(REMOVE_ITEM DCMTK_SOURCES 
     ${DCMTK_SOURCES_DIR}/dcmdata/libsrc/mkdictbi.cc
     ${DCMTK_SOURCES_DIR}/dcmdata/libsrc/mkdeftag.cc
     )
-
-  if (USE_DCMTK_360)
-    # Removing this file is required with DCMTK 3.6.0
-    list(REMOVE_ITEM DCMTK_SOURCES 
-      ${DCMTK_SOURCES_DIR}/dcmdata/libsrc/dcdictbi.cc
-      )
-  endif()
 
   #set_source_files_properties(${DCMTK_SOURCES}
   #  PROPERTIES COMPILE_DEFINITIONS
@@ -361,6 +413,10 @@ if (NOT DCMTK_USE_EMBEDDED_DICTIONARIES)
       /usr/share/libdcmtk14
       /usr/share/libdcmtk15
       /usr/share/libdcmtk16
+      /usr/share/libdcmtk17
+      /usr/share/libdcmtk18
+      /usr/share/libdcmtk19
+      /usr/share/libdcmtk20
       /usr/local/share/dcmtk
       )
 

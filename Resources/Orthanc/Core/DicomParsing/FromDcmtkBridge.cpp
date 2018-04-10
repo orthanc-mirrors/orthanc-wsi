@@ -37,13 +37,19 @@
 #define NOMINMAX
 #endif
 
+#if !defined(ORTHANC_SANDBOXED)
+#  error The macro ORTHANC_SANDBOXED must be defined
+#endif
+
 #include "FromDcmtkBridge.h"
 #include "ToDcmtkBridge.h"
 #include "../Logging.h"
-#include "../SystemToolbox.h"
 #include "../Toolbox.h"
-#include "../TemporaryFile.h"
 #include "../OrthancException.h"
+
+#if ORTHANC_SANDBOXED == 0
+#  include "../TemporaryFile.h"
+#endif
 
 #include <list>
 #include <limits>
@@ -127,6 +133,7 @@ namespace Orthanc
     std::string content;
     EmbeddedResources::GetFileResource(content, resource);
 
+#if ORTHANC_SANDBOXED == 0
     TemporaryFile tmp;
     tmp.Write(content);
 
@@ -136,6 +143,14 @@ namespace Orthanc
                  << "your TEMP directory does not contain special characters.";
       throw OrthancException(ErrorCode_InternalError);
     }
+#else
+    if (!dictionary.loadFromMemory(content))
+    {
+      LOG(ERROR) << "Cannot read embedded dictionary. Under Windows, make sure that " 
+                 << "your TEMP directory does not contain special characters.";
+      throw OrthancException(ErrorCode_InternalError);
+    }
+#endif
   }
                              
 #else
@@ -1151,7 +1166,7 @@ namespace Orthanc
         // The "PatientID" field is of type LO (Long String), 64
         // Bytes Maximum. An UUID is of length 36, thus it can be used
         // as a random PatientID.
-        return SystemToolbox::GenerateUuid();
+        return Toolbox::GenerateUuid();
 
       case ResourceType_Instance:
         return dcmGenerateUniqueIdentifier(uid, SITE_INSTANCE_UID_ROOT);
@@ -2167,7 +2182,7 @@ namespace Orthanc
         case ITagVisitor::Action_Replace:
         {
           std::string s = Toolbox::ConvertFromUtf8(newValue, encoding);
-          if (element.putString(s.c_str(), s.size()) != EC_Normal)
+          if (element.putString(s.c_str()) != EC_Normal)
           {
             LOG(ERROR) << "Cannot replace value of tag: " << tag.Format();
             throw OrthancException(ErrorCode_InternalError);
