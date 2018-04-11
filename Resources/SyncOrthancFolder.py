@@ -125,7 +125,7 @@ FILES = [
     'Resources/MinGW-W64-Toolchain32.cmake',
     'Resources/MinGW-W64-Toolchain64.cmake',
     'Resources/MinGWToolchain.cmake',
-    'Resources/Patches/boost-1.65.1-linux-standard-base.patch',
+    'Resources/Patches/boost-1.66.0-linux-standard-base.patch',
     'Resources/Patches/curl-7.57.0-cmake.patch',
     'Resources/Patches/dcmtk-3.6.0-dulparse-vulnerability.patch',
     'Resources/Patches/dcmtk-3.6.0-mingw64.patch',
