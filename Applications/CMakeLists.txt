@@ -48,6 +48,7 @@ SET(ENABLE_WEB_CLIENT ON)
 SET(ENABLE_ZLIB ON)
 SET(HAS_EMBEDDED_RESOURCES ON)
 
+include(${ORTHANC_ROOT}/Resources/CMake/VisualStudioPrecompiledHeaders.cmake)
 include(${ORTHANC_ROOT}/Resources/CMake/OrthancFrameworkConfiguration.cmake)
 include_directories(${ORTHANC_ROOT})
 
@@ -114,6 +115,10 @@ EmbedResources(
   BRIGHTFIELD_OPTICAL_PATH  ${ORTHANC_WSI_DIR}/Resources/BrightfieldOpticalPath.json
   SAMPLE_DATASET            ${ORTHANC_WSI_DIR}/Resources/SampleDataset.json
   SRGB_ICC_PROFILE          ${ORTHANC_WSI_DIR}/Resources/sRGB.icc
+  )
+
+add_definitions(
+  -DHAS_ORTHANC_EXCEPTION=1
   )
 
 

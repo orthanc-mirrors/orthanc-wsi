@@ -39,6 +39,7 @@ set(ENABLE_ZLIB ON)
 set(ENABLE_PNG ON)
 set(ENABLE_JPEG ON)
 
+include(${ORTHANC_ROOT}/Resources/CMake/VisualStudioPrecompiledHeaders.cmake)
 include(${ORTHANC_ROOT}/Resources/CMake/OrthancFrameworkConfiguration.cmake)
 include_directories(${ORTHANC_ROOT})
 
@@ -64,6 +65,10 @@ endif()
 #####################################################################
 ## Platform-specific configuration
 #####################################################################
+
+add_definitions(
+  -DHAS_ORTHANC_EXCEPTION=1
+  )
 
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux" OR
     ${CMAKE_SYSTEM_NAME} STREQUAL "kFreeBSD" OR
