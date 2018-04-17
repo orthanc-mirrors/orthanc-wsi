@@ -23,7 +23,7 @@
 
 #if ORTHANC_USE_PRECOMPILED_HEADERS == 1
 
-#include "../Resources/Orthanc/Core/PrecompiledHeaders.h"
+#include <Core/PrecompiledHeaders.h>
 
 #include "DicomToolbox.h"
 #include "ImageToolbox.h"
