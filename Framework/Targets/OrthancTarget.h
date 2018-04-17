@@ -22,8 +22,8 @@
 #pragma once
 
 #include "IFileTarget.h"
-#include "../../Resources/Orthanc/Core/WebServiceParameters.h"
-#include "../../Resources/Orthanc/Plugins/Samples/Common/IOrthancConnection.h"
+#include <Core/WebServiceParameters.h>
+#include <Plugins/Samples/Common/IOrthancConnection.h>
 
 #include <memory>
 

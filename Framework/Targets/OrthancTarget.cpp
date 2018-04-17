@@ -23,9 +23,9 @@
 #include "OrthancTarget.h"
 
 #include "../DicomToolbox.h"
-#include "../../Resources/Orthanc/Core/OrthancException.h"
-#include "../../Resources/Orthanc/Core/Logging.h"
-#include "../../Resources/Orthanc/Plugins/Samples/Common/OrthancHttpConnection.h"
+#include <Core/OrthancException.h>
+#include <Core/Logging.h>
+#include <Plugins/Samples/Common/OrthancHttpConnection.h>
 
 namespace OrthancWSI
 {

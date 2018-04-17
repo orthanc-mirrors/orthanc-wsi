@@ -23,7 +23,7 @@
 
 #include "../Enumerations.h"
 
-#include "../../Resources/Orthanc/Core/Images/ImageAccessor.h"
+#include <Core/Images/ImageAccessor.h>
 
 #include <boost/noncopyable.hpp>
 #include <string>

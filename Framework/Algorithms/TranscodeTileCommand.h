@@ -24,7 +24,7 @@
 #include "PyramidReader.h"
 #include "../Outputs/IPyramidWriter.h"
 
-#include "../../Resources/Orthanc/Core/MultiThreading/BagOfTasks.h"
+#include <Core/MultiThreading/BagOfTasks.h>
 
 namespace OrthancWSI
 {

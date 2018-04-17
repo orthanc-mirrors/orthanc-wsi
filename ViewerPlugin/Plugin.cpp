@@ -24,12 +24,12 @@
 #include "DicomPyramidCache.h"
 #include "../Framework/Jpeg2000Reader.h"
 
-#include "../Resources/Orthanc/Core/Images/ImageProcessing.h"
-#include "../Resources/Orthanc/Core/Images/PngWriter.h"
-#include "../Resources/Orthanc/Core/MultiThreading/Semaphore.h"
-#include "../Resources/Orthanc/Core/OrthancException.h"
-#include "../Resources/Orthanc/Plugins/Samples/Common/OrthancPluginCppWrapper.h"
-#include "../Resources/Orthanc/Plugins/Samples/Common/OrthancPluginConnection.h"
+#include <Core/Images/ImageProcessing.h>
+#include <Core/Images/PngWriter.h>
+#include <Core/MultiThreading/Semaphore.h>
+#include <Core/OrthancException.h>
+#include <Plugins/Samples/Common/OrthancPluginCppWrapper.h>
+#include <Plugins/Samples/Common/OrthancPluginConnection.h>
 
 #include <EmbeddedResources.h>
 

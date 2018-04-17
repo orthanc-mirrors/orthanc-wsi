@@ -25,9 +25,9 @@
 #include "../Framework/Inputs/TiledPyramidStatistics.h"
 #include "../Framework/Outputs/HierarchicalTiffWriter.h"
 
-#include "../Resources/Orthanc/Core/Logging.h"
-#include "../Resources/Orthanc/Core/OrthancException.h"
-#include "../Resources/Orthanc/Plugins/Samples/Common/OrthancHttpConnection.h"
+#include <Core/Logging.h>
+#include <Core/OrthancException.h>
+#include <Plugins/Samples/Common/OrthancHttpConnection.h>
 
 #include "ApplicationToolbox.h"
 

@@ -25,7 +25,7 @@
 #include "Outputs/IPyramidWriter.h"
 #include "Targets/IFileTarget.h"
 #include "DicomToolbox.h"
-#include "../Resources/Orthanc/Core/WebServiceParameters.h"
+#include <Core/WebServiceParameters.h>
 
 #include <stdint.h>
 

@@ -21,8 +21,8 @@
 
 #pragma once
 
-#include "../Resources/Orthanc/Core/MultiThreading/BagOfTasks.h"
-#include "../Resources/Orthanc/Core/WebServiceParameters.h"
+#include <Core/MultiThreading/BagOfTasks.h>
+#include <Core/WebServiceParameters.h>
 
 #include <string>
 #include <stdint.h>

@@ -22,7 +22,8 @@
 #pragma once
 
 #include "../Framework/Inputs/DicomPyramid.h"
-#include "../Resources/Orthanc/Core/Cache/LeastRecentlyUsedIndex.h"
+
+#include <Core/Cache/LeastRecentlyUsedIndex.h>
 
 #include <boost/thread/mutex.hpp>
 

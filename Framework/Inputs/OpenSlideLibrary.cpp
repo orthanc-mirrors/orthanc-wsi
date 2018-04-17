@@ -22,9 +22,11 @@
 #include "../PrecompiledHeadersWSI.h"
 #include "OpenSlideLibrary.h"
 
-#include "../../Resources/Orthanc/Core/Logging.h"
-#include "../../Resources/Orthanc/Core/Images/Image.h"
-#include "../../Resources/Orthanc/Core/OrthancException.h"
+#include <Core/Logging.h>
+#include <Core/Images/Image.h>
+#include <Core/OrthancException.h>
+
+#include <memory>
 
 namespace OrthancWSI
 {

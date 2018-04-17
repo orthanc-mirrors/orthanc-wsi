@@ -22,12 +22,13 @@
 #include "ApplicationToolbox.h"
 
 #include "../Framework/Inputs/OpenSlideLibrary.h"
-#include "../Resources/Orthanc/Core/DicomParsing/FromDcmtkBridge.h"
-#include "../Resources/Orthanc/Core/HttpClient.h"
-#include "../Resources/Orthanc/Core/Logging.h"
-#include "../Resources/Orthanc/Core/MultiThreading/BagOfTasksProcessor.h"
-#include "../Resources/Orthanc/Core/OrthancException.h"
-#include "../Resources/Orthanc/Core/SystemToolbox.h"
+
+#include <Core/DicomParsing/FromDcmtkBridge.h>
+#include <Core/HttpClient.h>
+#include <Core/Logging.h>
+#include <Core/MultiThreading/BagOfTasksProcessor.h>
+#include <Core/OrthancException.h>
+#include <Core/SystemToolbox.h>
 
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>

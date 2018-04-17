@@ -22,8 +22,8 @@
 #include "../PrecompiledHeadersWSI.h"
 #include "FolderTarget.h"
 
-#include "../../Resources/Orthanc/Core/SystemToolbox.h"
-#include "../../Resources/Orthanc/Core/Logging.h"
+#include <Core/SystemToolbox.h>
+#include <Core/Logging.h>
 
 #include <stdio.h>
 

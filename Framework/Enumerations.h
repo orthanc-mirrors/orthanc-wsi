@@ -21,7 +21,7 @@
 
 #pragma once
 
-#include "../Resources/Orthanc/Core/Enumerations.h"
+#include <Core/Enumerations.h>
 
 #include <stdint.h>
 #include <string>

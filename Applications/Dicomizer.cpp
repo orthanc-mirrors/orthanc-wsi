@@ -32,11 +32,11 @@
 #include "../Framework/Outputs/DicomPyramidWriter.h"
 #include "../Framework/Outputs/TruncatedPyramidWriter.h"
 
-#include "../Resources/Orthanc/Core/DicomParsing/FromDcmtkBridge.h"
-#include "../Resources/Orthanc/Core/Logging.h"
-#include "../Resources/Orthanc/Core/MultiThreading/BagOfTasksProcessor.h"
-#include "../Resources/Orthanc/Core/OrthancException.h"
-#include "../Resources/Orthanc/Core/SystemToolbox.h"
+#include <Core/DicomParsing/FromDcmtkBridge.h>
+#include <Core/Logging.h>
+#include <Core/MultiThreading/BagOfTasksProcessor.h>
+#include <Core/OrthancException.h>
+#include <Core/SystemToolbox.h>
 
 #include "ApplicationToolbox.h"
 

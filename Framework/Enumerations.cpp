@@ -23,9 +23,9 @@
 #include "Enumerations.h"
 
 #include "Jpeg2000Reader.h"
-#include "../Resources/Orthanc/Core/OrthancException.h"
-#include "../Resources/Orthanc/Core/SystemToolbox.h"
-#include "../Resources/Orthanc/Core/Toolbox.h"
+#include <Core/OrthancException.h>
+#include <Core/SystemToolbox.h>
+#include <Core/Toolbox.h>
 
 #include <string.h>
 #include <boost/algorithm/string/predicate.hpp>

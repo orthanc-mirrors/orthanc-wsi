@@ -25,13 +25,13 @@
 #include "Jpeg2000Reader.h"
 #include "Jpeg2000Writer.h"
 
-#include "../Resources/Orthanc/Core/OrthancException.h"
-#include "../Resources/Orthanc/Core/Images/ImageProcessing.h"
-#include "../Resources/Orthanc/Core/Images/PngReader.h"
-#include "../Resources/Orthanc/Core/Images/PngWriter.h"
-#include "../Resources/Orthanc/Core/Images/JpegReader.h"
-#include "../Resources/Orthanc/Core/Images/JpegWriter.h"
-#include "../Resources/Orthanc/Core/Logging.h"
+#include <Core/OrthancException.h>
+#include <Core/Images/ImageProcessing.h>
+#include <Core/Images/PngReader.h>
+#include <Core/Images/PngWriter.h>
+#include <Core/Images/JpegReader.h>
+#include <Core/Images/JpegWriter.h>
+#include <Core/Logging.h>
 
 #include <string.h>
 #include <memory>

@@ -22,9 +22,9 @@
 #include "PrecompiledHeadersWSI.h"
 #include "DicomToolbox.h"
 
-#include "../Resources/Orthanc/Core/Logging.h"
-#include "../Resources/Orthanc/Core/OrthancException.h"
-#include "../Resources/Orthanc/Core/Toolbox.h"
+#include <Core/Logging.h>
+#include <Core/OrthancException.h>
+#include <Core/Toolbox.h>
 
 #if ORTHANC_ENABLE_DCMTK == 1
 #  include <dcmtk/dcmdata/dcelem.h>

@@ -22,7 +22,7 @@
 #pragma once
 
 #include "../Enumerations.h"
-#include "../../Resources/Orthanc/Core/ChunkedBuffer.h"
+#include <Core/ChunkedBuffer.h>
 
 #include <boost/noncopyable.hpp>
 #include <memory>

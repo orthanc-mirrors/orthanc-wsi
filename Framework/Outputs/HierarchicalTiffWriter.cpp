@@ -22,9 +22,9 @@
 #include "../PrecompiledHeadersWSI.h"
 #include "HierarchicalTiffWriter.h"
 
-#include "../../Resources/Orthanc/Core/Logging.h"
-#include "../../Resources/Orthanc/Core/OrthancException.h"
-#include "../../Resources/Orthanc/Core/TemporaryFile.h"
+#include <Core/Logging.h>
+#include <Core/OrthancException.h>
+#include <Core/TemporaryFile.h>
 
 namespace OrthancWSI
 {

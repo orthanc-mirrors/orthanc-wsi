@@ -22,8 +22,8 @@
 #include "../PrecompiledHeadersWSI.h"
 #include "DicomPyramidLevel.h"
 
-#include "../../Resources/Orthanc/Core/Logging.h"
-#include "../../Resources/Orthanc/Core/OrthancException.h"
+#include <Core/Logging.h>
+#include <Core/OrthancException.h>
 
 #include <boost/lexical_cast.hpp>
 
