@@ -68,7 +68,7 @@ namespace OrthancWSI
     bool Initialize();
 
   public:
-    HierarchicalTiff(const std::string& path);
+    explicit HierarchicalTiff(const std::string& path);
 
     virtual ~HierarchicalTiff()
     {

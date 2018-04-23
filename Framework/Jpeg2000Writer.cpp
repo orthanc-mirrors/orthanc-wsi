@@ -246,7 +246,8 @@ namespace OrthancWSI
 #endif
 
     public:
-      OpenJpegOutput(OpenJpegEncoder& encoder) : cio_(NULL)
+      explicit OpenJpegOutput(OpenJpegEncoder& encoder) :
+        cio_(NULL)
       {
 #if ORTHANC_OPENJPEG_MAJOR_VERSION == 1
         cio_ = opj_cio_open(reinterpret_cast<opj_common_ptr>(encoder.GetObject()), NULL, 0);

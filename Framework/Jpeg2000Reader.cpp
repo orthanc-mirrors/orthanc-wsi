@@ -97,7 +97,8 @@ namespace OrthancWSI
       }
 
     public:
-      OpenJpegDecoder(Jpeg2000Format format) : dinfo_(NULL)
+      explicit OpenJpegDecoder(Jpeg2000Format format) :
+        dinfo_(NULL)
       {
         switch (format)
         {

@@ -36,7 +36,7 @@ namespace OrthancWSI
     unsigned int   countDecodedTiles_;
 
   public:
-    TiledPyramidStatistics(ITiledPyramid& source);   // Takes ownership
+    explicit TiledPyramidStatistics(ITiledPyramid& source);   // Takes ownership
 
     virtual ~TiledPyramidStatistics();
 

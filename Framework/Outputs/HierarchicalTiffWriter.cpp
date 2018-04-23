@@ -386,6 +386,8 @@ namespace OrthancWSI
                                                  unsigned int tileHeight) :
     PyramidWriterBase(pixelFormat, compression, tileWidth, tileHeight),
     currentLevel_(0),
+    nextX_(0),
+    nextY_(0),
     isFirst_(true)
   {
     tiff_ = TIFFOpen(path.c_str(), "w");

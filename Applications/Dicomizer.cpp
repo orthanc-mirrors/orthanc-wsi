@@ -723,7 +723,7 @@ static bool ParseParameters(int& exitStatus,
       w = options[OPTION_TILE_WIDTH].as<int>();
     }
 
-    unsigned int h = 0;
+    int h = 0;
     if (options.count(OPTION_TILE_HEIGHT))
     {
       h = options[OPTION_TILE_HEIGHT].as<int>();

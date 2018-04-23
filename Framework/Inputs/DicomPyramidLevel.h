@@ -61,7 +61,7 @@ namespace OrthancWSI
                     unsigned int tileY) const;
 
   public:
-    DicomPyramidLevel(DicomPyramidInstance& instance);
+    explicit DicomPyramidLevel(DicomPyramidInstance& instance);
 
     void AddInstance(DicomPyramidInstance& instance);
 

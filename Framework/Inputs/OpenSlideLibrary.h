@@ -47,7 +47,7 @@ namespace OrthancWSI
     FunctionReadRegion          readRegion_;
 
   public:
-    OpenSlideLibrary(const std::string& path);
+    explicit OpenSlideLibrary(const std::string& path);
 
     static OpenSlideLibrary& GetInstance();
 
@@ -85,7 +85,7 @@ namespace OrthancWSI
       Image(OpenSlideLibrary& that,
             const std::string& path);
 
-      Image(const std::string& path);
+      explicit Image(const std::string& path);
 
       ~Image()
       {

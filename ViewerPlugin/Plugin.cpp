@@ -322,7 +322,7 @@ extern "C"
     transcoderSemaphore_.reset(new Orthanc::Semaphore(threads));
 
     char info[1024];
-    sprintf(info, "The whole-slide imaging plugin will use at most %d threads to transcode the tiles", threads);
+    sprintf(info, "The whole-slide imaging plugin will use at most %u threads to transcode the tiles", threads);
     OrthancPluginLogWarning(context_, info);
 
     OrthancPluginSetDescription(context, "Provides a Web viewer of whole-slide microscopic images within Orthanc.");
