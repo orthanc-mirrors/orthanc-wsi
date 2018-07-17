@@ -100,14 +100,15 @@ set(ORTHANC_WSI_SOURCES
   ${ORTHANC_WSI_DIR}/Framework/Inputs/TiledPyramidStatistics.cpp
   ${ORTHANC_WSI_DIR}/Framework/Jpeg2000Reader.cpp
   ${ORTHANC_WSI_DIR}/Framework/Jpeg2000Writer.cpp
-  ${ORTHANC_WSI_DIR}/Framework/Targets/FolderTarget.cpp
-  ${ORTHANC_WSI_DIR}/Framework/Targets/OrthancTarget.cpp
+  ${ORTHANC_WSI_DIR}/Framework/MultiThreading/BagOfTasksProcessor.cpp
   ${ORTHANC_WSI_DIR}/Framework/Outputs/DicomPyramidWriter.cpp
   ${ORTHANC_WSI_DIR}/Framework/Outputs/HierarchicalTiffWriter.cpp
   ${ORTHANC_WSI_DIR}/Framework/Outputs/InMemoryTiledImage.cpp
   ${ORTHANC_WSI_DIR}/Framework/Outputs/MultiframeDicomWriter.cpp
   ${ORTHANC_WSI_DIR}/Framework/Outputs/PyramidWriterBase.cpp
   ${ORTHANC_WSI_DIR}/Framework/Outputs/TruncatedPyramidWriter.cpp
+  ${ORTHANC_WSI_DIR}/Framework/Targets/FolderTarget.cpp
+  ${ORTHANC_WSI_DIR}/Framework/Targets/OrthancTarget.cpp
   )
 
 EmbedResources(

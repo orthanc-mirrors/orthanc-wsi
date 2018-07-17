@@ -22,13 +22,14 @@
 #include "ApplicationToolbox.h"
 
 #include "../Framework/Inputs/OpenSlideLibrary.h"
+#include "../Framework/MultiThreading/BagOfTasksProcessor.h"
 
 #include <Core/DicomParsing/FromDcmtkBridge.h>
 #include <Core/HttpClient.h>
 #include <Core/Logging.h>
-#include <Core/MultiThreading/BagOfTasksProcessor.h>
 #include <Core/OrthancException.h>
 #include <Core/SystemToolbox.h>
+#include <Core/Toolbox.h>
 
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
@@ -63,7 +64,7 @@ namespace OrthancWSI
     void GlobalInitialize()
     {
       Orthanc::Logging::Initialize();
-      Orthanc::HttpClient::InitializeOpenSsl();
+      Orthanc::Toolbox::InitializeOpenSsl();
       Orthanc::HttpClient::GlobalInitialize();
       Orthanc::FromDcmtkBridge::InitializeDictionary(false /* don't load private dictionary */);
       assert(DisplayPerformanceWarning());
@@ -74,7 +75,7 @@ namespace OrthancWSI
     {
       OrthancWSI::OpenSlideLibrary::Finalize();
       Orthanc::HttpClient::GlobalFinalize();
-      Orthanc::HttpClient::FinalizeOpenSsl();
+      Orthanc::Toolbox::FinalizeOpenSsl();
     }
 
 

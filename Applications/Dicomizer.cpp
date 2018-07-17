@@ -29,12 +29,12 @@
 #include "../Framework/Inputs/TiledJpegImage.h"
 #include "../Framework/Inputs/TiledPngImage.h"
 #include "../Framework/Inputs/TiledPyramidStatistics.h"
+#include "../Framework/MultiThreading/BagOfTasksProcessor.h"
 #include "../Framework/Outputs/DicomPyramidWriter.h"
 #include "../Framework/Outputs/TruncatedPyramidWriter.h"
 
 #include <Core/DicomParsing/FromDcmtkBridge.h>
 #include <Core/Logging.h>
-#include <Core/MultiThreading/BagOfTasksProcessor.h>
 #include <Core/OrthancException.h>
 #include <Core/SystemToolbox.h>
 
