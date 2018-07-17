@@ -68,6 +68,7 @@ endif()
 
 add_definitions(
   -DHAS_ORTHANC_EXCEPTION=1
+  -DORTHANC_ENABLE_LOGGING_PLUGIN=1
   )
 
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux" OR
@@ -153,6 +154,7 @@ set(ORTHANC_WSI_SOURCES
   ${ORTHANC_WSI_DIR}/Framework/Inputs/PyramidWithRawTiles.cpp
   ${ORTHANC_WSI_DIR}/Framework/Jpeg2000Reader.cpp
   ${ORTHANC_WSI_DIR}/Framework/Jpeg2000Writer.cpp
+  ${ORTHANC_WSI_DIR}/Framework/Semaphore.cpp
 
   ${ORTHANC_ROOT}/Plugins/Samples/Common/DicomDatasetReader.cpp
   ${ORTHANC_ROOT}/Plugins/Samples/Common/DicomPath.cpp

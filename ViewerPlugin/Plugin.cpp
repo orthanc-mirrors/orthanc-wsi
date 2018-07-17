@@ -23,10 +23,10 @@
 
 #include "DicomPyramidCache.h"
 #include "../Framework/Jpeg2000Reader.h"
+#include "../Framework/Semaphore.h"
 
 #include <Core/Images/ImageProcessing.h>
 #include <Core/Images/PngWriter.h>
-#include <Core/MultiThreading/Semaphore.h>
 #include <Core/OrthancException.h>
 #include <Plugins/Samples/Common/OrthancPluginCppWrapper.h>
 #include <Plugins/Samples/Common/OrthancPluginConnection.h>
@@ -39,7 +39,7 @@ OrthancPluginContext* context_ = NULL;
 
 std::auto_ptr<OrthancPlugins::OrthancPluginConnection>  orthanc_;
 std::auto_ptr<OrthancWSI::DicomPyramidCache>            cache_;
-std::auto_ptr<Orthanc::Semaphore>                       transcoderSemaphore_;
+std::auto_ptr<OrthancWSI::Semaphore>                    transcoderSemaphore_;
 
 
 static void AnswerSparseTile(OrthancPluginRestOutput* output,
@@ -183,7 +183,7 @@ void ServeTile(OrthancPluginRestOutput* output,
   // decompress the raw tile
   std::auto_ptr<Orthanc::ImageAccessor> decoded;
 
-  Orthanc::Semaphore::Locker locker(*transcoderSemaphore_);
+  OrthancWSI::Semaphore::Locker locker(*transcoderSemaphore_);
 
   switch (compression)
   {
@@ -319,7 +319,7 @@ extern "C"
       threads = 1;
     }
     
-    transcoderSemaphore_.reset(new Orthanc::Semaphore(threads));
+    transcoderSemaphore_.reset(new OrthancWSI::Semaphore(threads));
 
     char info[1024];
     sprintf(info, "The whole-slide imaging plugin will use at most %u threads to transcode the tiles", threads);
