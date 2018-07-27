@@ -154,7 +154,6 @@ set(ORTHANC_WSI_SOURCES
   ${ORTHANC_WSI_DIR}/Framework/Inputs/PyramidWithRawTiles.cpp
   ${ORTHANC_WSI_DIR}/Framework/Jpeg2000Reader.cpp
   ${ORTHANC_WSI_DIR}/Framework/Jpeg2000Writer.cpp
-  ${ORTHANC_WSI_DIR}/Framework/Semaphore.cpp
 
   ${ORTHANC_ROOT}/Plugins/Samples/Common/DicomDatasetReader.cpp
   ${ORTHANC_ROOT}/Plugins/Samples/Common/DicomPath.cpp
