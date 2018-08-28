@@ -280,8 +280,8 @@ namespace OrthancWSI
       if (options.count(OPTION_USERNAME) &&
           options.count(OPTION_PASSWORD))
       {
-        parameters.SetUsername(options[OPTION_USERNAME].as<std::string>());
-        parameters.SetPassword(options[OPTION_PASSWORD].as<std::string>());
+        parameters.SetCredentials(options[OPTION_USERNAME].as<std::string>(),
+                                  options[OPTION_PASSWORD].as<std::string>());
       }
 
       if (options.count(OPTION_TIMEOUT))
