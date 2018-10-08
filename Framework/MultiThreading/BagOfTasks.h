@@ -21,37 +21,52 @@
 
 #pragma once
 
-#include "../Framework/MultiThreading/BagOfTasks.h"
+#include "ICommand.h"
 
-#include <Core/WebServiceParameters.h>
+#include <list>
+#include <cstddef>
 
-#include <string>
-#include <stdint.h>
-#include <boost/program_options.hpp>
-
-namespace OrthancWSI
+namespace Orthanc
 {
-  namespace ApplicationToolbox
+  class BagOfTasks : public boost::noncopyable
   {
-    void GlobalInitialize();
+  private:
+    typedef std::list<ICommand*>  Tasks;
 
-    void GlobalFinalize();
+    Tasks  tasks_;
 
-    void Execute(Orthanc::BagOfTasks& tasks,
-                 unsigned int threadsCount);
+  public:
+    ~BagOfTasks()
+    {
+      for (Tasks::iterator it = tasks_.begin(); it != tasks_.end(); ++it)
+      {
+        delete *it;
+      }
+    }
 
-    void ParseColor(uint8_t& red,
-                    uint8_t& green,
-                    uint8_t& blue,
-                    const std::string& color);
+    ICommand* Pop()
+    {
+      ICommand* task = tasks_.front();
+      tasks_.pop_front();
+      return task;
+    }
 
-    void PrintVersion(const char* path);
+    void Push(ICommand* task)   // Takes ownership
+    {
+      if (task != NULL)
+      {
+        tasks_.push_back(task);
+      }
+    }
 
-    void ShowVersionInLog(const char* path);
+    size_t GetSize() const
+    {
+      return tasks_.size();
+    }
 
-    void AddRestApiOptions(boost::program_options::options_description& section);
-
-    void SetupRestApi(Orthanc::WebServiceParameters& parameters,
-                      const boost::program_options::variables_map& options);
-  }
+    bool IsEmpty() const
+    {
+      return tasks_.empty();
+    }
+  };
 }

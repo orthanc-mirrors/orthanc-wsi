@@ -61,9 +61,10 @@ namespace OrthancWSI
         assert(tileY_ * that_.sourceTileHeight_ < that_.levelHeight_);
 
         unsigned int bottom = that_.levelHeight_ - tileY_ * that_.sourceTileHeight_;
-        Orthanc::ImageAccessor a = decoded_->GetRegion(0, bottom, 
-                                                       that_.sourceTileWidth_, 
-                                                       that_.sourceTileHeight_ - bottom);
+        Orthanc::ImageAccessor a;
+        decoded_->GetRegion(a, 0, bottom,
+                            that_.sourceTileWidth_, 
+                            that_.sourceTileHeight_ - bottom);
         ImageToolbox::Set(a, 
                           that_.parameters_.GetBackgroundColorRed(),
                           that_.parameters_.GetBackgroundColorGreen(),
@@ -77,9 +78,10 @@ namespace OrthancWSI
         assert(tileX_ * that_.sourceTileWidth_ < that_.levelWidth_);
 
         unsigned int right = that_.levelWidth_ - tileX_ * that_.sourceTileWidth_;
-        Orthanc::ImageAccessor a = decoded_->GetRegion(right, 0, 
-                                                       that_.sourceTileWidth_ - right, 
-                                                       that_.sourceTileHeight_);
+        Orthanc::ImageAccessor a;
+        decoded_->GetRegion(a, right, 0, 
+                            that_.sourceTileWidth_ - right, 
+                            that_.sourceTileHeight_);
         ImageToolbox::Set(a,
                           that_.parameters_.GetBackgroundColorRed(),
                           that_.parameters_.GetBackgroundColorGreen(),
@@ -283,37 +285,37 @@ namespace OrthancWSI
   }
 
 
-  Orthanc::ImageAccessor PyramidReader::GetDecodedTile(unsigned int tileX,
-                                                       unsigned int tileY)
+  void PyramidReader::GetDecodedTile(Orthanc::ImageAccessor& target,
+                                     unsigned int tileX,
+                                     unsigned int tileY)
   {
     if (tileX * targetTileWidth_ >= levelWidth_ ||
         tileY * targetTileHeight_ >= levelHeight_)
     {
       // Accessing a tile out of the source image
-      return GetOutsideTile();
+      GetOutsideTile().GetReadOnlyAccessor(target);
     }
+    else
+    {
+      SourceTile& source = AccessSourceTile(MapTargetToSourceLocation(tileX, tileY));
+      const Orthanc::ImageAccessor& tile = source.GetDecodedTile();
 
-    SourceTile& source = AccessSourceTile(MapTargetToSourceLocation(tileX, tileY));
-    const Orthanc::ImageAccessor& tile = source.GetDecodedTile();
+      CheckTileSize(tile);
 
-    CheckTileSize(tile);
+      assert(sourceTileWidth_ % targetTileWidth_ == 0 &&
+             sourceTileHeight_ % targetTileHeight_ == 0);
 
-    assert(sourceTileWidth_ % targetTileWidth_ == 0 &&
-           sourceTileHeight_ % targetTileHeight_ == 0);
+      unsigned int xx = tileX % (sourceTileWidth_ / targetTileWidth_);
+      unsigned int yy = tileY % (sourceTileHeight_ / targetTileHeight_);
 
-    unsigned int xx = tileX % (sourceTileWidth_ / targetTileWidth_);
-    unsigned int yy = tileY % (sourceTileHeight_ / targetTileHeight_);
+      const uint8_t* bytes = 
+        reinterpret_cast<const uint8_t*>(tile.GetConstRow(yy * targetTileHeight_)) +
+        GetBytesPerPixel(tile.GetFormat()) * xx * targetTileWidth_;
 
-    const uint8_t* bytes = 
-      reinterpret_cast<const uint8_t*>(tile.GetConstRow(yy * targetTileHeight_)) +
-      GetBytesPerPixel(tile.GetFormat()) * xx * targetTileWidth_;
-
-    Orthanc::ImageAccessor region;
-    region.AssignReadOnly(tile.GetFormat(),
-                          targetTileWidth_,
-                          targetTileHeight_,
-                          tile.GetPitch(), bytes);                                    
-
-    return region;
+      target.AssignReadOnly(tile.GetFormat(),
+                            targetTileWidth_,
+                            targetTileHeight_,
+                            tile.GetPitch(), bytes);                                    
+    }
   }
 }

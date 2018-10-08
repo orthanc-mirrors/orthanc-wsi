@@ -73,7 +73,8 @@ namespace OrthancWSI
         }
         else
         {
-          Orthanc::ImageAccessor tile = source_.GetDecodedTile(x, y);
+          Orthanc::ImageAccessor tile;
+          source_.GetDecodedTile(tile, x, y);
 
           // Re-encoding the file
           target_.EncodeTile(tile, level_, x, y);

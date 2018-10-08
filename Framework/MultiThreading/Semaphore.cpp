@@ -19,39 +19,32 @@
  **/
 
 
-#pragma once
+#include "Semaphore.h"
 
-#include "../Framework/MultiThreading/BagOfTasks.h"
-
-#include <Core/WebServiceParameters.h>
-
-#include <string>
-#include <stdint.h>
-#include <boost/program_options.hpp>
 
 namespace OrthancWSI
 {
-  namespace ApplicationToolbox
+  Semaphore::Semaphore(unsigned int count) : count_(count)
   {
-    void GlobalInitialize();
+  }
 
-    void GlobalFinalize();
+  void Semaphore::Release()
+  {
+    boost::mutex::scoped_lock lock(mutex_);
 
-    void Execute(Orthanc::BagOfTasks& tasks,
-                 unsigned int threadsCount);
+    count_++;
+    condition_.notify_one(); 
+  }
 
-    void ParseColor(uint8_t& red,
-                    uint8_t& green,
-                    uint8_t& blue,
-                    const std::string& color);
+  void Semaphore::Acquire()
+  {
+    boost::mutex::scoped_lock lock(mutex_);
 
-    void PrintVersion(const char* path);
+    while (count_ == 0)
+    {
+      condition_.wait(lock);
+    }
 
-    void ShowVersionInLog(const char* path);
-
-    void AddRestApiOptions(boost::program_options::options_description& section);
-
-    void SetupRestApi(Orthanc::WebServiceParameters& parameters,
-                      const boost::program_options::variables_map& options);
+    count_++;
   }
 }

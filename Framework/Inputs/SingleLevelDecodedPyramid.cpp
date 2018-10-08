@@ -32,7 +32,8 @@ namespace OrthancWSI
                                              unsigned int x,
                                              unsigned int y)
   {
-    Orthanc::ImageAccessor region = image_.GetRegion(x, y, target.GetWidth(), target.GetHeight());
+    Orthanc::ImageAccessor region;
+    image_.GetRegion(region, x, y, target.GetWidth(), target.GetHeight());
     ImageToolbox::Copy(target, region);
   }
 

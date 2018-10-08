@@ -68,8 +68,10 @@ namespace OrthancWSI
       unsigned int h = std::min(source.GetHeight(), target.GetHeight() - y);
       unsigned int w = std::min(source.GetWidth(), target.GetWidth() - x);
 
-      Orthanc::ImageAccessor targetRegion = target.GetRegion(x, y, w, h);
-      Orthanc::ImageAccessor sourceRegion = source.GetRegion(0, 0, w, h);
+      Orthanc::ImageAccessor targetRegion, sourceRegion;
+      target.GetRegion(targetRegion, x, y, w, h);
+      source.GetRegion(sourceRegion, 0, 0, w, h);
+      
       Orthanc::ImageProcessing::Copy(targetRegion, sourceRegion);
     }
 

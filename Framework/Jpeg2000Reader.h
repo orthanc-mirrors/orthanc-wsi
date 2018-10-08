@@ -33,9 +33,7 @@ namespace OrthancWSI
     Jpeg2000Format_Unknown
   };
 
-  class Jpeg2000Reader : 
-    public Orthanc::ImageAccessor,
-    public boost::noncopyable
+  class Jpeg2000Reader : public Orthanc::ImageAccessor
   {
   private:
     std::auto_ptr<Orthanc::ImageAccessor> image_;

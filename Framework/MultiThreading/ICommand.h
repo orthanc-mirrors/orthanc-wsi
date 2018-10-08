@@ -21,37 +21,17 @@
 
 #pragma once
 
-#include "../Framework/MultiThreading/BagOfTasks.h"
+#include <Core/IDynamicObject.h>
 
-#include <Core/WebServiceParameters.h>
-
-#include <string>
-#include <stdint.h>
-#include <boost/program_options.hpp>
-
-namespace OrthancWSI
+namespace Orthanc
 {
-  namespace ApplicationToolbox
+  /**
+   * This class is the base class for the "Command" design pattern.
+   * http://en.wikipedia.org/wiki/Command_pattern
+   **/
+  class ICommand : public IDynamicObject
   {
-    void GlobalInitialize();
-
-    void GlobalFinalize();
-
-    void Execute(Orthanc::BagOfTasks& tasks,
-                 unsigned int threadsCount);
-
-    void ParseColor(uint8_t& red,
-                    uint8_t& green,
-                    uint8_t& blue,
-                    const std::string& color);
-
-    void PrintVersion(const char* path);
-
-    void ShowVersionInLog(const char* path);
-
-    void AddRestApiOptions(boost::program_options::options_description& section);
-
-    void SetupRestApi(Orthanc::WebServiceParameters& parameters,
-                      const boost::program_options::variables_map& options);
-  }
+  public:
+    virtual bool Execute() = 0;
+  };
 }

@@ -23,7 +23,7 @@
 
 #include "PyramidReader.h"
 #include "../Outputs/IPyramidWriter.h"
-#include <Core/MultiThreading/BagOfTasks.h>
+#include "../MultiThreading/BagOfTasks.h"
 
 
 namespace OrthancWSI

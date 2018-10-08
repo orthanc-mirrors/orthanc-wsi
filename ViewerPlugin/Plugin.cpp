@@ -23,7 +23,9 @@
 
 #include "DicomPyramidCache.h"
 #include "../Framework/Jpeg2000Reader.h"
+#include "../Framework/MultiThreading/Semaphore.h"
 
+#include <Core/Logging.h>
 #include <Core/Images/ImageProcessing.h>
 #include <Core/Images/PngWriter.h>
 #include <Core/MultiThreading/Semaphore.h>
@@ -309,6 +311,8 @@ extern "C"
       // We need the "/instances/.../frames/.../raw" URI that was introduced in Orthanc 1.1.0
       return -1;
     }
+
+    Orthanc::Logging::Initialize(context);
 
     // Limit the number of PNG transcoders to the number of available
     // hardware threads (e.g. number of CPUs or cores or

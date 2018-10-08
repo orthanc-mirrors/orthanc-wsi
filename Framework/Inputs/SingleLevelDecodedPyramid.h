@@ -35,7 +35,7 @@ namespace OrthancWSI
   protected:
     void SetImage(const Orthanc::ImageAccessor& image)
     {
-      image_ = image;
+      image.GetReadOnlyAccessor(image_);
     }
 
     virtual void ReadRegion(Orthanc::ImageAccessor& target,

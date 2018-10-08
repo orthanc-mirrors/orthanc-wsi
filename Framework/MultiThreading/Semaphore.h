@@ -21,37 +21,41 @@
 
 #pragma once
 
-#include "../Framework/MultiThreading/BagOfTasks.h"
-
-#include <Core/WebServiceParameters.h>
-
-#include <string>
-#include <stdint.h>
-#include <boost/program_options.hpp>
+#include <boost/noncopyable.hpp>
+#include <boost/thread.hpp>
 
 namespace OrthancWSI
 {
-  namespace ApplicationToolbox
+  class Semaphore : public boost::noncopyable
   {
-    void GlobalInitialize();
+  private:
+    unsigned int count_;
+    boost::mutex mutex_;
+    boost::condition_variable condition_;
 
-    void GlobalFinalize();
+  public:
+    explicit Semaphore(unsigned int count);
 
-    void Execute(Orthanc::BagOfTasks& tasks,
-                 unsigned int threadsCount);
+    void Release();
 
-    void ParseColor(uint8_t& red,
-                    uint8_t& green,
-                    uint8_t& blue,
-                    const std::string& color);
+    void Acquire();
 
-    void PrintVersion(const char* path);
+    class Locker : public boost::noncopyable
+    {
+    private:
+      Semaphore&  that_;
 
-    void ShowVersionInLog(const char* path);
+    public:
+      explicit Locker(Semaphore& that) :
+        that_(that)
+      {
+        that_.Acquire();
+      }
 
-    void AddRestApiOptions(boost::program_options::options_description& section);
-
-    void SetupRestApi(Orthanc::WebServiceParameters& parameters,
-                      const boost::program_options::variables_map& options);
-  }
+      ~Locker()
+      {
+        that_.Release();
+      }
+    };
+  };
 }

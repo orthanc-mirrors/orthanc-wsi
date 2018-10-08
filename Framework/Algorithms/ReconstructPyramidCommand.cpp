@@ -50,7 +50,8 @@ namespace OrthancWSI
 
     if (level == 0)
     {
-      result.reset(new Orthanc::ImageAccessor(source_.GetDecodedTile(x, y)));
+      result.reset(new Orthanc::ImageAccessor);
+      source_.GetDecodedTile(*result, x, y);
 
       ImageCompression compression;
       const std::string* rawTile = source_.GetRawTile(compression, x, y);

@@ -117,7 +117,9 @@ namespace OrthancWSI
       Tiles::const_iterator it = tiles_.find(std::make_pair(tileX, tileY));
       if (it != tiles_.end())
       {
-        return new Orthanc::ImageAccessor(*it->second);
+        std::auto_ptr<Orthanc::ImageAccessor> result(new Orthanc::ImageAccessor);
+        it->second->GetReadOnlyAccessor(*result);
+        return result.release();
       }
       else
       {
