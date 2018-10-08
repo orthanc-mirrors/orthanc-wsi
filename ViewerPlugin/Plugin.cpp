@@ -23,7 +23,6 @@
 
 #include "DicomPyramidCache.h"
 #include "../Framework/Jpeg2000Reader.h"
-#include "../Framework/MultiThreading/Semaphore.h"
 
 #include <Core/Logging.h>
 #include <Core/Images/ImageProcessing.h>
