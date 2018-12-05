@@ -37,8 +37,6 @@
 
 #include <cassert>
 
-OrthancPluginContext* context_ = NULL;
-
 std::auto_ptr<OrthancPlugins::OrthancPluginConnection>  orthanc_;
 std::auto_ptr<OrthancWSI::DicomPyramidCache>            cache_;
 std::auto_ptr<Orthanc::Semaphore>                       transcoderSemaphore_;
@@ -57,7 +55,8 @@ static void AnswerSparseTile(OrthancPluginRestOutput* output,
   Orthanc::ImageProcessing::Set(tile, red, green, blue, 255);
 
   // TODO Cache the tile
-  OrthancPluginCompressAndAnswerPngImage(context_, output, OrthancPluginPixelFormat_RGB24, 
+  OrthancPluginCompressAndAnswerPngImage(OrthancPlugins::GetGlobalContext(),
+                                         output, OrthancPluginPixelFormat_RGB24, 
                                          tile.GetWidth(), tile.GetHeight(), 
                                          tile.GetPitch(), tile.GetBuffer());
 }
@@ -66,7 +65,7 @@ static void AnswerSparseTile(OrthancPluginRestOutput* output,
 static bool DisplayPerformanceWarning()
 {
   (void) DisplayPerformanceWarning;   // Disable warning about unused function
-  OrthancPluginLogWarning(context_, "Performance warning in whole-slide imaging: "
+  OrthancPluginLogWarning(OrthancPlugins::GetGlobalContext(), "Performance warning in whole-slide imaging: "
                           "Non-release build, runtime debug assertions are turned on");
   return true;
 }
@@ -80,7 +79,7 @@ void ServePyramid(OrthancPluginRestOutput* output,
 
   char tmp[1024];
   sprintf(tmp, "Accessing whole-slide pyramid of series %s", seriesId.c_str());
-  OrthancPluginLogInfo(context_, tmp);
+  OrthancPluginLogInfo(OrthancPlugins::GetGlobalContext(), tmp);
   
 
   OrthancWSI::DicomPyramidCache::Locker locker(*cache_, seriesId);
@@ -122,7 +121,7 @@ void ServePyramid(OrthancPluginRestOutput* output,
   result["TotalWidth"] = totalWidth;
 
   std::string s = result.toStyledString();
-  OrthancPluginAnswerBuffer(context_, output, s.c_str(), s.size(), "application/json");
+  OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, s.c_str(), s.size(), "application/json");
 }
 
 
@@ -137,7 +136,7 @@ void ServeTile(OrthancPluginRestOutput* output,
 
   char tmp[1024];
   sprintf(tmp, "Accessing tile in series %s: (%d,%d) at level %d", seriesId.c_str(), tileX, tileY, level);
-  OrthancPluginLogInfo(context_, tmp);
+  OrthancPluginLogInfo(OrthancPlugins::GetGlobalContext(), tmp);
   
   if (level < 0 ||
       tileX < 0 ||
@@ -176,7 +175,7 @@ void ServeTile(OrthancPluginRestOutput* output,
 
   if (compression == OrthancWSI::ImageCompression_Jpeg)
   {
-    OrthancPluginAnswerBuffer(context_, output, tile.c_str(), tile.size(), "image/jpeg");
+    OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, tile.c_str(), tile.size(), "image/jpeg");
     return;   // We're done
   }
 
@@ -220,7 +219,7 @@ void ServeTile(OrthancPluginRestOutput* output,
   Orthanc::PngWriter writer;
   writer.WriteToMemory(png, *decoded);
 
-  OrthancPluginAnswerBuffer(context_, output, png.c_str(), png.size(), "image/png");
+  OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, png.c_str(), png.size(), "image/png");
 }
 
 
@@ -233,7 +232,7 @@ OrthancPluginErrorCode OnChangeCallback(OrthancPluginChangeType changeType,
   { 
     char tmp[1024];
     sprintf(tmp, "New instance has been added to series %s, invalidating it", resourceId);
-    OrthancPluginLogInfo(context_, tmp);
+    OrthancPluginLogInfo(OrthancPlugins::GetGlobalContext(), tmp);
 
     cache_->Invalidate(resourceId);
   }
@@ -280,7 +279,7 @@ void ServeFile(OrthancPluginRestOutput* output,
   std::string content;
   Orthanc::EmbeddedResources::GetFileResource(content, resource);
 
-  OrthancPluginAnswerBuffer(context_, output, content.c_str(), content.size(), mime.c_str());
+  OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, content.c_str(), content.size(), mime.c_str());
 }
 
 
@@ -289,23 +288,23 @@ extern "C"
 {
   ORTHANC_PLUGINS_API int32_t OrthancPluginInitialize(OrthancPluginContext* context)
   {
-    context_ = context;
+    OrthancPlugins::SetGlobalContext(context);
     assert(DisplayPerformanceWarning());
 
     /* Check the version of the Orthanc core */
-    if (OrthancPluginCheckVersion(context_) == 0)
+    if (OrthancPluginCheckVersion(OrthancPlugins::GetGlobalContext()) == 0)
     {
       char info[1024];
       sprintf(info, "Your version of Orthanc (%s) must be above %d.%d.%d to run this plugin",
-              context_->orthancVersion,
+              OrthancPlugins::GetGlobalContext()->orthancVersion,
               ORTHANC_PLUGINS_MINIMAL_MAJOR_NUMBER,
               ORTHANC_PLUGINS_MINIMAL_MINOR_NUMBER,
               ORTHANC_PLUGINS_MINIMAL_REVISION_NUMBER);
-      OrthancPluginLogError(context_, info);
+      OrthancPluginLogError(OrthancPlugins::GetGlobalContext(), info);
       return -1;
     }
 
-    if (!OrthancPlugins::CheckMinimalOrthancVersion(context_, 1, 1, 0))
+    if (!OrthancPlugins::CheckMinimalOrthancVersion(1, 1, 0))
     {
       // We need the "/instances/.../frames/.../raw" URI that was introduced in Orthanc 1.1.0
       return -1;
@@ -321,26 +320,26 @@ extern "C"
 
     char info[1024];
     sprintf(info, "The whole-slide imaging plugin will use at most %u threads to transcode the tiles", threads);
-    OrthancPluginLogWarning(context_, info);
+    OrthancPluginLogWarning(OrthancPlugins::GetGlobalContext(), info);
 
     OrthancPluginSetDescription(context, "Provides a Web viewer of whole-slide microscopic images within Orthanc.");
 
-    orthanc_.reset(new OrthancPlugins::OrthancPluginConnection(context));
+    orthanc_.reset(new OrthancPlugins::OrthancPluginConnection);
     cache_.reset(new OrthancWSI::DicomPyramidCache(*orthanc_, 10 /* Number of pyramids to be cached - TODO parameter */));
 
-    OrthancPluginRegisterOnChangeCallback(context_, OnChangeCallback);
+    OrthancPluginRegisterOnChangeCallback(OrthancPlugins::GetGlobalContext(), OnChangeCallback);
 
-    OrthancPlugins::RegisterRestCallback<ServeFile>(context, "/wsi/app/(ol.css)", true);
-    OrthancPlugins::RegisterRestCallback<ServeFile>(context, "/wsi/app/(ol.js)", true);
-    OrthancPlugins::RegisterRestCallback<ServeFile>(context, "/wsi/app/(viewer.html)", true);
-    OrthancPlugins::RegisterRestCallback<ServeFile>(context, "/wsi/app/(viewer.js)", true);
-    OrthancPlugins::RegisterRestCallback<ServePyramid>(context, "/wsi/pyramids/([0-9a-f-]+)", true);
-    OrthancPlugins::RegisterRestCallback<ServeTile>(context, "/wsi/tiles/([0-9a-f-]+)/([0-9-]+)/([0-9-]+)/([0-9-]+)", true);
+    OrthancPlugins::RegisterRestCallback<ServeFile>("/wsi/app/(ol.css)", true);
+    OrthancPlugins::RegisterRestCallback<ServeFile>("/wsi/app/(ol.js)", true);
+    OrthancPlugins::RegisterRestCallback<ServeFile>("/wsi/app/(viewer.html)", true);
+    OrthancPlugins::RegisterRestCallback<ServeFile>("/wsi/app/(viewer.js)", true);
+    OrthancPlugins::RegisterRestCallback<ServePyramid>("/wsi/pyramids/([0-9a-f-]+)", true);
+    OrthancPlugins::RegisterRestCallback<ServeTile>("/wsi/tiles/([0-9a-f-]+)/([0-9-]+)/([0-9-]+)/([0-9-]+)", true);
 
     // Extend the default Orthanc Explorer with custom JavaScript for WSI
     std::string explorer;
     Orthanc::EmbeddedResources::GetFileResource(explorer, Orthanc::EmbeddedResources::ORTHANC_EXPLORER);
-    OrthancPluginExtendOrthancExplorer(context_, explorer.c_str());
+    OrthancPluginExtendOrthancExplorer(OrthancPlugins::GetGlobalContext(), explorer.c_str());
 
     return 0;
   }
