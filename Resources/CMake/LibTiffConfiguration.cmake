@@ -1,6 +1,6 @@
 if (STATIC_BUILD OR NOT USE_SYSTEM_LIBTIFF)
   SET(LIBTIFF_SOURCES_DIR ${CMAKE_BINARY_DIR}/tiff-4.0.6)
-  SET(LIBTIFF_URL "http://www.orthanc-server.com/downloads/third-party/WSI/tiff-4.0.6.tar.gz")
+  SET(LIBTIFF_URL "http://orthanc.osimis.io/ThirdPartyDownloads/tiff-4.0.6.tar.gz")
   SET(LIBTIFF_MD5 "d1d2e940dea0b5ad435f21f03d96dd72")
 
   DownloadPackage(${LIBTIFF_MD5} ${LIBTIFF_URL} "${LIBTIFF_SOURCES_DIR}")

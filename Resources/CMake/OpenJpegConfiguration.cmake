@@ -1,6 +1,6 @@
 if (STATIC_BUILD OR NOT USE_SYSTEM_OPENJPEG)
   SET(OPENJPEG_SOURCES_DIR ${CMAKE_BINARY_DIR}/openjpeg-version.2.1)
-  SET(OPENJPEG_URL "http://www.orthanc-server.com/downloads/third-party/openjpeg-2.1.tar.gz")
+  SET(OPENJPEG_URL "http://orthanc.osimis.io/ThirdPartyDownloads/openjpeg-2.1.tar.gz")
   SET(OPENJPEG_MD5 "3e1c451c087f8462955426da38aa3b3d")
 
   if (IS_DIRECTORY "${OPENJPEG_SOURCES_DIR}")
