@@ -208,7 +208,7 @@ static void Run(OrthancWSI::ITiledPyramid& source,
 
   for (unsigned int level = 0; level < source.GetLevelCount(); level++)
   {
-    LOG(WARNING) << std::string(reencode ? "Reencoding" : "Transcoding")
+    LOG(WARNING) << std::string(reencode ? "Re-encoding" : "Transcoding")
                  << " level " << level;
 
     unsigned int countX = OrthancWSI::CeilingDivision
