@@ -1,6 +1,10 @@
 Pending changes in the mainline
 ===============================
 
+
+Version 0.6 (2019-01-26)
+========================
+
 * Fix compatibility with the Orthanc 1.5.2 framework
 
 
