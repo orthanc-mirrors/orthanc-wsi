@@ -46,7 +46,8 @@ namespace OrthancWSI
     unsigned int              nextX_;
     unsigned int              nextY_;
     bool                      isFirst_;
- 
+    Orthanc::PhotometricInterpretation  photometric_;
+    
     void Close()
     {
       TIFFClose(tiff_);
@@ -78,7 +79,8 @@ namespace OrthancWSI
                            Orthanc::PixelFormat pixelFormat, 
                            ImageCompression compression,
                            unsigned int tileWidth,
-                           unsigned int tileHeight);
+                           unsigned int tileHeight,
+                           Orthanc::PhotometricInterpretation photometric);
 
     virtual ~HierarchicalTiffWriter();
 

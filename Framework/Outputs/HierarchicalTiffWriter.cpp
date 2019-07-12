@@ -266,12 +266,29 @@ namespace OrthancWSI
       case Orthanc::PixelFormat_RGB24:
       {
         uint16_t samplesPerPixel = 3;
-        uint16_t photometric = PHOTOMETRIC_YCBCR;
+        uint16_t photometric;
         uint16_t planar = PLANARCONFIG_CONTIG;   // Interleaved RGB
         uint16_t bpp = 8;
         uint16_t subsampleHorizontal = 2;
         uint16_t subsampleVertical = 2;
 
+        switch (photometric_)
+        {
+          case Orthanc::PhotometricInterpretation_YBRFull422:
+            photometric = PHOTOMETRIC_YCBCR;
+            break;
+
+          case Orthanc::PhotometricInterpretation_RGB:
+            photometric = PHOTOMETRIC_RGB;
+            break;
+
+          default:
+            throw Orthanc::OrthancException(
+              Orthanc::ErrorCode_ParameterOutOfRange,
+              "Unsupported photometric interpreation: " +
+              std::string(Orthanc::EnumerationToString(photometric_)));
+        }
+  
         if (TIFFSetField(tiff_, TIFFTAG_SAMPLESPERPIXEL, samplesPerPixel) != 1 ||
             TIFFSetField(tiff_, TIFFTAG_PHOTOMETRIC, photometric) != 1 ||
             TIFFSetField(tiff_, TIFFTAG_BITSPERSAMPLE, bpp) != 1 ||
@@ -383,12 +400,14 @@ namespace OrthancWSI
                                                  Orthanc::PixelFormat pixelFormat, 
                                                  ImageCompression compression,
                                                  unsigned int tileWidth,
-                                                 unsigned int tileHeight) :
+                                                 unsigned int tileHeight,
+                                                 Orthanc::PhotometricInterpretation photometric) :
     PyramidWriterBase(pixelFormat, compression, tileWidth, tileHeight),
     currentLevel_(0),
     nextX_(0),
     nextY_(0),
-    isFirst_(true)
+    isFirst_(true),
+    photometric_(photometric)
   {
     tiff_ = TIFFOpen(path.c_str(), "w");
     if (tiff_ == NULL)

@@ -140,7 +140,7 @@ namespace OrthancWSI
       {
         writer = new MultiframeDicomWriter
           (dataset_, GetImageCompression(), GetPixelFormat(), level.width_, level.height_, 
-           GetTileWidth(), GetTileHeight());
+           GetTileWidth(), GetTileHeight(), photometric_);
         writers_[z] = writer;
       }
 
@@ -166,14 +166,16 @@ namespace OrthancWSI
                                          unsigned int tileWidth,
                                          unsigned int tileHeight,
                                          size_t maxSize,   // If "0", no automatic flushing
-                                         const ImagedVolumeParameters&  volume) :
+                                         const ImagedVolumeParameters&  volume,
+                                         Orthanc::PhotometricInterpretation photometric) :
     PyramidWriterBase(pixelFormat, compression, tileWidth, tileHeight),
     target_(target),
     dataset_(dataset),
     maxSize_(maxSize),
     countTiles_(0),
     countInstances_(0),
-    volume_(volume)
+    volume_(volume),
+    photometric_(photometric)
   {
   }
 

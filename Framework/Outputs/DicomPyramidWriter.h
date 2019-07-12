@@ -39,8 +39,9 @@ namespace OrthancWSI
     size_t             maxSize_;
     size_t             countTiles_;
     unsigned int       countInstances_;
-
-    const ImagedVolumeParameters&  volume_;
+      
+    const ImagedVolumeParameters&       volume_;
+    Orthanc::PhotometricInterpretation  photometric_;
 
     void FlushInternal(MultiframeDicomWriter& writer,
                        bool force);
@@ -70,7 +71,8 @@ namespace OrthancWSI
                        unsigned int tileWidth,
                        unsigned int tileHeight,
                        size_t maxSize,   // If "0", no automatic flushing
-                       const ImagedVolumeParameters&  volume);
+                       const ImagedVolumeParameters&  volume,
+                       Orthanc::PhotometricInterpretation photometric);
 
     virtual ~DicomPyramidWriter();
 

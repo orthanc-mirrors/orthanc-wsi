@@ -147,7 +147,8 @@ namespace OrthancWSI
                                                unsigned int width,
                                                unsigned int height,
                                                unsigned int tileWidth,
-                                               unsigned int tileHeight) :
+                                               unsigned int tileHeight,
+                                               Orthanc::PhotometricInterpretation photometric) :
     compression_(compression),
     width_(width),
     height_(height)
@@ -187,28 +188,18 @@ namespace OrthancWSI
     DicomToolbox::SetUint16Tag(sharedTags_, DCM_BitsStored, 8);
     DicomToolbox::SetUint16Tag(sharedTags_, DCM_HighBit, 7);
     DicomToolbox::SetUint16Tag(sharedTags_, DCM_PixelRepresentation, 0);   // Unsigned values
+    DicomToolbox::SetStringTag(sharedTags_, DCM_PhotometricInterpretation, Orthanc::EnumerationToString(photometric));
 
     switch (pixelFormat)
     {
       case Orthanc::PixelFormat_RGB24:
         uncompressedFrameSize_ = 3 * tileWidth * tileHeight;
         DicomToolbox::SetUint16Tag(sharedTags_, DCM_SamplesPerPixel, 3);
-
-        if (compression_ == ImageCompression_Jpeg)
-        {
-          DicomToolbox::SetStringTag(sharedTags_, DCM_PhotometricInterpretation, "YBR_FULL_422");
-        }
-        else
-        {
-          DicomToolbox::SetStringTag(sharedTags_, DCM_PhotometricInterpretation, "RGB");
-        }
-
         break;
 
       case Orthanc::PixelFormat_Grayscale8:
         uncompressedFrameSize_ = tileWidth * tileHeight;
         DicomToolbox::SetUint16Tag(sharedTags_, DCM_SamplesPerPixel, 1);
-        DicomToolbox::SetStringTag(sharedTags_, DCM_PhotometricInterpretation, "MONOCHROME2");
         break;
 
       default:

@@ -22,10 +22,7 @@
 #include "../PrecompiledHeadersWSI.h"
 #include "PyramidWithRawTiles.h"
 
-#include <Core/Images/PngReader.h>
-#include <Core/Images/JpegReader.h>
-#include <Core/OrthancException.h>
-#include "../Jpeg2000Reader.h"
+#include "../ImageToolbox.h"
 
 namespace OrthancWSI
 {
@@ -40,39 +37,13 @@ namespace OrthancWSI
     {
       return NULL;
     }
-
-    std::auto_ptr<Orthanc::ImageAccessor> result;
-
-    switch (compression)
+    else if (compression == ImageCompression_None)
     {
-      case ImageCompression_None:
-        result.reset(new Orthanc::ImageAccessor);
-        result->AssignReadOnly(GetPixelFormat(), 
-                               GetTileWidth(),
-                               GetTileHeight(), 
-                               GetBytesPerPixel(GetPixelFormat()) * GetTileWidth(),
-                               tile.c_str());
-        break;
-
-      case ImageCompression_Jpeg:
-        result.reset(new Orthanc::JpegReader);
-        dynamic_cast<Orthanc::JpegReader&>(*result).ReadFromMemory(tile);
-        break;
-
-      case ImageCompression_Png:
-        result.reset(new Orthanc::PngReader);
-        dynamic_cast<Orthanc::PngReader&>(*result).ReadFromMemory(tile);
-        break;
-
-      case ImageCompression_Jpeg2000:
-        result.reset(new Jpeg2000Reader);
-        dynamic_cast<Jpeg2000Reader&>(*result).ReadFromMemory(tile);
-        break;
-
-      default:
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
+      return ImageToolbox::DecodeRawTile(tile, GetPixelFormat(), GetTileWidth(), GetTileHeight());
     }
-
-    return result.release();
+    else
+    {
+      return ImageToolbox::DecodeTile(tile, compression);
+    }
   }
 }

@@ -54,6 +54,11 @@ namespace OrthancWSI
     Orthanc::ImageAccessor* DecodeTile(const std::string& source,
                                        ImageCompression compression);
     
+    Orthanc::ImageAccessor* DecodeRawTile(const std::string& source,
+                                          Orthanc::PixelFormat format,
+                                          unsigned int width,
+                                          unsigned int height);
+    
     void EncodeTile(std::string& target,
                     const Orthanc::ImageAccessor& source,
                     ImageCompression compression,

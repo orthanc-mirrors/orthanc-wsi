@@ -156,12 +156,6 @@ namespace OrthancWSI
   unsigned int DicomizerParameters::GetPyramidLevelsCount(const IPyramidWriter& target,
                                                           const ITiledPyramid& source) const
   {
-    if (!reconstructPyramid_)
-    {
-      // Only makes sense if reconstructing the pyramid
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
-    }
-
     if (pyramidLevelsCount_ != 0)
     {
       return pyramidLevelsCount_;
@@ -205,12 +199,6 @@ namespace OrthancWSI
   unsigned int DicomizerParameters::GetPyramidLowerLevelsCount(const IPyramidWriter& target,
                                                                const ITiledPyramid& source) const
   {
-    if (!reconstructPyramid_)
-    {
-      // Only makes sense if reconstructing the pyramid
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
-    }
-
     if (pyramidLowerLevelsCount_ != 0)
     {
       return pyramidLowerLevelsCount_;

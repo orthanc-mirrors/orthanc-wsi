@@ -63,7 +63,8 @@ namespace OrthancWSI
                           unsigned int width,
                           unsigned int height,
                           unsigned int tileWidth,
-                          unsigned int tileHeight);
+                          unsigned int tileHeight,
+                          Orthanc::PhotometricInterpretation photometric);
 
     void AddFrame(const std::string& frame,
                   DcmItem* functionalGroup);   // This takes the ownership

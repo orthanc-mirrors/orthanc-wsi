@@ -183,19 +183,35 @@ static Orthanc::ImageAccessor* CreateEmptyTile(const OrthancWSI::IPyramidWriter&
 static void Run(OrthancWSI::ITiledPyramid& source,
                 const boost::program_options::variables_map& options)
 {
-  OrthancWSI::HierarchicalTiffWriter target(options[OPTION_OUTPUT].as<std::string>(),
-                                            source.GetPixelFormat(), 
-                                            OrthancWSI::ImageCompression_Jpeg,
-                                            source.GetTileWidth(), 
-                                            source.GetTileHeight());
-
   bool reencode = (options.count(OPTION_REENCODE) &&
                    options[OPTION_REENCODE].as<bool>());
+
+  Orthanc::PhotometricInterpretation targetPhotometric;
+
+  if (reencode)
+  {
+    // The DicomToTiff tool only creates TIFF images with JPEG tiles (*)
+    targetPhotometric = Orthanc::PhotometricInterpretation_YBRFull422;
+  }
+  else
+  {
+    targetPhotometric = source.GetPhotometricInterpretation();
+  }
+
+  OrthancWSI::HierarchicalTiffWriter target(options[OPTION_OUTPUT].as<std::string>(),
+                                            source.GetPixelFormat(), 
+                                            OrthancWSI::ImageCompression_Jpeg,  // (*)
+                                            source.GetTileWidth(), 
+                                            source.GetTileHeight(),
+                                            targetPhotometric);
 
   if (options.count(OPTION_JPEG_QUALITY))
   {
     target.SetJpegQuality(options[OPTION_JPEG_QUALITY].as<int>());
   }
+
+  LOG(WARNING) << "Source photometric interpretation: " << EnumerationToString(source.GetPhotometricInterpretation());
+  LOG(WARNING) << "Target photometric interpretation: " << EnumerationToString(targetPhotometric);
 
   std::auto_ptr<Orthanc::ImageAccessor> empty(CreateEmptyTile(target, options));
 
@@ -226,15 +242,31 @@ static void Run(OrthancWSI::ITiledPyramid& source,
         bool missing = false;
         bool success = true;
 
-        // Give a first try to get the raw tile
         std::string tile;
         OrthancWSI::ImageCompression compression;
+
         if (source.ReadRawTile(tile, compression, level, tileX, tileY))
         {
-          if (reencode ||
-              compression == OrthancWSI::ImageCompression_Jpeg)
+          if (compression == OrthancWSI::ImageCompression_Jpeg)
           {
+            // Transcoding of JPEG tiles
             target.WriteRawTile(tile, compression, level, tileX, tileY);
+          }
+          else if (reencode)
+          {
+            std::auto_ptr<Orthanc::ImageAccessor> decoded;
+
+            if (compression == OrthancWSI::ImageCompression_None)
+            {
+              decoded.reset(OrthancWSI::ImageToolbox::DecodeRawTile(tile, source.GetPixelFormat(),
+                                                                    source.GetTileWidth(), source.GetTileHeight()));
+            }
+            else
+            {
+              decoded.reset(OrthancWSI::ImageToolbox::DecodeTile(tile, compression));
+            }
+                
+            target.EncodeTile(*decoded, level, tileX, tileY);
           }
           else
           {
@@ -243,23 +275,8 @@ static void Run(OrthancWSI::ITiledPyramid& source,
         }
         else
         {
-          // Give a second try to get the decoded tile
-          compression = OrthancWSI::ImageCompression_Unknown;
-
-          std::auto_ptr<Orthanc::ImageAccessor> tile(source.DecodeTile(level, tileX, tileY));
-          if (tile.get() == NULL)
-          {
-            // Unable to read the raw tile or to decode it: The tile is missing (sparse tiling)
-            missing = true;
-          }
-          else if (reencode)
-          {
-            target.EncodeTile(*empty, level, tileX, tileY);
-          }
-          else
-          {
-            success = false;  // Re-encoding is mandatory
-          }
+          // Unable to read the raw tile: The tile is missing (sparse tiling)
+          missing = true;
         }
 
         if (!success)

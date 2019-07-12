@@ -84,6 +84,8 @@ static void TranscodePyramid(OrthancWSI::PyramidWriterBase& target,
                              OrthancWSI::ITiledPyramid& source,
                              const OrthancWSI::DicomizerParameters& parameters)
 {
+  LOG(WARNING) << "Transcoding the source pyramid (not re-encoding)";
+
   Orthanc::BagOfTasks tasks;
 
   for (unsigned int i = 0; i < source.GetLevelCount(); i++)
@@ -92,8 +94,6 @@ static void TranscodePyramid(OrthancWSI::PyramidWriterBase& target,
                  << source.GetLevelWidth(i) << "x" << source.GetLevelHeight(i);
     target.AddLevel(source.GetLevelWidth(i), source.GetLevelHeight(i));
   }
-
-  LOG(WARNING) << "Transcoding the source pyramid";
 
   OrthancWSI::TranscodeTileCommand::PrepareBagOfTasks(tasks, target, source, parameters);
   OrthancWSI::ApplicationToolbox::Execute(tasks, parameters.GetThreadsCount());
@@ -104,6 +104,8 @@ static void ReconstructPyramid(OrthancWSI::PyramidWriterBase& target,
                                OrthancWSI::ITiledPyramid& source,
                                const OrthancWSI::DicomizerParameters& parameters)
 {
+  LOG(WARNING) << "Re-encoding the source pyramid (not transcoding, slower process)";
+
   Orthanc::BagOfTasks tasks;
 
   unsigned int levelsCount = parameters.GetPyramidLevelsCount(target, source);
@@ -160,12 +162,15 @@ static void Recompress(OrthancWSI::IFileTarget& output,
                        OrthancWSI::ITiledPyramid& source,
                        const DcmDataset& dataset,
                        const OrthancWSI::DicomizerParameters& parameters,
-                       const OrthancWSI::ImagedVolumeParameters& volume)
+                       const OrthancWSI::ImagedVolumeParameters& volume,
+                       OrthancWSI::ImageCompression sourceCompression)
 {
   OrthancWSI::TiledPyramidStatistics stats(source);
 
   LOG(WARNING) << "Size of source tiles: " << stats.GetTileWidth() << "x" << stats.GetTileHeight();
-  LOG(WARNING) << "Pixel format: " << Orthanc::EnumerationToString(stats.GetPixelFormat());
+  LOG(WARNING) << "Pixel format: " << Orthanc::EnumerationToString(source.GetPixelFormat());
+  LOG(WARNING) << "Source photometric interpretation: " << Orthanc::EnumerationToString(source.GetPhotometricInterpretation());
+  LOG(WARNING) << "Source compression: " << EnumerationToString(sourceCompression);
   LOG(WARNING) << "Smoothing is " << (parameters.IsSmoothEnabled() ? "enabled" : "disabled");
 
   if (parameters.IsRepaintBackground())
@@ -180,26 +185,60 @@ static void Recompress(OrthancWSI::IFileTarget& output,
     LOG(WARNING) << "No repainting of the background";
   }
 
+  Orthanc::PhotometricInterpretation targetPhotometric;
+  bool transcoding;
+
+  if (parameters.IsForceReencode() ||
+      parameters.IsReconstructPyramid() ||
+      sourceCompression != parameters.GetTargetCompression())
+  {
+    // The tiles of the source image will be re-encoded
+    transcoding = false;
+    
+    switch (parameters.GetTargetCompression())
+    {
+      case OrthancWSI::ImageCompression_Jpeg:
+      case OrthancWSI::ImageCompression_Jpeg2000:
+        targetPhotometric = Orthanc::PhotometricInterpretation_YBRFull422;
+        break;
+
+      case OrthancWSI::ImageCompression_None:
+        targetPhotometric = Orthanc::PhotometricInterpretation_RGB;
+        break;
+
+      default:
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+    }
+  }
+  else
+  {
+    // Transcoding: The tiles are copied (no re-encoding)
+    transcoding = true;
+    targetPhotometric = source.GetPhotometricInterpretation();
+  }
+  
   OrthancWSI::DicomPyramidWriter target(output, dataset, 
                                         source.GetPixelFormat(), 
                                         parameters.GetTargetCompression(),
                                         parameters.GetTargetTileWidth(source),
                                         parameters.GetTargetTileHeight(source),
                                         parameters.GetDicomMaxFileSize(),
-                                        volume);
+                                        volume, targetPhotometric);
   target.SetJpegQuality(parameters.GetJpegQuality());
 
   LOG(WARNING) << "Size of target tiles: " << target.GetTileWidth() << "x" << target.GetTileHeight();
+  LOG(WARNING) << "Target photometric interpretation: " << Orthanc::EnumerationToString(targetPhotometric);
 
-  if (target.GetImageCompression() == OrthancWSI::ImageCompression_Jpeg)
+  if (!transcoding &&
+      target.GetImageCompression() == OrthancWSI::ImageCompression_Jpeg)
   {
-    LOG(WARNING) << "Target image compression: Jpeg with quality "
+    LOG(WARNING) << "Target compression: Jpeg with quality "
                  << static_cast<int>(target.GetJpegQuality());
     target.SetJpegQuality(target.GetJpegQuality());
   }
   else
   {
-    LOG(WARNING) << "Target image compression: "
+    LOG(WARNING) << "Target compression: "
                  << OrthancWSI::EnumerationToString(target.GetImageCompression());
   }
 
@@ -219,13 +258,13 @@ static void Recompress(OrthancWSI::IFileTarget& output,
     throw Orthanc::OrthancException(Orthanc::ErrorCode_IncompatibleImageSize);
   }
 
-  if (parameters.IsReconstructPyramid())
+  if (transcoding)
   {
-    ReconstructPyramid(target, stats, parameters);
+    TranscodePyramid(target, stats, parameters);
   }
   else
   {
-    TranscodePyramid(target, stats, parameters);
+    ReconstructPyramid(target, stats, parameters);
   }
 
   target.Flush();
@@ -863,6 +902,7 @@ static bool ParseParameters(int& exitStatus,
 }
 
 
+
 OrthancWSI::ITiledPyramid* OpenInputPyramid(OrthancWSI::ImageCompression& sourceCompression,
                                             const std::string& path,
                                             const OrthancWSI::DicomizerParameters& parameters)
@@ -954,7 +994,7 @@ int main(int argc, char* argv[])
       EnrichDataset(*dataset, *source, sourceCompression, parameters, volume);
 
       std::auto_ptr<OrthancWSI::IFileTarget> output(parameters.CreateTarget());
-      Recompress(*output, *source, *dataset, parameters, volume);
+      Recompress(*output, *source, *dataset, parameters, volume, sourceCompression);
     }
   }
   catch (Orthanc::OrthancException& e)

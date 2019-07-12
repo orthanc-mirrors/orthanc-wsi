@@ -158,6 +158,25 @@ namespace OrthancWSI
     }
 
 
+    Orthanc::ImageAccessor* DecodeRawTile(const std::string& source,
+                                          Orthanc::PixelFormat format,
+                                          unsigned int width,
+                                          unsigned int height)
+    {
+      unsigned int bpp = GetBytesPerPixel(format);
+
+      if (bpp * width * height != source.size())
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_IncompatibleImageSize);
+      }
+
+      Orthanc::ImageAccessor accessor;
+      accessor.AssignReadOnly(format, width, height, bpp * width, source.empty() ? NULL : source.c_str());
+
+      return Orthanc::Image::Clone(accessor);
+    }
+
+
     void EncodeTile(std::string& target,
                     const Orthanc::ImageAccessor& source,
                     ImageCompression compression,
