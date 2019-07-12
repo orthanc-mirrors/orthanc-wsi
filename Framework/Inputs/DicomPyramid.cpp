@@ -235,4 +235,11 @@ namespace OrthancWSI
     assert(!instances_.empty() && instances_[0] != NULL);
     return instances_[0]->GetPixelFormat();
   }
+
+  
+  Orthanc::PhotometricInterpretation DicomPyramid::GetPhotometricInterpretation() const
+  {
+    assert(!instances_.empty() && instances_[0] != NULL);
+    return instances_[0]->GetPhotometricInterpretation();
+  }
 }

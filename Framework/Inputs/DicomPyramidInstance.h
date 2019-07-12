@@ -43,6 +43,7 @@ namespace OrthancWSI
     unsigned int                totalWidth_;
     unsigned int                totalHeight_;
     std::vector<FrameLocation>  frames_;
+    Orthanc::PhotometricInterpretation  photometric_;
 
     void Load(OrthancPlugins::IOrthancConnection&  orthanc,
               const std::string& instanceId);
@@ -64,6 +65,11 @@ namespace OrthancWSI
     Orthanc::PixelFormat GetPixelFormat() const
     {
       return format_;
+    }
+
+    Orthanc::PhotometricInterpretation GetPhotometricInterpretation() const
+    {
+      return photometric_;
     }
 
     unsigned int GetTotalWidth() const

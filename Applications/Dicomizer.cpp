@@ -132,7 +132,7 @@ static void ReconstructPyramid(OrthancWSI::PyramidWriterBase& target,
   if (lowerLevelsCount != levelsCount)
   {
     LOG(WARNING) << "Constructing the " << lowerLevelsCount << " lower levels of the pyramid";
-    OrthancWSI::TruncatedPyramidWriter truncated(target, lowerLevelsCount);
+    OrthancWSI::TruncatedPyramidWriter truncated(target, lowerLevelsCount, source.GetPhotometricInterpretation());
     OrthancWSI::ReconstructPyramidCommand::PrepareBagOfTasks
       (tasks, truncated, source, lowerLevelsCount + 1, 0, parameters);
     OrthancWSI::ApplicationToolbox::Execute(tasks, parameters.GetThreadsCount());

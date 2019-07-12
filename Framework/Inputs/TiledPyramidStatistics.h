@@ -79,5 +79,10 @@ namespace OrthancWSI
     virtual Orthanc::ImageAccessor* DecodeTile(unsigned int level,
                                                unsigned int tileX,
                                                unsigned int tileY);
+
+    virtual Orthanc::PhotometricInterpretation GetPhotometricInterpretation() const
+    {
+      return source_.GetPhotometricInterpretation();
+    }
   };
 }

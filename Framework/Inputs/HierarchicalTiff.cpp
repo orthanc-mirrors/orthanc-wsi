@@ -123,14 +123,15 @@ namespace OrthancWSI
 
 
   bool HierarchicalTiff::GetCurrentPixelFormat(Orthanc::PixelFormat& pixelFormat,
+                                               Orthanc::PhotometricInterpretation& photometric,
                                                ImageCompression compression)
   {
     // http://www.awaresystems.be/imaging/tiff/tifftags/baseline.html
 
-    uint16_t channels, photometric, bpp, planar;
+    uint16_t channels, photometricTiff, bpp, planar;
     if (!TIFFGetField(tiff_, TIFFTAG_SAMPLESPERPIXEL, &channels) ||
         channels == 0 ||
-        !TIFFGetField(tiff_, TIFFTAG_PHOTOMETRIC, &photometric) ||
+        !TIFFGetField(tiff_, TIFFTAG_PHOTOMETRIC, &photometricTiff) ||
         !TIFFGetField(tiff_, TIFFTAG_BITSPERSAMPLE, &bpp) ||
         !TIFFGetField(tiff_, TIFFTAG_PLANARCONFIG, &planar))
     {
@@ -140,10 +141,24 @@ namespace OrthancWSI
     if (compression == ImageCompression_Jpeg &&
         channels == 3 &&     // This is a color image
         bpp == 8 &&
-        photometric == PHOTOMETRIC_YCBCR &&
         planar == PLANARCONFIG_CONTIG)  // This is interleaved RGB
     {
       pixelFormat = Orthanc::PixelFormat_RGB24;
+
+      switch (photometricTiff)
+      {
+        case PHOTOMETRIC_YCBCR:
+          photometric = Orthanc::PhotometricInterpretation_YBRFull422;
+          return true;
+          
+        case PHOTOMETRIC_RGB:
+          photometric = Orthanc::PhotometricInterpretation_RGB;
+          return true;
+
+        default:
+          LOG(ERROR) << "Unknown photometric interpretation in TIFF: " << photometricTiff;
+          return false;
+      }
     }
     else
     {
@@ -164,6 +179,7 @@ namespace OrthancWSI
       uint32_t w, h, tw, th;
       ImageCompression compression;
       Orthanc::PixelFormat pixelFormat;
+      Orthanc::PhotometricInterpretation photometric;
 
       if (TIFFSetDirectory(tiff_, pos) &&
           TIFFGetField(tiff_, TIFFTAG_IMAGEWIDTH, &w) &&
@@ -175,7 +191,7 @@ namespace OrthancWSI
           tw > 0 &&
           th > 0 &&
           GetCurrentCompression(compression) &&
-          GetCurrentPixelFormat(pixelFormat, compression))
+          GetCurrentPixelFormat(pixelFormat, photometric, compression))
       {
         if (first)
         {
@@ -183,12 +199,14 @@ namespace OrthancWSI
           tileHeight_ = th;
           compression_ = compression;
           pixelFormat_ = pixelFormat;
+          photometric_ = photometric;
           first = false;
         }
         else if (tw != tileWidth_ ||
                  th != tileHeight_ ||
                  compression_ != compression ||
-                 pixelFormat_ != pixelFormat)
+                 pixelFormat_ != pixelFormat ||
+                 photometric_ != photometric)
         {
           LOG(ERROR) << "The tile size or compression of the TIFF file varies along levels, this is not supported";
           return false;

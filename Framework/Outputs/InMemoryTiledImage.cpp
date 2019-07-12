@@ -41,12 +41,14 @@ namespace OrthancWSI
                                          unsigned int countTilesX,
                                          unsigned int countTilesY,
                                          unsigned int tileWidth,
-                                         unsigned int tileHeight) :
+                                         unsigned int tileHeight,
+                                         Orthanc::PhotometricInterpretation photometric) :
     format_(format),
     countTilesX_(countTilesX),
     countTilesY_(countTilesY),
     tileWidth_(tileWidth),
-    tileHeight_(tileHeight)
+    tileHeight_(tileHeight),
+    photometric_(photometric)
   {
   }
 

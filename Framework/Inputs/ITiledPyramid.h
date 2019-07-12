@@ -63,5 +63,7 @@ namespace OrthancWSI
                                                unsigned int tileY) = 0;
 
     virtual Orthanc::PixelFormat GetPixelFormat() const = 0;
+
+    virtual Orthanc::PhotometricInterpretation GetPhotometricInterpretation() const = 0;
   };
 }

@@ -34,7 +34,8 @@ namespace OrthancWSI
     
   public:
     TruncatedPyramidWriter(IPyramidWriter& lower,
-                           unsigned int upperLevelIndex);
+                           unsigned int upperLevelIndex,
+                           Orthanc::PhotometricInterpretation photometric);
 
     virtual unsigned int GetLevelCount() const
     {

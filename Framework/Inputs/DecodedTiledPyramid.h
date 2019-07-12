@@ -68,5 +68,10 @@ namespace OrthancWSI
     {
       return false;   // No access to the raw tiles
     }
+
+    virtual Orthanc::PhotometricInterpretation GetPhotometricInterpretation() const
+    {
+      return Orthanc::PhotometricInterpretation_RGB;
+    }
   };
 }

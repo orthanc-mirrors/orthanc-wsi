@@ -69,17 +69,21 @@ namespace OrthancWSI
   }
 
 
-  static Orthanc::PixelFormat DetectPixelFormat(OrthancPlugins::DicomDatasetReader& reader)
+  static void DetectPixelFormat(Orthanc::PixelFormat& format,
+                                Orthanc::PhotometricInterpretation& photometric,
+                                OrthancPlugins::DicomDatasetReader& reader)
   {
     using namespace OrthancPlugins;
 
-    std::string photometric = Orthanc::Toolbox::StripSpaces
+    std::string p = Orthanc::Toolbox::StripSpaces
       (reader.GetMandatoryStringValue(DICOM_TAG_PHOTOMETRIC_INTERPRETATION));
+    
+    photometric = Orthanc::StringToPhotometricInterpretation(p.c_str());
 
-    if (photometric == "PALETTE")
+    if (photometric == Orthanc::PhotometricInterpretation_Palette)
     {
-      LOG(ERROR) << "Unsupported photometric interpretation: " << photometric;
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented,
+                                      "Unsupported photometric interpretation: " + p);
     }
 
     unsigned int bitsStored, samplesPerPixel, tmp;
@@ -97,18 +101,17 @@ namespace OrthancWSI
         samplesPerPixel == 1 &&
         !isSigned)
     {
-      return Orthanc::PixelFormat_Grayscale8;
+      format = Orthanc::PixelFormat_Grayscale8;
     }
     else if (bitsStored == 8 &&
              samplesPerPixel == 3 &&
              !isSigned)
     {
-      return Orthanc::PixelFormat_RGB24;
+      format = Orthanc::PixelFormat_RGB24;
     }
     else
     {
-      LOG(ERROR) << "Unsupported pixel format";
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "Unsupported pixel format");
     }
   }
 
@@ -149,7 +152,7 @@ namespace OrthancWSI
     }
 
     hasCompression_ = false;
-    format_ = DetectPixelFormat(reader);
+    DetectPixelFormat(format_, photometric_, reader);
 
     unsigned int tmp;
     if (!reader.GetUnsignedIntegerValue(tileWidth_, DICOM_TAG_COLUMNS) ||

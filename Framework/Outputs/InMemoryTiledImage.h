@@ -44,13 +44,15 @@ namespace OrthancWSI
     unsigned int          tileWidth_;
     unsigned int          tileHeight_;
     Tiles                 tiles_;
+    Orthanc::PhotometricInterpretation  photometric_;
 
   public:
     InMemoryTiledImage(Orthanc::PixelFormat format,
                        unsigned int countTilesX,
                        unsigned int countTilesY,
                        unsigned int tileWidth,
-                       unsigned int tileHeight);
+                       unsigned int tileHeight,
+                       Orthanc::PhotometricInterpretation photometric);
 
     virtual ~InMemoryTiledImage();
 
@@ -102,5 +104,10 @@ namespace OrthancWSI
                             unsigned int level,
                             unsigned int tileX,
                             unsigned int tileY);
+
+    virtual Orthanc::PhotometricInterpretation GetPhotometricInterpretation() const
+    {
+      return photometric_;
+    }
   };
 }

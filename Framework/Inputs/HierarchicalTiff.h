@@ -55,6 +55,7 @@ namespace OrthancWSI
     unsigned int          tileWidth_;
     unsigned int          tileHeight_;
     std::vector<Level>    levels_;
+    Orthanc::PhotometricInterpretation  photometric_;
 
     void Finalize();
 
@@ -63,6 +64,7 @@ namespace OrthancWSI
     bool GetCurrentCompression(ImageCompression& compression);
 
     bool GetCurrentPixelFormat(Orthanc::PixelFormat& pixelFormat,
+                               Orthanc::PhotometricInterpretation& photometric,
                                ImageCompression compression);
 
     bool Initialize();
@@ -103,6 +105,11 @@ namespace OrthancWSI
     virtual Orthanc::PixelFormat GetPixelFormat() const
     {
       return pixelFormat_;
+    }
+
+    virtual Orthanc::PhotometricInterpretation GetPhotometricInterpretation() const
+    {
+      return photometric_;
     }
 
     ImageCompression GetImageCompression()
