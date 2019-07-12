@@ -91,5 +91,10 @@ namespace OrthancWSI
     {
       return height_;
     }
+
+    DcmDataset& GetSharedTags()
+    {
+      return sharedTags_;
+    }
   };
 }

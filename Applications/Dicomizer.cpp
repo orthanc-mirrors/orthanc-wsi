@@ -390,6 +390,7 @@ static void SetupDimension(DcmDataset& dataset,
   {
     // Construct tag "Shared Functional Groups Sequence" (5200,9229)
 
+#if 1
     // In the 2 lines below, remember to switch X/Y when going from physical to pixel coordinates!
     float spacingX = volume.GetWidth() / static_cast<float>(source.GetLevelHeight(0));
     float spacingY = volume.GetHeight() / static_cast<float>(source.GetLevelWidth(0));
@@ -420,6 +421,23 @@ static void SetupDimension(DcmDataset& dataset,
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
     }
+#else
+    std::auto_ptr<DcmItem> item(new DcmItem);
+
+    std::auto_ptr<DcmItem> item3(new DcmItem);
+    OrthancWSI::DicomToolbox::SetStringTag(*item3, DCM_OpticalPathIdentifier, opticalPathId);
+
+    std::auto_ptr<DcmSequenceOfItems> sequence(new DcmSequenceOfItems(DCM_SharedFunctionalGroupsSequence));
+    std::auto_ptr<DcmSequenceOfItems> sequence3(new DcmSequenceOfItems(DCM_OpticalPathIdentificationSequence));
+
+    if (!sequence3->insert(item3.release(), false, false).good() ||
+        !item->insert(sequence3.release(), false, false).good() ||
+        !sequence->insert(item.release(), false, false).good() ||
+        !dataset.insert(sequence.release(), true /* replace */, false).good())
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+    }
+#endif
   }
 }
 

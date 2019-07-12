@@ -142,6 +142,44 @@ namespace OrthancWSI
           (dataset_, GetImageCompression(), GetPixelFormat(), level.width_, level.height_, 
            GetTileWidth(), GetTileHeight(), photometric_);
         writers_[z] = writer;
+
+#if 0
+        {
+          // Fix issue 139: The PixelSpacing information changes at each level
+          // https://bitbucket.org/sjodogne/orthanc/issues/139/orthancwsidicomizer-pixelspacing
+
+          // In the 2 lines below, remember to switch X/Y when going from physical to pixel coordinates!
+          float spacingX = volume_.GetWidth() / static_cast<float>(level.height_);
+          float spacingY = volume_.GetHeight() / static_cast<float>(level.width_);
+
+          std::string spacing = (boost::lexical_cast<std::string>(spacingX) + '\\' +
+                                 boost::lexical_cast<std::string>(spacingY));
+
+          std::auto_ptr<DcmItem> item(new DcmItem);
+
+          std::auto_ptr<DcmItem> item2(new DcmItem);
+          OrthancWSI::DicomToolbox::SetStringTag(*item2, DCM_SliceThickness, 
+                                                 boost::lexical_cast<std::string>(volume_.GetDepth()));
+          OrthancWSI::DicomToolbox::SetStringTag(*item2, DCM_PixelSpacing, spacing);
+
+          std::auto_ptr<DcmSequenceOfItems> sequence2(new DcmSequenceOfItems(DCM_PixelMeasuresSequence));
+          if (!sequence2->insert(item2.release(), false, false).good())
+          {
+            throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+          }
+
+          DcmSequenceOfItems* sequence = NULL;
+          if (!writer->GetSharedTags().findAndGetSequence(DCM_SharedFunctionalGroupsSequence, sequence).good() ||
+              sequence == NULL ||
+              sequence->card() != 1 ||
+              sequence->getItem(0) == NULL ||
+              !sequence->getItem(0)->insert(sequence2.release(), false, false).good())
+          {
+            // This sequence should have been created by "SetupDimension()" in Dicomizer.cpp
+            throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+          }
+        }
+#endif
       }
 
       std::auto_ptr<DcmItem> functionalGroup(CreateFunctionalGroup(writer->GetFramesCount() + 1,
