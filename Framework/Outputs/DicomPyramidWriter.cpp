@@ -143,7 +143,6 @@ namespace OrthancWSI
            GetTileWidth(), GetTileHeight(), photometric_);
         writers_[z] = writer;
 
-#if 0
         {
           // Fix issue 139: The PixelSpacing information changes at each level
           // https://bitbucket.org/sjodogne/orthanc/issues/139/orthancwsidicomizer-pixelspacing
@@ -179,7 +178,6 @@ namespace OrthancWSI
             throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
           }
         }
-#endif
       }
 
       std::auto_ptr<DcmItem> functionalGroup(CreateFunctionalGroup(writer->GetFramesCount() + 1,
