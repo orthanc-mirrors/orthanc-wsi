@@ -160,6 +160,13 @@ namespace OrthancWSI
           return false;
       }
     }
+    else if (compression == ImageCompression_Jpeg &&
+             channels == 1 &&     // This is a grayscale image
+             bpp == 8)
+    {
+      pixelFormat = Orthanc::PixelFormat_Grayscale8;
+      photometric = Orthanc::PhotometricInterpretation_Monochrome2;
+    }
     else
     {
       return false;
