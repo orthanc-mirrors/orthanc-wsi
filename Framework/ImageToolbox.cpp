@@ -326,21 +326,19 @@ namespace OrthancWSI
         throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
       }
 
-      unsigned int channelsCount = source.GetBytesPerPixel();  // OK tx (*)
+      const unsigned int bytesPerPixel = source.GetBytesPerPixel();  // Corresponds to the number of channels tx (*)
 
-      std::auto_ptr<Orthanc::ImageAccessor> result(Allocate(source.GetFormat(), 
+      std::auto_ptr<Orthanc::ImageAccessor> target(Allocate(source.GetFormat(), 
                                                             source.GetWidth() / 2, 
                                                             source.GetHeight() / 2));
 
-      unsigned int bytesPerPixel = source.GetBytesPerPixel();
-
-      for (unsigned int y = 0; y < source.GetHeight() / 2; y++)
+      for (unsigned int y = 0; y < target->GetHeight(); y++)
       {
-        uint8_t* q = reinterpret_cast<uint8_t*>(result->GetRow(y));
+        uint8_t* q = reinterpret_cast<uint8_t*>(target->GetRow(y));
 
-        for (unsigned int x = 0; x < source.GetWidth() / 2; x++, q += 3)
+        for (unsigned int x = 0; x < target->GetWidth(); x++, q += bytesPerPixel)
         {
-          for (unsigned int c = 0; c < channelsCount; c++)
+          for (unsigned int c = 0; c < bytesPerPixel; c++)
           {
             if (smooth)
             {
@@ -354,7 +352,7 @@ namespace OrthancWSI
         }
       }
 
-      return result.release();
+      return target.release();
     }
 
 

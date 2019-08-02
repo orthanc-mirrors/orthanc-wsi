@@ -160,7 +160,7 @@ namespace OrthancWSI
         switch (pixelFormat)
         {
           case Orthanc::PixelFormat_Grayscale8:
-            if (numberOfComponents != 3)
+            if (numberOfComponents != 1)
             {
               LOG(WARNING) << "The source image does not contain a grayscale image as expected";
             }
@@ -294,6 +294,23 @@ namespace OrthancWSI
             TIFFSetField(tiff_, TIFFTAG_BITSPERSAMPLE, bpp) != 1 ||
             TIFFSetField(tiff_, TIFFTAG_PLANARCONFIG, planar) != 1 ||
             TIFFSetField(tiff_, TIFFTAG_YCBCRSUBSAMPLING, subsampleHorizontal, subsampleVertical) != 1)
+        {
+          Close();
+          throw Orthanc::OrthancException(Orthanc::ErrorCode_CannotWriteFile);
+        }
+
+        break;
+      }
+
+      case Orthanc::PixelFormat_Grayscale8:
+      {
+        uint16_t samplesPerPixel = 1;
+        uint16_t bpp = 8;
+        uint16_t photometric = PHOTOMETRIC_MINISBLACK;
+
+        if (TIFFSetField(tiff_, TIFFTAG_SAMPLESPERPIXEL, samplesPerPixel) != 1 ||
+            TIFFSetField(tiff_, TIFFTAG_PHOTOMETRIC, photometric) != 1 ||
+            TIFFSetField(tiff_, TIFFTAG_BITSPERSAMPLE, bpp) != 1)
         {
           Close();
           throw Orthanc::OrthancException(Orthanc::ErrorCode_CannotWriteFile);
