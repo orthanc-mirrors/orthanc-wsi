@@ -74,5 +74,7 @@ namespace OrthancWSI
     {
       return image_.GetFormat();
     }
+
+    virtual Orthanc::PhotometricInterpretation GetPhotometricInterpretation() const;
   };
 }

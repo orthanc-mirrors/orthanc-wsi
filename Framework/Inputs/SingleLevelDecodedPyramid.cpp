@@ -58,4 +58,20 @@ namespace OrthancWSI
 
     return image_.GetHeight();
   }
+  
+
+  Orthanc::PhotometricInterpretation SingleLevelDecodedPyramid::GetPhotometricInterpretation() const
+  {
+    switch (image_.GetFormat())
+    {
+      case Orthanc::PixelFormat_Grayscale8:
+        return Orthanc::PhotometricInterpretation_Monochrome2;
+
+      case Orthanc::PixelFormat_RGB24:
+        return Orthanc::PhotometricInterpretation_RGB;
+
+      default:
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
+    }
+  }
 }

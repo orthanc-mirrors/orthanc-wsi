@@ -73,5 +73,10 @@ namespace OrthancWSI
     {
       return Orthanc::PixelFormat_RGB24;
     }
+
+    virtual Orthanc::PhotometricInterpretation GetPhotometricInterpretation() const
+    {
+      return Orthanc::PhotometricInterpretation_RGB;
+    }
   };
 }

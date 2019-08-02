@@ -34,6 +34,7 @@ namespace OrthancWSI
   class DecodedTiledPyramid : public ITiledPyramid
   {
   private:
+    bool     grayscale_;
     uint8_t  backgroundColor_[3];
 
   protected:
@@ -67,11 +68,6 @@ namespace OrthancWSI
                              unsigned int tileY)
     {
       return false;   // No access to the raw tiles
-    }
-
-    virtual Orthanc::PhotometricInterpretation GetPhotometricInterpretation() const
-    {
-      return Orthanc::PhotometricInterpretation_RGB;
     }
   };
 }

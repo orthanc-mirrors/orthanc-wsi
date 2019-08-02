@@ -194,20 +194,27 @@ static void Recompress(OrthancWSI::IFileTarget& output,
   {
     // The tiles of the source image will be re-encoded
     transcoding = false;
-    
-    switch (parameters.GetTargetCompression())
+
+    if (source.GetPixelFormat() == Orthanc::PixelFormat_Grayscale8)
     {
-      case OrthancWSI::ImageCompression_Jpeg:
-      case OrthancWSI::ImageCompression_Jpeg2000:
-        targetPhotometric = Orthanc::PhotometricInterpretation_YBRFull422;
-        break;
+      targetPhotometric = source.GetPhotometricInterpretation();
+    }
+    else
+    {
+      switch (parameters.GetTargetCompression())
+      {
+        case OrthancWSI::ImageCompression_Jpeg:
+        case OrthancWSI::ImageCompression_Jpeg2000:
+          targetPhotometric = Orthanc::PhotometricInterpretation_YBRFull422;
+          break;
 
-      case OrthancWSI::ImageCompression_None:
-        targetPhotometric = Orthanc::PhotometricInterpretation_RGB;
-        break;
+        case OrthancWSI::ImageCompression_None:
+          targetPhotometric = Orthanc::PhotometricInterpretation_RGB;
+          break;
 
-      default:
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+        default:
+          throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+      }
     }
   }
   else
