@@ -121,7 +121,7 @@ else()
 
   CHECK_INCLUDE_FILE_CXX(${OPENJPEG_INCLUDE_DIR}/openjpeg.h HAVE_OPENJPEG_H)
   if (NOT HAVE_OPENJPEG_H)
-    message(FATAL_ERROR "Please install the OpenJPEG development package")
+    message(FATAL_ERROR "Please install the OpenJPEG development package (libopenjp2-*dev on Ubuntu)")
   endif()
 
   CHECK_LIBRARY_EXISTS(openjpeg opj_image_create "" HAVE_OPENJPEG_LIB)

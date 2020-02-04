@@ -83,21 +83,37 @@ namespace OrthancWSI
 
   ImageCompression DetectFormatFromFile(const std::string& path)
   {
+    std::string lower;
+    Orthanc::Toolbox::ToLowerCase(lower, path);
+
     std::string header;
     Orthanc::SystemToolbox::ReadHeader(header, path, 256);
 
     ImageCompression tmp = DetectFormatFromMemory(header.c_str(), header.size());
     if (tmp != ImageCompression_Unknown)
     {
-      return tmp;
+      if (tmp == ImageCompression_Jpeg &&
+          boost::algorithm::ends_with(lower, ".mrxs"))
+      {
+        /**
+         * Special case of MIRAX / 3DHISTECH images, that contain a JPEG
+         * thumbnail, and that are thus confused with JPEG.
+         * https://bitbucket.org/sjodogne/orthanc/issues/163/
+         **/
+        
+        LOG(WARNING) << "The file extension \".mrxs\" indicates a MIRAX / 3DHISTECH image, "
+                     << "skipping auto-detection of the file format";
+        return ImageCompression_Unknown;
+      }
+      else
+      {
+        return tmp;
+      }
     }
 
     // Cannot detect the format using the header, fallback to the use
     // of the filename extension
     
-    std::string lower;
-    Orthanc::Toolbox::ToLowerCase(lower, path);
-
     if (boost::algorithm::ends_with(lower, ".jpeg") ||
         boost::algorithm::ends_with(lower, ".jpg"))
     {
