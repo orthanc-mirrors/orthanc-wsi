@@ -300,7 +300,8 @@ static DcmDataset* ParseDataset(const std::string& path)
     }
   }
 
-  std::auto_ptr<DcmDataset> dataset(Orthanc::FromDcmtkBridge::FromJson(json, true, true, Orthanc::Encoding_Latin1));
+  std::auto_ptr<DcmDataset> dataset(Orthanc::FromDcmtkBridge::FromJson(json, true, true, Orthanc::Encoding_Latin1,
+                                                                       "" /* no private tag, thus no private creator */));
   if (dataset.get() == NULL)
   {
     LOG(ERROR) << "Cannot convert to JSON file to a DICOM dataset: " << path;
@@ -475,7 +476,8 @@ static void EnrichDataset(DcmDataset& dataset,
     std::auto_ptr<DcmElement> element(Orthanc::FromDcmtkBridge::FromJson(
                                         Orthanc::DicomTag(DCM_OpticalPathSequence.getGroup(),
                                                           DCM_OpticalPathSequence.getElement()),
-                                        json, false, encoding));
+                                        json, false, encoding,
+                                        "" /* no private tag, thus no private creator */));
     if (!dataset.insert(element.release()).good())
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
