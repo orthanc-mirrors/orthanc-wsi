@@ -168,7 +168,7 @@ namespace OrthancWSI
                              void *userData)
       {
         OpenJpegInput& that = *reinterpret_cast<OpenJpegInput*>(userData);
-        assert(that.position_ >= 0 && that.position_ <= that.size_);
+        assert(that.position_ <= that.size_);
         assert(size >= 0);
 
         if (that.position_ == that.size_)

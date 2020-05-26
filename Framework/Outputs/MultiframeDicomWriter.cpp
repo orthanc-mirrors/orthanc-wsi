@@ -252,7 +252,7 @@ namespace OrthancWSI
   void MultiframeDicomWriter::Flush(std::string& target,
                                     unsigned int instanceNumber)
   {
-    if (instanceNumber <= 0)
+    if (instanceNumber == 0)
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
     }

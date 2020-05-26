@@ -34,7 +34,6 @@ namespace OrthancWSI
   class DecodedTiledPyramid : public ITiledPyramid
   {
   private:
-    bool     grayscale_;
     uint8_t  backgroundColor_[3];
 
   protected:

@@ -6,6 +6,7 @@ Pending changes in the mainline
 * Fix issue #139 (OrthancWSIDicomizer PixelSpacing)
 * Fix issue #144 (OrthancWSIDicomizer PhotometricInterpretation)
 * Fix issue #163 (Failure to recognize MIRAX / 3DHISTECH images)
+* Upgrade to Orthanc framework 1.7.0
 
 
 Version 0.6 (2019-01-26)
