@@ -1,6 +1,10 @@
 Pending changes in the mainline
 ===============================
 
+
+Version 0.7 (2020-05-26)
+========================
+
 * Improved consistency when transcoding/re-encoding is applied
 * Support of grayscale images
 * Fix issue #139 (OrthancWSIDicomizer PixelSpacing)
