@@ -38,6 +38,7 @@ set(ENABLE_LOCALE OFF)         # Disable support for locales (notably in Boost)
 set(ENABLE_ZLIB ON)
 set(ENABLE_PNG ON)
 set(ENABLE_JPEG ON)
+set(HAS_EMBEDDED_RESOURCES ON)
 
 include(${ORTHANC_ROOT}/Resources/CMake/VisualStudioPrecompiledHeaders.cmake)
 include(${ORTHANC_ROOT}/Resources/CMake/OrthancFrameworkConfiguration.cmake)
