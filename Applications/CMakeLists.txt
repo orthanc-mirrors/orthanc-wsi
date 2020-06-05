@@ -32,7 +32,6 @@ include(${CMAKE_SOURCE_DIR}/../Resources/Orthanc/DownloadOrthancFramework.cmake)
 UNSET(STANDALONE_BUILD CACHE)
 SET(STANDALONE_BUILD ON)       # Embed DCMTK's dictionaries for static builds
 
-set(ORTHANC_FRAMEWORK_PLUGIN OFF)
 include(${ORTHANC_ROOT}/Resources/CMake/OrthancFrameworkParameters.cmake)
 
 SET(ENABLE_CRYPTO_OPTIONS ON)
@@ -122,6 +121,7 @@ EmbedResources(
 add_definitions(
   -DHAS_ORTHANC_EXCEPTION=1
   -DORTHANC_ENABLE_LOGGING_PLUGIN=0
+  -DORTHANC_FRAMEWORK_BUILDING_PLUGIN=0
   )
 
 
