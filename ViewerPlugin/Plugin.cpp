@@ -310,7 +310,7 @@ extern "C"
       return -1;
     }
 
-    Orthanc::Logging::Initialize(context);
+    Orthanc::Logging::InitializePluginContext(context);
 
     // Limit the number of PNG transcoders to the number of available
     // hardware threads (e.g. number of CPUs or cores or
