@@ -23,7 +23,7 @@
 
 #include "../Framework/MultiThreading/BagOfTasks.h"
 
-#include <Core/WebServiceParameters.h>
+#include <WebServiceParameters.h>
 
 #include <string>
 #include <stdint.h>

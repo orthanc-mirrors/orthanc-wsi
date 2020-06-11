@@ -23,8 +23,8 @@
 #include "DicomPyramid.h"
 
 #include "../DicomToolbox.h"
-#include <Core/Logging.h>
-#include <Core/OrthancException.h>
+#include <Logging.h>
+#include <OrthancException.h>
 
 #include <algorithm>
 #include <cassert>

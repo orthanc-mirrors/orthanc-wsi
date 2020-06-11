@@ -24,12 +24,12 @@
 #include "../Framework/Inputs/OpenSlideLibrary.h"
 #include "../Framework/MultiThreading/BagOfTasksProcessor.h"
 
-#include <Core/DicomParsing/FromDcmtkBridge.h>
-#include <Core/HttpClient.h>
-#include <Core/Logging.h>
-#include <Core/OrthancException.h>
-#include <Core/SystemToolbox.h>
-#include <Core/Toolbox.h>
+#include <DicomParsing/FromDcmtkBridge.h>
+#include <HttpClient.h>
+#include <Logging.h>
+#include <OrthancException.h>
+#include <SystemToolbox.h>
+#include <Toolbox.h>
 
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>

@@ -22,8 +22,8 @@
 #include "../PrecompiledHeadersWSI.h"
 #include "FolderTarget.h"
 
-#include <Core/SystemToolbox.h>
-#include <Core/Logging.h>
+#include <SystemToolbox.h>
+#include <Logging.h>
 
 #include <stdio.h>
 

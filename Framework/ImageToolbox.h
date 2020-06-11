@@ -21,7 +21,7 @@
 
 #pragma once
 
-#include <Core/Images/ImageAccessor.h>
+#include <Images/ImageAccessor.h>
 #include "Enumerations.h"
 #include "Inputs/ITiledPyramid.h"
 

@@ -33,10 +33,10 @@
 #include "../Framework/Outputs/DicomPyramidWriter.h"
 #include "../Framework/Outputs/TruncatedPyramidWriter.h"
 
-#include <Core/DicomParsing/FromDcmtkBridge.h>
-#include <Core/Logging.h>
-#include <Core/OrthancException.h>
-#include <Core/SystemToolbox.h>
+#include <DicomParsing/FromDcmtkBridge.h>
+#include <Logging.h>
+#include <OrthancException.h>
+#include <SystemToolbox.h>
 
 #include "ApplicationToolbox.h"
 

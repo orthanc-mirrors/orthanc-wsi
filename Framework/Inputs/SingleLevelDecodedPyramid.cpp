@@ -23,7 +23,7 @@
 #include "SingleLevelDecodedPyramid.h"
 #include "../ImageToolbox.h"
 
-#include <Core/OrthancException.h>
+#include <OrthancException.h>
 
 namespace OrthancWSI
 {

@@ -24,9 +24,9 @@
 
 #include "../DicomToolbox.h"
 
-#include <Core/Logging.h>
-#include <Core/OrthancException.h>
-#include <Core/DicomParsing/FromDcmtkBridge.h>
+#include <Logging.h>
+#include <OrthancException.h>
+#include <DicomParsing/FromDcmtkBridge.h>
 
 #include <dcmtk/dcmdata/dcdeftag.h>
 #include <boost/lexical_cast.hpp>

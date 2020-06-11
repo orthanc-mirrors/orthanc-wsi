@@ -23,8 +23,8 @@
 #include "PyramidWriterBase.h"
 
 #include "../ImageToolbox.h"
-#include <Core/OrthancException.h>
-#include <Core/Logging.h>
+#include <OrthancException.h>
+#include <Logging.h>
 
 namespace OrthancWSI
 {

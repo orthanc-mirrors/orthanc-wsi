@@ -25,7 +25,7 @@
 #include "Targets/FolderTarget.h"
 #include "Targets/OrthancTarget.h"
 
-#include <Core/OrthancException.h>
+#include <OrthancException.h>
 
 #include <boost/thread.hpp>
 #include <boost/lexical_cast.hpp>

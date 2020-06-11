@@ -23,7 +23,7 @@
 
 #include "BagOfTasks.h"
 
-#include <Core/MultiThreading/SharedMessageQueue.h>
+#include <MultiThreading/SharedMessageQueue.h>
 
 #include <stdint.h>
 #include <map>

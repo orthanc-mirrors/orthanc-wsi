@@ -22,8 +22,8 @@
 #include "../PrecompiledHeadersWSI.h"
 #include "MultiframeDicomWriter.h"
 
-#include <Core/OrthancException.h>
-#include <Core/Logging.h>
+#include <OrthancException.h>
+#include <Logging.h>
 #include "../DicomToolbox.h"
 
 #include <dcmtk/dcmdata/dcuid.h>

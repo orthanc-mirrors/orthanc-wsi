@@ -22,9 +22,9 @@
 #include "../PrecompiledHeadersWSI.h"
 #include "OpenSlideLibrary.h"
 
-#include <Core/Logging.h>
-#include <Core/Images/Image.h>
-#include <Core/OrthancException.h>
+#include <Logging.h>
+#include <Images/Image.h>
+#include <OrthancException.h>
 
 #include <memory>
 

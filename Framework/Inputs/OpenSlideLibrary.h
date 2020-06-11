@@ -21,8 +21,8 @@
 
 #pragma once
 
-#include <Core/Images/ImageAccessor.h>
-#include <Core/SharedLibrary.h>
+#include <Images/ImageAccessor.h>
+#include <SharedLibrary.h>
 
 #include <vector>
 

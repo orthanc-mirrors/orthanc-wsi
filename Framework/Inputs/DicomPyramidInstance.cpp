@@ -22,11 +22,13 @@
 #include "../PrecompiledHeadersWSI.h"
 #include "DicomPyramidInstance.h"
 
-#include <Core/Logging.h>
-#include <Core/OrthancException.h>
-#include <Core/Toolbox.h>
-#include <Plugins/Samples/Common/DicomDatasetReader.h>
-#include <Plugins/Samples/Common/FullOrthancDataset.h>
+#include <Logging.h>
+#include <OrthancException.h>
+#include <Toolbox.h>
+
+#include <DicomDatasetReader.h>
+#include <FullOrthancDataset.h>
+
 #include "../DicomToolbox.h"
 
 #include <cassert>

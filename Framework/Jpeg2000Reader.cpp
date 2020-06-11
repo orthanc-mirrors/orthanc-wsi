@@ -22,8 +22,8 @@
 #include "PrecompiledHeadersWSI.h"
 #include "Jpeg2000Reader.h"
 
-#include <Core/OrthancException.h>
-#include <Core/SystemToolbox.h>
+#include <OrthancException.h>
+#include <SystemToolbox.h>
 #include "ImageToolbox.h"
 
 #include <cassert>

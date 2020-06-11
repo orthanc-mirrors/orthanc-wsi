@@ -22,8 +22,8 @@
 #include "../PrecompiledHeadersWSI.h"
 #include "TranscodeTileCommand.h"
 
-#include <Core/OrthancException.h>
-#include <Core/Logging.h>
+#include <OrthancException.h>
+#include <Logging.h>
 
 #include <cassert>
 

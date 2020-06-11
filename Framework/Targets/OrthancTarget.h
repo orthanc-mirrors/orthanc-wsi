@@ -22,8 +22,8 @@
 #pragma once
 
 #include "IFileTarget.h"
-#include <Core/WebServiceParameters.h>
-#include <Plugins/Samples/Common/IOrthancConnection.h>
+#include <WebServiceParameters.h>
+#include <IOrthancConnection.h>
 
 #include <memory>
 

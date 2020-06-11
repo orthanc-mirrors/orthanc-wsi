@@ -23,7 +23,7 @@
 
 #include "../Framework/Inputs/DicomPyramid.h"
 
-#include <Core/Cache/LeastRecentlyUsedIndex.h>
+#include <Cache/LeastRecentlyUsedIndex.h>
 
 #include <boost/thread/mutex.hpp>
 

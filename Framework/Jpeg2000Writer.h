@@ -21,7 +21,7 @@
 
 #pragma once
 
-#include <Core/Images/IImageWriter.h>
+#include <Images/IImageWriter.h>
 
 namespace OrthancWSI
 {

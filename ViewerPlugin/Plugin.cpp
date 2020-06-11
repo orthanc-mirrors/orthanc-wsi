@@ -24,14 +24,15 @@
 #include "DicomPyramidCache.h"
 #include "../Framework/Jpeg2000Reader.h"
 
-#include <Core/Logging.h>
-#include <Core/Images/ImageProcessing.h>
-#include <Core/Images/PngWriter.h>
-#include <Core/MultiThreading/Semaphore.h>
-#include <Core/OrthancException.h>
-#include <Core/SystemToolbox.h>
-#include <Plugins/Samples/Common/OrthancPluginCppWrapper.h>
-#include <Plugins/Samples/Common/OrthancPluginConnection.h>
+#include <Logging.h>
+#include <Images/ImageProcessing.h>
+#include <Images/PngWriter.h>
+#include <MultiThreading/Semaphore.h>
+#include <OrthancException.h>
+#include <SystemToolbox.h>
+
+#include <OrthancPluginCppWrapper.h>
+#include <OrthancPluginConnection.h>
 
 #include <EmbeddedResources.h>
 

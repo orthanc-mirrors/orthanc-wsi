@@ -21,7 +21,7 @@
 
 #pragma once
 
-#include <Core/Images/Image.h>
+#include <Images/Image.h>
 #include <memory>
 
 namespace OrthancWSI

@@ -22,7 +22,7 @@
 #include "PrecompiledHeadersWSI.h"
 #include "ImagedVolumeParameters.h"
 
-#include <Core/OrthancException.h>
+#include <OrthancException.h>
 
 namespace OrthancWSI
 {

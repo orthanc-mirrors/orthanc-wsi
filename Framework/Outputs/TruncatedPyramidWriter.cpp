@@ -22,7 +22,7 @@
 #include "../PrecompiledHeadersWSI.h"
 #include "TruncatedPyramidWriter.h"
 
-#include <Core/OrthancException.h>
+#include <OrthancException.h>
 
 namespace OrthancWSI
 {
