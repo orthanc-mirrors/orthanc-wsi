@@ -311,7 +311,11 @@ extern "C"
       return -1;
     }
 
+#if defined(ORTHANC_FRAMEWORK_VERSION_IS_ABOVE)  // This indicates Orthanc framework >= 1.7.2
     Orthanc::Logging::InitializePluginContext(context);
+#else
+    Orthanc::Logging::Initialize(context);
+#endif
 
     // Limit the number of PNG transcoders to the number of available
     // hardware threads (e.g. number of CPUs or cores or
