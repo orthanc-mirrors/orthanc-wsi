@@ -23,10 +23,11 @@
 #include "OrthancTarget.h"
 
 #include "../DicomToolbox.h"
+#include "../Inputs/Orthanc/OrthancHttpConnection.h"
+
 #include <OrthancException.h>
 #include <Logging.h>
 
-#include <OrthancHttpConnection.h>
 
 namespace OrthancWSI
 {

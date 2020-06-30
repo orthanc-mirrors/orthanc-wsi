@@ -1,0 +1,64 @@
+/**
+ * Orthanc - A Lightweight, RESTful DICOM Store
+ * Copyright (C) 2012-2016 Sebastien Jodogne, Medical Physics
+ * Department, University Hospital of Liege, Belgium
+ * Copyright (C) 2017-2020 Osimis S.A., Belgium
+ *
+ * This program is free software: you can redistribute it and/or
+ * modify it under the terms of the GNU Affero General Public License
+ * as published by the Free Software Foundation, either version 3 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ **/
+
+
+#pragma once
+
+#include "IOrthancConnection.h"
+
+#if HAS_ORTHANC_EXCEPTION != 1
+#  error The macro HAS_ORTHANC_EXCEPTION must be set to 1 if using this header
+#endif
+
+#include <HttpClient.h>
+
+#include <boost/thread/mutex.hpp>
+
+namespace OrthancPlugins
+{
+  // This class is thread-safe
+  class OrthancHttpConnection : public IOrthancConnection
+  {
+  private:
+    boost::mutex         mutex_;
+    Orthanc::HttpClient  client_;
+    std::string          url_;
+
+    void Setup();
+
+  public:
+    OrthancHttpConnection();
+
+    OrthancHttpConnection(const Orthanc::WebServiceParameters& parameters);
+
+    virtual void RestApiGet(std::string& result,
+                            const std::string& uri);
+
+    virtual void RestApiPost(std::string& result,
+                             const std::string& uri,
+                             const std::string& body);
+
+    virtual void RestApiPut(std::string& result,
+                            const std::string& uri,
+                            const std::string& body);
+
+    virtual void RestApiDelete(const std::string& uri);
+  };
+}

@@ -21,30 +21,41 @@
 
 #pragma once
 
-#include "IFileTarget.h"
-#include "../Inputs/Orthanc/IOrthancConnection.h"
-
-#include <WebServiceParameters.h>
+#include "IDicomDataset.h"
 
 #include <memory>
+#include <vector>
 
-namespace OrthancWSI
+namespace OrthancPlugins
 {
-  class OrthancTarget : public IFileTarget
+  class DicomDatasetReader : public boost::noncopyable
   {
   private:
-    std::auto_ptr<OrthancPlugins::IOrthancConnection>  orthanc_;
-    bool  first_;
+    const IDicomDataset&  dataset_;
 
   public:
-    explicit OrthancTarget(const Orthanc::WebServiceParameters& parameters);
+    DicomDatasetReader(const IDicomDataset& dataset);
 
-    explicit OrthancTarget(OrthancPlugins::IOrthancConnection* orthanc) :   // Takes ownership
-      orthanc_(orthanc),
-      first_(true)
+    const IDicomDataset& GetDataset() const
     {
+      return dataset_;
     }
 
-    virtual void Write(const std::string& file);
+    std::string GetStringValue(const DicomPath& path,
+                               const std::string& defaultValue) const;
+
+    std::string GetMandatoryStringValue(const DicomPath& path) const;
+
+    bool GetIntegerValue(int& target,
+                         const DicomPath& path) const;
+
+    bool GetUnsignedIntegerValue(unsigned int& target,
+                                 const DicomPath& path) const;
+
+    bool GetFloatValue(float& target,
+                       const DicomPath& path) const;
+
+    bool GetDoubleValue(double& target,
+                        const DicomPath& path) const;
   };
 }

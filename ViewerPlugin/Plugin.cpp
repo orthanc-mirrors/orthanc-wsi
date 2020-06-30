@@ -23,6 +23,7 @@
 
 #include "DicomPyramidCache.h"
 #include "../Framework/Jpeg2000Reader.h"
+#include "../Framework/Inputs/Orthanc/OrthancPluginConnection.h"
 
 #include <Logging.h>
 #include <Images/ImageProcessing.h>
@@ -31,8 +32,7 @@
 #include <OrthancException.h>
 #include <SystemToolbox.h>
 
-#include <OrthancPluginCppWrapper.h>
-#include <OrthancPluginConnection.h>
+#include "../Resources/Orthanc/Plugins/OrthancPluginCppWrapper.h"
 
 #include <EmbeddedResources.h>
 

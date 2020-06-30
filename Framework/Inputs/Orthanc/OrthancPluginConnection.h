@@ -21,30 +21,27 @@
 
 #pragma once
 
-#include "IFileTarget.h"
-#include "../Inputs/Orthanc/IOrthancConnection.h"
+#include "IOrthancConnection.h"
 
-#include <WebServiceParameters.h>
+#include <orthanc/OrthancCPlugin.h>
 
-#include <memory>
-
-namespace OrthancWSI
+namespace OrthancPlugins
 {
-  class OrthancTarget : public IFileTarget
+  // This class is thread-safe
+  class OrthancPluginConnection : public IOrthancConnection
   {
-  private:
-    std::auto_ptr<OrthancPlugins::IOrthancConnection>  orthanc_;
-    bool  first_;
-
   public:
-    explicit OrthancTarget(const Orthanc::WebServiceParameters& parameters);
+    virtual void RestApiGet(std::string& result,
+                            const std::string& uri);
 
-    explicit OrthancTarget(OrthancPlugins::IOrthancConnection* orthanc) :   // Takes ownership
-      orthanc_(orthanc),
-      first_(true)
-    {
-    }
+    virtual void RestApiPost(std::string& result,
+                             const std::string& uri,
+                             const std::string& body);
 
-    virtual void Write(const std::string& file);
+    virtual void RestApiPut(std::string& result,
+                            const std::string& uri,
+                            const std::string& body);
+
+    virtual void RestApiDelete(const std::string& uri);
   };
 }

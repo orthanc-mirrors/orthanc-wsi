@@ -22,12 +22,12 @@
 #include "../Framework/DicomToolbox.h"
 #include "../Framework/ImageToolbox.h"
 #include "../Framework/Inputs/DicomPyramid.h"
+#include "../Framework/Inputs/Orthanc/OrthancHttpConnection.h"
 #include "../Framework/Inputs/TiledPyramidStatistics.h"
 #include "../Framework/Outputs/HierarchicalTiffWriter.h"
 
 #include <Logging.h>
 #include <OrthancException.h>
-#include <OrthancHttpConnection.h>
 
 #include "ApplicationToolbox.h"
 

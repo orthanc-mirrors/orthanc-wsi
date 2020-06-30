@@ -21,30 +21,24 @@
 
 #pragma once
 
-#include "IFileTarget.h"
-#include "../Inputs/Orthanc/IOrthancConnection.h"
+#include "DicomPath.h"
 
-#include <WebServiceParameters.h>
+#include <boost/noncopyable.hpp>
+#include <string>
 
-#include <memory>
-
-namespace OrthancWSI
+namespace OrthancPlugins
 {
-  class OrthancTarget : public IFileTarget
+  class IDicomDataset : public boost::noncopyable
   {
-  private:
-    std::auto_ptr<OrthancPlugins::IOrthancConnection>  orthanc_;
-    bool  first_;
-
   public:
-    explicit OrthancTarget(const Orthanc::WebServiceParameters& parameters);
-
-    explicit OrthancTarget(OrthancPlugins::IOrthancConnection* orthanc) :   // Takes ownership
-      orthanc_(orthanc),
-      first_(true)
+    virtual ~IDicomDataset()
     {
     }
 
-    virtual void Write(const std::string& file);
+    virtual bool GetStringValue(std::string& result,
+                                const DicomPath& path) const = 0;
+
+    virtual bool GetSequenceSize(size_t& size,
+                                 const DicomPath& path) const = 0;
   };
 }

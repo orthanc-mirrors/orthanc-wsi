@@ -22,7 +22,7 @@
 #pragma once
 
 #include "../Enumerations.h"
-#include <IOrthancConnection.h>
+#include "Orthanc/IOrthancConnection.h"
 
 #include <boost/noncopyable.hpp>
 #include <vector>

@@ -21,30 +21,42 @@
 
 #pragma once
 
-#include "IFileTarget.h"
-#include "../Inputs/Orthanc/IOrthancConnection.h"
+#include "IOrthancConnection.h"
+#include "IDicomDataset.h"
 
-#include <WebServiceParameters.h>
+#include <json/value.h>
 
-#include <memory>
-
-namespace OrthancWSI
+namespace OrthancPlugins
 {
-  class OrthancTarget : public IFileTarget
+  class FullOrthancDataset : public IDicomDataset
   {
   private:
-    std::auto_ptr<OrthancPlugins::IOrthancConnection>  orthanc_;
-    bool  first_;
+    Json::Value   root_;
+
+    const Json::Value* LookupPath(const DicomPath& path) const;
+
+    void CheckRoot() const;
 
   public:
-    explicit OrthancTarget(const Orthanc::WebServiceParameters& parameters);
+    FullOrthancDataset(IOrthancConnection& orthanc,
+                       const std::string& uri);
 
-    explicit OrthancTarget(OrthancPlugins::IOrthancConnection* orthanc) :   // Takes ownership
-      orthanc_(orthanc),
-      first_(true)
+    FullOrthancDataset(const std::string& content);
+
+    FullOrthancDataset(const void* content,
+                       size_t size);
+
+    FullOrthancDataset(const Json::Value& root);
+
+    virtual bool GetStringValue(std::string& result,
+                                const DicomPath& path) const;
+
+    virtual bool GetSequenceSize(size_t& size,
+                                 const DicomPath& path) const;
+
+    FullOrthancDataset* Clone() const
     {
+      return new FullOrthancDataset(this->root_);
     }
-
-    virtual void Write(const std::string& file);
   };
 }
