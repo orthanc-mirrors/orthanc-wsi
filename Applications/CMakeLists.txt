@@ -106,7 +106,6 @@ EmbedResources(
   )
 
 add_definitions(
-  -DHAS_ORTHANC_EXCEPTION=1
   -DORTHANC_ENABLE_LOGGING_PLUGIN=0
   )
 

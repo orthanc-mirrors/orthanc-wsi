@@ -23,10 +23,6 @@
 
 #include "IOrthancConnection.h"
 
-#if HAS_ORTHANC_EXCEPTION != 1
-#  error The macro HAS_ORTHANC_EXCEPTION must be set to 1 if using this header
-#endif
-
 #include <HttpClient.h>
 
 #include <boost/thread/mutex.hpp>
