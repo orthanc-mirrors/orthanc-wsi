@@ -1,5 +1,5 @@
 /**
- * Orthanc - A Lightweight, RESTful DICOM Store
+ * Stone of Orthanc
  * Copyright (C) 2012-2016 Sebastien Jodogne, Medical Physics
  * Department, University Hospital of Liege, Belgium
  * Copyright (C) 2017-2020 Osimis S.A., Belgium
@@ -26,10 +26,10 @@
 #include <stdio.h>
 #include <cassert>
 
-namespace OrthancPlugins
+namespace OrthancStone
 {
   static const Json::Value* AccessTag(const Json::Value& dataset,
-                                      const DicomTag& tag) 
+                                      const Orthanc::DicomTag& tag) 
   {
     if (dataset.type() != Json::objectValue)
     {

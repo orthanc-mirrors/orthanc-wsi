@@ -25,7 +25,7 @@
 
 #include <OrthancException.h>
 
-namespace OrthancPlugins
+namespace OrthancWSI
 {
   void OrthancPluginConnection::RestApiGet(std::string& result,
                                            const std::string& uri) 

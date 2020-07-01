@@ -22,7 +22,7 @@
 #pragma once
 
 #include "IFileTarget.h"
-#include "../Inputs/Orthanc/IOrthancConnection.h"
+#include "../../Resources/Orthanc/Stone/IOrthancConnection.h"
 
 #include <WebServiceParameters.h>
 
@@ -33,13 +33,13 @@ namespace OrthancWSI
   class OrthancTarget : public IFileTarget
   {
   private:
-    std::auto_ptr<OrthancPlugins::IOrthancConnection>  orthanc_;
+    std::auto_ptr<OrthancStone::IOrthancConnection>  orthanc_;
     bool  first_;
 
   public:
     explicit OrthancTarget(const Orthanc::WebServiceParameters& parameters);
 
-    explicit OrthancTarget(OrthancPlugins::IOrthancConnection* orthanc) :   // Takes ownership
+    explicit OrthancTarget(OrthancStone::IOrthancConnection* orthanc) :   // Takes ownership
       orthanc_(orthanc),
       first_(true)
     {

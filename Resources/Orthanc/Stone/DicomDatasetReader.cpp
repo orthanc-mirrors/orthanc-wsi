@@ -1,5 +1,5 @@
 /**
- * Orthanc - A Lightweight, RESTful DICOM Store
+ * Stone of Orthanc
  * Copyright (C) 2012-2016 Sebastien Jodogne, Medical Physics
  * Department, University Hospital of Liege, Belgium
  * Copyright (C) 2017-2020 Osimis S.A., Belgium
@@ -22,41 +22,12 @@
 #include "DicomDatasetReader.h"
 
 #include <OrthancException.h>
+#include <Toolbox.h>
 
 #include <boost/lexical_cast.hpp>
 
-namespace OrthancPlugins
+namespace OrthancStone
 {
-  // This function is copied-pasted from "../../../Core/Toolbox.cpp",
-  // in order to avoid the dependency of plugins against the Orthanc core
-  static std::string StripSpaces(const std::string& source)
-  {
-    size_t first = 0;
-
-    while (first < source.length() &&
-           isspace(source[first]))
-    {
-      first++;
-    }
-
-    if (first == source.length())
-    {
-      // String containing only spaces
-      return "";
-    }
-
-    size_t last = source.length();
-    while (last > first &&
-           isspace(source[last - 1]))
-    {
-      last--;
-    }          
-    
-    assert(first <= last);
-    return source.substr(first, last - first);
-  }
-
-
   DicomDatasetReader::DicomDatasetReader(const IDicomDataset& dataset) :
     dataset_(dataset)
   {
@@ -103,7 +74,7 @@ namespace OrthancPlugins
 
       if (dataset.GetStringValue(s, path))
       {
-        target = boost::lexical_cast<T>(StripSpaces(s));
+        target = boost::lexical_cast<T>(Orthanc::Toolbox::StripSpaces(s));
         return true;
       }
       else

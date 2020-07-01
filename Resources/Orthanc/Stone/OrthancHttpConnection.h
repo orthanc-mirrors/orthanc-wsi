@@ -1,5 +1,5 @@
 /**
- * Orthanc - A Lightweight, RESTful DICOM Store
+ * Stone of Orthanc
  * Copyright (C) 2012-2016 Sebastien Jodogne, Medical Physics
  * Department, University Hospital of Liege, Belgium
  * Copyright (C) 2017-2020 Osimis S.A., Belgium
@@ -22,41 +22,39 @@
 #pragma once
 
 #include "IOrthancConnection.h"
-#include "IDicomDataset.h"
 
-#include <json/value.h>
+#include <HttpClient.h>
 
-namespace OrthancPlugins
+#include <boost/thread/mutex.hpp>
+
+namespace OrthancStone
 {
-  class FullOrthancDataset : public IDicomDataset
+  // This class is thread-safe
+  class OrthancHttpConnection : public IOrthancConnection
   {
   private:
-    Json::Value   root_;
+    boost::mutex         mutex_;
+    Orthanc::HttpClient  client_;
+    std::string          url_;
 
-    const Json::Value* LookupPath(const DicomPath& path) const;
-
-    void CheckRoot() const;
+    void Setup();
 
   public:
-    FullOrthancDataset(IOrthancConnection& orthanc,
-                       const std::string& uri);
+    OrthancHttpConnection();
 
-    FullOrthancDataset(const std::string& content);
+    OrthancHttpConnection(const Orthanc::WebServiceParameters& parameters);
 
-    FullOrthancDataset(const void* content,
-                       size_t size);
+    virtual void RestApiGet(std::string& result,
+                            const std::string& uri);
 
-    FullOrthancDataset(const Json::Value& root);
+    virtual void RestApiPost(std::string& result,
+                             const std::string& uri,
+                             const std::string& body);
 
-    virtual bool GetStringValue(std::string& result,
-                                const DicomPath& path) const;
+    virtual void RestApiPut(std::string& result,
+                            const std::string& uri,
+                            const std::string& body);
 
-    virtual bool GetSequenceSize(size_t& size,
-                                 const DicomPath& path) const;
-
-    FullOrthancDataset* Clone() const
-    {
-      return new FullOrthancDataset(this->root_);
-    }
+    virtual void RestApiDelete(const std::string& uri);
   };
 }

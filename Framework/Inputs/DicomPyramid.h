@@ -32,10 +32,10 @@ namespace OrthancWSI
   private:
     struct Comparator;
 
-    OrthancPlugins::IOrthancConnection&  orthanc_;
-    std::string                          seriesId_;
-    std::vector<DicomPyramidInstance*>   instances_;
-    std::vector<DicomPyramidLevel*>      levels_;
+    OrthancStone::IOrthancConnection&   orthanc_;
+    std::string                         seriesId_;
+    std::vector<DicomPyramidInstance*>  instances_;
+    std::vector<DicomPyramidLevel*>     levels_;
 
     void Clear();
 
@@ -47,7 +47,7 @@ namespace OrthancWSI
     void CheckLevel(size_t level) const;
 
   public:
-    DicomPyramid(OrthancPlugins::IOrthancConnection& orthanc,
+    DicomPyramid(OrthancStone::IOrthancConnection& orthanc,
                  const std::string& seriesId,
                  bool useCache);
 

@@ -1,5 +1,5 @@
 /**
- * Orthanc - A Lightweight, RESTful DICOM Store
+ * Stone of Orthanc
  * Copyright (C) 2012-2016 Sebastien Jodogne, Medical Physics
  * Department, University Hospital of Liege, Belgium
  * Copyright (C) 2017-2020 Osimis S.A., Belgium
@@ -25,7 +25,7 @@
 
 #include <boost/lexical_cast.hpp>
 
-namespace OrthancPlugins
+namespace OrthancStone
 {
   const DicomPath::Prefix& DicomPath::GetPrefixItem(size_t depth) const
   {
@@ -53,20 +53,20 @@ namespace OrthancPlugins
   }
 
 
-  DicomPath::DicomPath(const DicomTag& sequence,
+  DicomPath::DicomPath(const Orthanc::DicomTag& sequence,
                        size_t index,
-                       const DicomTag& tag) :
+                       const Orthanc::DicomTag& tag) :
     finalTag_(tag)
   {
     AddToPrefix(sequence, index);
   }
 
 
-  DicomPath::DicomPath(const DicomTag& sequence1,
+  DicomPath::DicomPath(const Orthanc::DicomTag& sequence1,
                        size_t index1,
-                       const DicomTag& sequence2,
+                       const Orthanc::DicomTag& sequence2,
                        size_t index2,
-                       const DicomTag& tag) :
+                       const Orthanc::DicomTag& tag) :
     finalTag_(tag)
   {
     AddToPrefix(sequence1, index1);
@@ -74,13 +74,13 @@ namespace OrthancPlugins
   }
 
 
-  DicomPath::DicomPath(const DicomTag& sequence1,
+  DicomPath::DicomPath(const Orthanc::DicomTag& sequence1,
                        size_t index1,
-                       const DicomTag& sequence2,
+                       const Orthanc::DicomTag& sequence2,
                        size_t index2,
-                       const DicomTag& sequence3,
+                       const Orthanc::DicomTag& sequence3,
                        size_t index3,
-                       const DicomTag& tag) :
+                       const Orthanc::DicomTag& tag) :
     finalTag_(tag)
   {
     AddToPrefix(sequence1, index1);
@@ -89,16 +89,24 @@ namespace OrthancPlugins
   }
 
 
+  static std::string FormatHexadecimal(const Orthanc::DicomTag& tag)
+  {
+    char buf[16];
+    sprintf(buf, "(%04x,%04x)", tag.GetGroup(), tag.GetElement());
+    return buf;
+  }
+  
+
   std::string DicomPath::Format() const
   {
     std::string s;
       
     for (size_t i = 0; i < GetPrefixLength(); i++)
     {
-      s += (GetPrefixTag(i).FormatHexadecimal() + " / " +
+      s += (FormatHexadecimal(GetPrefixTag(i)) + " / " +
             boost::lexical_cast<std::string>(i) + " / ");
     }
 
-    return s + GetFinalTag().FormatHexadecimal();
+    return s + FormatHexadecimal(GetFinalTag());
   }
 }

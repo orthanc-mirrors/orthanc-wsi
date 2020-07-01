@@ -146,6 +146,7 @@ EmbedResources(
 
 set(ORTHANC_WSI_SOURCES
   DicomPyramidCache.cpp
+  OrthancPluginConnection.cpp
   Plugin.cpp
 
   ${ORTHANC_WSI_DIR}/Framework/DicomToolbox.cpp
@@ -154,17 +155,15 @@ set(ORTHANC_WSI_SOURCES
   ${ORTHANC_WSI_DIR}/Framework/Inputs/DicomPyramid.cpp
   ${ORTHANC_WSI_DIR}/Framework/Inputs/DicomPyramidInstance.cpp
   ${ORTHANC_WSI_DIR}/Framework/Inputs/DicomPyramidLevel.cpp
-  ${ORTHANC_WSI_DIR}/Framework/Inputs/Orthanc/DicomDatasetReader.cpp
-  ${ORTHANC_WSI_DIR}/Framework/Inputs/Orthanc/DicomPath.cpp
-  ${ORTHANC_WSI_DIR}/Framework/Inputs/Orthanc/DicomTag.cpp
-  ${ORTHANC_WSI_DIR}/Framework/Inputs/Orthanc/FullOrthancDataset.cpp
-  ${ORTHANC_WSI_DIR}/Framework/Inputs/Orthanc/IOrthancConnection.cpp
-  ${ORTHANC_WSI_DIR}/Framework/Inputs/Orthanc/OrthancPluginConnection.cpp
   ${ORTHANC_WSI_DIR}/Framework/Inputs/PyramidWithRawTiles.cpp
   ${ORTHANC_WSI_DIR}/Framework/Jpeg2000Reader.cpp
   ${ORTHANC_WSI_DIR}/Framework/Jpeg2000Writer.cpp
 
-  ${CMAKE_SOURCE_DIR}/../Resources/Orthanc/Plugins/OrthancPluginCppWrapper.cpp
+  ${ORTHANC_WSI_DIR}/Resources/Orthanc/Plugins/OrthancPluginCppWrapper.cpp
+  ${ORTHANC_WSI_DIR}/Resources/Orthanc/Stone/DicomDatasetReader.cpp
+  ${ORTHANC_WSI_DIR}/Resources/Orthanc/Stone/DicomPath.cpp
+  ${ORTHANC_WSI_DIR}/Resources/Orthanc/Stone/FullOrthancDataset.cpp
+  ${ORTHANC_WSI_DIR}/Resources/Orthanc/Stone/IOrthancConnection.cpp
   )
 
 

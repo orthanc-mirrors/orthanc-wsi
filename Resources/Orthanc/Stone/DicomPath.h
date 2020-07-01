@@ -1,5 +1,5 @@
 /**
- * Orthanc - A Lightweight, RESTful DICOM Store
+ * Stone of Orthanc
  * Copyright (C) 2012-2016 Sebastien Jodogne, Medical Physics
  * Department, University Hospital of Liege, Belgium
  * Copyright (C) 2017-2020 Osimis S.A., Belgium
@@ -21,50 +21,50 @@
 
 #pragma once
 
-#include "DicomTag.h"
+#include <DicomFormat/DicomTag.h>
 
 #include <vector>
 #include <stddef.h>
 
-namespace OrthancPlugins
+namespace OrthancStone
 {
   class DicomPath
   {
   private:
-    typedef std::pair<DicomTag, size_t>  Prefix;
+    typedef std::pair<Orthanc::DicomTag, size_t>  Prefix;
 
     std::vector<Prefix>  prefix_;
-    DicomTag             finalTag_;
+    Orthanc::DicomTag    finalTag_;
 
     const Prefix& GetPrefixItem(size_t depth) const;
 
     Prefix& GetPrefixItem(size_t depth);
 
   public:
-    DicomPath(const DicomTag& finalTag) :
-    finalTag_(finalTag)
+    DicomPath(const Orthanc::DicomTag& finalTag) :
+      finalTag_(finalTag)
     {
     }
 
-    DicomPath(const DicomTag& sequence,
+    DicomPath(const Orthanc::DicomTag& sequence,
               size_t index,
-              const DicomTag& tag);
+              const Orthanc::DicomTag& tag);
 
-    DicomPath(const DicomTag& sequence1,
+    DicomPath(const Orthanc::DicomTag& sequence1,
               size_t index1,
-              const DicomTag& sequence2,
+              const Orthanc::DicomTag& sequence2,
               size_t index2,
-              const DicomTag& tag);
+              const Orthanc::DicomTag& tag);
 
-    DicomPath(const DicomTag& sequence1,
+    DicomPath(const Orthanc::DicomTag& sequence1,
               size_t index1,
-              const DicomTag& sequence2,
+              const Orthanc::DicomTag& sequence2,
               size_t index2,
-              const DicomTag& sequence3,
+              const Orthanc::DicomTag& sequence3,
               size_t index3,
-              const DicomTag& tag);
+              const Orthanc::DicomTag& tag);
 
-    void AddToPrefix(const DicomTag& tag,
+    void AddToPrefix(const Orthanc::DicomTag& tag,
                      size_t position)
     {
       prefix_.push_back(std::make_pair(tag, position));
@@ -75,7 +75,7 @@ namespace OrthancPlugins
       return prefix_.size();
     }
     
-    DicomTag GetPrefixTag(size_t depth) const
+    Orthanc::DicomTag GetPrefixTag(size_t depth) const
     {
       return GetPrefixItem(depth).first;
     }
@@ -91,12 +91,12 @@ namespace OrthancPlugins
       GetPrefixItem(depth).second = value;
     }
     
-    const DicomTag& GetFinalTag() const
+    const Orthanc::DicomTag& GetFinalTag() const
     {
       return finalTag_;
     }
 
-    void SetFinalTag(const DicomTag& tag)
+    void SetFinalTag(const Orthanc::DicomTag& tag)
     {
       finalTag_ = tag;
     }

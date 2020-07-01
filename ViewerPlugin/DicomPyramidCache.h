@@ -34,10 +34,10 @@ namespace OrthancWSI
   private:
     typedef Orthanc::LeastRecentlyUsedIndex<std::string, DicomPyramid*>  Cache;
 
-    boost::mutex                         mutex_;
-    OrthancPlugins::IOrthancConnection&  orthanc_;
-    size_t                               maxSize_;
-    Cache                                cache_;
+    boost::mutex                       mutex_;
+    OrthancStone::IOrthancConnection&  orthanc_;
+    size_t                             maxSize_;
+    Cache                              cache_;
 
 
     DicomPyramid* GetCachedPyramid(const std::string& seriesId);
@@ -46,7 +46,7 @@ namespace OrthancWSI
                              boost::mutex::scoped_lock& lock);
 
   public:
-    DicomPyramidCache(OrthancPlugins::IOrthancConnection& orthanc,
+    DicomPyramidCache(OrthancStone::IOrthancConnection& orthanc,
                       size_t maxSize);
 
     ~DicomPyramidCache();

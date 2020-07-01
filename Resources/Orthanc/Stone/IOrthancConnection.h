@@ -1,5 +1,5 @@
 /**
- * Orthanc - A Lightweight, RESTful DICOM Store
+ * Stone of Orthanc
  * Copyright (C) 2012-2016 Sebastien Jodogne, Medical Physics
  * Department, University Hospital of Liege, Belgium
  * Copyright (C) 2017-2020 Osimis S.A., Belgium
@@ -27,7 +27,7 @@
 #include <string>
 #include <json/value.h>
 
-namespace OrthancPlugins
+namespace OrthancStone
 {
   class IOrthancConnection : public boost::noncopyable
   {

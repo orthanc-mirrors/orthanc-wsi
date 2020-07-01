@@ -21,14 +21,18 @@
 
 #pragma once
 
-#include "IOrthancConnection.h"
+#include "../Resources/Orthanc/Stone/IOrthancConnection.h"
 
 #include <orthanc/OrthancCPlugin.h>
 
-namespace OrthancPlugins
+namespace OrthancWSI
 {
-  // This class is thread-safe
-  class OrthancPluginConnection : public IOrthancConnection
+  /**
+   * This file was originally part of the Orthanc repository, in
+   * releases up to 1.7.1 (in folder "Plugins/Samples/Common/"). This
+   * class is thread-safe.
+   **/
+  class OrthancPluginConnection : public OrthancStone::IOrthancConnection
   {
   public:
     virtual void RestApiGet(std::string& result,

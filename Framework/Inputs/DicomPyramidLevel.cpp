@@ -120,7 +120,7 @@ namespace OrthancWSI
   bool DicomPyramidLevel::DownloadRawTile(std::string& raw /* out */,
                                           Orthanc::PixelFormat& format /* out */,
                                           ImageCompression& compression /* out */,
-                                          OrthancPlugins::IOrthancConnection& orthanc,
+                                          OrthancStone::IOrthancConnection& orthanc,
                                           unsigned int tileX,
                                           unsigned int tileY) const
   {

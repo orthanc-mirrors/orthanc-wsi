@@ -109,7 +109,7 @@ namespace OrthancWSI
   }
 
 
-  DicomPyramidCache::DicomPyramidCache(OrthancPlugins::IOrthancConnection& orthanc,
+  DicomPyramidCache::DicomPyramidCache(OrthancStone::IOrthancConnection& orthanc,
                                        size_t maxSize) :
     orthanc_(orthanc),
     maxSize_(maxSize)

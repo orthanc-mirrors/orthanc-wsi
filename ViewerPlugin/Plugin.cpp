@@ -21,9 +21,9 @@
 
 #include "../Framework/PrecompiledHeadersWSI.h"
 
-#include "DicomPyramidCache.h"
 #include "../Framework/Jpeg2000Reader.h"
-#include "../Framework/Inputs/Orthanc/OrthancPluginConnection.h"
+#include "DicomPyramidCache.h"
+#include "OrthancPluginConnection.h"
 
 #include <Logging.h>
 #include <Images/ImageProcessing.h>
@@ -38,9 +38,9 @@
 
 #include <cassert>
 
-std::auto_ptr<OrthancPlugins::OrthancPluginConnection>  orthanc_;
-std::auto_ptr<OrthancWSI::DicomPyramidCache>            cache_;
-std::auto_ptr<Orthanc::Semaphore>                       transcoderSemaphore_;
+std::auto_ptr<OrthancWSI::OrthancPluginConnection>  orthanc_;
+std::auto_ptr<OrthancWSI::DicomPyramidCache>        cache_;
+std::auto_ptr<Orthanc::Semaphore>                   transcoderSemaphore_;
 
 
 static void AnswerSparseTile(OrthancPluginRestOutput* output,
@@ -329,7 +329,7 @@ extern "C"
 
     OrthancPluginSetDescription(context, "Provides a Web viewer of whole-slide microscopic images within Orthanc.");
 
-    orthanc_.reset(new OrthancPlugins::OrthancPluginConnection);
+    orthanc_.reset(new OrthancWSI::OrthancPluginConnection);
     cache_.reset(new OrthancWSI::DicomPyramidCache(*orthanc_, 10 /* Number of pyramids to be cached - TODO parameter */));
 
     OrthancPluginRegisterOnChangeCallback(OrthancPlugins::GetGlobalContext(), OnChangeCallback);

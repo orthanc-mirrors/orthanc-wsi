@@ -23,7 +23,7 @@
 #include "OrthancTarget.h"
 
 #include "../DicomToolbox.h"
-#include "../Inputs/Orthanc/OrthancHttpConnection.h"
+#include "../../Resources/Orthanc/Stone/OrthancHttpConnection.h"
 
 #include <OrthancException.h>
 #include <Logging.h>
@@ -32,7 +32,7 @@
 namespace OrthancWSI
 {
   OrthancTarget::OrthancTarget(const Orthanc::WebServiceParameters& parameters) :
-    orthanc_(new OrthancPlugins::OrthancHttpConnection(parameters)),
+    orthanc_(new OrthancStone::OrthancHttpConnection(parameters)),
     first_(true)
   {
   }
@@ -41,7 +41,7 @@ namespace OrthancWSI
   void OrthancTarget::Write(const std::string& file)
   {
     Json::Value result;
-    OrthancPlugins::IOrthancConnection::RestApiPost(result, *orthanc_, "/instances", file);
+    OrthancStone::IOrthancConnection::RestApiPost(result, *orthanc_, "/instances", file);
 
     if (result.type() != Json::objectValue ||
         !result.isMember("ID") ||
@@ -55,7 +55,7 @@ namespace OrthancWSI
     if (first_)
     {
       Json::Value instance;
-      OrthancPlugins::IOrthancConnection::RestApiGet(instance, *orthanc_, "/instances/" + instanceId);
+      OrthancStone::IOrthancConnection::RestApiGet(instance, *orthanc_, "/instances/" + instanceId);
 
       if (instance.type() != Json::objectValue ||
           !instance.isMember("ParentSeries") ||

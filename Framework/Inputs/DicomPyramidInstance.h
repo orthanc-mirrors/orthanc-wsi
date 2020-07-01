@@ -22,7 +22,7 @@
 #pragma once
 
 #include "../Enumerations.h"
-#include "Orthanc/IOrthancConnection.h"
+#include "../../Resources/Orthanc/Stone/IOrthancConnection.h"
 
 #include <boost/noncopyable.hpp>
 #include <vector>
@@ -45,13 +45,13 @@ namespace OrthancWSI
     std::vector<FrameLocation>  frames_;
     Orthanc::PhotometricInterpretation  photometric_;
 
-    void Load(OrthancPlugins::IOrthancConnection&  orthanc,
+    void Load(OrthancStone::IOrthancConnection&  orthanc,
               const std::string& instanceId);
 
     void Deserialize(const std::string& content);
 
   public:
-    DicomPyramidInstance(OrthancPlugins::IOrthancConnection&  orthanc,
+    DicomPyramidInstance(OrthancStone::IOrthancConnection&  orthanc,
                          const std::string& instanceId,
                          bool useCache);
 
@@ -60,7 +60,7 @@ namespace OrthancWSI
       return instanceId_;
     }
 
-    ImageCompression GetImageCompression(OrthancPlugins::IOrthancConnection& orthanc);
+    ImageCompression GetImageCompression(OrthancStone::IOrthancConnection& orthanc);
 
     Orthanc::PixelFormat GetPixelFormat() const
     {

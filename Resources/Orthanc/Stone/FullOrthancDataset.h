@@ -1,5 +1,5 @@
 /**
- * Orthanc - A Lightweight, RESTful DICOM Store
+ * Stone of Orthanc
  * Copyright (C) 2012-2016 Sebastien Jodogne, Medical Physics
  * Department, University Hospital of Liege, Belgium
  * Copyright (C) 2017-2020 Osimis S.A., Belgium
@@ -22,39 +22,41 @@
 #pragma once
 
 #include "IOrthancConnection.h"
+#include "IDicomDataset.h"
 
-#include <HttpClient.h>
+#include <json/value.h>
 
-#include <boost/thread/mutex.hpp>
-
-namespace OrthancPlugins
+namespace OrthancStone
 {
-  // This class is thread-safe
-  class OrthancHttpConnection : public IOrthancConnection
+  class FullOrthancDataset : public IDicomDataset
   {
   private:
-    boost::mutex         mutex_;
-    Orthanc::HttpClient  client_;
-    std::string          url_;
+    Json::Value   root_;
 
-    void Setup();
+    const Json::Value* LookupPath(const DicomPath& path) const;
+
+    void CheckRoot() const;
 
   public:
-    OrthancHttpConnection();
+    FullOrthancDataset(IOrthancConnection& orthanc,
+                       const std::string& uri);
 
-    OrthancHttpConnection(const Orthanc::WebServiceParameters& parameters);
+    FullOrthancDataset(const std::string& content);
 
-    virtual void RestApiGet(std::string& result,
-                            const std::string& uri);
+    FullOrthancDataset(const void* content,
+                       size_t size);
 
-    virtual void RestApiPost(std::string& result,
-                             const std::string& uri,
-                             const std::string& body);
+    FullOrthancDataset(const Json::Value& root);
 
-    virtual void RestApiPut(std::string& result,
-                            const std::string& uri,
-                            const std::string& body);
+    virtual bool GetStringValue(std::string& result,
+                                const DicomPath& path) const;
 
-    virtual void RestApiDelete(const std::string& uri);
+    virtual bool GetSequenceSize(size_t& size,
+                                 const DicomPath& path) const;
+
+    FullOrthancDataset* Clone() const
+    {
+      return new FullOrthancDataset(this->root_);
+    }
   };
 }

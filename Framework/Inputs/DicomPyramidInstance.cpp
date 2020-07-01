@@ -23,8 +23,8 @@
 #include "DicomPyramidInstance.h"
 
 #include "../DicomToolbox.h"
-#include "Orthanc/DicomDatasetReader.h"
-#include "Orthanc/FullOrthancDataset.h"
+#include "../../Resources/Orthanc/Stone/DicomDatasetReader.h"
+#include "../../Resources/Orthanc/Stone/FullOrthancDataset.h"
 
 #include <Logging.h>
 #include <OrthancException.h>
@@ -35,18 +35,26 @@
 
 #define SERIALIZED_METADATA  "4200"
 
+
 namespace OrthancWSI
 {
-  static ImageCompression DetectImageCompression(OrthancPlugins::IOrthancConnection& orthanc,
+  static const Orthanc::DicomTag DICOM_TAG_COLUMN_POSITION_IN_TOTAL_IMAGE_PIXEL_MATRIX(0x0048, 0x021e);
+  static const Orthanc::DicomTag DICOM_TAG_PER_FRAME_FUNCTIONAL_GROUPS_SEQUENCE(0x5200, 0x9230);
+  static const Orthanc::DicomTag DICOM_TAG_PLANE_POSITION_SLIDE_SEQUENCE(0x0048, 0x021a);
+  static const Orthanc::DicomTag DICOM_TAG_ROW_POSITION_IN_TOTAL_IMAGE_PIXEL_MATRIX(0x0048, 0x021f);
+  static const Orthanc::DicomTag DICOM_TAG_TOTAL_PIXEL_MATRIX_COLUMNS(0x0048, 0x0006);
+  static const Orthanc::DicomTag DICOM_TAG_TOTAL_PIXEL_MATRIX_ROWS(0x0048, 0x0007);
+
+  static ImageCompression DetectImageCompression(OrthancStone::IOrthancConnection& orthanc,
                                                  const std::string& instanceId)
   {
-    using namespace OrthancPlugins;
+    using namespace OrthancStone;
 
     FullOrthancDataset dataset(orthanc, "/instances/" + instanceId + "/header");
     DicomDatasetReader header(dataset);
 
     std::string s = Orthanc::Toolbox::StripSpaces
-      (header.GetMandatoryStringValue(DICOM_TAG_TRANSFER_SYNTAX_UID));
+      (header.GetMandatoryStringValue(Orthanc::DICOM_TAG_TRANSFER_SYNTAX_UID));
 
     if (s == "1.2.840.10008.1.2" ||
         s == "1.2.840.10008.1.2.1")
@@ -72,12 +80,12 @@ namespace OrthancWSI
 
   static void DetectPixelFormat(Orthanc::PixelFormat& format,
                                 Orthanc::PhotometricInterpretation& photometric,
-                                OrthancPlugins::DicomDatasetReader& reader)
+                                OrthancStone::DicomDatasetReader& reader)
   {
-    using namespace OrthancPlugins;
+    using namespace OrthancStone;
 
     std::string p = Orthanc::Toolbox::StripSpaces
-      (reader.GetMandatoryStringValue(DICOM_TAG_PHOTOMETRIC_INTERPRETATION));
+      (reader.GetMandatoryStringValue(Orthanc::DICOM_TAG_PHOTOMETRIC_INTERPRETATION));
     
     photometric = Orthanc::StringToPhotometricInterpretation(p.c_str());
 
@@ -89,9 +97,9 @@ namespace OrthancWSI
 
     unsigned int bitsStored, samplesPerPixel, tmp;
 
-    if (!reader.GetUnsignedIntegerValue(bitsStored, DICOM_TAG_BITS_STORED) ||
-        !reader.GetUnsignedIntegerValue(samplesPerPixel, DICOM_TAG_SAMPLES_PER_PIXEL) ||
-        !reader.GetUnsignedIntegerValue(tmp, DICOM_TAG_PIXEL_REPRESENTATION))
+    if (!reader.GetUnsignedIntegerValue(bitsStored, Orthanc::DICOM_TAG_BITS_STORED) ||
+        !reader.GetUnsignedIntegerValue(samplesPerPixel, Orthanc::DICOM_TAG_SAMPLES_PER_PIXEL) ||
+        !reader.GetUnsignedIntegerValue(tmp, Orthanc::DICOM_TAG_PIXEL_REPRESENTATION))
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_InexistentTag);
     }
@@ -117,7 +125,7 @@ namespace OrthancWSI
   }
 
 
-  ImageCompression  DicomPyramidInstance::GetImageCompression(OrthancPlugins::IOrthancConnection& orthanc)
+  ImageCompression  DicomPyramidInstance::GetImageCompression(OrthancStone::IOrthancConnection& orthanc)
   {
     /**
      * Lazy detection of the image compression using the transfer
@@ -138,16 +146,16 @@ namespace OrthancWSI
   }
 
   
-  void DicomPyramidInstance::Load(OrthancPlugins::IOrthancConnection&  orthanc,
+  void DicomPyramidInstance::Load(OrthancStone::IOrthancConnection&  orthanc,
                                   const std::string& instanceId)
   {
-    using namespace OrthancPlugins;
+    using namespace OrthancStone;
 
     FullOrthancDataset dataset(orthanc, "/instances/" + instanceId + "/tags");
     DicomDatasetReader reader(dataset);
 
-    if (reader.GetMandatoryStringValue(DICOM_TAG_SOP_CLASS_UID) != "1.2.840.10008.5.1.4.1.1.77.1.6" ||
-        reader.GetMandatoryStringValue(DICOM_TAG_MODALITY) != "SM")
+    if (reader.GetMandatoryStringValue(Orthanc::DICOM_TAG_SOP_CLASS_UID) != "1.2.840.10008.5.1.4.1.1.77.1.6" ||
+        reader.GetMandatoryStringValue(Orthanc::DICOM_TAG_MODALITY) != "SM")
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
     }
@@ -156,11 +164,11 @@ namespace OrthancWSI
     DetectPixelFormat(format_, photometric_, reader);
 
     unsigned int tmp;
-    if (!reader.GetUnsignedIntegerValue(tileWidth_, DICOM_TAG_COLUMNS) ||
-        !reader.GetUnsignedIntegerValue(tileHeight_, DICOM_TAG_ROWS) ||
+    if (!reader.GetUnsignedIntegerValue(tileWidth_, Orthanc::DICOM_TAG_COLUMNS) ||
+        !reader.GetUnsignedIntegerValue(tileHeight_, Orthanc::DICOM_TAG_ROWS) ||
         !reader.GetUnsignedIntegerValue(totalWidth_, DICOM_TAG_TOTAL_PIXEL_MATRIX_COLUMNS) ||
         !reader.GetUnsignedIntegerValue(totalHeight_, DICOM_TAG_TOTAL_PIXEL_MATRIX_ROWS) ||
-        !reader.GetUnsignedIntegerValue(tmp, DICOM_TAG_NUMBER_OF_FRAMES))
+        !reader.GetUnsignedIntegerValue(tmp, Orthanc::DICOM_TAG_NUMBER_OF_FRAMES))
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
     }
@@ -221,7 +229,7 @@ namespace OrthancWSI
   }
 
 
-  DicomPyramidInstance::DicomPyramidInstance(OrthancPlugins::IOrthancConnection&  orthanc,
+  DicomPyramidInstance::DicomPyramidInstance(OrthancStone::IOrthancConnection&  orthanc,
                                              const std::string& instanceId,
                                              bool useCache) :
     instanceId_(instanceId),
@@ -313,7 +321,7 @@ namespace OrthancWSI
     hasCompression_ = false;
 
     Json::Value content;
-    OrthancPlugins::IOrthancConnection::ParseJson(content, s);
+    OrthancStone::IOrthancConnection::ParseJson(content, s);
 
     if (content.type() != Json::objectValue ||
         !content.isMember("Frames") ||

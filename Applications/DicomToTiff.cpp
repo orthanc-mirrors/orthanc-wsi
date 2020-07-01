@@ -22,9 +22,9 @@
 #include "../Framework/DicomToolbox.h"
 #include "../Framework/ImageToolbox.h"
 #include "../Framework/Inputs/DicomPyramid.h"
-#include "../Framework/Inputs/Orthanc/OrthancHttpConnection.h"
 #include "../Framework/Inputs/TiledPyramidStatistics.h"
 #include "../Framework/Outputs/HierarchicalTiffWriter.h"
+#include "../Resources/Orthanc/Stone/OrthancHttpConnection.h"
 
 #include <Logging.h>
 #include <OrthancException.h>
@@ -318,7 +318,7 @@ int main(int argc, char* argv[])
 
       OrthancWSI::ApplicationToolbox::SetupRestApi(params, options);
 
-      OrthancPlugins::OrthancHttpConnection orthanc(params);
+      OrthancStone::OrthancHttpConnection orthanc(params);
       OrthancWSI::DicomPyramid source(orthanc, options[OPTION_INPUT].as<std::string>(), 
                                       false /* don't use cached metadata */);
 

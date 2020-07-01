@@ -65,7 +65,7 @@ namespace OrthancWSI
                                        bool useCache)
   {
     Json::Value series;
-    OrthancPlugins::IOrthancConnection::RestApiGet(series, orthanc_, "/series/" + seriesId);
+    OrthancStone::IOrthancConnection::RestApiGet(series, orthanc_, "/series/" + seriesId);
 
     if (series.type() != Json::objectValue ||
         !series.isMember("Instances") ||
@@ -139,7 +139,7 @@ namespace OrthancWSI
   }
 
 
-  DicomPyramid::DicomPyramid(OrthancPlugins::IOrthancConnection& orthanc,
+  DicomPyramid::DicomPyramid(OrthancStone::IOrthancConnection& orthanc,
                              const std::string& seriesId,
                              bool useCache) :
     orthanc_(orthanc),
