@@ -158,4 +158,7 @@ else()
     
   link_libraries(${OPENJPEG_LIB})
   include_directories(${OPENJPEG_INCLUDE_DIR})
+
+  unset(CMAKE_REQUIRED_INCLUDES)
+  unset(CMAKE_REQUIRED_LIBRARIES)
 endif()
