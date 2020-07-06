@@ -52,7 +52,6 @@ else()
   SET(ENABLE_SSL ON)
   SET(ENABLE_WEB_CLIENT ON)
   SET(ENABLE_ZLIB ON)
-  SET(HAS_EMBEDDED_RESOURCES ON)
 
   include(${ORTHANC_FRAMEWORK_ROOT}/Resources/CMake/VisualStudioPrecompiledHeaders.cmake)
   include(${ORTHANC_FRAMEWORK_ROOT}/Resources/CMake/OrthancFrameworkConfiguration.cmake)
