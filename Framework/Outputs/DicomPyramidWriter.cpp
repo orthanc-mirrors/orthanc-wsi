@@ -28,7 +28,6 @@
 #include <OrthancException.h>
 #include <DicomParsing/FromDcmtkBridge.h>
 
-#include <dcmtk/dcmdata/dcdeftag.h>
 #include <boost/lexical_cast.hpp>
 
 namespace OrthancWSI

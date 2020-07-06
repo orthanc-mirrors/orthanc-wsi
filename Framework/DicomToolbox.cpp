@@ -28,6 +28,7 @@
 
 #if ORTHANC_ENABLE_DCMTK == 1
 #  include <dcmtk/dcmdata/dcelem.h>
+#  include <dcmtk/dcmdata/dcitem.h>
 #  include <dcmtk/dcmdata/dcsequen.h>
 #  include <dcmtk/dcmdata/dcvrat.h>
 #endif

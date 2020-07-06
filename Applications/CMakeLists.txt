@@ -26,36 +26,45 @@ SET(USE_SYSTEM_OPENJPEG ON CACHE BOOL "Use the system version of OpenJpeg")
 SET(ORTHANC_WSI_DIR ${CMAKE_CURRENT_LIST_DIR}/..)
 SET(USE_OPENJPEG_JP2 ON)
 
-include(${CMAKE_SOURCE_DIR}/../Resources/Orthanc/DownloadOrthancFramework.cmake)
+if (ORTHANC_FRAMEWORK_SOURCE STREQUAL "system")
+  set(ENABLE_DCMTK ON)
+  set(ORTHANC_BOOST_COMPONENTS program_options)
+  include(${CMAKE_SOURCE_DIR}/../Resources/Orthanc/CMake/DownloadOrthancFramework.cmake)  
+  link_libraries(${ORTHANC_FRAMEWORK_LIBRARIES})
+  
+else()
+  include(${CMAKE_SOURCE_DIR}/../Resources/Orthanc/CMake/DownloadOrthancFramework.cmake)
 
-UNSET(STANDALONE_BUILD CACHE)
-SET(STANDALONE_BUILD ON)       # Embed DCMTK's dictionaries for static builds
+  UNSET(STANDALONE_BUILD CACHE)
+  SET(STANDALONE_BUILD ON)       # Embed DCMTK's dictionaries for static builds
 
-include(${ORTHANC_FRAMEWORK_ROOT}/Resources/CMake/OrthancFrameworkParameters.cmake)
+  include(${ORTHANC_FRAMEWORK_ROOT}/Resources/CMake/OrthancFrameworkParameters.cmake)
 
-SET(ENABLE_CRYPTO_OPTIONS ON)
-SET(ENABLE_DCMTK ON)
-SET(ENABLE_DCMTK_JPEG OFF)          # Disable DCMTK's support for JPEG, that clashes with libtiff
-SET(ENABLE_DCMTK_JPEG_LOSSLESS OFF) # Disable DCMTK's support for JPEG-LS
-SET(ENABLE_DCMTK_NETWORKING OFF)    # Disable DCMTK's support for DICOM networking
-SET(ENABLE_JPEG ON)
-SET(ENABLE_LOCALE ON)               # Enable support for locales (notably in Boost)
-SET(ENABLE_OPENSSL_ENGINES ON)
-SET(ENABLE_PNG ON)
-SET(ENABLE_SSL ON)
-SET(ENABLE_WEB_CLIENT ON)
-SET(ENABLE_ZLIB ON)
-SET(HAS_EMBEDDED_RESOURCES ON)
+  SET(ENABLE_CRYPTO_OPTIONS ON)
+  SET(ENABLE_DCMTK ON)
+  SET(ENABLE_DCMTK_JPEG OFF)          # Disable DCMTK's support for JPEG, that clashes with libtiff
+  SET(ENABLE_DCMTK_JPEG_LOSSLESS OFF) # Disable DCMTK's support for JPEG-LS
+  SET(ENABLE_DCMTK_NETWORKING OFF)    # Disable DCMTK's support for DICOM networking
+  SET(ENABLE_JPEG ON)
+  SET(ENABLE_LOCALE ON)               # Enable support for locales (notably in Boost)
+  SET(ENABLE_OPENSSL_ENGINES ON)
+  SET(ENABLE_PNG ON)
+  SET(ENABLE_SSL ON)
+  SET(ENABLE_WEB_CLIENT ON)
+  SET(ENABLE_ZLIB ON)
+  SET(HAS_EMBEDDED_RESOURCES ON)
 
-include(${ORTHANC_FRAMEWORK_ROOT}/Resources/CMake/VisualStudioPrecompiledHeaders.cmake)
-include(${ORTHANC_FRAMEWORK_ROOT}/Resources/CMake/OrthancFrameworkConfiguration.cmake)
-include_directories(
-  ${ORTHANC_FRAMEWORK_ROOT}/Sources/
-  )
+  include(${ORTHANC_FRAMEWORK_ROOT}/Resources/CMake/VisualStudioPrecompiledHeaders.cmake)
+  include(${ORTHANC_FRAMEWORK_ROOT}/Resources/CMake/OrthancFrameworkConfiguration.cmake)
+  include_directories(
+    ${ORTHANC_FRAMEWORK_ROOT}/Sources/
+    )
+
+  include(${ORTHANC_WSI_DIR}/Resources/CMake/BoostExtendedConfiguration.cmake)
+endif()
 
 
 # Include components specific to WSI
-include(${ORTHANC_WSI_DIR}/Resources/CMake/BoostExtendedConfiguration.cmake)
 include(${ORTHANC_WSI_DIR}/Resources/CMake/OpenJpegConfiguration.cmake)
 include(${ORTHANC_WSI_DIR}/Resources/CMake/LibTiffConfiguration.cmake)
 
