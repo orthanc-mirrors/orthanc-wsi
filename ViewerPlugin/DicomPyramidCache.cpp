@@ -22,6 +22,8 @@
 #include "../Framework/PrecompiledHeadersWSI.h"
 #include "DicomPyramidCache.h"
 
+#include <Compatibility.h>  // For std::unique_ptr
+
 #include <cassert>
 
 namespace OrthancWSI
@@ -64,7 +66,7 @@ namespace OrthancWSI
     // time-consuming operation, we don't want it to block other clients)
     lock.unlock();
 
-    std::auto_ptr<DicomPyramid> pyramid
+    std::unique_ptr<DicomPyramid> pyramid
       (new DicomPyramid(orthanc_, seriesId, true /* use metadata cache */));
 
     {
@@ -138,7 +140,7 @@ namespace OrthancWSI
 
     if (cache_.Contains(seriesId))
     {
-      std::auto_ptr<DicomPyramid> pyramid(cache_.Invalidate(seriesId));
+      std::unique_ptr<DicomPyramid> pyramid(cache_.Invalidate(seriesId));
 
       if (pyramid.get() == NULL)
       {

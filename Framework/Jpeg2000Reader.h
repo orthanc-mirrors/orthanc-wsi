@@ -21,7 +21,9 @@
 
 #pragma once
 
+#include <Compatibility.h>  // For std::unique_ptr
 #include <Images/Image.h>
+
 #include <memory>
 
 namespace OrthancWSI
@@ -36,7 +38,7 @@ namespace OrthancWSI
   class Jpeg2000Reader : public Orthanc::ImageAccessor
   {
   private:
-    std::auto_ptr<Orthanc::ImageAccessor> image_;
+    std::unique_ptr<Orthanc::ImageAccessor> image_;
 
   public:
     void ReadFromFile(const std::string& filename);

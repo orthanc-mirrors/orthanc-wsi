@@ -22,6 +22,7 @@
 #include "../PrecompiledHeadersWSI.h"
 #include "OpenSlidePyramid.h"
 
+#include <Compatibility.h>  // For std::unique_ptr
 #include <Images/ImageProcessing.h>
 #include <OrthancException.h>
 #include <Logging.h>
@@ -35,7 +36,7 @@ namespace OrthancWSI
                                     unsigned int x,
                                     unsigned int y)
   {
-    std::auto_ptr<Orthanc::ImageAccessor> source(image_.ReadRegion(level, x, y, target.GetWidth(), target.GetHeight()));
+    std::unique_ptr<Orthanc::ImageAccessor> source(image_.ReadRegion(level, x, y, target.GetWidth(), target.GetHeight()));
     Orthanc::ImageProcessing::Convert(target, *source);
   }
 

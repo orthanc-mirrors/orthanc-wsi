@@ -25,6 +25,7 @@
 #include "Jpeg2000Reader.h"
 #include "Jpeg2000Writer.h"
 
+#include <Compatibility.h>  // For std::unique_ptr
 #include <OrthancException.h>
 #include <Images/ImageProcessing.h>
 #include <Images/PngReader.h>
@@ -133,21 +134,21 @@ namespace OrthancWSI
       {
         case ImageCompression_Png:
         {
-          std::auto_ptr<Orthanc::PngReader> reader(new Orthanc::PngReader);
+          std::unique_ptr<Orthanc::PngReader> reader(new Orthanc::PngReader);
           reader->ReadFromMemory(source);
           return reader.release();
         }
 
         case ImageCompression_Jpeg:
         {
-          std::auto_ptr<Orthanc::JpegReader> reader(new Orthanc::JpegReader);
+          std::unique_ptr<Orthanc::JpegReader> reader(new Orthanc::JpegReader);
           reader->ReadFromMemory(source);
           return reader.release();
         }
 
         case ImageCompression_Jpeg2000:
         {
-          std::auto_ptr<Jpeg2000Reader> reader(new Jpeg2000Reader);
+          std::unique_ptr<Jpeg2000Reader> reader(new Jpeg2000Reader);
           reader->ReadFromMemory(source);
           return reader.release();
         }
@@ -194,7 +195,7 @@ namespace OrthancWSI
       }
       else
       {
-        std::auto_ptr<Orthanc::IImageWriter> writer;
+        std::unique_ptr<Orthanc::IImageWriter> writer;
 
         switch (compression)
         {
@@ -232,7 +233,7 @@ namespace OrthancWSI
       }
       else
       {
-        std::auto_ptr<Orthanc::ImageAccessor> decoded(DecodeTile(source, sourceCompression));
+        std::unique_ptr<Orthanc::ImageAccessor> decoded(DecodeTile(source, sourceCompression));
         EncodeTile(target, *decoded, targetCompression, quality);
       }
     }
@@ -328,7 +329,7 @@ namespace OrthancWSI
 
       const unsigned int bytesPerPixel = source.GetBytesPerPixel();  // Corresponds to the number of channels tx (*)
 
-      std::auto_ptr<Orthanc::ImageAccessor> target(Allocate(source.GetFormat(), 
+      std::unique_ptr<Orthanc::ImageAccessor> target(Allocate(source.GetFormat(), 
                                                             source.GetWidth() / 2, 
                                                             source.GetHeight() / 2));
 
@@ -358,7 +359,7 @@ namespace OrthancWSI
 
     Orthanc::ImageAccessor* Clone(const Orthanc::ImageAccessor& accessor)
     {
-      std::auto_ptr<Orthanc::ImageAccessor> result(Allocate(accessor.GetFormat(),
+      std::unique_ptr<Orthanc::ImageAccessor> result(Allocate(accessor.GetFormat(),
                                                             accessor.GetWidth(),
                                                             accessor.GetHeight()));
       Embed(*result, accessor, 0, 0);
@@ -370,7 +371,7 @@ namespace OrthancWSI
     Orthanc::ImageAccessor* Render(ITiledPyramid& pyramid,
                                    unsigned int level)
     {
-      std::auto_ptr<Orthanc::ImageAccessor> result(Allocate(pyramid.GetPixelFormat(), 
+      std::unique_ptr<Orthanc::ImageAccessor> result(Allocate(pyramid.GetPixelFormat(), 
                                                             pyramid.GetLevelWidth(level),
                                                             pyramid.GetLevelHeight(level)));
 
@@ -380,7 +381,7 @@ namespace OrthancWSI
       {
         for (unsigned int x = 0; x < result->GetWidth(); x += pyramid.GetTileWidth())
         {
-          std::auto_ptr<Orthanc::ImageAccessor> tile(pyramid.DecodeTile(level,
+          std::unique_ptr<Orthanc::ImageAccessor> tile(pyramid.DecodeTile(level,
                                                                         x / pyramid.GetTileWidth(),
                                                                         y / pyramid.GetTileHeight()));
           Embed(*result, *tile, x, y);

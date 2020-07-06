@@ -22,9 +22,11 @@
 #include "PrecompiledHeadersWSI.h"
 #include "Jpeg2000Reader.h"
 
+#include "ImageToolbox.h"
+
+#include <Compatibility.h>  // For std::unique_ptr
 #include <OrthancException.h>
 #include <SystemToolbox.h>
-#include "ImageToolbox.h"
 
 #include <cassert>
 #include <string.h>
@@ -400,7 +402,7 @@ namespace OrthancWSI
           throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
         }
 
-        std::auto_ptr<Orthanc::ImageAccessor> image(ImageToolbox::Allocate(format, width, height));
+        std::unique_ptr<Orthanc::ImageAccessor> image(ImageToolbox::Allocate(format, width, height));
         
         switch (format)
         {

@@ -25,6 +25,7 @@
 #include "DicomPyramidCache.h"
 #include "OrthancPluginConnection.h"
 
+#include <Compatibility.h>  // For std::unique_ptr
 #include <Logging.h>
 #include <Images/ImageProcessing.h>
 #include <Images/PngWriter.h>
@@ -38,9 +39,9 @@
 
 #include <cassert>
 
-std::auto_ptr<OrthancWSI::OrthancPluginConnection>  orthanc_;
-std::auto_ptr<OrthancWSI::DicomPyramidCache>        cache_;
-std::auto_ptr<Orthanc::Semaphore>                   transcoderSemaphore_;
+std::unique_ptr<OrthancWSI::OrthancPluginConnection>  orthanc_;
+std::unique_ptr<OrthancWSI::DicomPyramidCache>        cache_;
+std::unique_ptr<Orthanc::Semaphore>                   transcoderSemaphore_;
 
 
 static void AnswerSparseTile(OrthancPluginRestOutput* output,
@@ -183,7 +184,7 @@ void ServeTile(OrthancPluginRestOutput* output,
 
   // The tile does not come from a DICOM-JPEG instance, we need to
   // decompress the raw tile
-  std::auto_ptr<Orthanc::ImageAccessor> decoded;
+  std::unique_ptr<Orthanc::ImageAccessor> decoded;
 
   Orthanc::Semaphore::Locker locker(*transcoderSemaphore_);
 

@@ -33,6 +33,7 @@
 #include "../Framework/Outputs/DicomPyramidWriter.h"
 #include "../Framework/Outputs/TruncatedPyramidWriter.h"
 
+#include <Compatibility.h>  // For std::unique_ptr
 #include <DicomParsing/FromDcmtkBridge.h>
 #include <Logging.h>
 #include <OrthancException.h>
@@ -300,7 +301,7 @@ static DcmDataset* ParseDataset(const std::string& path)
     }
   }
 
-  std::auto_ptr<DcmDataset> dataset(Orthanc::FromDcmtkBridge::FromJson(json, true, true, Orthanc::Encoding_Latin1,
+  std::unique_ptr<DcmDataset> dataset(Orthanc::FromDcmtkBridge::FromJson(json, true, true, Orthanc::Encoding_Latin1,
                                                                        "" /* no private tag, thus no private creator */));
   if (dataset.get() == NULL)
   {
@@ -359,10 +360,10 @@ static void SetupDimension(DcmDataset& dataset,
 
   {
     // Construct tag "Dimension Organization Sequence" (0020,9221)
-    std::auto_ptr<DcmItem> item(new DcmItem);
+    std::unique_ptr<DcmItem> item(new DcmItem);
     OrthancWSI::DicomToolbox::SetStringTag(*item, DCM_DimensionOrganizationUID, organization);
     
-    std::auto_ptr<DcmSequenceOfItems> sequence(new DcmSequenceOfItems(DCM_DimensionOrganizationSequence));
+    std::unique_ptr<DcmSequenceOfItems> sequence(new DcmSequenceOfItems(DCM_DimensionOrganizationSequence));
 
     if (!sequence->insert(item.release(), false, false).good() ||
         !dataset.insert(sequence.release(), true /* replace */, false).good())
@@ -374,17 +375,17 @@ static void SetupDimension(DcmDataset& dataset,
 
   {
     // Construct tag "Dimension Index Sequence" (0020,9222)
-    std::auto_ptr<DcmItem> item(new DcmItem);
+    std::unique_ptr<DcmItem> item(new DcmItem);
     OrthancWSI::DicomToolbox::SetStringTag(*item, DCM_DimensionOrganizationUID, organization);
     OrthancWSI::DicomToolbox::SetAttributeTag(*item, DCM_FunctionalGroupPointer, DCM_PlanePositionSlideSequence);
     OrthancWSI::DicomToolbox::SetAttributeTag(*item, DCM_DimensionIndexPointer, DCM_ColumnPositionInTotalImagePixelMatrix);
 
-    std::auto_ptr<DcmItem> item2(new DcmItem);
+    std::unique_ptr<DcmItem> item2(new DcmItem);
     OrthancWSI::DicomToolbox::SetStringTag(*item2, DCM_DimensionOrganizationUID, organization);
     OrthancWSI::DicomToolbox::SetAttributeTag(*item2, DCM_FunctionalGroupPointer, DCM_PlanePositionSlideSequence);
     OrthancWSI::DicomToolbox::SetAttributeTag(*item2, DCM_DimensionIndexPointer, DCM_RowPositionInTotalImagePixelMatrix);
 
-    std::auto_ptr<DcmSequenceOfItems> sequence(new DcmSequenceOfItems(DCM_DimensionIndexSequence));
+    std::unique_ptr<DcmSequenceOfItems> sequence(new DcmSequenceOfItems(DCM_DimensionIndexSequence));
 
     if (!sequence->insert(item.release(), false, false).good() ||
         !sequence->insert(item2.release(), false, false).good() ||
@@ -397,13 +398,13 @@ static void SetupDimension(DcmDataset& dataset,
 
   {
     // Construct tag "Shared Functional Groups Sequence" (5200,9229)
-    std::auto_ptr<DcmItem> item(new DcmItem);
+    std::unique_ptr<DcmItem> item(new DcmItem);
 
-    std::auto_ptr<DcmItem> item3(new DcmItem);
+    std::unique_ptr<DcmItem> item3(new DcmItem);
     OrthancWSI::DicomToolbox::SetStringTag(*item3, DCM_OpticalPathIdentifier, opticalPathId);
 
-    std::auto_ptr<DcmSequenceOfItems> sequence(new DcmSequenceOfItems(DCM_SharedFunctionalGroupsSequence));
-    std::auto_ptr<DcmSequenceOfItems> sequence3(new DcmSequenceOfItems(DCM_OpticalPathIdentificationSequence));
+    std::unique_ptr<DcmSequenceOfItems> sequence(new DcmSequenceOfItems(DCM_SharedFunctionalGroupsSequence));
+    std::unique_ptr<DcmSequenceOfItems> sequence3(new DcmSequenceOfItems(DCM_OpticalPathIdentificationSequence));
 
     if (!sequence3->insert(item3.release(), false, false).good() ||
         !item->insert(sequence3.release(), false, false).good() ||
@@ -441,13 +442,13 @@ static void EnrichDataset(DcmDataset& dataset,
   OrthancWSI::DicomToolbox::SetStringTag(dataset, DCM_ImagedVolumeHeight, boost::lexical_cast<std::string>(volume.GetHeight()));
   OrthancWSI::DicomToolbox::SetStringTag(dataset, DCM_ImagedVolumeDepth, boost::lexical_cast<std::string>(volume.GetDepth()));
 
-  std::auto_ptr<DcmItem> origin(new DcmItem);
+  std::unique_ptr<DcmItem> origin(new DcmItem);
   OrthancWSI::DicomToolbox::SetStringTag(*origin, DCM_XOffsetInSlideCoordinateSystem, 
                                          boost::lexical_cast<std::string>(volume.GetOffsetX()));
   OrthancWSI::DicomToolbox::SetStringTag(*origin, DCM_YOffsetInSlideCoordinateSystem, 
                                          boost::lexical_cast<std::string>(volume.GetOffsetY()));
 
-  std::auto_ptr<DcmSequenceOfItems> sequenceOrigin(new DcmSequenceOfItems(DCM_TotalPixelMatrixOriginSequence));
+  std::unique_ptr<DcmSequenceOfItems> sequenceOrigin(new DcmSequenceOfItems(DCM_TotalPixelMatrixOriginSequence));
   if (!sequenceOrigin->insert(origin.release(), false, false).good() ||
       !dataset.insert(sequenceOrigin.release(), false, false).good())
   {
@@ -473,7 +474,7 @@ static void EnrichDataset(DcmDataset& dataset,
       throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
     }
 
-    std::auto_ptr<DcmElement> element(Orthanc::FromDcmtkBridge::FromJson(
+    std::unique_ptr<DcmElement> element(Orthanc::FromDcmtkBridge::FromJson(
                                         Orthanc::DicomTag(DCM_OpticalPathSequence.getGroup(),
                                                           DCM_OpticalPathSequence.getElement()),
                                         json, false, encoding,
@@ -505,7 +506,7 @@ static void EnrichDataset(DcmDataset& dataset,
 
   if (!opticalPath->tagExists(DCM_ICCProfile))
   {
-    std::auto_ptr<DcmOtherByteOtherWord> icc(new DcmOtherByteOtherWord(DCM_ICCProfile));
+    std::unique_ptr<DcmOtherByteOtherWord> icc(new DcmOtherByteOtherWord(DCM_ICCProfile));
 
     if (!icc->putUint8Array(reinterpret_cast<const Uint8*>(profile.c_str()), profile.size()).good() ||
         !opticalPath->insert(icc.release()).good())
@@ -927,7 +928,7 @@ OrthancWSI::ITiledPyramid* OpenInputPyramid(OrthancWSI::ImageCompression& source
     {
       try
       {
-        std::auto_ptr<OrthancWSI::HierarchicalTiff> tiff(new OrthancWSI::HierarchicalTiff(path));
+        std::unique_ptr<OrthancWSI::HierarchicalTiff> tiff(new OrthancWSI::HierarchicalTiff(path));
         sourceCompression = tiff->GetImageCompression();
         return tiff.release();
       }
@@ -972,7 +973,7 @@ int main(int argc, char* argv[])
     if (ParseParameters(exitStatus, parameters, volume, argc, argv))
     {
       OrthancWSI::ImageCompression sourceCompression;
-      std::auto_ptr<OrthancWSI::ITiledPyramid> source;
+      std::unique_ptr<OrthancWSI::ITiledPyramid> source;
 
       source.reset(OpenInputPyramid(sourceCompression, parameters.GetInputFile(), parameters));
       if (source.get() == NULL)
@@ -983,10 +984,10 @@ int main(int argc, char* argv[])
       LOG(WARNING) << "Compression of the individual source tiles: " << OrthancWSI::EnumerationToString(sourceCompression);
       
       // Create the shared DICOM tags
-      std::auto_ptr<DcmDataset> dataset(ParseDataset(parameters.GetDatasetPath()));
+      std::unique_ptr<DcmDataset> dataset(ParseDataset(parameters.GetDatasetPath()));
       EnrichDataset(*dataset, *source, sourceCompression, parameters, volume);
 
-      std::auto_ptr<OrthancWSI::IFileTarget> output(parameters.CreateTarget());
+      std::unique_ptr<OrthancWSI::IFileTarget> output(parameters.CreateTarget());
       Recompress(*output, *source, *dataset, parameters, volume, sourceCompression);
     }
   }

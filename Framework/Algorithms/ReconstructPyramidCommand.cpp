@@ -23,6 +23,8 @@
 #include "ReconstructPyramidCommand.h"
 
 #include "../ImageToolbox.h"
+
+#include <Compatibility.h>  // For std::unique_ptr
 #include <Logging.h>
 #include <OrthancException.h>
 #include <Images/Image.h>
@@ -46,7 +48,7 @@ namespace OrthancWSI
       return NULL;
     }
 
-    std::auto_ptr<Orthanc::ImageAccessor> result;
+    std::unique_ptr<Orthanc::ImageAccessor> result;
 
     if (level == 0)
     {
@@ -69,7 +71,7 @@ namespace OrthancWSI
     }
     else
     {
-      std::auto_ptr<Orthanc::ImageAccessor> mosaic(ImageToolbox::Allocate(source_.GetPixelFormat(), 
+      std::unique_ptr<Orthanc::ImageAccessor> mosaic(ImageToolbox::Allocate(source_.GetPixelFormat(), 
                                                                           2 * target_.GetTileWidth(), 
                                                                           2 * target_.GetTileHeight()));
       ImageToolbox::Set(*mosaic, 
@@ -78,7 +80,7 @@ namespace OrthancWSI
                         source_.GetParameters().GetBackgroundColorBlue());
 
       {
-        std::auto_ptr<Orthanc::ImageAccessor> subTile(Explore(level - 1, 2 * offsetX, 2 * offsetY));
+        std::unique_ptr<Orthanc::ImageAccessor> subTile(Explore(level - 1, 2 * offsetX, 2 * offsetY));
         if (subTile.get() != NULL)
         {
           ImageToolbox::Embed(*mosaic, *subTile, 0, 0);
@@ -86,7 +88,7 @@ namespace OrthancWSI
       }
 
       {
-        std::auto_ptr<Orthanc::ImageAccessor> subTile(Explore(level - 1, 2 * offsetX + 1, 2 * offsetY));
+        std::unique_ptr<Orthanc::ImageAccessor> subTile(Explore(level - 1, 2 * offsetX + 1, 2 * offsetY));
         if (subTile.get() != NULL)
         {
           ImageToolbox::Embed(*mosaic, *subTile, target_.GetTileWidth(), 0);
@@ -94,7 +96,7 @@ namespace OrthancWSI
       }
 
       {
-        std::auto_ptr<Orthanc::ImageAccessor> subTile(Explore(level - 1, 2 * offsetX, 2 * offsetY + 1));
+        std::unique_ptr<Orthanc::ImageAccessor> subTile(Explore(level - 1, 2 * offsetX, 2 * offsetY + 1));
         if (subTile.get() != NULL)
         {
           ImageToolbox::Embed(*mosaic, *subTile, 0, target_.GetTileHeight());
@@ -102,7 +104,7 @@ namespace OrthancWSI
       }
 
       {
-        std::auto_ptr<Orthanc::ImageAccessor> subTile(Explore(level - 1, 2 * offsetX + 1, 2 * offsetY + 1));
+        std::unique_ptr<Orthanc::ImageAccessor> subTile(Explore(level - 1, 2 * offsetX + 1, 2 * offsetY + 1));
         if (subTile.get() != NULL)
         {
           ImageToolbox::Embed(*mosaic, *subTile, target_.GetTileWidth(), target_.GetTileHeight());
@@ -147,7 +149,7 @@ namespace OrthancWSI
 
   bool ReconstructPyramidCommand::Execute()
   {
-    std::auto_ptr<Orthanc::ImageAccessor> root(Explore(upToLevel_, 0, 0));
+    std::unique_ptr<Orthanc::ImageAccessor> root(Explore(upToLevel_, 0, 0));
     return true;
   }
 
@@ -177,7 +179,7 @@ namespace OrthancWSI
     {
       for (unsigned int x = 0; x < targetCountTilesX; x += step)
       {
-        std::auto_ptr<ReconstructPyramidCommand> command;
+        std::unique_ptr<ReconstructPyramidCommand> command;
         command.reset(new ReconstructPyramidCommand
                       (target, source, countLevels - 1, x, y, parameters));
         command->SetShiftTargetLevel(shiftTargetLevel);

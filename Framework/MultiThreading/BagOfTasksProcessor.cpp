@@ -21,6 +21,7 @@
 
 #include "BagOfTasksProcessor.h"
 
+#include <Compatibility.h>  // For std::unique_ptr
 #include <Logging.h>
 #include <OrthancException.h>
 
@@ -32,7 +33,7 @@ namespace Orthanc
   {
   private:
     uint64_t                 bag_;
-    std::auto_ptr<ICommand>  command_;
+    std::unique_ptr<ICommand>  command_;
 
   public:
     Task(uint64_t  bag,
@@ -90,7 +91,7 @@ namespace Orthanc
   {
     while (that->continue_)
     {
-      std::auto_ptr<IDynamicObject> obj(that->queue_.Dequeue(100));
+      std::unique_ptr<IDynamicObject> obj(that->queue_.Dequeue(100));
       if (obj.get() != NULL)
       {
         Task& task = *dynamic_cast<Task*>(obj.get());

@@ -26,6 +26,7 @@
 #include "../Framework/Outputs/HierarchicalTiffWriter.h"
 #include "../Resources/Orthanc/Stone/OrthancHttpConnection.h"
 
+#include <Compatibility.h>  // For std::unique_ptr
 #include <Logging.h>
 #include <OrthancException.h>
 
@@ -159,7 +160,7 @@ static bool ParseParameters(int& exitStatus,
 static Orthanc::ImageAccessor* CreateEmptyTile(const OrthancWSI::IPyramidWriter& writer,
                                                const boost::program_options::variables_map& options)
 {
-  std::auto_ptr<Orthanc::ImageAccessor> tile
+  std::unique_ptr<Orthanc::ImageAccessor> tile
     (OrthancWSI::ImageToolbox::Allocate(writer.GetPixelFormat(), 
                                         writer.GetTileWidth(), 
                                         writer.GetTileHeight()));
@@ -213,7 +214,7 @@ static void Run(OrthancWSI::ITiledPyramid& source,
   LOG(WARNING) << "Source photometric interpretation: " << EnumerationToString(source.GetPhotometricInterpretation());
   LOG(WARNING) << "Target photometric interpretation: " << EnumerationToString(targetPhotometric);
 
-  std::auto_ptr<Orthanc::ImageAccessor> empty(CreateEmptyTile(target, options));
+  std::unique_ptr<Orthanc::ImageAccessor> empty(CreateEmptyTile(target, options));
 
   for (unsigned int level = 0; level < source.GetLevelCount(); level++)
   {
@@ -254,7 +255,7 @@ static void Run(OrthancWSI::ITiledPyramid& source,
           }
           else if (reencode)
           {
-            std::auto_ptr<Orthanc::ImageAccessor> decoded;
+            std::unique_ptr<Orthanc::ImageAccessor> decoded;
 
             if (compression == OrthancWSI::ImageCompression_None)
             {

@@ -24,6 +24,7 @@
 #include "IFileTarget.h"
 #include "../../Resources/Orthanc/Stone/IOrthancConnection.h"
 
+#include <Compatibility.h>  // For std::unique_ptr
 #include <WebServiceParameters.h>
 
 #include <memory>
@@ -33,7 +34,7 @@ namespace OrthancWSI
   class OrthancTarget : public IFileTarget
   {
   private:
-    std::auto_ptr<OrthancStone::IOrthancConnection>  orthanc_;
+    std::unique_ptr<OrthancStone::IOrthancConnection>  orthanc_;
     bool  first_;
 
   public:

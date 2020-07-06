@@ -22,6 +22,7 @@
 #include "PrecompiledHeadersWSI.h"
 #include "DicomToolbox.h"
 
+#include <Compatibility.h>  // For std::unique_ptr
 #include <Logging.h>
 #include <OrthancException.h>
 #include <Toolbox.h>
@@ -79,7 +80,7 @@ namespace OrthancWSI
     {
       if (!dataset.tagExists(key))
       {
-        std::auto_ptr<DcmAttributeTag> tag(new DcmAttributeTag(key));
+        std::unique_ptr<DcmAttributeTag> tag(new DcmAttributeTag(key));
         
         if (!tag->putTagVal(value).good() ||
             !dataset.insert(tag.release()).good())

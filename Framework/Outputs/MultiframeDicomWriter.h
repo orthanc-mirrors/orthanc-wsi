@@ -22,6 +22,8 @@
 #pragma once
 
 #include "../Enumerations.h"
+
+#include <Compatibility.h>  // For std::unique_ptr
 #include <ChunkedBuffer.h>
 
 #include <boost/noncopyable.hpp>
@@ -47,10 +49,10 @@ namespace OrthancWSI
     unsigned int      height_;
 
     Orthanc::ChunkedBuffer             uncompressedPixelData_;
-    std::auto_ptr<DcmSequenceOfItems>  perFrameFunctionalGroups_;
-    std::auto_ptr<DcmPixelSequence>    compressedPixelSequence_;
+    std::unique_ptr<DcmSequenceOfItems>  perFrameFunctionalGroups_;
+    std::unique_ptr<DcmPixelSequence>    compressedPixelSequence_;
     DcmPixelItem*                      offsetTable_;
-    std::auto_ptr<DcmOffsetList>       offsetList_;
+    std::unique_ptr<DcmOffsetList>       offsetList_;
 
     void ResetImage();
 

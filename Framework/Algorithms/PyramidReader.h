@@ -24,6 +24,8 @@
 #include "../Inputs/ITiledPyramid.h"
 #include "../DicomizerParameters.h"
 
+#include <Compatibility.h>  // For std::unique_ptr
+
 #include <map>
 #include <memory>
 
@@ -50,7 +52,7 @@ namespace OrthancWSI
 
     Cache           cache_;
 
-    std::auto_ptr<Orthanc::ImageAccessor>  outside_;
+    std::unique_ptr<Orthanc::ImageAccessor>  outside_;
 
 
     Orthanc::ImageAccessor& GetOutsideTile();

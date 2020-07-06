@@ -23,6 +23,8 @@
 #include "PyramidReader.h"
 
 #include "../ImageToolbox.h"
+
+#include <Compatibility.h>  // For std::unique_ptr
 #include <Logging.h>
 #include <OrthancException.h>
 
@@ -40,7 +42,7 @@ namespace OrthancWSI
     std::string       rawTile_;
     ImageCompression  rawTileCompression_;
 
-    std::auto_ptr<Orthanc::ImageAccessor>  decoded_;
+    std::unique_ptr<Orthanc::ImageAccessor>  decoded_;
 
     bool IsRepaintNeeded() const
     {
@@ -197,7 +199,7 @@ namespace OrthancWSI
   {
     if (parameters_.IsSafetyCheck())
     {
-      std::auto_ptr<Orthanc::ImageAccessor> decoded(ImageToolbox::DecodeTile(tile, compression));
+      std::unique_ptr<Orthanc::ImageAccessor> decoded(ImageToolbox::DecodeTile(tile, compression));
       CheckTileSize(*decoded);
     }
   }

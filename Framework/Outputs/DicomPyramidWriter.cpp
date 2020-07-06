@@ -24,6 +24,7 @@
 
 #include "../DicomToolbox.h"
 
+#include <Compatibility.h>  // For std::unique_ptr
 #include <Logging.h>
 #include <OrthancException.h>
 #include <DicomParsing/FromDcmtkBridge.h>
@@ -67,7 +68,7 @@ namespace OrthancWSI
     std::string index = (boost::lexical_cast<std::string>(x / GetTileWidth() + 1) + "\\" + 
                          boost::lexical_cast<std::string>(y / GetTileHeight() + 1));
 
-    std::auto_ptr<DcmItem> dimension(new DcmItem);
+    std::unique_ptr<DcmItem> dimension(new DcmItem);
     if (!dimension->putAndInsertString(DCM_DimensionIndexValues, index.c_str()).good())
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
@@ -76,7 +77,7 @@ namespace OrthancWSI
     // From Supp 145: The column position of the top left pixel of the
     // Total Pixel Matrix is 1. The row position of the top left pixel
     // of the Total Pixel Matrix is 1.
-    std::auto_ptr<DcmItem> position(new DcmItem);
+    std::unique_ptr<DcmItem> position(new DcmItem);
     if (!position->putAndInsertSint32(DCM_ColumnPositionInTotalImagePixelMatrix, x + 1).good() ||
         !position->putAndInsertSint32(DCM_RowPositionInTotalImagePixelMatrix, y + 1).good() ||
         !position->putAndInsertString(DCM_XOffsetInSlideCoordinateSystem, tmpX.c_str()).good() ||
@@ -87,19 +88,19 @@ namespace OrthancWSI
     }
 
 
-    std::auto_ptr<DcmSequenceOfItems> sequencePosition(new DcmSequenceOfItems(DCM_PlanePositionSlideSequence));
+    std::unique_ptr<DcmSequenceOfItems> sequencePosition(new DcmSequenceOfItems(DCM_PlanePositionSlideSequence));
     if (!sequencePosition->insert(position.release(), false, false).good())
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
     }
 
-    std::auto_ptr<DcmSequenceOfItems> sequenceDimension(new DcmSequenceOfItems(DCM_FrameContentSequence));
+    std::unique_ptr<DcmSequenceOfItems> sequenceDimension(new DcmSequenceOfItems(DCM_FrameContentSequence));
     if (!sequenceDimension->insert(dimension.release(), false, false).good())
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
     }
 
-    std::auto_ptr<DcmItem> item(new DcmItem);
+    std::unique_ptr<DcmItem> item(new DcmItem);
     if (!item->insert(sequencePosition.release(), false, false).good() ||
         !item->insert(sequenceDimension.release(), false, false).good())
     {
@@ -153,14 +154,14 @@ namespace OrthancWSI
           std::string spacing = (boost::lexical_cast<std::string>(spacingX) + '\\' +
                                  boost::lexical_cast<std::string>(spacingY));
 
-          std::auto_ptr<DcmItem> item(new DcmItem);
+          std::unique_ptr<DcmItem> item(new DcmItem);
 
-          std::auto_ptr<DcmItem> item2(new DcmItem);
+          std::unique_ptr<DcmItem> item2(new DcmItem);
           OrthancWSI::DicomToolbox::SetStringTag(*item2, DCM_SliceThickness, 
                                                  boost::lexical_cast<std::string>(volume_.GetDepth()));
           OrthancWSI::DicomToolbox::SetStringTag(*item2, DCM_PixelSpacing, spacing);
 
-          std::auto_ptr<DcmSequenceOfItems> sequence2(new DcmSequenceOfItems(DCM_PixelMeasuresSequence));
+          std::unique_ptr<DcmSequenceOfItems> sequence2(new DcmSequenceOfItems(DCM_PixelMeasuresSequence));
           if (!sequence2->insert(item2.release(), false, false).good())
           {
             throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
@@ -179,7 +180,7 @@ namespace OrthancWSI
         }
       }
 
-      std::auto_ptr<DcmItem> functionalGroup(CreateFunctionalGroup(writer->GetFramesCount() + 1,
+      std::unique_ptr<DcmItem> functionalGroup(CreateFunctionalGroup(writer->GetFramesCount() + 1,
                                                                    x * GetTileWidth(), 
                                                                    y * GetTileHeight(), 
                                                                    writer->GetTotalWidth(),

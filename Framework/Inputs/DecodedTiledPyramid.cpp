@@ -24,6 +24,8 @@
 
 #include "../ImageToolbox.h"
 
+#include <Compatibility.h>  // For std::unique_ptr
+
 #include <memory>
 #include <cassert>
 
@@ -62,7 +64,7 @@ namespace OrthancWSI
     unsigned int x = tileX * GetTileWidth();
     unsigned int y = tileY * GetTileHeight();
 
-    std::auto_ptr<Orthanc::ImageAccessor> tile
+    std::unique_ptr<Orthanc::ImageAccessor> tile
       (ImageToolbox::Allocate(GetPixelFormat(), GetTileWidth(), GetTileHeight()));
 
     if (x >= GetLevelWidth(level) ||
@@ -105,7 +107,7 @@ namespace OrthancWSI
     else
     {
       // The tile exceeds the size of image, decode it to a temporary buffer
-      std::auto_ptr<Orthanc::ImageAccessor> cropped
+      std::unique_ptr<Orthanc::ImageAccessor> cropped
         (ImageToolbox::Allocate(GetPixelFormat(), regionWidth, regionHeight));
       ReadRegion(*cropped, level, x, y);
 

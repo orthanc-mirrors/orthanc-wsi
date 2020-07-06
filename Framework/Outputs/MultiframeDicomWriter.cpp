@@ -22,9 +22,11 @@
 #include "../PrecompiledHeadersWSI.h"
 #include "MultiframeDicomWriter.h"
 
+#include "../DicomToolbox.h"
+
+#include <Compatibility.h>  // For std::unique_ptr
 #include <OrthancException.h>
 #include <Logging.h>
-#include "../DicomToolbox.h"
 
 #include <dcmtk/dcmdata/dcuid.h>
 #include <dcmtk/dcmdata/dcdeftag.h>
@@ -115,7 +117,7 @@ namespace OrthancWSI
       throw Orthanc::OrthancException(Orthanc::ErrorCode_NotEnoughMemory);
     }
 
-    std::auto_ptr<DcmPixelData> pixels(new DcmPixelData(DCM_PixelData));
+    std::unique_ptr<DcmPixelData> pixels(new DcmPixelData(DCM_PixelData));
 
     uint8_t* target = NULL;
     if (!pixels->createUint8Array(pixelData.size(), target).good())
@@ -214,7 +216,7 @@ namespace OrthancWSI
                                        DcmItem* functionalGroup)   // This takes the ownership
   {
     // Free the functional group on error
-    std::auto_ptr<DcmItem> functionalGroupRaii(functionalGroup);
+    std::unique_ptr<DcmItem> functionalGroupRaii(functionalGroup);
 
     if (compression_ == ImageCompression_None)
     {
@@ -259,7 +261,7 @@ namespace OrthancWSI
 
     std::string tmp = boost::lexical_cast<std::string>(instanceNumber);
 
-    std::auto_ptr<DcmFileFormat> dicom(new DcmFileFormat);
+    std::unique_ptr<DcmFileFormat> dicom(new DcmFileFormat);
 
     char uid[100];
     dcmGenerateUniqueIdentifier(uid, SITE_INSTANCE_UID_ROOT);

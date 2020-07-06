@@ -23,6 +23,8 @@
 #include "InMemoryTiledImage.h"
 
 #include "../ImageToolbox.h"
+
+#include <Compatibility.h>  // For std::unique_ptr
 #include <Logging.h>
 #include <OrthancException.h>
 
@@ -119,7 +121,7 @@ namespace OrthancWSI
       Tiles::const_iterator it = tiles_.find(std::make_pair(tileX, tileY));
       if (it != tiles_.end())
       {
-        std::auto_ptr<Orthanc::ImageAccessor> result(new Orthanc::ImageAccessor);
+        std::unique_ptr<Orthanc::ImageAccessor> result(new Orthanc::ImageAccessor);
         it->second->GetReadOnlyAccessor(*result);
         return result.release();
       }
@@ -138,7 +140,7 @@ namespace OrthancWSI
                                         unsigned int tileX,
                                         unsigned int tileY)
   {
-    std::auto_ptr<Orthanc::ImageAccessor> decoded(ImageToolbox::DecodeTile(raw, compression));
+    std::unique_ptr<Orthanc::ImageAccessor> decoded(ImageToolbox::DecodeTile(raw, compression));
     EncodeTile(*decoded, level, tileX, tileY);
   }
       

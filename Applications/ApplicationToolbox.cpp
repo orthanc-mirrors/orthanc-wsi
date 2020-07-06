@@ -24,6 +24,7 @@
 #include "../Framework/Inputs/OpenSlideLibrary.h"
 #include "../Framework/MultiThreading/BagOfTasksProcessor.h"
 
+#include <Compatibility.h>  // For std::unique_ptr
 #include <DicomParsing/FromDcmtkBridge.h>
 #include <HttpClient.h>
 #include <Logging.h>
@@ -107,7 +108,7 @@ namespace OrthancWSI
         LOG(WARNING) << "Running " << tasks.GetSize() << " tasks";
         LOG(WARNING) << "Using " << threadsCount << " threads for the computation";
         Orthanc::BagOfTasksProcessor processor(threadsCount);
-        std::auto_ptr<Orthanc::BagOfTasksProcessor::Handle> handle(processor.Submit(tasks));
+        std::unique_ptr<Orthanc::BagOfTasksProcessor::Handle> handle(processor.Submit(tasks));
 
         // Start a thread to display the progress
         bool done = false;
@@ -144,7 +145,7 @@ namespace OrthancWSI
         // No multithreading
         while (!tasks.IsEmpty())
         {
-          std::auto_ptr<Orthanc::ICommand> task(tasks.Pop());
+          std::unique_ptr<Orthanc::ICommand> task(tasks.Pop());
           if (task->Execute())
           {
             unsigned int progress = static_cast<unsigned int>(100.0f * 

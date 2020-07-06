@@ -22,6 +22,7 @@
 #include "../PrecompiledHeadersWSI.h"
 #include "OpenSlideLibrary.h"
 
+#include <Compatibility.h>  // For std::unique_ptr
 #include <Logging.h>
 #include <Images/Image.h>
 #include <OrthancException.h>
@@ -30,7 +31,7 @@
 
 namespace OrthancWSI
 {
-  static std::auto_ptr<OpenSlideLibrary>  globalLibrary_;
+  static std::unique_ptr<OpenSlideLibrary>  globalLibrary_;
 
 
   OpenSlideLibrary::OpenSlideLibrary(const std::string& path) :
@@ -194,7 +195,7 @@ namespace OrthancWSI
     CheckLevel(level);
 
     // Create a new image, with minimal pitch so as to be compatible with OpenSlide API
-    std::auto_ptr<Orthanc::ImageAccessor> region(new Orthanc::Image(Orthanc::PixelFormat_BGRA32, width, height, true));
+    std::unique_ptr<Orthanc::ImageAccessor> region(new Orthanc::Image(Orthanc::PixelFormat_BGRA32, width, height, true));
 
     if (region->GetWidth() != 0 &&
         region->GetHeight() != 0)
