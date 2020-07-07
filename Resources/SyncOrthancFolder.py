@@ -33,17 +33,17 @@ FILES = [
     ('orthanc', 'OrthancServer/Plugins/Samples/Common/OrthancPluginsExports.cmake', 'Plugins'),
     ('orthanc', 'OrthancServer/Plugins/Samples/Common/VersionScriptPlugins.map', 'Plugins'),
 
-    ('orthanc-stone', 'Framework/Toolbox/OrthancDatasets/DicomDatasetReader.cpp', 'Stone'),
-    ('orthanc-stone', 'Framework/Toolbox/OrthancDatasets/DicomDatasetReader.h', 'Stone'),
-    ('orthanc-stone', 'Framework/Toolbox/OrthancDatasets/DicomPath.cpp', 'Stone'),
-    ('orthanc-stone', 'Framework/Toolbox/OrthancDatasets/DicomPath.h', 'Stone'),
-    ('orthanc-stone', 'Framework/Toolbox/OrthancDatasets/FullOrthancDataset.cpp', 'Stone'),
-    ('orthanc-stone', 'Framework/Toolbox/OrthancDatasets/FullOrthancDataset.h', 'Stone'),
-    ('orthanc-stone', 'Framework/Toolbox/OrthancDatasets/IDicomDataset.h', 'Stone'),
-    ('orthanc-stone', 'Framework/Toolbox/OrthancDatasets/IOrthancConnection.cpp', 'Stone'),
-    ('orthanc-stone', 'Framework/Toolbox/OrthancDatasets/IOrthancConnection.h', 'Stone'),
-    ('orthanc-stone', 'Framework/Toolbox/OrthancDatasets/OrthancHttpConnection.cpp', 'Stone'),
-    ('orthanc-stone', 'Framework/Toolbox/OrthancDatasets/OrthancHttpConnection.h', 'Stone'),
+    ('orthanc-stone', 'OrthancStone/Sources/Toolbox/OrthancDatasets/DicomDatasetReader.cpp', 'Stone'),
+    ('orthanc-stone', 'OrthancStone/Sources/Toolbox/OrthancDatasets/DicomDatasetReader.h', 'Stone'),
+    ('orthanc-stone', 'OrthancStone/Sources/Toolbox/OrthancDatasets/DicomPath.cpp', 'Stone'),
+    ('orthanc-stone', 'OrthancStone/Sources/Toolbox/OrthancDatasets/DicomPath.h', 'Stone'),
+    ('orthanc-stone', 'OrthancStone/Sources/Toolbox/OrthancDatasets/FullOrthancDataset.cpp', 'Stone'),
+    ('orthanc-stone', 'OrthancStone/Sources/Toolbox/OrthancDatasets/FullOrthancDataset.h', 'Stone'),
+    ('orthanc-stone', 'OrthancStone/Sources/Toolbox/OrthancDatasets/IDicomDataset.h', 'Stone'),
+    ('orthanc-stone', 'OrthancStone/Sources/Toolbox/OrthancDatasets/IOrthancConnection.cpp', 'Stone'),
+    ('orthanc-stone', 'OrthancStone/Sources/Toolbox/OrthancDatasets/IOrthancConnection.h', 'Stone'),
+    ('orthanc-stone', 'OrthancStone/Sources/Toolbox/OrthancDatasets/OrthancHttpConnection.cpp', 'Stone'),
+    ('orthanc-stone', 'OrthancStone/Sources/Toolbox/OrthancDatasets/OrthancHttpConnection.h', 'Stone'),
 ]
 
 SDK = [
