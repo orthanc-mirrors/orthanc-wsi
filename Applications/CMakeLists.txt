@@ -26,16 +26,17 @@ SET(USE_SYSTEM_OPENJPEG ON CACHE BOOL "Use the system version of OpenJpeg")
 SET(ORTHANC_WSI_DIR ${CMAKE_CURRENT_LIST_DIR}/..)
 SET(USE_OPENJPEG_JP2 ON)
 
-include_directories(${ORTHANC_FRAMEWORK_ROOT})
-
 if (ORTHANC_FRAMEWORK_SOURCE STREQUAL "system")
   set(ENABLE_DCMTK ON)
   set(ORTHANC_BOOST_COMPONENTS program_options)
   include(${CMAKE_SOURCE_DIR}/../Resources/Orthanc/CMake/DownloadOrthancFramework.cmake)  
+
   link_libraries(${ORTHANC_FRAMEWORK_LIBRARIES})
+  include_directories(${ORTHANC_FRAMEWORK_ROOT})
   
 else()
   include(${CMAKE_SOURCE_DIR}/../Resources/Orthanc/CMake/DownloadOrthancFramework.cmake)
+  include_directories(${ORTHANC_FRAMEWORK_ROOT})
 
   UNSET(STANDALONE_BUILD CACHE)
   SET(STANDALONE_BUILD ON)       # Embed DCMTK's dictionaries for static builds
