@@ -1,6 +1,6 @@
 SET(ORTHANC_BOOST_COMPONENTS program_options)
 
-include(${ORTHANC_FRAMEWORK_ROOT}/Resources/CMake/BoostConfiguration.cmake)
+include(${ORTHANC_FRAMEWORK_ROOT}/../Resources/CMake/BoostConfiguration.cmake)
 
 if (BOOST_STATIC)
   set(BOOST_EXTENDED_SOURCES

@@ -26,6 +26,8 @@ SET(USE_SYSTEM_OPENJPEG ON CACHE BOOL "Use the system version of OpenJpeg")
 SET(ORTHANC_WSI_DIR ${CMAKE_CURRENT_LIST_DIR}/..)
 SET(USE_OPENJPEG_JP2 ON)
 
+include_directories(${ORTHANC_FRAMEWORK_ROOT})
+
 if (ORTHANC_FRAMEWORK_SOURCE STREQUAL "system")
   set(ENABLE_DCMTK ON)
   set(ORTHANC_BOOST_COMPONENTS program_options)
@@ -38,7 +40,7 @@ else()
   UNSET(STANDALONE_BUILD CACHE)
   SET(STANDALONE_BUILD ON)       # Embed DCMTK's dictionaries for static builds
 
-  include(${ORTHANC_FRAMEWORK_ROOT}/Resources/CMake/OrthancFrameworkParameters.cmake)
+  include(${ORTHANC_FRAMEWORK_ROOT}/../Resources/CMake/OrthancFrameworkParameters.cmake)
 
   SET(ENABLE_CRYPTO_OPTIONS ON)
   SET(ENABLE_DCMTK ON)
@@ -53,11 +55,8 @@ else()
   SET(ENABLE_WEB_CLIENT ON)
   SET(ENABLE_ZLIB ON)
 
-  include(${ORTHANC_FRAMEWORK_ROOT}/Resources/CMake/VisualStudioPrecompiledHeaders.cmake)
-  include(${ORTHANC_FRAMEWORK_ROOT}/Resources/CMake/OrthancFrameworkConfiguration.cmake)
-  include_directories(
-    ${ORTHANC_FRAMEWORK_ROOT}/Sources/
-    )
+  include(${ORTHANC_FRAMEWORK_ROOT}/../Resources/CMake/VisualStudioPrecompiledHeaders.cmake)
+  include(${ORTHANC_FRAMEWORK_ROOT}/../Resources/CMake/OrthancFrameworkConfiguration.cmake)
 
   include(${ORTHANC_WSI_DIR}/Resources/CMake/BoostExtendedConfiguration.cmake)
 endif()

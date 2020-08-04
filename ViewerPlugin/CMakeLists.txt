@@ -29,6 +29,7 @@ SET(OPENLAYERS_JS "" CACHE FILEPATH "Path to the system version of OpenLayers Ja
 SET(ORTHANC_WSI_DIR ${CMAKE_CURRENT_LIST_DIR}/..)
 SET(USE_OPENJPEG_JP2 ON)
 
+include_directories(${ORTHANC_FRAMEWORK_ROOT})
 
 if (ORTHANC_FRAMEWORK_SOURCE STREQUAL "system")
   set(ENABLE_DCMTK ON)
@@ -37,18 +38,15 @@ if (ORTHANC_FRAMEWORK_SOURCE STREQUAL "system")
   
 else()
   include(${CMAKE_SOURCE_DIR}/../Resources/Orthanc/CMake/DownloadOrthancFramework.cmake)
-  include(${ORTHANC_FRAMEWORK_ROOT}/Resources/CMake/OrthancFrameworkParameters.cmake)
+  include(${ORTHANC_FRAMEWORK_ROOT}/../Resources/CMake/OrthancFrameworkParameters.cmake)
 
   set(ENABLE_LOCALE OFF)         # Disable support for locales (notably in Boost)
   set(ENABLE_ZLIB ON)
   set(ENABLE_PNG ON)
   set(ENABLE_JPEG ON)
 
-  include(${ORTHANC_FRAMEWORK_ROOT}/Resources/CMake/VisualStudioPrecompiledHeaders.cmake)
-  include(${ORTHANC_FRAMEWORK_ROOT}/Resources/CMake/OrthancFrameworkConfiguration.cmake)
-  include_directories(
-    ${ORTHANC_FRAMEWORK_ROOT}/Sources/
-    )
+  include(${ORTHANC_FRAMEWORK_ROOT}/../Resources/CMake/VisualStudioPrecompiledHeaders.cmake)
+  include(${ORTHANC_FRAMEWORK_ROOT}/../Resources/CMake/OrthancFrameworkConfiguration.cmake)
 endif()
 
 include(${ORTHANC_WSI_DIR}/Resources/Orthanc/Plugins/OrthancPluginsExports.cmake)
