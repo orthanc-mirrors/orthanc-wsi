@@ -23,6 +23,8 @@
 #include "Enumerations.h"
 
 #include "Jpeg2000Reader.h"
+
+#include <Logging.h>
 #include <OrthancException.h>
 #include <SystemToolbox.h>
 #include <Toolbox.h>

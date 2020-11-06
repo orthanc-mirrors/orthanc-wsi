@@ -303,11 +303,14 @@ namespace OrthancWSI
         int32_t* q = image_->comps[channel].data;
         assert(q != NULL);
 
-        for (unsigned int y = 0; y < target.GetHeight(); y++)
+        const unsigned int width = target.GetWidth();
+        const unsigned int height = target.GetHeight();
+
+        for (unsigned int y = 0; y < height; y++)
         {
           uint8_t *p = reinterpret_cast<uint8_t*>(target.GetRow(y)) + channel;
 
-          for (unsigned int x = 0; x < target.GetWidth(); x++, p += targetIncrement)
+          for (unsigned int x = 0; x < width; x++, p += targetIncrement)
           {
             *p = *q;
             q++;

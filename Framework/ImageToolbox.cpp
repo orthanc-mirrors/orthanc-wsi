@@ -93,13 +93,16 @@ namespace OrthancWSI
                            7152 * static_cast<uint16_t>(g) +
                            0722 * static_cast<uint16_t>(b)) / 10000;
 
+      const unsigned int width = image.GetWidth();
+      const unsigned int height = image.GetHeight();
+
       switch (image.GetFormat())
       {
         case Orthanc::PixelFormat_Grayscale8:
         {
-          for (unsigned int y = 0; y < image.GetHeight(); y++)
+          for (unsigned int y = 0; y < height; y++)
           {
-            memset(image.GetRow(y), grayscale, image.GetWidth());
+            memset(image.GetRow(y), grayscale, width);
           }
 
           break;
@@ -107,10 +110,10 @@ namespace OrthancWSI
 
         case Orthanc::PixelFormat_RGB24:
         {
-          for (unsigned int y = 0; y < image.GetHeight(); y++)
+          for (unsigned int y = 0; y < height; y++)
           {
             uint8_t* p = reinterpret_cast<uint8_t*>(image.GetRow(y));
-            for (unsigned int x = 0; x < image.GetWidth(); x++, p += 3)
+            for (unsigned int x = 0; x < width; x++, p += 3)
             {
               p[0] = r;
               p[1] = g;
@@ -330,14 +333,17 @@ namespace OrthancWSI
       const unsigned int bytesPerPixel = source.GetBytesPerPixel();  // Corresponds to the number of channels tx (*)
 
       std::unique_ptr<Orthanc::ImageAccessor> target(Allocate(source.GetFormat(), 
-                                                            source.GetWidth() / 2, 
-                                                            source.GetHeight() / 2));
+                                                              source.GetWidth() / 2, 
+                                                              source.GetHeight() / 2));
 
-      for (unsigned int y = 0; y < target->GetHeight(); y++)
+      const unsigned int width = target->GetWidth();
+      const unsigned int height = target->GetHeight();
+
+      for (unsigned int y = 0; y < height; y++)
       {
         uint8_t* q = reinterpret_cast<uint8_t*>(target->GetRow(y));
 
-        for (unsigned int x = 0; x < target->GetWidth(); x++, q += bytesPerPixel)
+        for (unsigned int x = 0; x < width; x++, q += bytesPerPixel)
         {
           for (unsigned int c = 0; c < bytesPerPixel; c++)
           {
@@ -360,8 +366,8 @@ namespace OrthancWSI
     Orthanc::ImageAccessor* Clone(const Orthanc::ImageAccessor& accessor)
     {
       std::unique_ptr<Orthanc::ImageAccessor> result(Allocate(accessor.GetFormat(),
-                                                            accessor.GetWidth(),
-                                                            accessor.GetHeight()));
+                                                              accessor.GetWidth(),
+                                                              accessor.GetHeight()));
       Embed(*result, accessor, 0, 0);
 
       return result.release();
@@ -372,14 +378,18 @@ namespace OrthancWSI
                                    unsigned int level)
     {
       std::unique_ptr<Orthanc::ImageAccessor> result(Allocate(pyramid.GetPixelFormat(), 
-                                                            pyramid.GetLevelWidth(level),
-                                                            pyramid.GetLevelHeight(level)));
+                                                              pyramid.GetLevelWidth(level),
+                                                              pyramid.GetLevelHeight(level)));
 
-      LOG(INFO) << "Rendering a tiled image of size " << result->GetWidth() << "x" << result->GetHeight();
+      LOG(INFO) << "Rendering a tiled image of size "
+                << result->GetWidth() << "x" << result->GetHeight();
 
-      for (unsigned int y = 0; y < result->GetHeight(); y += pyramid.GetTileHeight())
+      const unsigned int width = result->GetWidth();
+      const unsigned int height = result->GetHeight();
+      
+      for (unsigned int y = 0; y < height; y += pyramid.GetTileHeight())
       {
-        for (unsigned int x = 0; x < result->GetWidth(); x += pyramid.GetTileWidth())
+        for (unsigned int x = 0; x < width; x += pyramid.GetTileWidth())
         {
           std::unique_ptr<Orthanc::ImageAccessor> tile(pyramid.DecodeTile(level,
                                                                         x / pyramid.GetTileWidth(),
