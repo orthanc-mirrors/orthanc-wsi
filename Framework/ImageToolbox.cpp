@@ -191,7 +191,8 @@ namespace OrthancWSI
         unsigned int pitch = GetBytesPerPixel(source.GetFormat()) * source.GetWidth();
         target.resize(pitch * source.GetHeight());
 
-        for (unsigned int i = 0; i < source.GetHeight(); i++)
+        const unsigned int height = source.GetHeight();
+        for (unsigned int i = 0; i < height; i++)
         {
           memcpy(&target[i * pitch], source.GetConstRow(i), pitch);
         }
