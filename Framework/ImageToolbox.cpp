@@ -220,7 +220,7 @@ namespace OrthancWSI
             throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
         }
 
-        writer->WriteToMemory(target, source);
+        Orthanc::IImageWriter::WriteToMemory(*writer, target, source);
       }
     }
 

@@ -219,7 +219,7 @@ void ServeTile(OrthancPluginRestOutput* output,
 
   std::string png;
   Orthanc::PngWriter writer;
-  writer.WriteToMemory(png, *decoded);
+  Orthanc::IImageWriter::WriteToMemory(writer, png, *decoded);
 
   OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, png.c_str(), png.size(), "image/png");
 }
