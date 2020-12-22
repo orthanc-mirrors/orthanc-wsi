@@ -5,17 +5,18 @@
  * Copyright (C) 2017-2020 Osimis S.A., Belgium
  *
  * This program is free software: you can redistribute it and/or
- * modify it under the terms of the GNU Affero General Public License
+ * modify it under the terms of the GNU Lesser General Public License
  * as published by the Free Software Foundation, either version 3 of
  * the License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Affero General Public License for more details.
- * 
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this program. If not, see
+ * <http://www.gnu.org/licenses/>.
  **/
 
 
@@ -23,6 +24,7 @@
 
 #include "IOrthancConnection.h"
 
+#include <Compatibility.h>  // For ORTHANC_OVERRIDE
 #include <HttpClient.h>
 
 #include <boost/thread/mutex.hpp>
@@ -42,19 +44,19 @@ namespace OrthancStone
   public:
     OrthancHttpConnection();
 
-    OrthancHttpConnection(const Orthanc::WebServiceParameters& parameters);
+    explicit OrthancHttpConnection(const Orthanc::WebServiceParameters& parameters);
 
     virtual void RestApiGet(std::string& result,
-                            const std::string& uri);
+                            const std::string& uri) ORTHANC_OVERRIDE;
 
     virtual void RestApiPost(std::string& result,
                              const std::string& uri,
-                             const std::string& body);
+                             const std::string& body) ORTHANC_OVERRIDE;
 
     virtual void RestApiPut(std::string& result,
                             const std::string& uri,
-                            const std::string& body);
+                            const std::string& body) ORTHANC_OVERRIDE;
 
-    virtual void RestApiDelete(const std::string& uri);
+    virtual void RestApiDelete(const std::string& uri) ORTHANC_OVERRIDE;
   };
 }

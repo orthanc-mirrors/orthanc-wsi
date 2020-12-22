@@ -476,6 +476,19 @@ namespace OrthancPlugins
 #endif
 
 
+  bool ReadJson(Json::Value& target,
+                const std::string& source);
+  
+  bool ReadJson(Json::Value& target,
+                const void* buffer,
+                size_t size);
+
+  void WriteFastJson(std::string& target,
+                     const Json::Value& source);
+
+  void WriteStyledJson(std::string& target,
+                       const Json::Value& source);
+
   bool RestApiGet(Json::Value& result,
                   const std::string& uri,
                   bool applyPlugins);
@@ -779,7 +792,7 @@ namespace OrthancPlugins
     void UpdateProgress(float progress);
     
   public:
-    OrthancJob(const std::string& jobType);
+    explicit OrthancJob(const std::string& jobType);
     
     virtual ~OrthancJob()
     {
