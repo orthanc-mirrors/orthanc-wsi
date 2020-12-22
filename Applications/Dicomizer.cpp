@@ -37,6 +37,7 @@
 #include <DicomParsing/FromDcmtkBridge.h>
 #include <Logging.h>
 #include <OrthancException.h>
+#include <Toolbox.h>
 #include <SystemToolbox.h>
 
 #include "ApplicationToolbox.h"
@@ -293,8 +294,7 @@ static DcmDataset* ParseDataset(const std::string& path)
     std::string content;
     Orthanc::SystemToolbox::ReadFile(content, path);
 
-    Json::Reader reader;
-    if (!reader.parse(content, json, false))
+    if (!Orthanc::Toolbox::ReadJsonWithoutComments(json, content))
     {
       LOG(ERROR) << "Cannot parse the JSON file in: " << path;
       throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
@@ -468,8 +468,7 @@ static void EnrichDataset(DcmDataset& dataset,
     Orthanc::EmbeddedResources::GetFileResource(brightfield, Orthanc::EmbeddedResources::BRIGHTFIELD_OPTICAL_PATH);
 
     Json::Value json;
-    Json::Reader reader;
-    if (!reader.parse(brightfield, json, false))
+    if (!Orthanc::Toolbox::ReadJsonWithoutComments(json, brightfield))
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
     }

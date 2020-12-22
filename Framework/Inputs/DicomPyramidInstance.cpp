@@ -31,7 +31,6 @@
 #include <Toolbox.h>
 
 #include <cassert>
-#include <json/writer.h>
 
 #define SERIALIZED_METADATA  "4200"
 
@@ -54,7 +53,7 @@ namespace OrthancWSI
     DicomDatasetReader header(dataset);
 
     std::string s = Orthanc::Toolbox::StripSpaces
-      (header.GetMandatoryStringValue(Orthanc::DICOM_TAG_TRANSFER_SYNTAX_UID));
+      (header.GetMandatoryStringValue(OrthancStone::DicomPath(Orthanc::DICOM_TAG_TRANSFER_SYNTAX_UID)));
 
     if (s == "1.2.840.10008.1.2" ||
         s == "1.2.840.10008.1.2.1")
@@ -85,7 +84,7 @@ namespace OrthancWSI
     using namespace OrthancStone;
 
     std::string p = Orthanc::Toolbox::StripSpaces
-      (reader.GetMandatoryStringValue(Orthanc::DICOM_TAG_PHOTOMETRIC_INTERPRETATION));
+      (reader.GetMandatoryStringValue(OrthancStone::DicomPath(Orthanc::DICOM_TAG_PHOTOMETRIC_INTERPRETATION)));
     
     photometric = Orthanc::StringToPhotometricInterpretation(p.c_str());
 
@@ -97,9 +96,9 @@ namespace OrthancWSI
 
     unsigned int bitsStored, samplesPerPixel, tmp;
 
-    if (!reader.GetUnsignedIntegerValue(bitsStored, Orthanc::DICOM_TAG_BITS_STORED) ||
-        !reader.GetUnsignedIntegerValue(samplesPerPixel, Orthanc::DICOM_TAG_SAMPLES_PER_PIXEL) ||
-        !reader.GetUnsignedIntegerValue(tmp, Orthanc::DICOM_TAG_PIXEL_REPRESENTATION))
+    if (!reader.GetUnsignedIntegerValue(bitsStored, OrthancStone::DicomPath(Orthanc::DICOM_TAG_BITS_STORED)) ||
+        !reader.GetUnsignedIntegerValue(samplesPerPixel, OrthancStone::DicomPath(Orthanc::DICOM_TAG_SAMPLES_PER_PIXEL)) ||
+        !reader.GetUnsignedIntegerValue(tmp, OrthancStone::DicomPath(Orthanc::DICOM_TAG_PIXEL_REPRESENTATION)))
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_InexistentTag);
     }
@@ -154,8 +153,8 @@ namespace OrthancWSI
     FullOrthancDataset dataset(orthanc, "/instances/" + instanceId + "/tags");
     DicomDatasetReader reader(dataset);
 
-    if (reader.GetMandatoryStringValue(Orthanc::DICOM_TAG_SOP_CLASS_UID) != "1.2.840.10008.5.1.4.1.1.77.1.6" ||
-        reader.GetMandatoryStringValue(Orthanc::DICOM_TAG_MODALITY) != "SM")
+    if (reader.GetMandatoryStringValue(OrthancStone::DicomPath(Orthanc::DICOM_TAG_SOP_CLASS_UID)) != "1.2.840.10008.5.1.4.1.1.77.1.6" ||
+        reader.GetMandatoryStringValue(OrthancStone::DicomPath(Orthanc::DICOM_TAG_MODALITY)) != "SM")
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
     }
@@ -164,17 +163,17 @@ namespace OrthancWSI
     DetectPixelFormat(format_, photometric_, reader);
 
     unsigned int tmp;
-    if (!reader.GetUnsignedIntegerValue(tileWidth_, Orthanc::DICOM_TAG_COLUMNS) ||
-        !reader.GetUnsignedIntegerValue(tileHeight_, Orthanc::DICOM_TAG_ROWS) ||
-        !reader.GetUnsignedIntegerValue(totalWidth_, DICOM_TAG_TOTAL_PIXEL_MATRIX_COLUMNS) ||
-        !reader.GetUnsignedIntegerValue(totalHeight_, DICOM_TAG_TOTAL_PIXEL_MATRIX_ROWS) ||
-        !reader.GetUnsignedIntegerValue(tmp, Orthanc::DICOM_TAG_NUMBER_OF_FRAMES))
+    if (!reader.GetUnsignedIntegerValue(tileWidth_, OrthancStone::DicomPath(Orthanc::DICOM_TAG_COLUMNS)) ||
+        !reader.GetUnsignedIntegerValue(tileHeight_, OrthancStone::DicomPath(Orthanc::DICOM_TAG_ROWS)) ||
+        !reader.GetUnsignedIntegerValue(totalWidth_, OrthancStone::DicomPath(DICOM_TAG_TOTAL_PIXEL_MATRIX_COLUMNS)) ||
+        !reader.GetUnsignedIntegerValue(totalHeight_, OrthancStone::DicomPath(DICOM_TAG_TOTAL_PIXEL_MATRIX_ROWS)) ||
+        !reader.GetUnsignedIntegerValue(tmp, OrthancStone::DicomPath(Orthanc::DICOM_TAG_NUMBER_OF_FRAMES)))
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
     }
 
     size_t countFrames;
-    if (!reader.GetDataset().GetSequenceSize(countFrames, DICOM_TAG_PER_FRAME_FUNCTIONAL_GROUPS_SEQUENCE))
+    if (!reader.GetDataset().GetSequenceSize(countFrames, OrthancStone::DicomPath(DICOM_TAG_PER_FRAME_FUNCTIONAL_GROUPS_SEQUENCE)))
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
     }
@@ -311,8 +310,7 @@ namespace OrthancWSI
         throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
     }
 
-    Json::FastWriter writer;
-    result = writer.write(content);
+    Orthanc::Toolbox::WriteFastJson(result, content);
   }
 
 
