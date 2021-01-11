@@ -173,57 +173,85 @@ namespace OrthancWSI
     }
 
     size_t countFrames;
-    if (!reader.GetDataset().GetSequenceSize(countFrames, OrthancStone::DicomPath(DICOM_TAG_PER_FRAME_FUNCTIONAL_GROUPS_SEQUENCE)))
+    if (reader.GetDataset().GetSequenceSize(countFrames, OrthancStone::DicomPath(DICOM_TAG_PER_FRAME_FUNCTIONAL_GROUPS_SEQUENCE)))
     {
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
-    }
-
-    if (countFrames != tmp)
-    {
-      LOG(ERROR) << "Mismatch between the number of frames in instance: " << instanceId;
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
-    }
-
-    frames_.resize(countFrames);
-
-    for (size_t i = 0; i < countFrames; i++)
-    {
-      DicomPath pathX(DICOM_TAG_PER_FRAME_FUNCTIONAL_GROUPS_SEQUENCE, i,
-                      DICOM_TAG_PLANE_POSITION_SLIDE_SEQUENCE, 0,
-                      DICOM_TAG_COLUMN_POSITION_IN_TOTAL_IMAGE_PIXEL_MATRIX);
-
-      DicomPath pathY(DICOM_TAG_PER_FRAME_FUNCTIONAL_GROUPS_SEQUENCE, i,
-                      DICOM_TAG_PLANE_POSITION_SLIDE_SEQUENCE, 0,
-                      DICOM_TAG_ROW_POSITION_IN_TOTAL_IMAGE_PIXEL_MATRIX);
-
-      int xx, yy;
-      if (!reader.GetIntegerValue(xx, pathX) ||
-          !reader.GetIntegerValue(yy, pathY))
+      if (countFrames != tmp)
       {
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_InexistentTag);
-      }
-
-      // "-1", because coordinates are shifted by 1 in DICOM
-      xx -= 1;
-      yy -= 1;
-
-      unsigned int x = static_cast<unsigned int>(xx);
-      unsigned int y = static_cast<unsigned int>(yy);
-
-      if (xx < 0 || 
-          yy < 0 ||
-          x % tileWidth_ != 0 ||
-          y % tileHeight_ != 0 ||
-          x >= totalWidth_ ||
-          y >= totalHeight_)
-      {
-        LOG(ERROR) << "Frame " << i << " with unexpected tile location (" 
-                   << x << "," << y << ") in instance: " << instanceId;
+        LOG(ERROR) << "Mismatch between the number of frames in instance: " << instanceId;
         throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
       }
 
-      frames_[i].first = x / tileWidth_;
-      frames_[i].second = y / tileHeight_;
+      frames_.resize(countFrames);
+
+      for (size_t i = 0; i < countFrames; i++)
+      {
+        DicomPath pathX(DICOM_TAG_PER_FRAME_FUNCTIONAL_GROUPS_SEQUENCE, i,
+                        DICOM_TAG_PLANE_POSITION_SLIDE_SEQUENCE, 0,
+                        DICOM_TAG_COLUMN_POSITION_IN_TOTAL_IMAGE_PIXEL_MATRIX);
+
+        DicomPath pathY(DICOM_TAG_PER_FRAME_FUNCTIONAL_GROUPS_SEQUENCE, i,
+                        DICOM_TAG_PLANE_POSITION_SLIDE_SEQUENCE, 0,
+                        DICOM_TAG_ROW_POSITION_IN_TOTAL_IMAGE_PIXEL_MATRIX);
+
+        int xx, yy;
+        if (!reader.GetIntegerValue(xx, pathX) ||
+            !reader.GetIntegerValue(yy, pathY))
+        {
+          throw Orthanc::OrthancException(Orthanc::ErrorCode_InexistentTag);
+        }
+
+        // "-1", because coordinates are shifted by 1 in DICOM
+        xx -= 1;
+        yy -= 1;
+
+        unsigned int x = static_cast<unsigned int>(xx);
+        unsigned int y = static_cast<unsigned int>(yy);
+
+        if (xx < 0 || 
+            yy < 0 ||
+            x % tileWidth_ != 0 ||
+            y % tileHeight_ != 0 ||
+            x >= totalWidth_ ||
+            y >= totalHeight_)
+        {
+          LOG(ERROR) << "Frame " << i << " with unexpected tile location (" 
+                     << x << "," << y << ") in instance: " << instanceId;
+          throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
+        }
+
+        frames_[i].first = x / tileWidth_;
+        frames_[i].second = y / tileHeight_;
+      }
+    }
+    else
+    {
+      // No "Per frame functional groups sequence" tag. Assume regular grid.
+      frames_.resize(tmp);
+      
+      // Compute "ceiling(totalWidth_ / tileWidth_)
+      unsigned int w = totalWidth_ / tileWidth_;
+      if (totalWidth_ % tileWidth_ != 0)
+      {
+        w += 1;
+      }
+
+      unsigned int h = totalHeight_ / tileHeight_;
+      if (totalHeight_ % tileHeight_ != 0)
+      {
+        h += 1;
+      }
+
+      if (w * h != tmp)
+      {
+        LOG(ERROR) << "Mismatch between the number of frames in instance: " << instanceId;
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
+      }
+
+      for (size_t i = 0; i < frames_.size(); i++)
+      {
+        frames_[i].first = i % w;
+        frames_[i].second = i / w;
+      }
     }
   }
 

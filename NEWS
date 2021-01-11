@@ -1,6 +1,7 @@
 Pending changes in the mainline
 ===============================
 
+* Allow images without "Per frame functional groups sequence" tag (0x5200,0x9230)
 * Support of dynamic linking against the system-wide Orthanc framework library
 
 
