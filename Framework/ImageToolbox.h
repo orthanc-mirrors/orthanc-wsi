@@ -35,12 +35,12 @@ namespace OrthancWSI
                                      unsigned int width,
                                      unsigned int height);
 
-    void Embed(Orthanc::ImageAccessor& target,
+    void Embed(const Orthanc::ImageAccessor& target,
                const Orthanc::ImageAccessor& source,
                unsigned int x,
                unsigned int y);
 
-    inline void Copy(Orthanc::ImageAccessor& target,
+    inline void Copy(const Orthanc::ImageAccessor& target,
                      const Orthanc::ImageAccessor& source)
     {
       Embed(target, source, 0, 0);

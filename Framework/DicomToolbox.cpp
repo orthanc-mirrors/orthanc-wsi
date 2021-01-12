@@ -95,7 +95,7 @@ namespace OrthancWSI
                                        const DcmTagKey& key)
     {
       DcmElement* element = NULL;
-      if (!const_cast<DcmItem&>(dataset).findAndGetElement(key, element).good() ||
+      if (!dataset.findAndGetElement(key, element).good() ||
           element == NULL)
       {
         return NULL;

@@ -79,7 +79,7 @@ namespace OrthancWSI
 
   static void DetectPixelFormat(Orthanc::PixelFormat& format,
                                 Orthanc::PhotometricInterpretation& photometric,
-                                OrthancStone::DicomDatasetReader& reader)
+                                const OrthancStone::DicomDatasetReader& reader)
   {
     using namespace OrthancStone;
 

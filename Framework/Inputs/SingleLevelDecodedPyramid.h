@@ -41,7 +41,7 @@ namespace OrthancWSI
     virtual void ReadRegion(Orthanc::ImageAccessor& target,
                             unsigned int level,
                             unsigned int x,
-                            unsigned int y);
+                            unsigned int y) ORTHANC_OVERRIDE;
 
   public:
     SingleLevelDecodedPyramid(unsigned int tileWidth,
@@ -51,30 +51,30 @@ namespace OrthancWSI
     {
     }
 
-    virtual unsigned int GetTileWidth() const
+    virtual unsigned int GetTileWidth() const ORTHANC_OVERRIDE
     {
       return tileWidth_;
     }
 
-    virtual unsigned int GetTileHeight() const
+    virtual unsigned int GetTileHeight() const ORTHANC_OVERRIDE
     {
       return tileHeight_;
     }
 
-    virtual unsigned int GetLevelCount() const
+    virtual unsigned int GetLevelCount() const ORTHANC_OVERRIDE
     {
       return 1;
     }
 
-    virtual unsigned int GetLevelWidth(unsigned int level) const;
+    virtual unsigned int GetLevelWidth(unsigned int level) const ORTHANC_OVERRIDE;
 
-    virtual unsigned int GetLevelHeight(unsigned int level) const;
+    virtual unsigned int GetLevelHeight(unsigned int level) const ORTHANC_OVERRIDE;
 
-    virtual Orthanc::PixelFormat GetPixelFormat() const
+    virtual Orthanc::PixelFormat GetPixelFormat() const ORTHANC_OVERRIDE
     {
       return image_.GetFormat();
     }
 
-    virtual Orthanc::PhotometricInterpretation GetPhotometricInterpretation() const;
+    virtual Orthanc::PhotometricInterpretation GetPhotometricInterpretation() const ORTHANC_OVERRIDE;
   };
 }

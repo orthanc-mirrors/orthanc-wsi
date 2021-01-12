@@ -61,7 +61,7 @@ namespace OrthancWSI
       return shiftTargetLevel_;
     }
 
-    virtual bool Execute();
+    virtual bool Execute() ORTHANC_OVERRIDE;
 
     static void PrepareBagOfTasks(Orthanc::BagOfTasks& tasks,
                                   IPyramidWriter& target,

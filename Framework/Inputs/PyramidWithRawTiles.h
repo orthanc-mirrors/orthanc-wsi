@@ -30,6 +30,6 @@ namespace OrthancWSI
   public:
     virtual Orthanc::ImageAccessor* DecodeTile(unsigned int level,
                                                unsigned int tileX,
-                                               unsigned int tileY);
+                                               unsigned int tileY) ORTHANC_OVERRIDE;
   };
 }

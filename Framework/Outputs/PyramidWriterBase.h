@@ -74,30 +74,30 @@ namespace OrthancWSI
 
     void SetJpegQuality(int quality);
 
-    virtual void AddLevel(unsigned int width,
-                          unsigned int height);
-
-    virtual unsigned int GetTileWidth() const
+    void AddLevel(unsigned int width,
+                  unsigned int height);
+    
+    virtual unsigned int GetTileWidth() const ORTHANC_OVERRIDE
     {
       return tileWidth_;
     }
 
-    virtual unsigned int GetTileHeight() const 
+    virtual unsigned int GetTileHeight() const ORTHANC_OVERRIDE
     {
       return tileHeight_;
     }
 
-    virtual unsigned int GetCountTilesX(unsigned int level) const
+    virtual unsigned int GetCountTilesX(unsigned int level) const ORTHANC_OVERRIDE
     {
       return GetLevel(level).countTilesX_;
     }
 
-    virtual unsigned int GetCountTilesY(unsigned int level) const
+    virtual unsigned int GetCountTilesY(unsigned int level) const ORTHANC_OVERRIDE
     {
       return GetLevel(level).countTilesY_;
     }
 
-    virtual unsigned int GetLevelCount() const;
+    virtual unsigned int GetLevelCount() const ORTHANC_OVERRIDE;
 
     ImageCompression GetImageCompression() const
     {
@@ -108,14 +108,14 @@ namespace OrthancWSI
                               ImageCompression compression,
                               unsigned int z,
                               unsigned int tileX,
-                              unsigned int tileY);
+                              unsigned int tileY) ORTHANC_OVERRIDE;
 
     virtual void EncodeTile(const Orthanc::ImageAccessor& tile,
                             unsigned int z,
                             unsigned int tileX, 
-                            unsigned int tileY);
+                            unsigned int tileY) ORTHANC_OVERRIDE;
 
-    virtual Orthanc::PixelFormat GetPixelFormat() const
+    virtual Orthanc::PixelFormat GetPixelFormat() const ORTHANC_OVERRIDE
     {
       return pixelFormat_;
     }

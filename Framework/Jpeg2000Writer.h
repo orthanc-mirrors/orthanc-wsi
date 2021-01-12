@@ -21,6 +21,7 @@
 
 #pragma once
 
+#include <Compatibility.h>
 #include <Images/IImageWriter.h>
 
 namespace OrthancWSI
@@ -33,7 +34,7 @@ namespace OrthancWSI
                                        unsigned int height,
                                        unsigned int pitch,
                                        Orthanc::PixelFormat format,
-                                       const void* buffer);
+                                       const void* buffer) ORTHANC_OVERRIDE;
 
   private:
     bool  isLossless_;

@@ -69,9 +69,9 @@ namespace OrthancWSI
     virtual void WriteRawTileInternal(const std::string& tile,
                                       const Level& level,
                                       unsigned int tileX,
-                                      unsigned int tileY);
+                                      unsigned int tileY) ORTHANC_OVERRIDE;
         
-    virtual void AddLevelInternal(const Level& level);
+    virtual void AddLevelInternal(const Level& level) ORTHANC_OVERRIDE;
 
 
   public:
@@ -84,6 +84,6 @@ namespace OrthancWSI
 
     virtual ~HierarchicalTiffWriter();
 
-    virtual void Flush();
+    virtual void Flush() ORTHANC_OVERRIDE;
   };
 }

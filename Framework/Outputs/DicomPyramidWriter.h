@@ -57,9 +57,9 @@ namespace OrthancWSI
     virtual void WriteRawTileInternal(const std::string& tile,
                                       const Level& level,
                                       unsigned int x,
-                                      unsigned int y);
+                                      unsigned int y) ORTHANC_OVERRIDE;
 
-    virtual void AddLevelInternal(const Level& level)
+    virtual void AddLevelInternal(const Level& level) ORTHANC_OVERRIDE
     {
     }
 
@@ -76,6 +76,6 @@ namespace OrthancWSI
 
     virtual ~DicomPyramidWriter();
 
-    virtual void Flush();
+    virtual void Flush() ORTHANC_OVERRIDE;
   };
 }

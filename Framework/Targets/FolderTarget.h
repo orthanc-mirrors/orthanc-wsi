@@ -23,6 +23,8 @@
 
 #include "IFileTarget.h"
 
+#include <Compatibility.h>
+
 #include <boost/thread.hpp>
 
 namespace OrthancWSI
@@ -41,6 +43,6 @@ namespace OrthancWSI
     {
     }
 
-    virtual void Write(const std::string& file);
+    virtual void Write(const std::string& file) ORTHANC_OVERRIDE;
   };
 }

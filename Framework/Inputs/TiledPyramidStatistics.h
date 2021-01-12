@@ -40,32 +40,32 @@ namespace OrthancWSI
 
     virtual ~TiledPyramidStatistics();
 
-    virtual unsigned int GetLevelCount() const
+    virtual unsigned int GetLevelCount() const ORTHANC_OVERRIDE
     {
       return source_.GetLevelCount();
     }
 
-    virtual unsigned int GetLevelWidth(unsigned int level)  const
+    virtual unsigned int GetLevelWidth(unsigned int level)  const ORTHANC_OVERRIDE
     {
       return source_.GetLevelWidth(level);
     }
 
-    virtual unsigned int GetLevelHeight(unsigned int level) const
+    virtual unsigned int GetLevelHeight(unsigned int level) const ORTHANC_OVERRIDE
     {
       return source_.GetLevelHeight(level);
     }
 
-    virtual unsigned int GetTileWidth() const
+    virtual unsigned int GetTileWidth() const ORTHANC_OVERRIDE
     {
       return source_.GetTileWidth();
     }
     
-    virtual unsigned int GetTileHeight() const
+    virtual unsigned int GetTileHeight() const ORTHANC_OVERRIDE
     {
       return source_.GetTileHeight();
     }
 
-    virtual Orthanc::PixelFormat GetPixelFormat() const
+    virtual Orthanc::PixelFormat GetPixelFormat() const ORTHANC_OVERRIDE
     {
       return source_.GetPixelFormat();
     }
@@ -74,13 +74,13 @@ namespace OrthancWSI
                              ImageCompression& compression,
                              unsigned int level,
                              unsigned int tileX,
-                             unsigned int tileY);
+                             unsigned int tileY) ORTHANC_OVERRIDE;
 
     virtual Orthanc::ImageAccessor* DecodeTile(unsigned int level,
                                                unsigned int tileX,
-                                               unsigned int tileY);
+                                               unsigned int tileY) ORTHANC_OVERRIDE;
 
-    virtual Orthanc::PhotometricInterpretation GetPhotometricInterpretation() const
+    virtual Orthanc::PhotometricInterpretation GetPhotometricInterpretation() const ORTHANC_OVERRIDE
     {
       return source_.GetPhotometricInterpretation();
     }

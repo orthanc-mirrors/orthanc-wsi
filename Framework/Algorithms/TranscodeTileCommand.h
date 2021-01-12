@@ -49,7 +49,7 @@ namespace OrthancWSI
                          unsigned int countTilesY,
                          const DicomizerParameters& parameters);
 
-    virtual bool Execute();
+    virtual bool Execute() ORTHANC_OVERRIDE;
 
     static void PrepareBagOfTasks(Orthanc::BagOfTasks& tasks,
                                   IPyramidWriter& target,

@@ -106,7 +106,8 @@ namespace Orthanc
              bool empty) : 
         that_(that),
         bag_(bag),
-        hasJoined_(empty)
+        hasJoined_(empty),
+        status_(false)
       {
       }
 

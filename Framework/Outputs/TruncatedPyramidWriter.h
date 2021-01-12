@@ -37,40 +37,40 @@ namespace OrthancWSI
                            unsigned int upperLevelIndex,
                            Orthanc::PhotometricInterpretation photometric);
 
-    virtual unsigned int GetLevelCount() const
+    virtual unsigned int GetLevelCount() const ORTHANC_OVERRIDE
     {
       return upperLevelIndex_ + 1;
     }
 
-    virtual Orthanc::PixelFormat GetPixelFormat() const 
+    virtual Orthanc::PixelFormat GetPixelFormat() const ORTHANC_OVERRIDE
     {
       return lowerLevels_.GetPixelFormat();
     }
 
-    virtual unsigned int GetTileWidth() const
+    virtual unsigned int GetTileWidth() const ORTHANC_OVERRIDE
     {
       return lowerLevels_.GetTileWidth();
     }
 
-    virtual unsigned int GetTileHeight() const 
+    virtual unsigned int GetTileHeight() const ORTHANC_OVERRIDE
     {
       return lowerLevels_.GetTileHeight();
     }
 
-    virtual unsigned int GetCountTilesX(unsigned int level) const;
+    virtual unsigned int GetCountTilesX(unsigned int level) const ORTHANC_OVERRIDE;
 
-    virtual unsigned int GetCountTilesY(unsigned int level) const;
+    virtual unsigned int GetCountTilesY(unsigned int level) const ORTHANC_OVERRIDE;
 
     virtual void WriteRawTile(const std::string& tile,
                               ImageCompression compression,
                               unsigned int level,
                               unsigned int x,
-                              unsigned int y);
+                              unsigned int y) ORTHANC_OVERRIDE;
 
     virtual void EncodeTile(const Orthanc::ImageAccessor& tile,
                             unsigned int level,
                             unsigned int x, 
-                            unsigned int y);
+                            unsigned int y) ORTHANC_OVERRIDE;
 
     InMemoryTiledImage& GetUpperLevel()
     {

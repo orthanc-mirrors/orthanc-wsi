@@ -46,6 +46,6 @@ namespace OrthancWSI
     {
     }
 
-    virtual void Write(const std::string& file);
+    virtual void Write(const std::string& file) ORTHANC_OVERRIDE;
   };
 }

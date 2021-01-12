@@ -56,25 +56,25 @@ namespace OrthancWSI
 
     virtual ~InMemoryTiledImage();
 
-    virtual unsigned int GetLevelCount() const
+    virtual unsigned int GetLevelCount() const ORTHANC_OVERRIDE
     {
       return 1;
     }
 
-    virtual unsigned int GetCountTilesX(unsigned int level) const;
+    virtual unsigned int GetCountTilesX(unsigned int level) const ORTHANC_OVERRIDE;
 
-    virtual unsigned int GetCountTilesY(unsigned int level) const;
+    virtual unsigned int GetCountTilesY(unsigned int level) const ORTHANC_OVERRIDE;
 
-    virtual unsigned int GetLevelWidth(unsigned int level) const;
+    virtual unsigned int GetLevelWidth(unsigned int level) const ORTHANC_OVERRIDE;
 
-    virtual unsigned int GetLevelHeight(unsigned int level) const;
+    virtual unsigned int GetLevelHeight(unsigned int level) const ORTHANC_OVERRIDE;
 
-    virtual unsigned int GetTileWidth() const
+    virtual unsigned int GetTileWidth() const ORTHANC_OVERRIDE
     {
       return tileWidth_;
     }
 
-    virtual unsigned int GetTileHeight() const
+    virtual unsigned int GetTileHeight() const ORTHANC_OVERRIDE
     {
       return tileHeight_;
     }
@@ -83,13 +83,13 @@ namespace OrthancWSI
                              ImageCompression& compression,
                              unsigned int level,
                              unsigned int tileX,
-                             unsigned int tileY);
+                             unsigned int tileY) ORTHANC_OVERRIDE;
 
     virtual Orthanc::ImageAccessor* DecodeTile(unsigned int level,
                                                unsigned int tileX,
-                                               unsigned int tileY);
+                                               unsigned int tileY) ORTHANC_OVERRIDE;
 
-    virtual Orthanc::PixelFormat GetPixelFormat() const
+    virtual Orthanc::PixelFormat GetPixelFormat() const ORTHANC_OVERRIDE
     {
       return format_;
     }
@@ -98,14 +98,14 @@ namespace OrthancWSI
                               ImageCompression compression,
                               unsigned int level,
                               unsigned int tileX,
-                              unsigned int tileY);
+                              unsigned int tileY) ORTHANC_OVERRIDE;
 
     virtual void EncodeTile(const Orthanc::ImageAccessor& tile,
                             unsigned int level,
                             unsigned int tileX,
-                            unsigned int tileY);
+                            unsigned int tileY) ORTHANC_OVERRIDE;
 
-    virtual Orthanc::PhotometricInterpretation GetPhotometricInterpretation() const
+    virtual Orthanc::PhotometricInterpretation GetPhotometricInterpretation() const ORTHANC_OVERRIDE
     {
       return photometric_;
     }

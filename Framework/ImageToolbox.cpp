@@ -50,7 +50,7 @@ namespace OrthancWSI
     }
 
 
-    void Embed(Orthanc::ImageAccessor& target,
+    void Embed(const Orthanc::ImageAccessor& target,
                const Orthanc::ImageAccessor& source,
                unsigned int x,
                unsigned int y)

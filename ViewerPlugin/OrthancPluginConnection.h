@@ -23,6 +23,8 @@
 
 #include "../Resources/Orthanc/Stone/IOrthancConnection.h"
 
+#include <Compatibility.h>
+
 #include <orthanc/OrthancCPlugin.h>
 
 namespace OrthancWSI
@@ -36,16 +38,16 @@ namespace OrthancWSI
   {
   public:
     virtual void RestApiGet(std::string& result,
-                            const std::string& uri);
+                            const std::string& uri) ORTHANC_OVERRIDE;
 
     virtual void RestApiPost(std::string& result,
                              const std::string& uri,
-                             const std::string& body);
+                             const std::string& body) ORTHANC_OVERRIDE;
 
     virtual void RestApiPut(std::string& result,
                             const std::string& uri,
-                            const std::string& body);
+                            const std::string& body) ORTHANC_OVERRIDE;
 
-    virtual void RestApiDelete(const std::string& uri);
+    virtual void RestApiDelete(const std::string& uri) ORTHANC_OVERRIDE;
   };
 }

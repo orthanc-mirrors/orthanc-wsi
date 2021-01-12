@@ -23,6 +23,7 @@
 
 #include "../Enumerations.h"
 
+#include <Compatibility.h>
 #include <Images/ImageAccessor.h>
 
 #include <boost/noncopyable.hpp>
