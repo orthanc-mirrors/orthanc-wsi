@@ -1,7 +1,7 @@
 if (STATIC_BUILD OR NOT USE_SYSTEM_OPENJPEG)
-  SET(OPENJPEG_SOURCES_DIR ${CMAKE_BINARY_DIR}/openjpeg-version.2.1)
-  SET(OPENJPEG_URL "http://orthanc.osimis.io/ThirdPartyDownloads/openjpeg-2.1.tar.gz")
-  SET(OPENJPEG_MD5 "3e1c451c087f8462955426da38aa3b3d")
+  SET(OPENJPEG_SOURCES_DIR ${CMAKE_BINARY_DIR}/openjpeg-2.4.0)
+  SET(OPENJPEG_URL "http://orthanc.osimis.io/ThirdPartyDownloads/openjpeg-2.4.0.tar.gz")
+  SET(OPENJPEG_MD5 "4d388298335947367e91f1d100468af1")
 
   if (IS_DIRECTORY "${OPENJPEG_SOURCES_DIR}")
     set(FirstRun OFF)
@@ -11,20 +11,17 @@ if (STATIC_BUILD OR NOT USE_SYSTEM_OPENJPEG)
 
   DownloadPackage(${OPENJPEG_MD5} ${OPENJPEG_URL} "${OPENJPEG_SOURCES_DIR}")
 
-  execute_process(
-    COMMAND ${PATCH_EXECUTABLE} -p0 -N -i ${CMAKE_CURRENT_LIST_DIR}/OpenJpegConfiguration.patch
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    RESULT_VARIABLE Failure
-    )
-
-  if (Failure AND FirstRun)
-    message(FATAL_ERROR "Error while patching a file")
-  endif()
-
   if (USE_OPENJPEG_JP2)
     set(OPENJPEG_SOURCES
+      # ${OPENJPEG_SOURCES_DIR}/src/lib/openjp2/bench_dwt.c
+      # ${OPENJPEG_SOURCES_DIR}/src/lib/openjp2/cidx_manager.c
+      # ${OPENJPEG_SOURCES_DIR}/src/lib/openjp2/phix_manager.c
+      # ${OPENJPEG_SOURCES_DIR}/src/lib/openjp2/ppix_manager.c
+      # ${OPENJPEG_SOURCES_DIR}/src/lib/openjp2/t1_generate_luts.c
+      # ${OPENJPEG_SOURCES_DIR}/src/lib/openjp2/test_sparse_array.c
+      # ${OPENJPEG_SOURCES_DIR}/src/lib/openjp2/thix_manager.c
+      # ${OPENJPEG_SOURCES_DIR}/src/lib/openjp2/tpix_manager.c
       ${OPENJPEG_SOURCES_DIR}/src/lib/openjp2/bio.c
-      #${OPENJPEG_SOURCES_DIR}/src/lib/openjp2/cidx_manager.c
       ${OPENJPEG_SOURCES_DIR}/src/lib/openjp2/cio.c
       ${OPENJPEG_SOURCES_DIR}/src/lib/openjp2/dwt.c
       ${OPENJPEG_SOURCES_DIR}/src/lib/openjp2/event.c
@@ -37,17 +34,14 @@ if (STATIC_BUILD OR NOT USE_SYSTEM_OPENJPEG)
       ${OPENJPEG_SOURCES_DIR}/src/lib/openjp2/mqc.c
       ${OPENJPEG_SOURCES_DIR}/src/lib/openjp2/openjpeg.c
       ${OPENJPEG_SOURCES_DIR}/src/lib/openjp2/opj_clock.c
-      #${OPENJPEG_SOURCES_DIR}/src/lib/openjp2/phix_manager.c
+      ${OPENJPEG_SOURCES_DIR}/src/lib/openjp2/opj_malloc.c
       ${OPENJPEG_SOURCES_DIR}/src/lib/openjp2/pi.c
-      #${OPENJPEG_SOURCES_DIR}/src/lib/openjp2/ppix_manager.c
-      ${OPENJPEG_SOURCES_DIR}/src/lib/openjp2/raw.c
+      ${OPENJPEG_SOURCES_DIR}/src/lib/openjp2/sparse_array.c
       ${OPENJPEG_SOURCES_DIR}/src/lib/openjp2/t1.c
-      #${OPENJPEG_SOURCES_DIR}/src/lib/openjp2/t1_generate_luts.c
       ${OPENJPEG_SOURCES_DIR}/src/lib/openjp2/t2.c
       ${OPENJPEG_SOURCES_DIR}/src/lib/openjp2/tcd.c
       ${OPENJPEG_SOURCES_DIR}/src/lib/openjp2/tgt.c
-      #${OPENJPEG_SOURCES_DIR}/src/lib/openjp2/thix_manager.c
-      #${OPENJPEG_SOURCES_DIR}/src/lib/openjp2/tpix_manager.c
+      ${OPENJPEG_SOURCES_DIR}/src/lib/openjp2/thread.c
       )
 
     configure_file(
@@ -64,13 +58,6 @@ if (STATIC_BUILD OR NOT USE_SYSTEM_OPENJPEG)
 
     include_directories(
       ${OPENJPEG_SOURCES_DIR}/src/lib/openjp2
-      )
-
-    # The following definition disables explicit inlining. This is
-    # necessary to bypass the "undefined reference to
-    # `opj_t1_dec_sigpass_step_mqc'" error.
-    add_definitions(
-      #-DINLINE=
       )
 
   else()
@@ -116,6 +103,7 @@ else()
     /usr/include/openjpeg-2.1/
     /usr/include/openjpeg-2.2/
     /usr/include/openjpeg-2.3/
+    /usr/include/openjpeg-2.4/
     /usr/local/include/
     )
 

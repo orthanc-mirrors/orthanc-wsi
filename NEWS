@@ -9,7 +9,8 @@ Pending changes in the mainline
 * Fix issue #145 (support of Concatenation UID)
 * Support of dynamic linking against the system-wide Orthanc framework library
 * Upgraded dependencies for static builds (notably on Windows):
-  - libtiff 4.0.6 upgraded to 4.2.0
+  - libtiff, from 4.0.6 to 4.2.0
+  - openjpeg, from 2.1 to 2.4.0
 
 
 Version 0.7 (2020-05-26)
