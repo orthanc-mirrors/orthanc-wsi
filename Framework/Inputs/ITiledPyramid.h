@@ -49,9 +49,9 @@ namespace OrthancWSI
 
     virtual unsigned int GetLevelHeight(unsigned int level) const = 0;
 
-    virtual unsigned int GetTileWidth() const = 0;
+    virtual unsigned int GetTileWidth(unsigned int level) const = 0;
 
-    virtual unsigned int GetTileHeight() const = 0;
+    virtual unsigned int GetTileHeight(unsigned int level) const = 0;
 
     virtual bool ReadRawTile(std::string& tile,
                              ImageCompression& compression,

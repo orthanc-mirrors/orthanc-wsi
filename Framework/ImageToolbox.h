@@ -77,5 +77,9 @@ namespace OrthancWSI
 
     Orthanc::ImageAccessor* Render(ITiledPyramid& pyramid,
                                    unsigned int level);
+
+    void CheckConstantTileSize(const ITiledPyramid& source);
+
+    void ConvertJpegYCbCrToRgb(Orthanc::ImageAccessor& image /* inplace */);
   }
 }

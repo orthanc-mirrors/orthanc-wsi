@@ -113,8 +113,6 @@ namespace OrthancWSI
       const DicomPyramidInstance& b = *instances_[i];
 
       if (a.GetPixelFormat() != b.GetPixelFormat() ||
-          a.GetTileWidth() != b.GetTileWidth() ||
-          a.GetTileHeight() != b.GetTileHeight() ||
           a.GetTotalWidth() < b.GetTotalWidth() ||
           a.GetTotalHeight() < b.GetTotalHeight())            
       {
@@ -190,17 +188,17 @@ namespace OrthancWSI
   }
 
 
-  unsigned int DicomPyramid::GetTileWidth() const
+  unsigned int DicomPyramid::GetTileWidth(unsigned int level) const
   {
-    assert(!levels_.empty() && levels_[0] != NULL);
-    return levels_[0]->GetTileWidth();
+    CheckLevel(level);
+    return levels_[level]->GetTileWidth();
   }
 
 
-  unsigned int DicomPyramid::GetTileHeight() const
+  unsigned int DicomPyramid::GetTileHeight(unsigned int level) const
   {
-    assert(!levels_.empty() && levels_[0] != NULL);
-    return levels_[0]->GetTileHeight();
+    CheckLevel(level);
+    return levels_[level]->GetTileHeight();
   }
 
 

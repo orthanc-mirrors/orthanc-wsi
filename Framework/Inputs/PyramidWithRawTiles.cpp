@@ -39,7 +39,7 @@ namespace OrthancWSI
     }
     else if (compression == ImageCompression_None)
     {
-      return ImageToolbox::DecodeRawTile(tile, GetPixelFormat(), GetTileWidth(), GetTileHeight());
+      return ImageToolbox::DecodeRawTile(tile, GetPixelFormat(), GetTileWidth(level), GetTileHeight(level));
     }
     else
     {

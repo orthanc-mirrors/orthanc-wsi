@@ -55,14 +55,14 @@ namespace OrthancWSI
       return source_.GetLevelHeight(level);
     }
 
-    virtual unsigned int GetTileWidth() const ORTHANC_OVERRIDE
+    virtual unsigned int GetTileWidth(unsigned int level) const ORTHANC_OVERRIDE
     {
-      return source_.GetTileWidth();
+      return source_.GetTileWidth(level);
     }
     
-    virtual unsigned int GetTileHeight() const ORTHANC_OVERRIDE
+    virtual unsigned int GetTileHeight(unsigned int level) const ORTHANC_OVERRIDE
     {
-      return source_.GetTileHeight();
+      return source_.GetTileHeight(level);
     }
 
     virtual Orthanc::PixelFormat GetPixelFormat() const ORTHANC_OVERRIDE

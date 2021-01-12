@@ -115,17 +115,11 @@ namespace OrthancWSI
 
     unsigned int GetTargetTileWidth(unsigned int defaultWidth) const;
 
-    unsigned int GetTargetTileWidth(const ITiledPyramid& source) const
-    {
-      return GetTargetTileWidth(source.GetTileWidth());
-    }
+    unsigned int GetTargetTileWidth(const ITiledPyramid& source) const;
 
     unsigned int GetTargetTileHeight(unsigned int defaultHeight) const;
 
-    unsigned int GetTargetTileHeight(const ITiledPyramid& source) const
-    {
-      return GetTargetTileHeight(source.GetTileHeight());
-    }
+    unsigned int GetTargetTileHeight(const ITiledPyramid& source) const;
 
     void SetThreadsCount(unsigned int threads);
 

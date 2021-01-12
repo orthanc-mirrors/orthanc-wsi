@@ -86,12 +86,12 @@ namespace OrthancWSI
 
     virtual unsigned int GetLevelHeight(unsigned int level) const ORTHANC_OVERRIDE;
 
-    virtual unsigned int GetTileWidth() const ORTHANC_OVERRIDE
+    virtual unsigned int GetTileWidth(unsigned int level) const ORTHANC_OVERRIDE
     {
       return tileWidth_;
     }
 
-    virtual unsigned int GetTileHeight() const ORTHANC_OVERRIDE
+    virtual unsigned int GetTileHeight(unsigned int level) const ORTHANC_OVERRIDE
     {
       return tileHeight_;
     }

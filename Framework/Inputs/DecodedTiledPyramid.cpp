@@ -61,11 +61,11 @@ namespace OrthancWSI
                                                           unsigned int tileX,
                                                           unsigned int tileY)
   {
-    unsigned int x = tileX * GetTileWidth();
-    unsigned int y = tileY * GetTileHeight();
+    unsigned int x = tileX * GetTileWidth(level);
+    unsigned int y = tileY * GetTileHeight(level);
 
     std::unique_ptr<Orthanc::ImageAccessor> tile
-      (ImageToolbox::Allocate(GetPixelFormat(), GetTileWidth(), GetTileHeight()));
+      (ImageToolbox::Allocate(GetPixelFormat(), GetTileWidth(level), GetTileHeight(level)));
 
     if (x >= GetLevelWidth(level) ||
         y >= GetLevelHeight(level))   // (*)
@@ -76,9 +76,9 @@ namespace OrthancWSI
 
     bool fit = true;
     unsigned int regionWidth;
-    if (x + GetTileWidth() <= GetLevelWidth(level))
+    if (x + GetTileWidth(level) <= GetLevelWidth(level))
     {
-      regionWidth = GetTileWidth();
+      regionWidth = GetTileWidth(level);
     }
     else
     {
@@ -88,9 +88,9 @@ namespace OrthancWSI
     }
     
     unsigned int regionHeight;
-    if (y + GetTileHeight() <= GetLevelHeight(level))
+    if (y + GetTileHeight(level) <= GetLevelHeight(level))
     {
-      regionHeight = GetTileHeight();
+      regionHeight = GetTileHeight(level);
     }
     else
     {

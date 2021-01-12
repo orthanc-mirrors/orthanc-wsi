@@ -21,6 +21,7 @@
 
 #include "../Framework/PrecompiledHeadersWSI.h"
 
+#include "../Framework/ImageToolbox.h"
 #include "../Framework/Jpeg2000Reader.h"
 #include "DicomPyramidCache.h"
 #include "OrthancPluginConnection.h"
@@ -86,19 +87,20 @@ void ServePyramid(OrthancPluginRestOutput* output,
 
   OrthancWSI::DicomPyramidCache::Locker locker(*cache_, seriesId);
 
-  unsigned int tileWidth = locker.GetPyramid().GetTileWidth();
-  unsigned int tileHeight = locker.GetPyramid().GetTileHeight();
   unsigned int totalWidth = locker.GetPyramid().GetLevelWidth(0);
   unsigned int totalHeight = locker.GetPyramid().GetLevelHeight(0);
 
   Json::Value sizes = Json::arrayValue;
   Json::Value resolutions = Json::arrayValue;
   Json::Value tilesCount = Json::arrayValue;
+  Json::Value tilesSizes = Json::arrayValue;
   for (unsigned int i = 0; i < locker.GetPyramid().GetLevelCount(); i++)
   {
-    unsigned int levelWidth = locker.GetPyramid().GetLevelWidth(i);
-    unsigned int levelHeight = locker.GetPyramid().GetLevelHeight(i);
-
+    const unsigned int levelWidth = locker.GetPyramid().GetLevelWidth(i);
+    const unsigned int levelHeight = locker.GetPyramid().GetLevelHeight(i);
+    const unsigned int tileWidth = locker.GetPyramid().GetTileWidth(i);
+    const unsigned int tileHeight = locker.GetPyramid().GetTileHeight(i);
+    
     resolutions.append(static_cast<float>(totalWidth) / static_cast<float>(levelWidth));
     
     Json::Value s = Json::arrayValue;
@@ -110,15 +112,19 @@ void ServePyramid(OrthancPluginRestOutput* output,
     s.append(OrthancWSI::CeilingDivision(levelWidth, tileWidth));
     s.append(OrthancWSI::CeilingDivision(levelHeight, tileHeight));
     tilesCount.append(s);
+
+    s = Json::arrayValue;
+    s.append(tileWidth);
+    s.append(tileHeight);
+    tilesSizes.append(s);
   }
 
   Json::Value result;
   result["ID"] = seriesId;
   result["Resolutions"] = resolutions;
   result["Sizes"] = sizes;
-  result["TileHeight"] = tileHeight;
-  result["TileWidth"] = tileWidth;
   result["TilesCount"] = tilesCount;
+  result["TilesSizes"] = tilesSizes;
   result["TotalHeight"] = totalHeight;
   result["TotalWidth"] = totalWidth;
 
@@ -149,6 +155,7 @@ void ServeTile(OrthancPluginRestOutput* output,
 
   // Retrieve the raw tile from the WSI pyramid
   OrthancWSI::ImageCompression compression;
+  Orthanc::PhotometricInterpretation photometric;
   Orthanc::PixelFormat format;
   std::string tile;
   unsigned int tileWidth, tileHeight;
@@ -157,8 +164,9 @@ void ServeTile(OrthancPluginRestOutput* output,
     OrthancWSI::DicomPyramidCache::Locker locker(*cache_, seriesId);
 
     format = locker.GetPyramid().GetPixelFormat();
-    tileWidth = locker.GetPyramid().GetTileWidth();
-    tileHeight = locker.GetPyramid().GetTileHeight();
+    tileWidth = locker.GetPyramid().GetTileWidth(level);
+    tileHeight = locker.GetPyramid().GetTileHeight(level);
+    photometric = locker.GetPyramid().GetPhotometricInterpretation();
 
     if (!locker.GetPyramid().ReadRawTile(tile, compression, 
                                          static_cast<unsigned int>(level),
@@ -193,6 +201,12 @@ void ServeTile(OrthancPluginRestOutput* output,
     case OrthancWSI::ImageCompression_Jpeg2000:
       decoded.reset(new OrthancWSI::Jpeg2000Reader);
       dynamic_cast<OrthancWSI::Jpeg2000Reader&>(*decoded).ReadFromMemory(tile);
+
+      if (photometric == Orthanc::PhotometricInterpretation_YBR_ICT)
+      {
+        OrthancWSI::ImageToolbox::ConvertJpegYCbCrToRgb(*decoded);
+      }
+      
       break;
 
     case OrthancWSI::ImageCompression_None:

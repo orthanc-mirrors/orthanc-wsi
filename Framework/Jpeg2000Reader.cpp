@@ -25,6 +25,7 @@
 #include "ImageToolbox.h"
 
 #include <Compatibility.h>  // For std::unique_ptr
+#include <Images/ImageProcessing.h>
 #include <OrthancException.h>
 #include <SystemToolbox.h>
 
@@ -40,8 +41,9 @@
 typedef opj_dinfo_t opj_codec_t;
 typedef opj_cio_t opj_stream_t;
 #elif ORTHANC_OPENJPEG_MAJOR_VERSION == 2
+// OK, no need for compatibility macros
 #else
-#error Unsupported version of OpenJpeg
+#  error Unsupported version of OpenJpeg
 #endif
 
 
@@ -295,27 +297,80 @@ namespace OrthancWSI
     {
     private:
       opj_image_t* image_;
+      
+      Orthanc::ImageAccessor* ExtractChannel(unsigned int channel)
+      {
+        const unsigned int width = image_->comps[channel].w;
+        const unsigned int height = image_->comps[channel].h;
+        
+        std::unique_ptr<Orthanc::ImageAccessor> target(
+          new Orthanc::Image(Orthanc::PixelFormat_Grayscale8, width, height, false));
 
+        const int32_t* q = image_->comps[channel].data;
+        assert(q != NULL);
+
+        for (unsigned int y = 0; y < height; y++)
+        {
+          uint8_t *p = reinterpret_cast<uint8_t*>(target->GetRow(y));
+
+          for (unsigned int x = 0; x < width; x++, p++, q++)
+          {
+            *p = *q;
+          }
+        }        
+
+        return target.release();
+      }
+      
       void CopyChannel(Orthanc::ImageAccessor& target,
                        unsigned int channel,
                        unsigned int targetIncrement)
       {
-        int32_t* q = image_->comps[channel].data;
-        assert(q != NULL);
-
         const unsigned int width = target.GetWidth();
         const unsigned int height = target.GetHeight();
 
-        for (unsigned int y = 0; y < height; y++)
+        if (0 &&   // TODO
+            width == image_->comps[channel].w &&
+            height == image_->comps[channel].h)
         {
-          uint8_t *p = reinterpret_cast<uint8_t*>(target.GetRow(y)) + channel;
+          const int32_t* q = image_->comps[channel].data;
+          assert(q != NULL);
 
-          for (unsigned int x = 0; x < width; x++, p += targetIncrement)
+          for (unsigned int y = 0; y < height; y++)
           {
-            *p = *q;
-            q++;
+            uint8_t *p = reinterpret_cast<uint8_t*>(target.GetRow(y)) + channel;
+
+            for (unsigned int x = 0; x < width; x++, p += targetIncrement)
+            {
+              *p = *q;
+              q++;
+            }
           }
-        }        
+        }
+        else
+        {
+          // This component is subsampled
+          std::unique_ptr<Orthanc::ImageAccessor> source(ExtractChannel(channel));
+          Orthanc::Image resized(Orthanc::PixelFormat_Grayscale8, width, height, false);
+          Orthanc::ImageProcessing::Resize(resized, *source);
+
+          assert(resized.GetWidth() == target.GetWidth() &&
+                 resized.GetHeight() == target.GetHeight() &&
+                 resized.GetFormat() == Orthanc::PixelFormat_Grayscale8 &&
+                 source->GetFormat() == Orthanc::PixelFormat_Grayscale8);            
+          
+          for (unsigned int y = 0; y < height; y++)
+          {
+            const uint8_t *q = reinterpret_cast<const uint8_t*>(resized.GetConstRow(y));
+            uint8_t *p = reinterpret_cast<uint8_t*>(target.GetRow(y)) + channel;
+
+            for (unsigned int x = 0; x < width; x++, p += targetIncrement)
+            {
+              *p = *q;
+              q++;
+            }
+          }          
+        }
       }
 
     public:
@@ -375,12 +430,10 @@ namespace OrthancWSI
 
         for (unsigned int c = 0; c < static_cast<unsigned int>(image_->numcomps); c++)
         {
-          if (image_->comps[c].dx != 1 ||
-              image_->comps[c].dy != 1 ||
-              image_->comps[c].x0 != 0 ||
+          if (image_->comps[c].x0 != 0 ||
               image_->comps[c].y0 != 0 ||
-              image_->comps[c].w != image_->x1 ||
-              image_->comps[c].h != image_->y1 ||
+              image_->comps[c].dx * image_->comps[c].w != image_->x1 ||
+              image_->comps[c].dy * image_->comps[c].h != image_->y1 ||
               image_->comps[c].prec != 8 ||
               image_->comps[c].sgnd != 0)
           {
@@ -429,7 +482,6 @@ namespace OrthancWSI
 
         return image.release();
       }
-
     };
   }
 
@@ -442,11 +494,11 @@ namespace OrthancWSI
     OpenJpegImage image(decoder, input);
     
     image_.reset(image.ProvideImage());
-    AssignReadOnly(image_->GetFormat(), 
+    AssignWritable(image_->GetFormat(), 
                    image_->GetWidth(),
                    image_->GetHeight(), 
                    image_->GetPitch(), 
-                   image_->GetConstBuffer());
+                   image_->GetBuffer());
   }
 
 

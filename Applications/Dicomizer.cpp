@@ -23,6 +23,7 @@
 #include "../Framework/Algorithms/TranscodeTileCommand.h"
 #include "../Framework/DicomToolbox.h"
 #include "../Framework/DicomizerParameters.h"
+#include "../Framework/ImageToolbox.h"
 #include "../Framework/ImagedVolumeParameters.h"
 #include "../Framework/Inputs/HierarchicalTiff.h"
 #include "../Framework/Inputs/OpenSlidePyramid.h"
@@ -169,7 +170,8 @@ static void Recompress(OrthancWSI::IFileTarget& output,
 {
   OrthancWSI::TiledPyramidStatistics stats(source);
 
-  LOG(WARNING) << "Size of source tiles: " << stats.GetTileWidth() << "x" << stats.GetTileHeight();
+  OrthancWSI::ImageToolbox::CheckConstantTileSize(stats);  // Sanity check
+  LOG(WARNING) << "Size of source tiles: " << stats.GetTileWidth(0) << "x" << stats.GetTileHeight(0);
   LOG(WARNING) << "Pixel format: " << Orthanc::EnumerationToString(source.GetPixelFormat());
   LOG(WARNING) << "Source photometric interpretation: " << Orthanc::EnumerationToString(source.GetPhotometricInterpretation());
   LOG(WARNING) << "Source compression: " << EnumerationToString(sourceCompression);
@@ -251,8 +253,9 @@ static void Recompress(OrthancWSI::IFileTarget& output,
                  << OrthancWSI::EnumerationToString(target.GetImageCompression());
   }
 
-  if (stats.GetTileWidth() % target.GetTileWidth() != 0 ||
-      stats.GetTileHeight() % target.GetTileHeight() != 0)
+  OrthancWSI::ImageToolbox::CheckConstantTileSize(stats);
+  if (stats.GetTileWidth(0) % target.GetTileWidth() != 0 ||
+      stats.GetTileHeight(0) % target.GetTileHeight() != 0)
   {
     LOG(ERROR) << "When resampling the tile size, "
                << "it must be a integer divisor of the original tile size";

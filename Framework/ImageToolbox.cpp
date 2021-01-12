@@ -388,18 +388,96 @@ namespace OrthancWSI
       const unsigned int width = result->GetWidth();
       const unsigned int height = result->GetHeight();
       
-      for (unsigned int y = 0; y < height; y += pyramid.GetTileHeight())
+      for (unsigned int y = 0; y < height; y += pyramid.GetTileHeight(level))
       {
-        for (unsigned int x = 0; x < width; x += pyramid.GetTileWidth())
+        for (unsigned int x = 0; x < width; x += pyramid.GetTileWidth(level))
         {
-          std::unique_ptr<Orthanc::ImageAccessor> tile(pyramid.DecodeTile(level,
-                                                                        x / pyramid.GetTileWidth(),
-                                                                        y / pyramid.GetTileHeight()));
+          std::unique_ptr<Orthanc::ImageAccessor> tile(
+            pyramid.DecodeTile(level,
+                               x / pyramid.GetTileWidth(level),
+                               y / pyramid.GetTileHeight(level)));
           Embed(*result, *tile, x, y);
         }
       }
 
       return result.release();
+    }
+
+
+    void CheckConstantTileSize(const ITiledPyramid& source)
+    {
+      if (source.GetLevelCount() == 0)
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_IncompatibleImageSize,
+                                        "Input pyramid has no level");
+      }
+      else
+      {
+        for (unsigned int level = 0; level < source.GetLevelCount(); level++)
+        {
+          if (source.GetTileWidth(level) != source.GetTileWidth(0) ||
+              source.GetTileHeight(level) != source.GetTileHeight(0))
+          {
+            throw Orthanc::OrthancException(Orthanc::ErrorCode_IncompatibleImageSize,
+                                            "The DICOMizer requires that the input pyramid has constant "
+                                            "tile sizes across all its levels, which is not the case");
+          } 
+        }
+      }
+    }
+
+
+    void ConvertJpegYCbCrToRgb(Orthanc::ImageAccessor& image)
+    {
+#if defined(ORTHANC_FRAMEWORK_VERSION_IS_ABOVE) && ORTHANC_FRAMEWORK_VERSION_IS_ABOVE(1, 9, 0)
+      Orthanc::ImageProcessing::ConvertJpegYCbCrToRgb(image);
+#else
+#  warning You are using an old version of the Orthanc framework
+      const unsigned int width = image.GetWidth();
+      const unsigned int height = image.GetHeight();
+      const unsigned int pitch = image.GetPitch();
+      uint8_t* buffer = reinterpret_cast<uint8_t*>(image.GetBuffer());
+        
+      if (image.GetFormat() != Orthanc::PixelFormat_RGB24 ||
+          pitch < 3 * width)
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_IncompatibleImageFormat);
+      }
+
+      for (unsigned int y = 0; y < height; y++)
+      {
+        uint8_t* p = buffer + y * pitch;
+          
+        for (unsigned int x = 0; x < width; x++, p += 3)
+        {
+          const float Y  = p[0];
+          const float Cb = p[1];
+          const float Cr = p[2];
+
+          const float result[3] = {
+            Y                             + 1.402f    * (Cr - 128.0f),
+            Y - 0.344136f * (Cb - 128.0f) - 0.714136f * (Cr - 128.0f),
+            Y + 1.772f    * (Cb - 128.0f)
+          };
+
+          for (uint8_t i = 0; i < 3 ; i++)
+          {
+            if (result[i] < 0)
+            {
+              p[i] = 0;
+            }
+            else if (result[i] > 255)
+            {
+              p[i] = 255;
+            }
+            else
+            {
+              p[i] = static_cast<uint8_t>(result[i]);
+            }
+          }    
+        }
+      }
+#endif
     }
   }
 }

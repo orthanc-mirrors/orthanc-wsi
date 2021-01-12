@@ -91,14 +91,14 @@ namespace OrthancWSI
                                                ITiledPyramid& source,
                                                const DicomizerParameters& parameters)
   {
-    const unsigned int stepX = source.GetTileWidth() / target.GetTileWidth();
-    const unsigned int stepY = source.GetTileHeight() / target.GetTileHeight();
-    assert(stepX >= 1 && stepY >= 1);
-
     for (unsigned int level = 0; level < source.GetLevelCount(); level++)
     {
       const unsigned int targetCountTilesX = target.GetCountTilesX(level);
       const unsigned int targetCountTilesY = target.GetCountTilesY(level);
+
+      const unsigned int stepX = source.GetTileWidth(level) / target.GetTileWidth();
+      const unsigned int stepY = source.GetTileHeight(level) / target.GetTileHeight();
+      assert(stepX >= 1 && stepY >= 1);
 
       for (unsigned int y = 0; y < targetCountTilesY; y += stepY)
       {

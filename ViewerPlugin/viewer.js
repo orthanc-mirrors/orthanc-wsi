@@ -63,8 +63,6 @@ $(document).ready(function() {
       success : function(series) {
         var width = series['TotalWidth'];
         var height = series['TotalHeight'];
-        var tileWidth = series['TileWidth'];
-        var tileHeight = series['TileHeight'];
         var countLevels = series['Resolutions'].length;
 
         // Maps always need a projection, but Zoomify layers are not geo-referenced, and
@@ -99,7 +97,7 @@ $(document).ready(function() {
             tileGrid: new ol.tilegrid.TileGrid({
               extent: extent,
               resolutions: series['Resolutions'].reverse(),
-              tileSize: [tileWidth, tileHeight]
+              tileSizes: series['TilesSizes'].reverse()
             })
           }),
           wrapX: false,

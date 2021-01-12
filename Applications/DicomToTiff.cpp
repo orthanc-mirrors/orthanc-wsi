@@ -199,11 +199,12 @@ static void Run(OrthancWSI::ITiledPyramid& source,
     targetPhotometric = source.GetPhotometricInterpretation();
   }
 
+  OrthancWSI::ImageToolbox::CheckConstantTileSize(source); // (**)
   OrthancWSI::HierarchicalTiffWriter target(options[OPTION_OUTPUT].as<std::string>(),
                                             source.GetPixelFormat(), 
                                             OrthancWSI::ImageCompression_Jpeg,  // (*)
-                                            source.GetTileWidth(), 
-                                            source.GetTileHeight(),
+                                            source.GetTileWidth(0),   // (**) 
+                                            source.GetTileHeight(0),  // (**)
                                             targetPhotometric);
 
   if (options.count(OPTION_JPEG_QUALITY))
@@ -229,10 +230,10 @@ static void Run(OrthancWSI::ITiledPyramid& source,
                  << " level " << level;
 
     unsigned int countX = OrthancWSI::CeilingDivision
-      (source.GetLevelWidth(level), source.GetTileWidth());
+      (source.GetLevelWidth(level), source.GetTileWidth(level));
 
     unsigned int countY = OrthancWSI::CeilingDivision
-      (source.GetLevelHeight(level), source.GetTileHeight());
+      (source.GetLevelHeight(level), source.GetTileHeight(level));
 
     for (unsigned int tileY = 0; tileY < countY; tileY++)
     {
@@ -259,8 +260,9 @@ static void Run(OrthancWSI::ITiledPyramid& source,
 
             if (compression == OrthancWSI::ImageCompression_None)
             {
-              decoded.reset(OrthancWSI::ImageToolbox::DecodeRawTile(tile, source.GetPixelFormat(),
-                                                                    source.GetTileWidth(), source.GetTileHeight()));
+              decoded.reset(OrthancWSI::ImageToolbox::DecodeRawTile(
+                              tile, source.GetPixelFormat(),
+                              source.GetTileWidth(level), source.GetTileHeight(level)));
             }
             else
             {

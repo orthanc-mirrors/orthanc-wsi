@@ -28,11 +28,12 @@
 
 #include <Logging.h>
 #include <OrthancException.h>
+#include <SerializationToolbox.h>
 #include <Toolbox.h>
 
 #include <cassert>
 
-#define SERIALIZED_METADATA  "4200"
+#define SERIALIZED_METADATA  "4201"   // Was "4200" if versions <= 0.7 of this plugin
 
 
 namespace OrthancWSI
@@ -85,7 +86,7 @@ namespace OrthancWSI
 
     std::string p = Orthanc::Toolbox::StripSpaces
       (reader.GetMandatoryStringValue(OrthancStone::DicomPath(Orthanc::DICOM_TAG_PHOTOMETRIC_INTERPRETATION)));
-    
+
     photometric = Orthanc::StringToPhotometricInterpretation(p.c_str());
 
     if (photometric == Orthanc::PhotometricInterpretation_Palette)
@@ -260,7 +261,8 @@ namespace OrthancWSI
                                              const std::string& instanceId,
                                              bool useCache) :
     instanceId_(instanceId),
-    hasCompression_(false)
+    hasCompression_(false),
+    compression_(ImageCompression_None)  // Dummy initialization for serialization
   {
     if (useCache)
     {
@@ -269,6 +271,7 @@ namespace OrthancWSI
         // Try and deserialized the cached information about this instance
         std::string serialized;
         orthanc.RestApiGet(serialized, "/instances/" + instanceId + "/metadata/" + SERIALIZED_METADATA);
+        std::cout << serialized;
         Deserialize(serialized);
         return;  // Success
       }
@@ -304,6 +307,18 @@ namespace OrthancWSI
     return frames_[frame].second;
   }
 
+
+
+  static const char* const HAS_COMPRESSION = "HasCompression";
+  static const char* const IMAGE_COMPRESSION = "ImageCompression";
+  static const char* const PIXEL_FORMAT = "PixelFormat";
+  static const char* const FRAMES = "Frames";
+  static const char* const TILE_WIDTH = "TileWidth";
+  static const char* const TILE_HEIGHT = "TileHeight";
+  static const char* const TOTAL_WIDTH = "TotalWidth";
+  static const char* const TOTAL_HEIGHT = "TotalHeight";
+  static const char* const PHOTOMETRIC_INTERPRETATION = "PhotometricInterpretation";
+  
   
   void DicomPyramidInstance::Serialize(std::string& result) const
   {
@@ -313,30 +328,22 @@ namespace OrthancWSI
       Json::Value frame = Json::arrayValue;
       frame.append(frames_[i].first);
       frame.append(frames_[i].second);
-
       frames.append(frame);
     }
 
-    Json::Value content;
-    content["Frames"] = frames;
-    content["TileHeight"] = tileHeight_;
-    content["TileWidth"] = tileWidth_;
-    content["TotalHeight"] = totalHeight_;
-    content["TotalWidth"] = totalWidth_;    
+    Json::Value content = Json::objectValue;
+    content[FRAMES] = frames;
 
-    switch (format_)
-    {
-      case Orthanc::PixelFormat_RGB24:
-        content["PixelFormat"] = 0;
-        break;
-
-      case Orthanc::PixelFormat_Grayscale8:
-        content["PixelFormat"] = 1;
-        break;
-
-      default:
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
-    }
+    // "instanceId_" is set by the constructor
+    
+    content[HAS_COMPRESSION] = hasCompression_;
+    content[IMAGE_COMPRESSION] = static_cast<int>(compression_);
+    content[PIXEL_FORMAT] = static_cast<int>(format_);
+    content[TILE_WIDTH] = tileWidth_;
+    content[TILE_HEIGHT] = tileHeight_;
+    content[TOTAL_WIDTH] = totalWidth_;
+    content[TOTAL_HEIGHT] = totalHeight_;
+    content[PHOTOMETRIC_INTERPRETATION] = Orthanc::EnumerationToString(photometric_);
 
     Orthanc::Toolbox::WriteFastJson(result, content);
   }
@@ -344,53 +351,28 @@ namespace OrthancWSI
 
   void DicomPyramidInstance::Deserialize(const std::string& s)
   {
-    hasCompression_ = false;
-
     Json::Value content;
-    OrthancStone::IOrthancConnection::ParseJson(content, s);
+    Orthanc::Toolbox::ReadJson(content, s);
 
     if (content.type() != Json::objectValue ||
-        !content.isMember("Frames") ||
-        !content.isMember("PixelFormat") ||
-        !content.isMember("TileHeight") ||
-        !content.isMember("TileWidth") ||
-        !content.isMember("TotalHeight") ||
-        !content.isMember("TotalWidth") ||
-        content["Frames"].type() != Json::arrayValue ||
-        content["PixelFormat"].type() != Json::intValue ||
-        content["TileHeight"].type() != Json::intValue ||
-        content["TileWidth"].type() != Json::intValue ||
-        content["TotalHeight"].type() != Json::intValue ||
-        content["TotalWidth"].type() != Json::intValue ||
-        content["TileHeight"].asInt() < 0 ||
-        content["TileWidth"].asInt() < 0 ||
-        content["TotalHeight"].asInt() < 0 ||
-        content["TotalWidth"].asInt() < 0)
+        !content.isMember(FRAMES) ||
+        content[FRAMES].type() != Json::arrayValue)
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
     }
 
-    switch (content["PixelFormat"].asInt())
-    {
-      case 0:
-        format_ = Orthanc::PixelFormat_RGB24;
-        break;
+    hasCompression_ = Orthanc::SerializationToolbox::ReadBoolean(content, HAS_COMPRESSION);
+    compression_ = static_cast<ImageCompression>(Orthanc::SerializationToolbox::ReadInteger(content, IMAGE_COMPRESSION));
+    format_ = static_cast<Orthanc::PixelFormat>(Orthanc::SerializationToolbox::ReadInteger(content, PIXEL_FORMAT));
+    tileWidth_ = Orthanc::SerializationToolbox::ReadUnsignedInteger(content, TILE_WIDTH);
+    tileHeight_ = Orthanc::SerializationToolbox::ReadUnsignedInteger(content, TILE_HEIGHT);
+    totalWidth_ = Orthanc::SerializationToolbox::ReadUnsignedInteger(content, TOTAL_WIDTH);
+    totalHeight_ = Orthanc::SerializationToolbox::ReadUnsignedInteger(content, TOTAL_HEIGHT);
 
-      case 1:
-        format_ = Orthanc::PixelFormat_Grayscale8;
-        break;
-
-      default:
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
-    }
-
-    hasCompression_ = false;
-    tileHeight_ = static_cast<unsigned int>(content["TileHeight"].asInt());
-    tileWidth_ = static_cast<unsigned int>(content["TileWidth"].asInt());
-    totalHeight_ = static_cast<unsigned int>(content["TotalHeight"].asInt());
-    totalWidth_ = static_cast<unsigned int>(content["TotalWidth"].asInt());
-
-    const Json::Value f = content["Frames"];
+    std::string p = Orthanc::SerializationToolbox::ReadString(content, PHOTOMETRIC_INTERPRETATION);
+    photometric_ = Orthanc::StringToPhotometricInterpretation(p.c_str());
+    
+    const Json::Value f = content[FRAMES];
     frames_.resize(f.size());
 
     for (Json::Value::ArrayIndex i = 0; i < f.size(); i++)

@@ -188,7 +188,7 @@ namespace OrthancWSI
         tile.GetHeight() != sourceTileHeight_)
     {
       LOG(ERROR) << "One tile in the input image has size " << tile.GetWidth() << "x" << tile.GetHeight() 
-                 << " instead of required " << source_.GetTileWidth() << "x" << source_.GetTileHeight();
+                 << " instead of required " << sourceTileWidth_ << "x" << sourceTileHeight_;
       throw Orthanc::OrthancException(Orthanc::ErrorCode_IncompatibleImageSize);
     }
   }
@@ -238,8 +238,8 @@ namespace OrthancWSI
     level_(level),
     levelWidth_(source.GetLevelWidth(level)),
     levelHeight_(source.GetLevelHeight(level)),
-    sourceTileWidth_(source.GetTileWidth()),
-    sourceTileHeight_(source.GetTileHeight()),
+    sourceTileWidth_(source.GetTileWidth(level)),
+    sourceTileHeight_(source.GetTileHeight(level)),
     targetTileWidth_(targetTileWidth),
     targetTileHeight_(targetTileHeight),
     parameters_(parameters)

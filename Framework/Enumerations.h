@@ -28,15 +28,17 @@
 
 namespace OrthancWSI
 {
+  // WARNING - Don't change the enum values below, as this would break
+  // serialization of "DicomPyramidInstance"
   enum ImageCompression
   {
-    ImageCompression_Unknown,
-    ImageCompression_None,
-    ImageCompression_Dicom,
-    ImageCompression_Png,
-    ImageCompression_Jpeg,
-    ImageCompression_Jpeg2000,
-    ImageCompression_Tiff
+    ImageCompression_Unknown = 1,
+    ImageCompression_None = 2,
+    ImageCompression_Dicom = 3,
+    ImageCompression_Png = 4,
+    ImageCompression_Jpeg = 5,
+    ImageCompression_Jpeg2000 = 6,
+    ImageCompression_Tiff = 7
   };
 
   enum OpticalPath

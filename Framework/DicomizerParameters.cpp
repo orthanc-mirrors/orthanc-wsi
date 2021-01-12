@@ -22,6 +22,7 @@
 #include "PrecompiledHeadersWSI.h"
 #include "DicomizerParameters.h"
 
+#include "ImageToolbox.h"
 #include "Targets/FolderTarget.h"
 #include "Targets/OrthancTarget.h"
 
@@ -111,6 +112,13 @@ namespace OrthancWSI
   }
 
 
+  unsigned int DicomizerParameters::GetTargetTileWidth(const ITiledPyramid& source) const
+  {
+    ImageToolbox::CheckConstantTileSize(source);
+    return GetTargetTileWidth(source.GetTileWidth(0));
+  }
+  
+
   unsigned int DicomizerParameters::GetTargetTileHeight(unsigned int defaultHeight) const
   {
     if (hasTargetTileSize_ &&
@@ -122,6 +130,13 @@ namespace OrthancWSI
     {
       return defaultHeight;
     }
+  }
+
+
+  unsigned int DicomizerParameters::GetTargetTileHeight(const ITiledPyramid& source) const
+  {
+    ImageToolbox::CheckConstantTileSize(source);
+    return GetTargetTileHeight(source.GetTileHeight(0));
   }
 
 
@@ -160,6 +175,8 @@ namespace OrthancWSI
     {
       return pyramidLevelsCount_;
     }
+
+    ImageToolbox::CheckConstantTileSize(source);
 
     // By default, the number of levels for the pyramid is taken so that
     // the upper level is reduced either to 1 column of tiles, or to 1
@@ -205,8 +222,8 @@ namespace OrthancWSI
     }
 
     unsigned int fullNumberOfTiles = (
-      CeilingDivision(source.GetLevelWidth(0), source.GetTileWidth()) * 
-      CeilingDivision(source.GetLevelHeight(0), source.GetTileHeight()));
+      CeilingDivision(source.GetLevelWidth(0), source.GetTileWidth(0)) * 
+      CeilingDivision(source.GetLevelHeight(0), source.GetTileHeight(0)));
 
     // By default, the number of lower levels in the pyramid is chosen
     // as a compromise between the number of tasks (there should not be
