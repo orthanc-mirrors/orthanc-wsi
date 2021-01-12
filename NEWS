@@ -4,6 +4,7 @@ Pending changes in the mainline
 * Viewer can display DICOM pyramids whose tile sizes vary across levels
 * Allow images without "Per frame functional groups sequence" tag (0x5200,0x9230)
 * Better handling of PhotometricInterpretation in viewer
+* Fix colorspace of TIFF containing JPEG with RGB photometric interpretation (not YCbCr)
 * Support of dynamic linking against the system-wide Orthanc framework library
 
 

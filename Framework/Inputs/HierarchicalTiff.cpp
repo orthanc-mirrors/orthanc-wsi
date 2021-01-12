@@ -327,11 +327,43 @@ namespace OrthancWSI
         throw Orthanc::OrthancException(Orthanc::ErrorCode_CorruptedFile);
       }
 
-      tile.resize(headers.size() + raw.size() - 2);
-      memcpy(&tile[0], &headers[0], headers.size());
-      memcpy(&tile[0] + headers.size(), &raw[2], raw.size() - 2);
-    }
+      if (photometric_ == Orthanc::PhotometricInterpretation_RGB &&
+          pixelFormat_ == Orthanc::PixelFormat_RGB24)
+      {
+        /**
+         * Insert an Adobe APP14 marker with the "transform" flag set
+         * to value 0, which indicates to the JPEG decoder that
+         * "3-channel images are assumed to be RGB". Section 18 of
+         * "Supporting the DCT Filters in PostScript Level 2 -
+         * Technical Note #5116":
+         * https://stackoverflow.com/a/9658206/881731
+         * https://docs.oracle.com/javase/6/docs/api/javax/imageio/metadata/doc-files/jpeg_metadata.html
+         * https://www.pdfa.org/wp-content/uploads/2020/07/5116.DCT_Filter.pdf
+         **/
+        static const uint8_t APP14[] = {
+          0xff, 0xee,  /* JPEG Marker for Adobe segment: http://www.ozhiker.com/electronics/pjmt/jpeg_info/app_segments.html */
+          0x00, 0x0e,  /* Length (without the JPEG marker) == 0x0e == 14 bytes */
+          0x41, 0x64, 0x6f, 0x62, 0x65, /* "Adobe" string in ASCII */
+          0x00, 0x64,  /* Version == Two-byte DCTEncode/DCTDecode version number == 0x64 */
+          0x80, 0x00,  /* Two-byte "flags0" 0x8000 bit: Encoder used Blend=1 downsampling */
+          0x00, 0x00,  /* Two-byte "flags1": Set to zero */
+          0x00         /* One-byte color transform code == 0  <== This is the important one */
+        };
+        assert(sizeof(APP14) == 16);
 
+        tile.resize(headers.size() + sizeof(APP14) + raw.size() - 2);
+        memcpy(&tile[0], &headers[0], headers.size());
+        memcpy(&tile[0] + headers.size(), APP14, sizeof(APP14));
+        memcpy(&tile[0] + headers.size() + sizeof(APP14), &raw[2], raw.size() - 2);
+      }
+      else
+      {
+        tile.resize(headers.size() + raw.size() - 2);
+        memcpy(&tile[0], &headers[0], headers.size());
+        memcpy(&tile[0] + headers.size(), &raw[2], raw.size() - 2);
+      }
+    }
+    
     return true;
   }
 }
