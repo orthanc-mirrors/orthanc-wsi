@@ -44,6 +44,7 @@ namespace OrthancWSI
   static const Orthanc::DicomTag DICOM_TAG_ROW_POSITION_IN_TOTAL_IMAGE_PIXEL_MATRIX(0x0048, 0x021f);
   static const Orthanc::DicomTag DICOM_TAG_TOTAL_PIXEL_MATRIX_COLUMNS(0x0048, 0x0006);
   static const Orthanc::DicomTag DICOM_TAG_TOTAL_PIXEL_MATRIX_ROWS(0x0048, 0x0007);
+  static const Orthanc::DicomTag DICOM_TAG_IMAGE_TYPE(0x0008, 0x0008);
 
   static ImageCompression DetectImageCompression(OrthancStone::IOrthancConnection& orthanc,
                                                  const std::string& instanceId)
@@ -173,6 +174,8 @@ namespace OrthancWSI
       throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
     }
 
+    imageType_ = reader.GetStringValue(OrthancStone::DicomPath(DICOM_TAG_IMAGE_TYPE), "");
+
     size_t countFrames;
     if (reader.GetDataset().GetSequenceSize(countFrames, OrthancStone::DicomPath(DICOM_TAG_PER_FRAME_FUNCTIONAL_GROUPS_SEQUENCE)))
     {
@@ -271,7 +274,6 @@ namespace OrthancWSI
         // Try and deserialized the cached information about this instance
         std::string serialized;
         orthanc.RestApiGet(serialized, "/instances/" + instanceId + "/metadata/" + SERIALIZED_METADATA);
-        std::cout << serialized;
         Deserialize(serialized);
         return;  // Success
       }
@@ -318,6 +320,7 @@ namespace OrthancWSI
   static const char* const TOTAL_WIDTH = "TotalWidth";
   static const char* const TOTAL_HEIGHT = "TotalHeight";
   static const char* const PHOTOMETRIC_INTERPRETATION = "PhotometricInterpretation";
+  static const char* const IMAGE_TYPE = "ImageType";
   
   
   void DicomPyramidInstance::Serialize(std::string& result) const
@@ -344,6 +347,7 @@ namespace OrthancWSI
     content[TOTAL_WIDTH] = totalWidth_;
     content[TOTAL_HEIGHT] = totalHeight_;
     content[PHOTOMETRIC_INTERPRETATION] = Orthanc::EnumerationToString(photometric_);
+    content[IMAGE_TYPE] = imageType_;
 
     Orthanc::Toolbox::WriteFastJson(result, content);
   }
@@ -371,6 +375,8 @@ namespace OrthancWSI
 
     std::string p = Orthanc::SerializationToolbox::ReadString(content, PHOTOMETRIC_INTERPRETATION);
     photometric_ = Orthanc::StringToPhotometricInterpretation(p.c_str());
+
+    imageType_ = Orthanc::SerializationToolbox::ReadString(content, IMAGE_TYPE);
     
     const Json::Value f = content[FRAMES];
     frames_.resize(f.size());

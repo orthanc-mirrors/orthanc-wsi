@@ -23,8 +23,11 @@
 #include "DicomPyramid.h"
 
 #include "../DicomToolbox.h"
+
+#include <Compatibility.h>
 #include <Logging.h>
 #include <OrthancException.h>
+#include <Toolbox.h>
 
 #include <algorithm>
 #include <cassert>
@@ -84,15 +87,26 @@ namespace OrthancWSI
         throw Orthanc::OrthancException(Orthanc::ErrorCode_NetworkProtocol);
       }
 
-      std::string instance = instances[i].asString();
+      std::string instanceId = instances[i].asString();
 
       try
       {
-        instances_.push_back(new DicomPyramidInstance(orthanc_, instance, useCache));
+        std::unique_ptr<DicomPyramidInstance> instance(new DicomPyramidInstance(orthanc_, instanceId, useCache));
+
+        std::vector<std::string> tokens;
+        Orthanc::Toolbox::TokenizeString(tokens, instance->GetImageType(), '\\');
+
+        // Don't consider the thumbnail and overview as part of the DICOM pyramid (new in 0.8)
+        if (tokens.size() < 2 ||
+            (tokens[2] != "THUMBNAIL" &&
+             tokens[2] != "OVERVIEW"))
+        {
+          instances_.push_back(instance.release());
+        }        
       }
       catch (Orthanc::OrthancException&)
       {
-        LOG(ERROR) << "Skipping a DICOM instance that is not part of a whole-slide image: " << instance;
+        LOG(ERROR) << "Skipping a DICOM instance that is not part of a whole-slide image: " << instanceId;
       }
     }
   }

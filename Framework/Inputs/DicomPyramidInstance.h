@@ -34,16 +34,17 @@ namespace OrthancWSI
   private:
     typedef std::pair<unsigned int, unsigned int>  FrameLocation;
 
-    std::string                 instanceId_;
-    bool                        hasCompression_;
-    ImageCompression            compression_;
-    Orthanc::PixelFormat        format_;
-    unsigned int                tileWidth_;
-    unsigned int                tileHeight_;
-    unsigned int                totalWidth_;
-    unsigned int                totalHeight_;
-    std::vector<FrameLocation>  frames_;
+    std::string                         instanceId_;
+    bool                                hasCompression_;
+    ImageCompression                    compression_;
+    Orthanc::PixelFormat                format_;
+    unsigned int                        tileWidth_;
+    unsigned int                        tileHeight_;
+    unsigned int                        totalWidth_;
+    unsigned int                        totalHeight_;
+    std::vector<FrameLocation>          frames_;
     Orthanc::PhotometricInterpretation  photometric_;
+    std::string                         imageType_;
 
     void Load(OrthancStone::IOrthancConnection&  orthanc,
               const std::string& instanceId);
@@ -95,6 +96,11 @@ namespace OrthancWSI
     size_t GetFrameCount() const
     {
       return frames_.size();
+    }
+
+    const std::string& GetImageType() const
+    {
+      return imageType_;
     }
 
     unsigned int GetFrameLocationX(size_t frame) const;
