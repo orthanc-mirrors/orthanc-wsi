@@ -138,9 +138,10 @@ namespace OrthancWSI
 
       if (writer == NULL)
       {
+        const bool isConcatenation = (maxSize_ != 0);
         writer = new MultiframeDicomWriter
           (dataset_, GetImageCompression(), GetPixelFormat(), level.width_, level.height_, 
-           GetTileWidth(), GetTileHeight(), photometric_);
+           GetTileWidth(), GetTileHeight(), photometric_, isConcatenation);
         writers_[z] = writer;
 
         {

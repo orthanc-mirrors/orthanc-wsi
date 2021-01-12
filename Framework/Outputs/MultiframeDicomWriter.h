@@ -54,6 +54,10 @@ namespace OrthancWSI
     DcmPixelItem*                      offsetTable_;
     std::unique_ptr<DcmOffsetList>       offsetList_;
 
+    bool             isConcatenation_;
+    unsigned int     countInstances_;
+    unsigned int     firstFrameInInstance_;
+    
     void ResetImage();
 
     void InjectUncompressedPixelData(DcmFileFormat& dicom);
@@ -66,7 +70,8 @@ namespace OrthancWSI
                           unsigned int height,
                           unsigned int tileWidth,
                           unsigned int tileHeight,
-                          Orthanc::PhotometricInterpretation photometric);
+                          Orthanc::PhotometricInterpretation photometric,
+                          bool isConcatenation);
 
     void AddFrame(const std::string& frame,
                   DcmItem* functionalGroup);   // This takes the ownership

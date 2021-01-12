@@ -25,8 +25,9 @@
 #include "../DicomToolbox.h"
 
 #include <Compatibility.h>  // For std::unique_ptr
-#include <OrthancException.h>
+#include <DicomParsing/FromDcmtkBridge.h>
 #include <Logging.h>
+#include <OrthancException.h>
 
 #include <dcmtk/dcmdata/dcuid.h>
 #include <dcmtk/dcmdata/dcdeftag.h>
@@ -98,6 +99,9 @@ namespace OrthancWSI
       offsetList_.reset(new DcmOffsetList);
     }
 
+    firstFrameInInstance_ += framesCount_;
+    countInstances_ ++;
+
     writtenSize_ = 0;
     framesCount_ = 0;
   }
@@ -150,10 +154,15 @@ namespace OrthancWSI
                                                unsigned int height,
                                                unsigned int tileWidth,
                                                unsigned int tileHeight,
-                                               Orthanc::PhotometricInterpretation photometric) :
+                                               Orthanc::PhotometricInterpretation photometric,
+                                               bool isConcatenation) :
     compression_(compression),
+    framesCount_(0),
     width_(width),
-    height_(height)
+    height_(height),
+    isConcatenation_(isConcatenation),
+    countInstances_(0),
+    firstFrameInInstance_(0)
   {
     switch (compression)
     {
@@ -208,6 +217,28 @@ namespace OrthancWSI
         throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
     }
 
+    if (isConcatenation)
+    {
+      /**
+       * Generate a shared SOP Instance UID that corresponds to the
+       * main instance containing all the instances. This main
+       * instance is purely "virtual", as it is never generated.
+       * https://bugs.orthanc-server.com/show_bug.cgi?id=145
+       * http://dicom.nema.org/medical/dicom/2020d/output/chtml/part03/figures/PS3.3_C.7.6.16-1a.svg
+       **/
+      DicomToolbox::SetStringTag(sharedTags_, DCM_SOPInstanceUIDOfConcatenationSource,
+                                 Orthanc::FromDcmtkBridge::GenerateUniqueIdentifier(Orthanc::ResourceType_Instance));
+
+      /**
+       * Similarly, we generate one random UID to identify the
+       * concatenation. As we never generate two different
+       * concatenations of the "main" instance, this UID is shared by
+       * all the instances of the concatenation.
+       **/
+      DicomToolbox::SetStringTag(sharedTags_, DCM_ConcatenationUID,
+                                 Orthanc::FromDcmtkBridge::GenerateUniqueIdentifier(Orthanc::ResourceType_Instance));
+    }
+
     ResetImage();
   }
 
@@ -259,22 +290,26 @@ namespace OrthancWSI
       throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
     }
 
-    std::string tmp = boost::lexical_cast<std::string>(instanceNumber);
-
     std::unique_ptr<DcmFileFormat> dicom(new DcmFileFormat);
 
-    char uid[100];
-    dcmGenerateUniqueIdentifier(uid, SITE_INSTANCE_UID_ROOT);
-
+    const std::string uid = Orthanc::FromDcmtkBridge::GenerateUniqueIdentifier(Orthanc::ResourceType_Instance);
+    
     if (!dicom->getDataset()->copyFrom(sharedTags_).good() ||
         !dicom->getDataset()->insert(perFrameFunctionalGroups_.release(), false, false).good() ||
-        !dicom->getDataset()->putAndInsertString(DCM_SOPInstanceUID, uid).good() ||
-        !dicom->getDataset()->putAndInsertString(DCM_InstanceNumber, tmp.c_str()).good())
+        !dicom->getDataset()->putAndInsertString(DCM_SOPInstanceUID, uid.c_str()).good())
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
     }
 
+    // The two tags below have "IS" (integer string) value representation
+    DicomToolbox::SetStringTag(*dicom->getDataset(), DCM_InstanceNumber, boost::lexical_cast<std::string>(instanceNumber));
     DicomToolbox::SetStringTag(*dicom->getDataset(), DCM_NumberOfFrames, boost::lexical_cast<std::string>(framesCount_));
+
+    if (isConcatenation_)
+    {
+      DicomToolbox::SetUint32Tag(*dicom->getDataset(), DCM_ConcatenationFrameOffsetNumber, firstFrameInInstance_);
+      DicomToolbox::SetUint16Tag(*dicom->getDataset(), DCM_InConcatenationNumber, countInstances_);
+    }
 
     switch (compression_)
     {

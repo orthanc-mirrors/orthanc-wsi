@@ -6,6 +6,7 @@ Pending changes in the mainline
 * Better handling of PhotometricInterpretation in viewer
 * Fix colorspace of TIFF containing JPEG with RGB photometric interpretation (not YCbCr)
 * Don't display the thumbnail/overview instances in the Web viewer
+* Fix issue #145 (support of Concatenation UID)
 * Support of dynamic linking against the system-wide Orthanc framework library
 
 
