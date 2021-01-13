@@ -12,12 +12,15 @@ General
 * Viewer: Configure how missing tiles are displayed for sparse tiling
 
 
------------
-Performance
------------
+-------
+Testing
+-------
 
-* Check out rapidjson: https://github.com/miloyip/nativejson-benchmark
-* Optimize ImageToolbox::Set() and ImageToolbox::Halve()
+* Integration tests for photometric interpretations
+  (https://bugs.orthanc-server.com/show_bug.cgi?id=144) => all
+  possibilities (2x2x3) with "--rencode", "--pyramid", "--compression"
+  X all possible input photometric interpretations (6 = PNG, JPEG, PNG
+  grayscale, TIFF RGB, TIFF YCbCr, TIFF grayscale)
 
 
 -------------
