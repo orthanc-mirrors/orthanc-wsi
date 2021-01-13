@@ -9,7 +9,6 @@ else()
 endif()
 
 add_definitions(
-  -DHAS_ORTHANC_EXCEPTION=1
   -DORTHANC_WSI_VERSION="${ORTHANC_WSI_VERSION}"
   )
 

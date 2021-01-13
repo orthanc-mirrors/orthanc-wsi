@@ -104,11 +104,6 @@ set(ORTHANC_WSI_SOURCES
   ${ORTHANC_WSI_DIR}/Framework/Outputs/TruncatedPyramidWriter.cpp
   ${ORTHANC_WSI_DIR}/Framework/Targets/FolderTarget.cpp
   ${ORTHANC_WSI_DIR}/Framework/Targets/OrthancTarget.cpp
-
-  # To access compatibility functions
-  # "OrthancPlugins::WriteFastJson()" and "OrthancPlugins::ReadJson()"
-  # if Orthanc framework <= 1.8.2
-  ${ORTHANC_WSI_DIR}/Resources/Orthanc/Plugins/OrthancPluginCppWrapper.cpp
   )
 
 EmbedResources(

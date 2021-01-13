@@ -329,9 +329,8 @@ namespace OrthancWSI
         const unsigned int width = target.GetWidth();
         const unsigned int height = target.GetHeight();
 
-        if (0 &&   // TODO
-            width == image_->comps[channel].w &&
-            height == image_->comps[channel].h)
+        if (static_cast<int>(width) == image_->comps[channel].w &&
+            static_cast<int>(height) == image_->comps[channel].h)
         {
           const int32_t* q = image_->comps[channel].data;
           assert(q != NULL);

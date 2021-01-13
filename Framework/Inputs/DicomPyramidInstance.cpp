@@ -23,7 +23,6 @@
 #include "DicomPyramidInstance.h"
 
 #include "../DicomToolbox.h"
-#include "../../Resources/Orthanc/Plugins/OrthancPluginCppWrapper.h"
 #include "../../Resources/Orthanc/Stone/DicomDatasetReader.h"
 #include "../../Resources/Orthanc/Stone/FullOrthancDataset.h"
 
@@ -33,6 +32,10 @@
 #include <Toolbox.h>
 
 #include <cassert>
+
+#if !ORTHANC_FRAMEWORK_VERSION_IS_ABOVE(1, 9, 0)
+#  include <json/writer.h>
+#endif
 
 #define SERIALIZED_METADATA  "4201"   // Was "4200" if versions <= 0.7 of this plugin
 
@@ -350,14 +353,19 @@ namespace OrthancWSI
     content[PHOTOMETRIC_INTERPRETATION] = Orthanc::EnumerationToString(photometric_);
     content[IMAGE_TYPE] = imageType_;
 
-    OrthancPlugins::WriteFastJson(result, content);
+#if ORTHANC_FRAMEWORK_VERSION_IS_ABOVE(1, 9, 0)
+    Orthanc::Toolbox::WriteFastJson(result, content);
+#else
+    Json::FastWriter writer;
+    result = writer.write(content);
+#endif
   }
 
 
   void DicomPyramidInstance::Deserialize(const std::string& s)
   {
     Json::Value content;
-    OrthancPlugins::ReadJson(content, s);
+    OrthancStone::IOrthancConnection::ParseJson(content, s);
 
     if (content.type() != Json::objectValue ||
         !content.isMember(FRAMES) ||

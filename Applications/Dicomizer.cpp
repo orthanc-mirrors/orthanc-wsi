@@ -33,7 +33,6 @@
 #include "../Framework/MultiThreading/BagOfTasksProcessor.h"
 #include "../Framework/Outputs/DicomPyramidWriter.h"
 #include "../Framework/Outputs/TruncatedPyramidWriter.h"
-#include "../Resources/Orthanc/Plugins/OrthancPluginCppWrapper.h"
 
 #include <Compatibility.h>  // For std::unique_ptr
 #include <DicomParsing/FromDcmtkBridge.h>
@@ -82,6 +81,28 @@ static const char* OPTION_TILE_HEIGHT = "tile-height";
 static const char* OPTION_TILE_WIDTH = "tile-width";
 static const char* OPTION_VERBOSE = "verbose";
 static const char* OPTION_VERSION = "version";
+
+
+#if ORTHANC_FRAMEWORK_VERSION_IS_ABOVE(1, 9, 0)
+
+bool ReadJsonWithoutComments(Json::Value& target,
+                             const std::string& source)
+{
+  return Orthanc::Toolbox::ReadJsonWithoutComments(target, source);
+}
+
+#else
+
+// Backward compatibility with Orthanc framework <= 1.8.2
+#include <json/reader.h>
+
+bool ReadJsonWithoutComments(Json::Value& target,
+                             const std::string& source)
+{
+  Json::Reader reader;
+  return reader.parse(source, target, false);
+}
+#endif
 
 
 static void TranscodePyramid(OrthancWSI::PyramidWriterBase& target,
@@ -298,7 +319,7 @@ static DcmDataset* ParseDataset(const std::string& path)
     std::string content;
     Orthanc::SystemToolbox::ReadFile(content, path);
 
-    if (!OrthancPlugins::ReadJsonWithoutComments(json, content))
+    if (!ReadJsonWithoutComments(json, content))
     {
       LOG(ERROR) << "Cannot parse the JSON file in: " << path;
       throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
@@ -472,7 +493,7 @@ static void EnrichDataset(DcmDataset& dataset,
     Orthanc::EmbeddedResources::GetFileResource(brightfield, Orthanc::EmbeddedResources::BRIGHTFIELD_OPTICAL_PATH);
 
     Json::Value json;
-    if (!OrthancPlugins::ReadJsonWithoutComments(json, brightfield))
+    if (!ReadJsonWithoutComments(json, brightfield))
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
     }
