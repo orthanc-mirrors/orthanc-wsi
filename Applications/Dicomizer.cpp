@@ -33,6 +33,7 @@
 #include "../Framework/MultiThreading/BagOfTasksProcessor.h"
 #include "../Framework/Outputs/DicomPyramidWriter.h"
 #include "../Framework/Outputs/TruncatedPyramidWriter.h"
+#include "../Resources/Orthanc/Plugins/OrthancPluginCppWrapper.h"
 
 #include <Compatibility.h>  // For std::unique_ptr
 #include <DicomParsing/FromDcmtkBridge.h>
@@ -297,7 +298,7 @@ static DcmDataset* ParseDataset(const std::string& path)
     std::string content;
     Orthanc::SystemToolbox::ReadFile(content, path);
 
-    if (!Orthanc::Toolbox::ReadJsonWithoutComments(json, content))
+    if (!OrthancPlugins::ReadJsonWithoutComments(json, content))
     {
       LOG(ERROR) << "Cannot parse the JSON file in: " << path;
       throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
@@ -471,7 +472,7 @@ static void EnrichDataset(DcmDataset& dataset,
     Orthanc::EmbeddedResources::GetFileResource(brightfield, Orthanc::EmbeddedResources::BRIGHTFIELD_OPTICAL_PATH);
 
     Json::Value json;
-    if (!Orthanc::Toolbox::ReadJsonWithoutComments(json, brightfield))
+    if (!OrthancPlugins::ReadJsonWithoutComments(json, brightfield))
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
     }

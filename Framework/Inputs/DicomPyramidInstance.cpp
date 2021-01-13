@@ -23,6 +23,7 @@
 #include "DicomPyramidInstance.h"
 
 #include "../DicomToolbox.h"
+#include "../../Resources/Orthanc/Plugins/OrthancPluginCppWrapper.h"
 #include "../../Resources/Orthanc/Stone/DicomDatasetReader.h"
 #include "../../Resources/Orthanc/Stone/FullOrthancDataset.h"
 
@@ -349,14 +350,14 @@ namespace OrthancWSI
     content[PHOTOMETRIC_INTERPRETATION] = Orthanc::EnumerationToString(photometric_);
     content[IMAGE_TYPE] = imageType_;
 
-    Orthanc::Toolbox::WriteFastJson(result, content);
+    OrthancPlugins::WriteFastJson(result, content);
   }
 
 
   void DicomPyramidInstance::Deserialize(const std::string& s)
   {
     Json::Value content;
-    Orthanc::Toolbox::ReadJson(content, s);
+    OrthancPlugins::ReadJson(content, s);
 
     if (content.type() != Json::objectValue ||
         !content.isMember(FRAMES) ||

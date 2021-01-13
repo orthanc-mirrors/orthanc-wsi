@@ -25,12 +25,31 @@
 #include <OrthancException.h>
 #include <Toolbox.h>
 
+#if !defined(ORTHANC_FRAMEWORK_VERSION_IS_ABOVE)
+#  error You are using a version of the Orthanc framework that is too old
+#endif
+
+#if !ORTHANC_FRAMEWORK_VERSION_IS_ABOVE(1, 9, 0)
+#  include <json/reader.h>
+#endif
+
+
 namespace OrthancStone
 {
   void IOrthancConnection::ParseJson(Json::Value& result,
                                      const std::string& content)
   {
-    if (!Orthanc::Toolbox::ReadJson(result, content))
+    bool ok;
+    
+#if ORTHANC_FRAMEWORK_VERSION_IS_ABOVE(1, 9, 0)
+    ok = Orthanc::Toolbox::ReadJson(result, content);
+#else
+    // Backward compatibility (for use in orthanc-wsi 1.0)
+    Json::Reader reader;
+    ok = reader.parse(content, result);
+#endif
+
+    if (!ok)
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
     }
@@ -41,7 +60,18 @@ namespace OrthancStone
                                      const void* content,
                                      size_t size)
   {
-    if (!Orthanc::Toolbox::ReadJson(result, content, size))
+    bool ok;
+
+#if ORTHANC_FRAMEWORK_VERSION_IS_ABOVE(1, 9, 0)
+    ok = Orthanc::Toolbox::ReadJson(result, content, size);
+#else
+    // Backward compatibility (for use in orthanc-wsi 1.0)
+    Json::Reader reader;
+    ok = reader.parse(reinterpret_cast<const char*>(content),
+                      reinterpret_cast<const char*>(content) + size, result);
+#endif
+    
+    if (!ok)
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
     }
