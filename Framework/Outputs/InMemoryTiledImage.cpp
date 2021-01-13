@@ -27,6 +27,8 @@
 #include <Compatibility.h>  // For std::unique_ptr
 #include <Logging.h>
 #include <OrthancException.h>
+#include <Images/Image.h>
+
 
 namespace OrthancWSI
 {
@@ -164,7 +166,7 @@ namespace OrthancWSI
       Tiles::iterator it = tiles_.find(std::make_pair(tileX, tileY));
       if (it == tiles_.end())
       {
-        tiles_[std::make_pair(tileX, tileY)] = ImageToolbox::Clone(tile);
+        tiles_[std::make_pair(tileX, tileY)] = Orthanc::Image::Clone(tile);
       }
       else
       {
@@ -173,7 +175,7 @@ namespace OrthancWSI
           delete it->second;
         }
 
-        it->second = ImageToolbox::Clone(tile);
+        it->second = Orthanc::Image::Clone(tile);
       }
     }
   }

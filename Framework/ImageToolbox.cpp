@@ -83,46 +83,24 @@ namespace OrthancWSI
              uint8_t g,
              uint8_t b)
     {
-      if (image.GetWidth() == 0 ||
-          image.GetHeight() == 0)
-      {
-        return;
-      }
-
-      uint8_t grayscale = (2126 * static_cast<uint16_t>(r) + 
-                           7152 * static_cast<uint16_t>(g) +
-                           0722 * static_cast<uint16_t>(b)) / 10000;
-
-      const unsigned int width = image.GetWidth();
-      const unsigned int height = image.GetHeight();
-
       switch (image.GetFormat())
       {
         case Orthanc::PixelFormat_Grayscale8:
         {
-          for (unsigned int y = 0; y < height; y++)
-          {
-            memset(image.GetRow(y), grayscale, width);
-          }
-
+#if ORTHANC_FRAMEWORK_VERSION_IS_ABOVE(1, 9, 0)
+          Orthanc::ImageProcessing::Set(image, r, g, b, 0 /* alpha is ignored */);
+#else
+          uint8_t grayscale = (2126 * static_cast<uint16_t>(r) + 
+                               7152 * static_cast<uint16_t>(g) +
+                               0722 * static_cast<uint16_t>(b)) / 10000;
+          Orthanc::ImageProcessing::Set(image, grayscale);
+#endif
           break;
         }
 
         case Orthanc::PixelFormat_RGB24:
-        {
-          for (unsigned int y = 0; y < height; y++)
-          {
-            uint8_t* p = reinterpret_cast<uint8_t*>(image.GetRow(y));
-            for (unsigned int x = 0; x < width; x++, p += 3)
-            {
-              p[0] = r;
-              p[1] = g;
-              p[2] = b;
-            }
-          }
-
+          Orthanc::ImageProcessing::Set(image, r, g, b, 0 /* alpha is ignored */);
           break;
-        }
 
         default:
           throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
@@ -361,17 +339,6 @@ namespace OrthancWSI
       }
 
       return target.release();
-    }
-
-
-    Orthanc::ImageAccessor* Clone(const Orthanc::ImageAccessor& accessor)
-    {
-      std::unique_ptr<Orthanc::ImageAccessor> result(Allocate(accessor.GetFormat(),
-                                                              accessor.GetWidth(),
-                                                              accessor.GetHeight()));
-      Embed(*result, accessor, 0, 0);
-
-      return result.release();
     }
 
 

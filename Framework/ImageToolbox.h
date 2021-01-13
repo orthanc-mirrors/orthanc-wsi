@@ -40,17 +40,11 @@ namespace OrthancWSI
                unsigned int x,
                unsigned int y);
 
-    inline void Copy(const Orthanc::ImageAccessor& target,
-                     const Orthanc::ImageAccessor& source)
-    {
-      Embed(target, source, 0, 0);
-    }
-
     void Set(Orthanc::ImageAccessor& image,
              uint8_t r,
              uint8_t g,
              uint8_t b);
-
+    
     Orthanc::ImageAccessor* DecodeTile(const std::string& source,
                                        ImageCompression compression);
     
@@ -72,8 +66,6 @@ namespace OrthancWSI
 
     Orthanc::ImageAccessor* Halve(const Orthanc::ImageAccessor& source,
                                   bool smooth);
-
-    Orthanc::ImageAccessor* Clone(const Orthanc::ImageAccessor& accessor);
 
     Orthanc::ImageAccessor* Render(ITiledPyramid& pyramid,
                                    unsigned int level);

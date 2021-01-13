@@ -24,6 +24,7 @@
 #include "../ImageToolbox.h"
 
 #include <OrthancException.h>
+#include <Images/ImageProcessing.h>
 
 namespace OrthancWSI
 {
@@ -34,7 +35,7 @@ namespace OrthancWSI
   {
     Orthanc::ImageAccessor region;
     image_.GetRegion(region, x, y, target.GetWidth(), target.GetHeight());
-    ImageToolbox::Copy(target, region);
+    Orthanc::ImageProcessing::Copy(target, region);
   }
 
 
