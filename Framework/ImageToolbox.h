@@ -64,9 +64,6 @@ namespace OrthancWSI
                                ImageCompression targetCompression,
                                uint8_t quality);  // Only for JPEG compression
 
-    Orthanc::ImageAccessor* Halve(const Orthanc::ImageAccessor& source,
-                                  bool smooth);
-
     Orthanc::ImageAccessor* Render(ITiledPyramid& pyramid,
                                    unsigned int level);
 

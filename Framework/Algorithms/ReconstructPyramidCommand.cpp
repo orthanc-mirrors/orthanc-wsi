@@ -28,6 +28,7 @@
 #include <Logging.h>
 #include <OrthancException.h>
 #include <Images/Image.h>
+#include <Images/ImageProcessing.h>
 
 #include <cassert>
 
@@ -111,7 +112,12 @@ namespace OrthancWSI
         }
       }
 
-      result.reset(ImageToolbox::Halve(*mosaic, source_.GetParameters().IsSmoothEnabled()));
+      if (source_.GetParameters().IsSmoothEnabled())
+      {
+        Orthanc::ImageProcessing::SmoothGaussian5x5(*mosaic, false /* don't use accurate rounding */);
+      }
+
+      result.reset(Orthanc::ImageProcessing::Halve(*mosaic, false /* don't force minimal pitch */));
 
       target_.EncodeTile(*result, level + shiftTargetLevel_, x, y);
     }
