@@ -96,7 +96,7 @@ namespace OrthancWSI
         std::vector<std::string> tokens;
         Orthanc::Toolbox::TokenizeString(tokens, instance->GetImageType(), '\\');
 
-        // Don't consider the thumbnail and overview as part of the DICOM pyramid (new in 0.8)
+        // Don't consider the thumbnail and overview as part of the DICOM pyramid (new in 1.0)
         if (tokens.size() < 2 ||
             (tokens[2] != "THUMBNAIL" &&
              tokens[2] != "OVERVIEW"))
