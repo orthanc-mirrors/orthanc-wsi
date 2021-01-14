@@ -1,4 +1,4 @@
-set(ORTHANC_WSI_VERSION "mainline")
+set(ORTHANC_WSI_VERSION "1.0")
 
 if (ORTHANC_WSI_VERSION STREQUAL "mainline")
   set(ORTHANC_FRAMEWORK_VERSION "mainline")
