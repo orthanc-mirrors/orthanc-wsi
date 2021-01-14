@@ -278,7 +278,9 @@ namespace OrthancWSI
 #if defined(ORTHANC_FRAMEWORK_VERSION_IS_ABOVE) && ORTHANC_FRAMEWORK_VERSION_IS_ABOVE(1, 9, 0)
       Orthanc::ImageProcessing::ConvertJpegYCbCrToRgb(image);
 #else
-#  warning You are using an old version of the Orthanc framework
+#  if defined(__GNUC__) || defined(__clang__)
+#    warning You are using an old version of the Orthanc framework
+#  endif
       const unsigned int width = image.GetWidth();
       const unsigned int height = image.GetHeight();
       const unsigned int pitch = image.GetPitch();
