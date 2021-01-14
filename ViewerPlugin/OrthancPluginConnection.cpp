@@ -21,7 +21,7 @@
 
 #include "OrthancPluginConnection.h"
 
-#include "../../../Resources/Orthanc/Plugins/OrthancPluginCppWrapper.h"
+#include "../Resources/Orthanc/Plugins/OrthancPluginCppWrapper.h"
 
 #include <OrthancException.h>
 
