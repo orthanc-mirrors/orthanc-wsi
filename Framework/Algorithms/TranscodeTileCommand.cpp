@@ -86,7 +86,7 @@ namespace OrthancWSI
   }
 
 
-  void TranscodeTileCommand::PrepareBagOfTasks(Orthanc::BagOfTasks& tasks,
+  void TranscodeTileCommand::PrepareBagOfTasks(BagOfTasks& tasks,
                                                IPyramidWriter& target,
                                                ITiledPyramid& source,
                                                const DicomizerParameters& parameters)

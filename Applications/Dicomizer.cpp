@@ -111,7 +111,7 @@ static void TranscodePyramid(OrthancWSI::PyramidWriterBase& target,
 {
   LOG(WARNING) << "Transcoding the source pyramid (not re-encoding)";
 
-  Orthanc::BagOfTasks tasks;
+  OrthancWSI::BagOfTasks tasks;
 
   for (unsigned int i = 0; i < source.GetLevelCount(); i++)
   {
@@ -131,7 +131,7 @@ static void ReconstructPyramid(OrthancWSI::PyramidWriterBase& target,
 {
   LOG(WARNING) << "Re-encoding the source pyramid (not transcoding, slower process)";
 
-  Orthanc::BagOfTasks tasks;
+  OrthancWSI::BagOfTasks tasks;
 
   unsigned int levelsCount = parameters.GetPyramidLevelsCount(target, source);
   LOG(WARNING) << "The target pyramid will have " << levelsCount << " levels";

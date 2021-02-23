@@ -158,9 +158,9 @@ namespace OrthancWSI
           std::unique_ptr<DcmItem> item(new DcmItem);
 
           std::unique_ptr<DcmItem> item2(new DcmItem);
-          OrthancWSI::DicomToolbox::SetStringTag(*item2, DCM_SliceThickness, 
-                                                 boost::lexical_cast<std::string>(volume_.GetDepth()));
-          OrthancWSI::DicomToolbox::SetStringTag(*item2, DCM_PixelSpacing, spacing);
+          DicomToolbox::SetStringTag(*item2, DCM_SliceThickness, 
+                                     boost::lexical_cast<std::string>(volume_.GetDepth()));
+          DicomToolbox::SetStringTag(*item2, DCM_PixelSpacing, spacing);
 
           std::unique_ptr<DcmSequenceOfItems> sequence2(new DcmSequenceOfItems(DCM_PixelMeasuresSequence));
           if (!sequence2->insert(item2.release(), false, false).good())

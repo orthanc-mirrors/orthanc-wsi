@@ -80,7 +80,7 @@ namespace OrthancWSI
     }
 
 
-    static void PrintProgress(Orthanc::BagOfTasksProcessor::Handle* handle,
+    static void PrintProgress(BagOfTasksProcessor::Handle* handle,
                               bool* done)
     {
       unsigned int previous = 0;
@@ -99,7 +99,7 @@ namespace OrthancWSI
     }
 
 
-    void Execute(Orthanc::BagOfTasks& tasks,
+    void Execute(BagOfTasks& tasks,
                  unsigned int threadsCount)
     {
       if (threadsCount > 1)
@@ -107,8 +107,8 @@ namespace OrthancWSI
         // Submit the tasks to a newly-created processor
         LOG(WARNING) << "Running " << tasks.GetSize() << " tasks";
         LOG(WARNING) << "Using " << threadsCount << " threads for the computation";
-        Orthanc::BagOfTasksProcessor processor(threadsCount);
-        std::unique_ptr<Orthanc::BagOfTasksProcessor::Handle> handle(processor.Submit(tasks));
+        BagOfTasksProcessor processor(threadsCount);
+        std::unique_ptr<BagOfTasksProcessor::Handle> handle(processor.Submit(tasks));
 
         // Start a thread to display the progress
         bool done = false;
@@ -145,7 +145,7 @@ namespace OrthancWSI
         // No multithreading
         while (!tasks.IsEmpty())
         {
-          std::unique_ptr<Orthanc::ICommand> task(tasks.Pop());
+          std::unique_ptr<ICommand> task(tasks.Pop());
           if (task->Execute())
           {
             unsigned int progress = static_cast<unsigned int>(100.0f * 

@@ -28,7 +28,7 @@
 
 namespace OrthancWSI
 {
-  class ReconstructPyramidCommand : public Orthanc::ICommand
+  class ReconstructPyramidCommand : public ICommand
   {
   private:
     IPyramidWriter& target_;
@@ -63,7 +63,7 @@ namespace OrthancWSI
 
     virtual bool Execute() ORTHANC_OVERRIDE;
 
-    static void PrepareBagOfTasks(Orthanc::BagOfTasks& tasks,
+    static void PrepareBagOfTasks(BagOfTasks& tasks,
                                   IPyramidWriter& target,
                                   ITiledPyramid& source,
                                   unsigned int countLevels,

@@ -26,7 +26,7 @@
 #include <list>
 #include <cstddef>
 
-namespace Orthanc
+namespace OrthancWSI
 {
   class BagOfTasks : public boost::noncopyable
   {

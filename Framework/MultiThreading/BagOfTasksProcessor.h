@@ -28,7 +28,7 @@
 #include <stdint.h>
 #include <map>
 
-namespace Orthanc
+namespace OrthancWSI
 {
   class BagOfTasksProcessor : public boost::noncopyable
   {
@@ -68,7 +68,7 @@ namespace Orthanc
     typedef std::map<uint64_t, Bag>   Bags;
     typedef std::map<uint64_t, bool>  ExitStatus;
 
-    SharedMessageQueue  queue_;
+    Orthanc::SharedMessageQueue  queue_;
 
     boost::mutex  mutex_;
     uint64_t  countBags_;

@@ -23,13 +23,13 @@
 
 #include <IDynamicObject.h>
 
-namespace Orthanc
+namespace OrthancWSI
 {
   /**
    * This class is the base class for the "Command" design pattern.
    * http://en.wikipedia.org/wiki/Command_pattern
    **/
-  class ICommand : public IDynamicObject
+  class ICommand : public Orthanc::IDynamicObject
   {
   public:
     virtual bool Execute() = 0;

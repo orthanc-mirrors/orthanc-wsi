@@ -160,7 +160,7 @@ namespace OrthancWSI
   }
 
 
-  void ReconstructPyramidCommand::PrepareBagOfTasks(Orthanc::BagOfTasks& tasks,
+  void ReconstructPyramidCommand::PrepareBagOfTasks(BagOfTasks& tasks,
                                                     IPyramidWriter& target,
                                                     ITiledPyramid& source,
                                                     unsigned int countLevels,

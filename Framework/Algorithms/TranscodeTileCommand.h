@@ -27,7 +27,7 @@
 
 namespace OrthancWSI
 {
-  class TranscodeTileCommand : public Orthanc::ICommand
+  class TranscodeTileCommand : public ICommand
   {
   private:
     IPyramidWriter& target_;
@@ -51,7 +51,7 @@ namespace OrthancWSI
 
     virtual bool Execute() ORTHANC_OVERRIDE;
 
-    static void PrepareBagOfTasks(Orthanc::BagOfTasks& tasks,
+    static void PrepareBagOfTasks(BagOfTasks& tasks,
                                   IPyramidWriter& target,
                                   ITiledPyramid& source,
                                   const DicomizerParameters& parameters);

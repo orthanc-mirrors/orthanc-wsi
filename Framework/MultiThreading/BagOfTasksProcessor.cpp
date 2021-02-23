@@ -27,9 +27,9 @@
 
 #include <stdio.h>
 
-namespace Orthanc
+namespace OrthancWSI
 {
-  class BagOfTasksProcessor::Task : public IDynamicObject
+  class BagOfTasksProcessor::Task : public Orthanc::IDynamicObject
   {
   private:
     uint64_t                 bag_;
@@ -49,7 +49,7 @@ namespace Orthanc
       {
         return command_->Execute();
       }
-      catch (OrthancException& e)
+      catch (Orthanc::OrthancException& e)
       {
         LOG(ERROR) << "Exception while processing a bag of tasks: " << e.What();
         return false;
@@ -91,7 +91,7 @@ namespace Orthanc
   {
     while (that->continue_)
     {
-      std::unique_ptr<IDynamicObject> obj(that->queue_.Dequeue(100));
+      std::unique_ptr<Orthanc::IDynamicObject> obj(that->queue_.Dequeue(100));
       if (obj.get() != NULL)
       {
         Task& task = *dynamic_cast<Task*>(obj.get());
@@ -206,7 +206,7 @@ namespace Orthanc
   {
     if (countThreads == 0)
     {
-      throw OrthancException(ErrorCode_ParameterOutOfRange);
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
     }
 
     threads_.resize(countThreads);

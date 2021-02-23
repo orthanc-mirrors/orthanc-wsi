@@ -37,7 +37,7 @@ namespace OrthancWSI
 
     void GlobalFinalize();
 
-    void Execute(Orthanc::BagOfTasks& tasks,
+    void Execute(BagOfTasks& tasks,
                  unsigned int threadsCount);
 
     void ParseColor(uint8_t& red,
