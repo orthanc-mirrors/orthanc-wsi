@@ -66,8 +66,9 @@ namespace OrthancStone
 
     client_.SetMethod(Orthanc::HttpMethod_Post);
     client_.SetUrl(url_ + uri);
-    client_.SetBody(body);
+    client_.SetExternalBody(body);
     client_.ApplyAndThrowException(result);
+    client_.ClearBody();
   }
 
 
@@ -79,8 +80,9 @@ namespace OrthancStone
 
     client_.SetMethod(Orthanc::HttpMethod_Put);
     client_.SetUrl(url_ + uri);
-    client_.SetBody(body);
+    client_.SetExternalBody(body);
     client_.ApplyAndThrowException(result);
+    client_.ClearBody();
   }
 
 
