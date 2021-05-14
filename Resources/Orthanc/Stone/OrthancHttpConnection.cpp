@@ -66,9 +66,15 @@ namespace OrthancStone
 
     client_.SetMethod(Orthanc::HttpMethod_Post);
     client_.SetUrl(url_ + uri);
+
+#if defined(ORTHANC_FRAMEWORK_VERSION_IS_ABOVE) && ORTHANC_FRAMEWORK_VERSION_IS_ABOVE(1, 9, 3)
     client_.SetExternalBody(body);
     client_.ApplyAndThrowException(result);
     client_.ClearBody();
+#else
+    client_.SetBody(body);
+    client_.ApplyAndThrowException(result);
+#endif
   }
 
 
@@ -80,9 +86,15 @@ namespace OrthancStone
 
     client_.SetMethod(Orthanc::HttpMethod_Put);
     client_.SetUrl(url_ + uri);
+
+#if defined(ORTHANC_FRAMEWORK_VERSION_IS_ABOVE) && ORTHANC_FRAMEWORK_VERSION_IS_ABOVE(1, 9, 3)
     client_.SetExternalBody(body);
     client_.ApplyAndThrowException(result);
     client_.ClearBody();
+#else
+    client_.SetBody(body);
+    client_.ApplyAndThrowException(result);
+#endif
   }
 
 
