@@ -42,21 +42,21 @@ namespace OrthancStone
       return dataset_;
     }
 
-    std::string GetStringValue(const DicomPath& path,
+    std::string GetStringValue(const Orthanc::DicomPath& path,
                                const std::string& defaultValue) const;
 
-    std::string GetMandatoryStringValue(const DicomPath& path) const;
+    std::string GetMandatoryStringValue(const Orthanc::DicomPath& path) const;
 
     bool GetIntegerValue(int& target,
-                         const DicomPath& path) const;
+                         const Orthanc::DicomPath& path) const;
 
     bool GetUnsignedIntegerValue(unsigned int& target,
-                                 const DicomPath& path) const;
+                                 const Orthanc::DicomPath& path) const;
 
     bool GetFloatValue(float& target,
-                       const DicomPath& path) const;
+                       const Orthanc::DicomPath& path) const;
 
     bool GetDoubleValue(double& target,
-                        const DicomPath& path) const;
+                        const Orthanc::DicomPath& path) const;
   };
 }

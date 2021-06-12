@@ -29,15 +29,25 @@ SET(OPENLAYERS_JS "" CACHE FILEPATH "Path to the system version of OpenLayers Ja
 SET(ORTHANC_WSI_DIR ${CMAKE_CURRENT_LIST_DIR}/..)
 SET(USE_OPENJPEG_JP2 ON)
 
-if (ORTHANC_FRAMEWORK_SOURCE STREQUAL "system")
-  set(ENABLE_DCMTK ON)
-  include(${CMAKE_SOURCE_DIR}/../Resources/Orthanc/CMake/DownloadOrthancFramework.cmake)
+include(${CMAKE_SOURCE_DIR}/../Resources/Orthanc/CMake/DownloadOrthancFramework.cmake)
 
+if (ORTHANC_FRAMEWORK_SOURCE STREQUAL "system")
+  if (ORTHANC_FRAMEWORK_USE_SHARED)
+    include(FindBoost)
+    find_package(Boost COMPONENTS system)
+    
+    if (NOT Boost_FOUND)
+      message(FATAL_ERROR "Unable to locate Boost on this system")
+    endif()
+    
+    include(FindDCMTK)
+    link_libraries(${Boost_LIBRARIES} ${DCMTK_LIBRARIES} jsoncpp)
+  endif()
+  
   include_directories(${ORTHANC_FRAMEWORK_ROOT})
   link_libraries(${ORTHANC_FRAMEWORK_LIBRARIES})
   
 else()
-  include(${CMAKE_SOURCE_DIR}/../Resources/Orthanc/CMake/DownloadOrthancFramework.cmake)
   include(${ORTHANC_FRAMEWORK_ROOT}/../Resources/CMake/OrthancFrameworkParameters.cmake)
 
   set(ENABLE_LOCALE OFF)         # Disable support for locales (notably in Boost)
@@ -169,7 +179,6 @@ set(ORTHANC_WSI_SOURCES
 
   ${ORTHANC_WSI_DIR}/Resources/Orthanc/Plugins/OrthancPluginCppWrapper.cpp
   ${ORTHANC_WSI_DIR}/Resources/Orthanc/Stone/DicomDatasetReader.cpp
-  ${ORTHANC_WSI_DIR}/Resources/Orthanc/Stone/DicomPath.cpp
   ${ORTHANC_WSI_DIR}/Resources/Orthanc/Stone/FullOrthancDataset.cpp
   ${ORTHANC_WSI_DIR}/Resources/Orthanc/Stone/IOrthancConnection.cpp
   )

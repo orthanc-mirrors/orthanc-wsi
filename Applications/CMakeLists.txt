@@ -26,16 +26,25 @@ SET(USE_SYSTEM_OPENJPEG ON CACHE BOOL "Use the system version of OpenJpeg")
 SET(ORTHANC_WSI_DIR ${CMAKE_CURRENT_LIST_DIR}/..)
 SET(USE_OPENJPEG_JP2 ON)
 
-if (ORTHANC_FRAMEWORK_SOURCE STREQUAL "system")
-  set(ENABLE_DCMTK ON)
-  set(ORTHANC_BOOST_COMPONENTS program_options)
-  include(${CMAKE_SOURCE_DIR}/../Resources/Orthanc/CMake/DownloadOrthancFramework.cmake)  
+include(${CMAKE_SOURCE_DIR}/../Resources/Orthanc/CMake/DownloadOrthancFramework.cmake)  
 
+if (ORTHANC_FRAMEWORK_SOURCE STREQUAL "system")
+  if (ORTHANC_FRAMEWORK_USE_SHARED)    
+    include(FindBoost)
+    find_package(Boost COMPONENTS filesystem program_options regex system thread)
+    
+    if (NOT Boost_FOUND)
+      message(FATAL_ERROR "Unable to locate Boost on this system")
+    endif()
+
+    include(FindDCMTK)
+    link_libraries(${Boost_LIBRARIES} ${DCMTK_LIBRARIES} jsoncpp)
+  endif()
+  
   link_libraries(${ORTHANC_FRAMEWORK_LIBRARIES})
   include_directories(${ORTHANC_FRAMEWORK_ROOT})
   
 else()
-  include(${CMAKE_SOURCE_DIR}/../Resources/Orthanc/CMake/DownloadOrthancFramework.cmake)
   include_directories(${ORTHANC_FRAMEWORK_ROOT})
 
   UNSET(STANDALONE_BUILD CACHE)
@@ -159,7 +168,6 @@ add_library(OrthancWSIFramework STATIC
   ${BOOST_EXTENDED_SOURCES}
 
   ${ORTHANC_WSI_DIR}/Resources/Orthanc/Stone/DicomDatasetReader.cpp
-  ${ORTHANC_WSI_DIR}/Resources/Orthanc/Stone/DicomPath.cpp
   ${ORTHANC_WSI_DIR}/Resources/Orthanc/Stone/FullOrthancDataset.cpp
   ${ORTHANC_WSI_DIR}/Resources/Orthanc/Stone/IOrthancConnection.cpp
   ${ORTHANC_WSI_DIR}/Resources/Orthanc/Stone/OrthancHttpConnection.cpp

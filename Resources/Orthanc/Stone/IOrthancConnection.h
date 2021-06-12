@@ -22,8 +22,6 @@
 
 #pragma once
 
-#include "DicomPath.h"
-
 #include <boost/noncopyable.hpp>
 #include <string>
 #include <json/value.h>

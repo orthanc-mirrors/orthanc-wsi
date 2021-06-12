@@ -35,7 +35,7 @@ namespace OrthancStone
   }
   
 
-  std::string DicomDatasetReader::GetStringValue(const DicomPath& path,
+  std::string DicomDatasetReader::GetStringValue(const Orthanc::DicomPath& path,
                                                  const std::string& defaultValue) const
   {
     std::string s;
@@ -50,7 +50,7 @@ namespace OrthancStone
   }
 
 
-  std::string DicomDatasetReader::GetMandatoryStringValue(const DicomPath& path) const
+  std::string DicomDatasetReader::GetMandatoryStringValue(const Orthanc::DicomPath& path) const
   {
     std::string s;
     if (dataset_.GetStringValue(s, path))
@@ -67,7 +67,7 @@ namespace OrthancStone
   template <typename T>
   static bool GetValueInternal(T& target,
                                const IDicomDataset& dataset,
-                               const DicomPath& path)
+                               const Orthanc::DicomPath& path)
   {
     try
     {
@@ -91,14 +91,14 @@ namespace OrthancStone
 
 
   bool DicomDatasetReader::GetIntegerValue(int& target,
-                                           const DicomPath& path) const
+                                           const Orthanc::DicomPath& path) const
   {
     return GetValueInternal<int>(target, dataset_, path);
   }
 
 
   bool DicomDatasetReader::GetUnsignedIntegerValue(unsigned int& target,
-                                                   const DicomPath& path) const
+                                                   const Orthanc::DicomPath& path) const
   {
     int value;
 
@@ -119,14 +119,14 @@ namespace OrthancStone
 
 
   bool DicomDatasetReader::GetFloatValue(float& target,
-                                         const DicomPath& path) const
+                                         const Orthanc::DicomPath& path) const
   {
     return GetValueInternal<float>(target, dataset_, path);
   }
 
 
   bool DicomDatasetReader::GetDoubleValue(double& target,
-                                          const DicomPath& path) const
+                                          const Orthanc::DicomPath& path) const
   {
     return GetValueInternal<double>(target, dataset_, path);
   }

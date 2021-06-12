@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "DicomPath.h"
+#include <DicomFormat/DicomPath.h>  // From Orthanc framework
 
 #include <boost/noncopyable.hpp>
 #include <string>
@@ -37,9 +37,9 @@ namespace OrthancStone
     }
 
     virtual bool GetStringValue(std::string& result,
-                                const DicomPath& path) const = 0;
+                                const Orthanc::DicomPath& path) const = 0;
 
     virtual bool GetSequenceSize(size_t& size,
-                                 const DicomPath& path) const = 0;
+                                 const Orthanc::DicomPath& path) const = 0;
   };
 }

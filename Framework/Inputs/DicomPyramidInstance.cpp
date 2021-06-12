@@ -59,7 +59,7 @@ namespace OrthancWSI
     DicomDatasetReader header(dataset);
 
     std::string s = Orthanc::Toolbox::StripSpaces
-      (header.GetMandatoryStringValue(OrthancStone::DicomPath(Orthanc::DICOM_TAG_TRANSFER_SYNTAX_UID)));
+      (header.GetMandatoryStringValue(Orthanc::DicomPath(Orthanc::DICOM_TAG_TRANSFER_SYNTAX_UID)));
 
     if (s == "1.2.840.10008.1.2" ||
         s == "1.2.840.10008.1.2.1")
@@ -90,7 +90,7 @@ namespace OrthancWSI
     using namespace OrthancStone;
 
     std::string p = Orthanc::Toolbox::StripSpaces
-      (reader.GetMandatoryStringValue(OrthancStone::DicomPath(Orthanc::DICOM_TAG_PHOTOMETRIC_INTERPRETATION)));
+      (reader.GetMandatoryStringValue(Orthanc::DicomPath(Orthanc::DICOM_TAG_PHOTOMETRIC_INTERPRETATION)));
 
     photometric = Orthanc::StringToPhotometricInterpretation(p.c_str());
 
@@ -102,9 +102,9 @@ namespace OrthancWSI
 
     unsigned int bitsStored, samplesPerPixel, tmp;
 
-    if (!reader.GetUnsignedIntegerValue(bitsStored, OrthancStone::DicomPath(Orthanc::DICOM_TAG_BITS_STORED)) ||
-        !reader.GetUnsignedIntegerValue(samplesPerPixel, OrthancStone::DicomPath(Orthanc::DICOM_TAG_SAMPLES_PER_PIXEL)) ||
-        !reader.GetUnsignedIntegerValue(tmp, OrthancStone::DicomPath(Orthanc::DICOM_TAG_PIXEL_REPRESENTATION)))
+    if (!reader.GetUnsignedIntegerValue(bitsStored, Orthanc::DicomPath(Orthanc::DICOM_TAG_BITS_STORED)) ||
+        !reader.GetUnsignedIntegerValue(samplesPerPixel, Orthanc::DicomPath(Orthanc::DICOM_TAG_SAMPLES_PER_PIXEL)) ||
+        !reader.GetUnsignedIntegerValue(tmp, Orthanc::DicomPath(Orthanc::DICOM_TAG_PIXEL_REPRESENTATION)))
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_InexistentTag);
     }
@@ -159,8 +159,8 @@ namespace OrthancWSI
     FullOrthancDataset dataset(orthanc, "/instances/" + instanceId + "/tags");
     DicomDatasetReader reader(dataset);
 
-    if (reader.GetMandatoryStringValue(OrthancStone::DicomPath(Orthanc::DICOM_TAG_SOP_CLASS_UID)) != "1.2.840.10008.5.1.4.1.1.77.1.6" ||
-        reader.GetMandatoryStringValue(OrthancStone::DicomPath(Orthanc::DICOM_TAG_MODALITY)) != "SM")
+    if (reader.GetMandatoryStringValue(Orthanc::DicomPath(Orthanc::DICOM_TAG_SOP_CLASS_UID)) != "1.2.840.10008.5.1.4.1.1.77.1.6" ||
+        reader.GetMandatoryStringValue(Orthanc::DicomPath(Orthanc::DICOM_TAG_MODALITY)) != "SM")
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
     }
@@ -169,19 +169,19 @@ namespace OrthancWSI
     DetectPixelFormat(format_, photometric_, reader);
 
     unsigned int tmp;
-    if (!reader.GetUnsignedIntegerValue(tileWidth_, OrthancStone::DicomPath(Orthanc::DICOM_TAG_COLUMNS)) ||
-        !reader.GetUnsignedIntegerValue(tileHeight_, OrthancStone::DicomPath(Orthanc::DICOM_TAG_ROWS)) ||
-        !reader.GetUnsignedIntegerValue(totalWidth_, OrthancStone::DicomPath(DICOM_TAG_TOTAL_PIXEL_MATRIX_COLUMNS)) ||
-        !reader.GetUnsignedIntegerValue(totalHeight_, OrthancStone::DicomPath(DICOM_TAG_TOTAL_PIXEL_MATRIX_ROWS)) ||
-        !reader.GetUnsignedIntegerValue(tmp, OrthancStone::DicomPath(Orthanc::DICOM_TAG_NUMBER_OF_FRAMES)))
+    if (!reader.GetUnsignedIntegerValue(tileWidth_, Orthanc::DicomPath(Orthanc::DICOM_TAG_COLUMNS)) ||
+        !reader.GetUnsignedIntegerValue(tileHeight_, Orthanc::DicomPath(Orthanc::DICOM_TAG_ROWS)) ||
+        !reader.GetUnsignedIntegerValue(totalWidth_, Orthanc::DicomPath(DICOM_TAG_TOTAL_PIXEL_MATRIX_COLUMNS)) ||
+        !reader.GetUnsignedIntegerValue(totalHeight_, Orthanc::DicomPath(DICOM_TAG_TOTAL_PIXEL_MATRIX_ROWS)) ||
+        !reader.GetUnsignedIntegerValue(tmp, Orthanc::DicomPath(Orthanc::DICOM_TAG_NUMBER_OF_FRAMES)))
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
     }
 
-    imageType_ = reader.GetStringValue(OrthancStone::DicomPath(DICOM_TAG_IMAGE_TYPE), "");
+    imageType_ = reader.GetStringValue(Orthanc::DicomPath(DICOM_TAG_IMAGE_TYPE), "");
 
     size_t countFrames;
-    if (reader.GetDataset().GetSequenceSize(countFrames, OrthancStone::DicomPath(DICOM_TAG_PER_FRAME_FUNCTIONAL_GROUPS_SEQUENCE)))
+    if (reader.GetDataset().GetSequenceSize(countFrames, Orthanc::DicomPath(DICOM_TAG_PER_FRAME_FUNCTIONAL_GROUPS_SEQUENCE)))
     {
       if (countFrames != tmp)
       {
@@ -193,13 +193,13 @@ namespace OrthancWSI
 
       for (size_t i = 0; i < countFrames; i++)
       {
-        DicomPath pathX(DICOM_TAG_PER_FRAME_FUNCTIONAL_GROUPS_SEQUENCE, i,
-                        DICOM_TAG_PLANE_POSITION_SLIDE_SEQUENCE, 0,
-                        DICOM_TAG_COLUMN_POSITION_IN_TOTAL_IMAGE_PIXEL_MATRIX);
+        Orthanc::DicomPath pathX(DICOM_TAG_PER_FRAME_FUNCTIONAL_GROUPS_SEQUENCE, i,
+                                 DICOM_TAG_PLANE_POSITION_SLIDE_SEQUENCE, 0,
+                                 DICOM_TAG_COLUMN_POSITION_IN_TOTAL_IMAGE_PIXEL_MATRIX);
 
-        DicomPath pathY(DICOM_TAG_PER_FRAME_FUNCTIONAL_GROUPS_SEQUENCE, i,
-                        DICOM_TAG_PLANE_POSITION_SLIDE_SEQUENCE, 0,
-                        DICOM_TAG_ROW_POSITION_IN_TOTAL_IMAGE_PIXEL_MATRIX);
+        Orthanc::DicomPath pathY(DICOM_TAG_PER_FRAME_FUNCTIONAL_GROUPS_SEQUENCE, i,
+                                 DICOM_TAG_PLANE_POSITION_SLIDE_SEQUENCE, 0,
+                                 DICOM_TAG_ROW_POSITION_IN_TOTAL_IMAGE_PIXEL_MATRIX);
 
         int xx, yy;
         if (!reader.GetIntegerValue(xx, pathX) ||

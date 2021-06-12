@@ -35,8 +35,6 @@ FILES = [
 
     ('orthanc-stone', 'OrthancStone/Sources/Toolbox/OrthancDatasets/DicomDatasetReader.cpp', 'Stone'),
     ('orthanc-stone', 'OrthancStone/Sources/Toolbox/OrthancDatasets/DicomDatasetReader.h', 'Stone'),
-    ('orthanc-stone', 'OrthancStone/Sources/Toolbox/OrthancDatasets/DicomPath.cpp', 'Stone'),
-    ('orthanc-stone', 'OrthancStone/Sources/Toolbox/OrthancDatasets/DicomPath.h', 'Stone'),
     ('orthanc-stone', 'OrthancStone/Sources/Toolbox/OrthancDatasets/FullOrthancDataset.cpp', 'Stone'),
     ('orthanc-stone', 'OrthancStone/Sources/Toolbox/OrthancDatasets/FullOrthancDataset.h', 'Stone'),
     ('orthanc-stone', 'OrthancStone/Sources/Toolbox/OrthancDatasets/IDicomDataset.h', 'Stone'),
