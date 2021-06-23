@@ -44,7 +44,6 @@ if (ORTHANC_FRAMEWORK_SOURCE STREQUAL "system")
     link_libraries(${Boost_LIBRARIES} ${DCMTK_LIBRARIES} jsoncpp)
   endif()
   
-  include_directories(${ORTHANC_FRAMEWORK_ROOT})
   link_libraries(${ORTHANC_FRAMEWORK_LIBRARIES})
   
 else()

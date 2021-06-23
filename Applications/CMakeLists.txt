@@ -42,7 +42,6 @@ if (ORTHANC_FRAMEWORK_SOURCE STREQUAL "system")
   endif()
   
   link_libraries(${ORTHANC_FRAMEWORK_LIBRARIES})
-  include_directories(${ORTHANC_FRAMEWORK_ROOT})
   
 else()
   include_directories(${ORTHANC_FRAMEWORK_ROOT})
