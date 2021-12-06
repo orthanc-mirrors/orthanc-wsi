@@ -111,6 +111,7 @@ set(ORTHANC_WSI_SOURCES
   ${ORTHANC_WSI_DIR}/Framework/Enumerations.cpp
   ${ORTHANC_WSI_DIR}/Framework/ImageToolbox.cpp
   ${ORTHANC_WSI_DIR}/Framework/ImagedVolumeParameters.cpp
+  ${ORTHANC_WSI_DIR}/Framework/Inputs/CytomineImage.cpp
   ${ORTHANC_WSI_DIR}/Framework/Inputs/DecodedTiledPyramid.cpp
   ${ORTHANC_WSI_DIR}/Framework/Inputs/DicomPyramid.cpp
   ${ORTHANC_WSI_DIR}/Framework/Inputs/DicomPyramidInstance.cpp
