@@ -70,7 +70,8 @@ namespace OrthancWSI
     smooth_(false),
     jpegQuality_(90),
     forceReencode_(false),
-    opticalPath_(OpticalPath_Brightfield)
+    opticalPath_(OpticalPath_Brightfield),
+    isCytomineSource_(false)
   {
     backgroundColor_[0] = 255;
     backgroundColor_[1] = 255;
@@ -274,6 +275,86 @@ namespace OrthancWSI
     else
     {
       return new FolderTarget(folder_ + "/" + folderPattern_);
+    }
+  }
+
+
+  void DicomizerParameters::SetCytomineSource(const std::string& url,
+                                              const std::string& publicKey,
+                                              const std::string& privateKey,
+                                              int imageInstanceId,
+                                              ImageCompression cytomineCompression)
+  {
+    isCytomineSource_ = true;
+    cytomineServer_.SetUrl(url);
+    cytominePublicKey_ = publicKey;
+    cytominePrivateKey_ = privateKey;
+    cytomineImageInstanceId_ = imageInstanceId;
+    cytomineCompression_ = cytomineCompression;
+  }
+
+
+  const Orthanc::WebServiceParameters& DicomizerParameters::GetCytomineServer() const
+  {
+    if (isCytomineSource_)
+    {
+      return cytomineServer_;
+    }
+    else
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
+    }
+  }
+  
+
+  const std::string& DicomizerParameters::GetCytominePublicKey() const
+  {
+    if (isCytomineSource_)
+    {
+      return cytominePublicKey_;
+    }
+    else
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
+    }
+  }
+  
+
+  const std::string& DicomizerParameters::GetCytominePrivateKey() const
+  {
+    if (isCytomineSource_)
+    {
+      return cytominePrivateKey_;
+    }
+    else
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
+    }
+  }
+  
+
+  int DicomizerParameters::GetCytomineImageInstanceId() const
+  {
+    if (isCytomineSource_)
+    {
+      return cytomineImageInstanceId_;
+    }
+    else
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
+    }
+  }
+
+
+  ImageCompression DicomizerParameters::GetCytomineCompression() const
+  {
+    if (isCytomineSource_)
+    {
+      return cytomineCompression_;
+    }
+    else
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
     }
   }
 }

@@ -39,6 +39,7 @@ namespace OrthancWSI
     unsigned int  fullHeight_;
     unsigned int  tileWidth_;
     unsigned int  tileHeight_;
+    ImageCompression  compression_;
 
     bool GetCytomine(std::string& target,
                      const std::string& uri,
@@ -86,5 +87,7 @@ namespace OrthancWSI
     {
       return Orthanc::PhotometricInterpretation_RGB;
     }
+
+    void SetImageCompression(ImageCompression compression);
   };
 }

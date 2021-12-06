@@ -59,6 +59,14 @@ namespace OrthancWSI
 
     Orthanc::WebServiceParameters  orthanc_;
 
+    // New in release 1.1
+    bool                           isCytomineSource_;
+    Orthanc::WebServiceParameters  cytomineServer_;
+    int                            cytomineImageInstanceId_;
+    std::string                    cytominePublicKey_;
+    std::string                    cytominePrivateKey_;
+    ImageCompression               cytomineCompression_;
+
   public:
     DicomizerParameters();
 
@@ -249,5 +257,26 @@ namespace OrthancWSI
     {
       return iccProfile_;
     }
+
+    void SetCytomineSource(const std::string& url,
+                           const std::string& publicKey,
+                           const std::string& privateKey,
+                           int imageInstanceId,
+                           ImageCompression compression);
+
+    bool IsCytomineSource() const
+    {
+      return isCytomineSource_;
+    }
+
+    const Orthanc::WebServiceParameters& GetCytomineServer() const;
+
+    const std::string& GetCytominePublicKey() const;
+
+    const std::string& GetCytominePrivateKey() const;
+
+    int GetCytomineImageInstanceId() const;
+
+    ImageCompression GetCytomineCompression() const;
   };
 }

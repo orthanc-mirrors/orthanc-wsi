@@ -26,6 +26,7 @@
 #include "../Framework/DicomizerParameters.h"
 #include "../Framework/ImageToolbox.h"
 #include "../Framework/ImagedVolumeParameters.h"
+#include "../Framework/Inputs/CytomineImage.h"
 #include "../Framework/Inputs/HierarchicalTiff.h"
 #include "../Framework/Inputs/OpenSlidePyramid.h"
 #include "../Framework/Inputs/TiledJpegImage.h"
@@ -82,6 +83,13 @@ static const char* OPTION_TILE_HEIGHT = "tile-height";
 static const char* OPTION_TILE_WIDTH = "tile-width";
 static const char* OPTION_VERBOSE = "verbose";
 static const char* OPTION_VERSION = "version";
+
+// New in release 1.1
+static const char* OPTION_CYTOMINE_URL = "cytomine-url";
+static const char* OPTION_CYTOMINE_IMAGE_INSTANCE_ID = "cytomine-image";
+static const char* OPTION_CYTOMINE_PUBLIC_KEY = "cytomine-public-key";
+static const char* OPTION_CYTOMINE_PRIVATE_KEY = "cytomine-private-key";
+static const char* OPTION_CYTOMINE_COMPRESSION = "cytomine-compression";
 
 
 #if ORTHANC_FRAMEWORK_VERSION_IS_ABOVE(1, 9, 0)
@@ -586,6 +594,21 @@ static bool ParseParameters(int& exitStatus,
      "Color of the background (e.g. \"255,0,0\")")
     ;
 
+  boost::program_options::options_description cytomine("Options if importing from Cytomine");
+  cytomine.add_options()
+    (OPTION_CYTOMINE_URL, boost::program_options::value<std::string>(),
+     "URL of the source Cytomine server, for instance: https://demo.cytomine.be/")
+    (OPTION_CYTOMINE_PUBLIC_KEY, boost::program_options::value<std::string>(),
+     "Your personal public key in Cytomine (to be kept secret)")
+    (OPTION_CYTOMINE_PRIVATE_KEY, boost::program_options::value<std::string>(),
+     "Your personal private key in Cytomine (to be kept secret)")
+    (OPTION_CYTOMINE_IMAGE_INSTANCE_ID, boost::program_options::value<int>(),
+     "ID of the Image Instance of interest in Cytomine (must be an integer)")
+    (OPTION_CYTOMINE_COMPRESSION, boost::program_options::value<std::string>()->default_value("jpeg"),
+     "Compression to be used for downloading the tiles from Cytomine, "
+     "can be \"jpeg\" (faster) or \"png\" (better quality)")
+    ;
+
   boost::program_options::options_description pyramid("Options to construct the pyramid");
   pyramid.add_options()
     (OPTION_PYRAMID, boost::program_options::value<bool>()->default_value(false), 
@@ -659,6 +682,7 @@ static bool ParseParameters(int& exitStatus,
   allWithoutHidden
     .add(generic)
     .add(source)
+    .add(cytomine)
     .add(pyramid)
     .add(target)
     .add(volumeOptions)
@@ -697,10 +721,70 @@ static bool ParseParameters(int& exitStatus,
     return false;
   }
 
+  // New in release 1.1
+  if (options.count(OPTION_CYTOMINE_URL) ||
+      options.count(OPTION_CYTOMINE_PUBLIC_KEY) ||
+      options.count(OPTION_CYTOMINE_PRIVATE_KEY) ||
+      options.count(OPTION_CYTOMINE_IMAGE_INSTANCE_ID))
+  {
+    if (!options.count(OPTION_CYTOMINE_URL))
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange,
+                                      "URL to the Cytomine server is missing");
+    }
+
+    if (!options.count(OPTION_CYTOMINE_PUBLIC_KEY))
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange,
+                                      "Public key for the Cytomine server is missing");
+    }
+
+    if (!options.count(OPTION_CYTOMINE_PRIVATE_KEY))
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange,
+                                      "Private key for the Cytomine server is missing");
+    }
+
+    if (!options.count(OPTION_CYTOMINE_IMAGE_INSTANCE_ID))
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange,
+                                      "The Image Instance ID from the Cytomine server is missing");
+    }
+
+    if (!options.count(OPTION_CYTOMINE_COMPRESSION))
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange,
+                                      "The tile compression scheme for Cytomine is missing");
+    }
+
+    const std::string s = options[OPTION_CYTOMINE_COMPRESSION].as<std::string>();
+
+    OrthancWSI::ImageCompression compression;
+    if (s == "jpeg")
+    {
+      compression = OrthancWSI::ImageCompression_Jpeg;
+    }
+    else if (s == "png")
+    {
+      compression = OrthancWSI::ImageCompression_Png;
+    }
+    else
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange,
+                                      "The tile compression scheme must be \"jpeg\" or \"png\", found: " + s);
+    }    
+    
+    parameters.SetCytomineSource(options[OPTION_CYTOMINE_URL].as<std::string>(),
+                                 options[OPTION_CYTOMINE_PUBLIC_KEY].as<std::string>(),
+                                 options[OPTION_CYTOMINE_PRIVATE_KEY].as<std::string>(),
+                                 options[OPTION_CYTOMINE_IMAGE_INSTANCE_ID].as<int>(), compression);
+  }
+
   if (!error &&
       options.count(OPTION_HELP) == 0 &&
       options.count(OPTION_VERSION) == 0 &&
-      options.count(OPTION_INPUT) != 1)
+      options.count(OPTION_INPUT) != 1 &&
+      !parameters.IsCytomineSource())
   {
     LOG(ERROR) << "No input file was specified";
     error = true;
@@ -796,7 +880,10 @@ static bool ParseParameters(int& exitStatus,
     parameters.SetTargetTileSize(w, h);
   }
 
-  parameters.SetInputFile(options[OPTION_INPUT].as<std::string>());
+  if (!parameters.IsCytomineSource())
+  {
+    parameters.SetInputFile(options[OPTION_INPUT].as<std::string>());
+  }
 
   if (options.count(OPTION_COLOR))
   {
@@ -926,6 +1013,20 @@ OrthancWSI::ITiledPyramid* OpenInputPyramid(OrthancWSI::ImageCompression& source
                                             const std::string& path,
                                             const OrthancWSI::DicomizerParameters& parameters)
 {
+  if (parameters.IsCytomineSource())
+  {
+    // New in release 1.1
+    LOG(WARNING) << "Importing Image Instance " << parameters.GetCytomineImageInstanceId()
+                 << " from Cytomine server: " << parameters.GetCytomineServer().GetUrl();
+    sourceCompression = OrthancWSI::ImageCompression_Unknown;
+    return new OrthancWSI::CytomineImage(parameters.GetCytomineServer(),
+                                         parameters.GetCytominePublicKey(),
+                                         parameters.GetCytominePrivateKey(),
+                                         parameters.GetCytomineImageInstanceId(),
+                                         parameters.GetTargetTileWidth(512),
+                                         parameters.GetTargetTileHeight(512));
+  }
+  
   LOG(WARNING) << "The input image is: " << path;
 
   OrthancWSI::ImageCompression format = OrthancWSI::DetectFormatFromFile(path);

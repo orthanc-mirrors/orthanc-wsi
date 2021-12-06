@@ -22,7 +22,9 @@
 
 #include "CytomineImage.h"
 
+#include <Compatibility.h>
 #include <Images/ImageProcessing.h>
+#include <Images/JpegReader.h>
 #include <Images/JpegWriter.h>
 #include <Images/PngReader.h>
 #include <Logging.h>
@@ -166,24 +168,61 @@ namespace OrthancWSI
 
     unsigned int w = std::min(tileWidth_, fullWidth_ - x);
     unsigned int h = std::min(tileHeight_, fullHeight_ - y);
+
+    std::string extension;
+    Orthanc::MimeType mime;
+
+    switch (compression_)
+    {
+      case ImageCompression_Png:
+        extension = ".png";
+        mime = Orthanc::MimeType_Png;
+        break;
+        
+      case ImageCompression_Jpeg:
+        // 20.03user 0.58system 0:32.58elapsed 63%CPU (0avgtext+0avgdata 397808maxresident)k
+        extension = ".jpg";
+        mime = Orthanc::MimeType_Jpeg;
+        break;
+        
+      default:
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
+    }
     
     const std::string uri = ("api/imageinstance/" + boost::lexical_cast<std::string>(imageId_) + "/window-" +
                              boost::lexical_cast<std::string>(x) + "-" +
                              boost::lexical_cast<std::string>(y) + "-" +
                              boost::lexical_cast<std::string>(w) + "-" +
-                             boost::lexical_cast<std::string>(h) + ".png");
+                             boost::lexical_cast<std::string>(h) + extension);
 
-    std::string png;
-    if (!GetCytomine(png, uri, Orthanc::MimeType_Png))
+    std::string compressedImage;
+    if (!GetCytomine(compressedImage, uri, mime))
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_NetworkProtocol, "Cannot read a tile from Cytomine");
     }
 
-    Orthanc::PngReader reader;
-    reader.ReadFromMemory(png);
+    std::unique_ptr<Orthanc::ImageAccessor> reader;
 
-    if (reader.GetWidth() != w ||
-        reader.GetHeight() != h)
+    switch (compression_)
+    {
+      case ImageCompression_Png:
+        reader.reset(new Orthanc::PngReader);
+        dynamic_cast<Orthanc::PngReader&>(*reader).ReadFromMemory(compressedImage);
+        break;
+        
+      case ImageCompression_Jpeg:
+        reader.reset(new Orthanc::JpegReader);
+        dynamic_cast<Orthanc::JpegReader&>(*reader).ReadFromMemory(compressedImage);
+        break;
+        
+      default:
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
+    }
+
+    assert(reader.get() != NULL);
+
+    if (reader->GetWidth() != w ||
+        reader->GetHeight() != h)
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_NetworkProtocol, "Cytomine returned a tile of bad size");
     }
@@ -193,7 +232,7 @@ namespace OrthancWSI
     Orthanc::ImageAccessor region;
     target.GetRegion(region, 0, 0, w, h);
 
-    Orthanc::ImageProcessing::Copy(target, reader);
+    Orthanc::ImageProcessing::Copy(target, *reader);
   }
   
 
@@ -208,7 +247,8 @@ namespace OrthancWSI
     privateKey_(privateKey),
     imageId_(imageId),
     tileWidth_(tileWidth),
-    tileHeight_(tileHeight)
+    tileHeight_(tileHeight),
+    compression_(ImageCompression_Jpeg)
   {
     if (tileWidth_ < 16 ||
         tileHeight_ < 16)
@@ -262,6 +302,20 @@ namespace OrthancWSI
     if (level == 0)
     {
       return fullHeight_;
+    }
+    else
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
+    }
+  }
+
+  
+  void CytomineImage::SetImageCompression(ImageCompression compression)
+  {
+    if (compression == ImageCompression_Jpeg ||
+        compression == ImageCompression_Png)
+    {
+      compression_ = compression;
     }
     else
     {
