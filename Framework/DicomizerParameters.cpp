@@ -71,7 +71,9 @@ namespace OrthancWSI
     jpegQuality_(90),
     forceReencode_(false),
     opticalPath_(OpticalPath_Brightfield),
-    isCytomineSource_(false)
+    isCytomineSource_(false),
+    cytomineImageInstanceId_(-1),
+    cytomineCompression_(ImageCompression_Png)
   {
     backgroundColor_[0] = 255;
     backgroundColor_[1] = 255;

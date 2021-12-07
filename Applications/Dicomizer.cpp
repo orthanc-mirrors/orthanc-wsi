@@ -599,7 +599,7 @@ static bool ParseParameters(int& exitStatus,
     (OPTION_CYTOMINE_URL, boost::program_options::value<std::string>(),
      "URL of the source Cytomine server, for instance: https://demo.cytomine.be/")
     (OPTION_CYTOMINE_PUBLIC_KEY, boost::program_options::value<std::string>(),
-     "Your personal public key in Cytomine (to be kept secret)")
+     "Your personal public key in Cytomine (cf. Account in the Cytomine Web interface)")
     (OPTION_CYTOMINE_PRIVATE_KEY, boost::program_options::value<std::string>(),
      "Your personal private key in Cytomine (to be kept secret)")
     (OPTION_CYTOMINE_IMAGE_INSTANCE_ID, boost::program_options::value<int>(),
