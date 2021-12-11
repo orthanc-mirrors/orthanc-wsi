@@ -72,7 +72,10 @@ if (ORTHANC_FRAMEWORK_SOURCE STREQUAL "hg" OR
       if (NOT ORTHANC_FRAMEWORK_MAJOR MATCHES "^[0-9]+$" OR
           NOT ORTHANC_FRAMEWORK_MINOR MATCHES "^[0-9]+$" OR
           NOT ORTHANC_FRAMEWORK_REVISION MATCHES "^[0-9]+$")
-        message("Bad version of the Orthanc framework: ${ORTHANC_FRAMEWORK_VERSION}")
+        message("Bad version of the Orthanc framework, assuming a pre-release: ${ORTHANC_FRAMEWORK_VERSION}")
+        set(ORTHANC_FRAMEWORK_MAJOR 999)
+        set(ORTHANC_FRAMEWORK_MINOR 999)
+        set(ORTHANC_FRAMEWORK_REVISION 999)
       endif()
 
       if (ORTHANC_FRAMEWORK_VERSION STREQUAL "1.3.1")
@@ -159,9 +162,9 @@ if (ORTHANC_FRAMEWORK_SOURCE STREQUAL "hg" OR
       elseif (ORTHANC_FRAMEWORK_VERSION STREQUAL "23ad1b9c7800")
         # For "Toolbox::ReadJson()" and "Toolbox::Write{...}Json()" (pre-1.9.0)
         set(ORTHANC_FRAMEWORK_MD5 "9af92080e57c60dd288eba46ce606c00")
-      elseif (ORTHANC_FRAMEWORK_VERSION STREQUAL "ae0e3fd609df")
+      elseif (ORTHANC_FRAMEWORK_VERSION STREQUAL "b2e08d83e21d")
         # WSI 1.1 (framework pre-1.9.8), to remove "-std=c++11"
-        set(ORTHANC_FRAMEWORK_MD5 "7a54f4ebb5b78614f987cf5e6e7b233c")
+        set(ORTHANC_FRAMEWORK_MD5 "2eaa073cbb4b44ffba199ad93393b2b1")
       endif()
     endif()
   endif()
