@@ -1,6 +1,9 @@
 Pending changes in the mainline
 ===============================
 
+Version 1.1 (2021-12-11)
+========================
+
 * OrthancWSIDicomizer: Support importing of images from Cytomine
 
 

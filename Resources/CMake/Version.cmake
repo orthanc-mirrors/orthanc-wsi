@@ -18,13 +18,13 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
-set(ORTHANC_WSI_VERSION "mainline")
+set(ORTHANC_WSI_VERSION "1.1")
 
 if (ORTHANC_WSI_VERSION STREQUAL "mainline")
-  set(ORTHANC_FRAMEWORK_VERSION "mainline")
+  set(ORTHANC_FRAMEWORK_DEFAULT_VERSION "mainline")
   set(ORTHANC_FRAMEWORK_DEFAULT_SOURCE "hg")
 else()
-  set(ORTHANC_FRAMEWORK_VERSION "ae0e3fd609df")  # Framework pre-1.9.8
+  set(ORTHANC_FRAMEWORK_DEFAULT_VERSION "b2e08d83e21d")  # Framework pre-1.9.8
   set(ORTHANC_FRAMEWORK_DEFAULT_SOURCE "web")
 endif()
 
@@ -32,6 +32,7 @@ add_definitions(
   -DORTHANC_WSI_VERSION="${ORTHANC_WSI_VERSION}"
   )
 
+set(ORTHANC_FRAMEWORK_VERSION "${ORTHANC_FRAMEWORK_DEFAULT_VERSION}" CACHE STRING "Version of the Orthanc framework")
 set(ORTHANC_FRAMEWORK_SOURCE "${ORTHANC_FRAMEWORK_DEFAULT_SOURCE}" CACHE STRING "Source of the Orthanc source code (can be \"hg\", \"archive\", \"web\" or \"path\")")
 set(ORTHANC_FRAMEWORK_ARCHIVE "" CACHE STRING "Path to the Orthanc archive, if ORTHANC_FRAMEWORK_SOURCE is \"archive\"")
 set(ORTHANC_FRAMEWORK_ROOT "" CACHE STRING "Path to the Orthanc source directory, if ORTHANC_FRAMEWORK_SOURCE is \"path\"")
