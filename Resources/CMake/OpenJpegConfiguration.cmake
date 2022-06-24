@@ -124,6 +124,7 @@ else()
     /usr/include/openjpeg-2.2/
     /usr/include/openjpeg-2.3/
     /usr/include/openjpeg-2.4/
+    /usr/include/openjpeg-2.5/
     /usr/local/include/
     )
 
