@@ -197,6 +197,8 @@ add_library(OrthancWSIFramework STATIC
   ${OPENJPEG_SOURCES}
   )
 
+DefineSourceBasenameForTarget(OrthancWSIFramework)
+
 
 #####################################################################
 ## Build the WSI DICOM-izer
@@ -225,6 +227,8 @@ add_executable(OrthancWSIDicomizer
   ApplicationToolbox.cpp
   ${DICOMIZER_RESOURCES}
   )
+
+DefineSourceBasenameForTarget(OrthancWSIDicomizer)
 
 target_link_libraries(OrthancWSIDicomizer OrthancWSIFramework ${DCMTK_LIBRARIES})
 
@@ -261,6 +265,8 @@ add_executable(OrthancWSIDicomToTiff
   ApplicationToolbox.cpp
   ${DICOM_TO_TIFF_RESOURCES}
   )
+
+DefineSourceBasenameForTarget(OrthancWSIDicomToTiff)
 
 target_link_libraries(OrthancWSIDicomToTiff OrthancWSIFramework ${DCMTK_LIBRARIES})
 

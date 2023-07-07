@@ -236,6 +236,8 @@ add_library(OrthancWSI SHARED
   ${OPENJPEG_SOURCES}
   )
 
+DefineSourceBasenameForTarget(OrthancWSI)
+
 message("Setting the version of the library to ${ORTHANC_WSI_VERSION}")
 set_target_properties(OrthancWSI PROPERTIES 
   VERSION ${ORTHANC_WSI_VERSION} 
