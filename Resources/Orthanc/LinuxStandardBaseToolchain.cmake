@@ -1,8 +1,8 @@
 # Orthanc - A Lightweight, RESTful DICOM Store
 # Copyright (C) 2012-2016 Sebastien Jodogne, Medical Physics
 # Department, University Hospital of Liege, Belgium
-# Copyright (C) 2017-2021 Osimis S.A., Belgium
-# Copyright (C) 2021-2021 Sebastien Jodogne, ICTEAM UCLouvain, Belgium
+# Copyright (C) 2017-2023 Osimis S.A., Belgium
+# Copyright (C) 2021-2023 Sebastien Jodogne, ICTEAM UCLouvain, Belgium
 #
 # This program is free software: you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public License
@@ -22,11 +22,11 @@
 #
 # Full build, as used on the BuildBot CIS:
 #
-#   $ LSB_CC=gcc-4.8 LSB_CXX=g++-4.8 cmake ../OrthancServer/ -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE=../OrthancFramework/Resources/Toolchains/LinuxStandardBaseToolchain.cmake -DUSE_LEGACY_JSONCPP=ON -DUSE_LEGACY_LIBICU=ON -DBOOST_LOCALE_BACKEND=icu -DENABLE_PKCS11=ON -G Ninja
+#   $ LSB_CC=gcc-4.8 LSB_CXX=g++-4.8 cmake ../OrthancServer/ -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE=../OrthancFramework/Resources/Toolchains/LinuxStandardBaseToolchain.cmake -DUSE_LEGACY_JSONCPP=ON -DUSE_LEGACY_LIBICU=ON -DUSE_LEGACY_BOOST=ON -DBOOST_LOCALE_BACKEND=icu -DENABLE_PKCS11=ON -G Ninja
 #
 # Or, more lightweight version (without libp11 and ICU):
 #
-#   $ LSB_CC=gcc-4.8 LSB_CXX=g++-4.8 cmake ../OrthancServer/ -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE=../OrthancFramework/Resources/Toolchains/LinuxStandardBaseToolchain.cmake -DUSE_LEGACY_JSONCPP=ON -G Ninja
+#   $ LSB_CC=gcc-4.8 LSB_CXX=g++-4.8 cmake ../OrthancServer/ -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE=../OrthancFramework/Resources/Toolchains/LinuxStandardBaseToolchain.cmake -DUSE_LEGACY_JSONCPP=ON -DUSE_LEGACY_BOOST=ON -G Ninja
 #
 
 INCLUDE(CMakeForceCompiler)
