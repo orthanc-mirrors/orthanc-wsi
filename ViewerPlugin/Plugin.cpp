@@ -30,6 +30,8 @@
 #include <Compatibility.h>  // For std::unique_ptr
 #include <Logging.h>
 #include <Images/ImageProcessing.h>
+#include <Images/JpegReader.h>
+#include <Images/JpegWriter.h>
 #include <Images/PngWriter.h>
 #include <MultiThreading/Semaphore.h>
 #include <OrthancException.h>
@@ -40,11 +42,13 @@
 #include <EmbeddedResources.h>
 
 #include <cassert>
+#include <boost/regex.hpp>
+#include <boost/math/special_functions/round.hpp>
 
 std::unique_ptr<OrthancWSI::OrthancPluginConnection>  orthanc_;
 std::unique_ptr<OrthancWSI::DicomPyramidCache>        cache_;
 std::unique_ptr<Orthanc::Semaphore>                   transcoderSemaphore_;
-
+static std::string                                    publicIIIFUrl_;
 
 static void AnswerSparseTile(OrthancPluginRestOutput* output,
                              unsigned int tileWidth,
@@ -134,6 +138,151 @@ void ServePyramid(OrthancPluginRestOutput* output,
 }
 
 
+class RawTile : public boost::noncopyable
+{
+private:
+  Orthanc::PixelFormat               format_;
+  unsigned int                       tileWidth_;
+  unsigned int                       tileHeight_;
+  Orthanc::PhotometricInterpretation photometric_;
+  std::string                        tile_;
+  OrthancWSI::ImageCompression       compression_;
+
+  Orthanc::ImageAccessor* DecodeInternal()
+  {
+    switch (compression_)
+    {
+      case OrthancWSI::ImageCompression_Jpeg:
+      {
+        std::unique_ptr<Orthanc::JpegReader> decoded(new Orthanc::JpegReader);
+        decoded->ReadFromMemory(tile_);
+        return decoded.release();
+      }
+
+      case OrthancWSI::ImageCompression_Jpeg2000:
+      {
+        std::unique_ptr<OrthancWSI::Jpeg2000Reader> decoded(new OrthancWSI::Jpeg2000Reader);
+        decoded->ReadFromMemory(tile_);
+
+        if (photometric_ == Orthanc::PhotometricInterpretation_YBR_ICT)
+        {
+          OrthancWSI::ImageToolbox::ConvertJpegYCbCrToRgb(*decoded);
+        }
+
+        return decoded.release();
+      }
+
+      case OrthancWSI::ImageCompression_None:
+      {
+        unsigned int bpp = Orthanc::GetBytesPerPixel(format_);
+        if (bpp * tileWidth_ * tileHeight_ != tile_.size())
+        {
+          throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
+        }
+
+        std::unique_ptr<Orthanc::ImageAccessor> decoded(new Orthanc::ImageAccessor);
+        decoded->AssignReadOnly(format_, tileWidth_, tileHeight_, bpp * tileWidth_, tile_.c_str());
+
+        return decoded.release();
+      }
+
+      default:
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
+    }
+  }
+
+  static void EncodeInternal(std::string& encoded,
+                             const Orthanc::ImageAccessor& decoded,
+                             Orthanc::MimeType transcodingType)
+  {
+    switch (transcodingType)
+    {
+      case Orthanc::MimeType_Png:
+      {
+        Orthanc::PngWriter writer;
+        Orthanc::IImageWriter::WriteToMemory(writer, encoded, decoded);
+        break;
+      }
+
+      case Orthanc::MimeType_Jpeg:
+      {
+        Orthanc::JpegWriter writer;
+        Orthanc::IImageWriter::WriteToMemory(writer, encoded, decoded);
+        break;
+      }
+
+      default:
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
+    }
+  }
+
+
+public:
+  RawTile(OrthancWSI::ITiledPyramid& pyramid,
+          unsigned int level,
+          unsigned int tileX,
+          unsigned int tileY) :
+    format_(pyramid.GetPixelFormat()),
+    tileWidth_(pyramid.GetTileWidth(level)),
+    tileHeight_(pyramid.GetTileHeight(level)),
+    photometric_(pyramid.GetPhotometricInterpretation())
+  {
+    if (!pyramid.ReadRawTile(tile_, compression_, level, tileX, tileY))
+    {
+      // Handling of missing tile (for sparse tiling): TODO parameter?
+      // AnswerSparseTile(output, tileWidth, tileHeight); return;
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
+    }
+  }
+
+  void Answer(OrthancPluginRestOutput* output,
+              Orthanc::MimeType transcodingType)
+  {
+    if (compression_ == OrthancWSI::ImageCompression_Jpeg)
+    {
+      // The tile is already a JPEG image. In such a case, we can
+      // serve it as such, because any Web browser can handle JPEG.
+      OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, tile_.c_str(),
+                                tile_.size(), Orthanc::EnumerationToString(Orthanc::MimeType_Jpeg));
+    }
+    else
+    {
+      // This is a lossless frame (coming from a JPEG2000 or an
+      // uncompressed DICOM instance), which is not a DICOM-JPEG
+      // instance. We need to decompress the raw tile, then transcode
+      // it to the PNG/JPEG, depending on the "transcodingType".
+
+      std::string transcoded;
+
+      {
+        // The semaphore is used to throttle the number of simultaneous computations
+        Orthanc::Semaphore::Locker locker(*transcoderSemaphore_);
+
+        std::unique_ptr<Orthanc::ImageAccessor> decoded(DecodeInternal());
+        EncodeInternal(transcoded, *decoded, transcodingType);
+      }
+
+      OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, transcoded.c_str(),
+                                transcoded.size(), Orthanc::EnumerationToString(transcodingType));
+    }
+  }
+
+  Orthanc::ImageAccessor* Decode()
+  {
+    Orthanc::Semaphore::Locker locker(*transcoderSemaphore_);
+    return DecodeInternal();
+  }
+
+  static void Encode(std::string& encoded,
+                     const Orthanc::ImageAccessor& decoded,
+                     Orthanc::MimeType transcodingType)
+  {
+    Orthanc::Semaphore::Locker locker(*transcoderSemaphore_);
+    EncodeInternal(encoded, decoded, transcodingType);
+  }
+};
+
+
 void ServeTile(OrthancPluginRestOutput* output,
                const char* url,
                const OrthancPluginHttpRequest* request)
@@ -155,88 +304,23 @@ void ServeTile(OrthancPluginRestOutput* output,
   }
 
   // Retrieve the raw tile from the WSI pyramid
-  OrthancWSI::ImageCompression compression;
-  Orthanc::PhotometricInterpretation photometric;
-  Orthanc::PixelFormat format;
-  std::string tile;
-  unsigned int tileWidth, tileHeight;
+  std::unique_ptr<RawTile> rawTile;
 
   {
     OrthancWSI::DicomPyramidCache::Locker locker(*cache_, seriesId);
-
-    format = locker.GetPyramid().GetPixelFormat();
-    tileWidth = locker.GetPyramid().GetTileWidth(level);
-    tileHeight = locker.GetPyramid().GetTileHeight(level);
-    photometric = locker.GetPyramid().GetPhotometricInterpretation();
-
-    if (!locker.GetPyramid().ReadRawTile(tile, compression, 
-                                         static_cast<unsigned int>(level),
-                                         static_cast<unsigned int>(tileX),
-                                         static_cast<unsigned int>(tileY)))
-    {
-      // Handling of missing tile (for sparse tiling): TODO parameter?
-      // AnswerSparseTile(output, tileWidth, tileHeight); return;
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
-    }
+    rawTile.reset(new RawTile(locker.GetPyramid(),
+                              static_cast<unsigned int>(level),
+                              static_cast<unsigned int>(tileX),
+                              static_cast<unsigned int>(tileY)));
   }
 
-  
-  // Test whether the tile is a JPEG image. In such a case, we can
-  // serve it as such, because any Web browser can handle JPEG
-
-  if (compression == OrthancWSI::ImageCompression_Jpeg)
-  {
-    OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, tile.c_str(), tile.size(), "image/jpeg");
-    return;   // We're done
-  }
-
-
-  // The tile does not come from a DICOM-JPEG instance, we need to
-  // decompress the raw tile
-  std::unique_ptr<Orthanc::ImageAccessor> decoded;
-
-  Orthanc::Semaphore::Locker locker(*transcoderSemaphore_);
-
-  switch (compression)
-  {
-    case OrthancWSI::ImageCompression_Jpeg2000:
-      decoded.reset(new OrthancWSI::Jpeg2000Reader);
-      dynamic_cast<OrthancWSI::Jpeg2000Reader&>(*decoded).ReadFromMemory(tile);
-
-      if (photometric == Orthanc::PhotometricInterpretation_YBR_ICT)
-      {
-        OrthancWSI::ImageToolbox::ConvertJpegYCbCrToRgb(*decoded);
-      }
-      
-      break;
-
-    case OrthancWSI::ImageCompression_None:
-    {
-      unsigned int bpp = Orthanc::GetBytesPerPixel(format);
-      if (bpp * tileWidth * tileHeight != tile.size())
-      {
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
-      }
-
-      decoded.reset(new Orthanc::ImageAccessor);
-      decoded->AssignReadOnly(format, tileWidth, tileHeight, bpp * tileWidth, tile.c_str());
-      break;
-    }
-
-    default:
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
-  }
-
-
-  // This is a lossless frame (coming from a JPEG2000 or uncompressed
-  // DICOM instance), serve it as a PNG image so as to prevent lossy
-  // compression
-
-  std::string png;
-  Orthanc::PngWriter writer;
-  Orthanc::IImageWriter::WriteToMemory(writer, png, *decoded);
-
-  OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, png.c_str(), png.size(), "image/png");
+  /**
+   * In the case the DICOM file doesn't use the JPEG transfer syntax,
+   * transfer the tile (which is presumably lossless) as a PNG image
+   * so as to prevent lossy compression. Don't call "rawTile" while
+   * the Locker is around, as "Answer()" can be a costly operation.
+   **/
+  rawTile->Answer(output, Orthanc::MimeType_Png);
 }
 
 
@@ -301,6 +385,252 @@ void ServeFile(OrthancPluginRestOutput* output,
 
 
 
+void ServeIIIFImageInfo(OrthancPluginRestOutput* output,
+                        const char* url,
+                        const OrthancPluginHttpRequest* request)
+{
+  std::string seriesId(request->groups[0]);
+
+  LOG(INFO) << "IIIF: Accessing whole-slide pyramid of series " << seriesId;
+
+  OrthancWSI::DicomPyramidCache::Locker locker(*cache_, seriesId);
+
+  if (locker.GetPyramid().GetLevelCount() == 0)
+  {
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+  }
+
+  if (locker.GetPyramid().GetTileWidth(0) != locker.GetPyramid().GetTileHeight(0))
+  {
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_IncompatibleImageFormat,
+                                    "IIIF doesn't support non-isotropic tile sizes");
+  }
+
+  for (unsigned int i = 1; i < locker.GetPyramid().GetLevelCount(); i++)
+  {
+    if (locker.GetPyramid().GetTileWidth(i) != locker.GetPyramid().GetTileWidth(0) ||
+        locker.GetPyramid().GetTileHeight(i) != locker.GetPyramid().GetTileHeight(0))
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_IncompatibleImageFormat,
+                                      "IIIF doesn't support levels with varying tile sizes");
+    }
+  }
+
+  Json::Value sizes = Json::arrayValue;
+  for (unsigned int i = locker.GetPyramid().GetLevelCount(); i > 0; i--)
+  {
+    Json::Value level;
+    level["width"] = locker.GetPyramid().GetLevelWidth(i - 1);
+    level["height"] = locker.GetPyramid().GetLevelHeight(i - 1);
+    sizes.append(level);
+  }
+
+  Json::Value scaleFactors = Json::arrayValue;
+  for (unsigned int i = locker.GetPyramid().GetLevelCount(); i > 0; i--)
+  {
+    scaleFactors.append(static_cast<float>(locker.GetPyramid().GetLevelWidth(0)) /
+                        static_cast<float>(locker.GetPyramid().GetLevelWidth(i - 1)));
+  }
+
+  Json::Value tiles;
+  tiles["width"] = locker.GetPyramid().GetTileWidth(0);
+  tiles["height"] = locker.GetPyramid().GetTileHeight(0);
+  tiles["scaleFactors"] = scaleFactors;
+
+  Json::Value result;
+  result["@context"] = "http://iiif.io/api/image/2/context.json";
+  result["@id"] = publicIIIFUrl_ + seriesId;
+  result["profile"] = "http://iiif.io/api/image/2/level0.json";
+  result["protocol"] = "http://iiif.io/api/image";
+  result["width"] = locker.GetPyramid().GetLevelWidth(0);
+  result["height"] = locker.GetPyramid().GetLevelHeight(0);
+  result["sizes"] = sizes;
+
+  result["tiles"] = Json::arrayValue;
+  result["tiles"].append(tiles);
+
+  std::string s = result.toStyledString();
+  OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, s.c_str(), s.size(), "application/json");
+}
+
+
+static unsigned int GetPhysicalTileWidth(const OrthancWSI::ITiledPyramid& pyramid,
+                                         unsigned int level)
+{
+  return static_cast<unsigned int>(boost::math::iround(
+                                     static_cast<float>(pyramid.GetTileWidth(level)) *
+                                     static_cast<float>(pyramid.GetLevelWidth(0)) /
+                                     static_cast<float>(pyramid.GetLevelWidth(level))));
+}
+
+
+static unsigned int GetPhysicalTileHeight(const OrthancWSI::ITiledPyramid& pyramid,
+                                          unsigned int level)
+{
+  return static_cast<unsigned int>(boost::math::iround(
+                                     static_cast<float>(pyramid.GetTileHeight(level)) *
+                                     static_cast<float>(pyramid.GetLevelHeight(0)) /
+                                     static_cast<float>(pyramid.GetLevelHeight(level))));
+}
+
+
+void ServeIIIFImageTile(OrthancPluginRestOutput* output,
+                        const char* url,
+                        const OrthancPluginHttpRequest* request)
+{
+  std::string seriesId(request->groups[0]);
+  std::string region(request->groups[1]);
+  std::string size(request->groups[2]);
+  std::string rotation(request->groups[3]);
+  std::string quality(request->groups[4]);
+  std::string format(request->groups[5]);
+
+  LOG(INFO) << "IIIF: Accessing tile of series " << seriesId << ": "
+            << "region=" << region << "; size=" << size << "; rotation="
+            << rotation << "; quality=" << quality << "; format=" << format;
+
+  if (region == "full")
+  {
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "IIIF - Full region is not supported for whole-slide images");
+  }
+
+  if (rotation != "0")
+  {
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "IIIF - Unsupported rotation: " + rotation);
+  }
+
+  if (quality != "default")
+  {
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "IIIF - Unsupported quality: " + quality);
+  }
+
+  if (format != "jpg")
+  {
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "IIIF - Unsupported format: " + format);
+  }
+
+  int regionX, regionY, regionWidth, regionHeight;
+
+  bool ok = false;
+  boost::regex regionPattern("([0-9]+),([0-9]+),([0-9]+),([0-9]+)");
+  boost::cmatch regionWhat;
+  if (regex_match(region.c_str(), regionWhat, regionPattern))
+  {
+    try
+    {
+      regionX = boost::lexical_cast<int>(regionWhat[1]);
+      regionY = boost::lexical_cast<int>(regionWhat[2]);
+      regionWidth = boost::lexical_cast<int>(regionWhat[3]);
+      regionHeight = boost::lexical_cast<int>(regionWhat[4]);
+      ok = (regionX >= 0 &&
+            regionY >= 0 &&
+            regionWidth > 0 &&
+            regionHeight > 0);
+    }
+    catch (boost::bad_lexical_cast&)
+    {
+    }
+  }
+
+  if (!ok)
+  {
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "IIIF - Not a (x,y,width,height) region: " + region);
+  }
+
+  int cropWidth;
+  boost::regex sizePattern("([0-9]+),");
+  boost::cmatch sizeWhat;
+  if (regex_match(size.c_str(), sizeWhat, sizePattern))
+  {
+    try
+    {
+      cropWidth = boost::lexical_cast<int>(sizeWhat[1]);
+      ok = (cropWidth > 0);
+    }
+    catch (boost::bad_lexical_cast&)
+    {
+    }
+  }
+
+  if (!ok)
+  {
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "IIIF - Not a (width,) size: " + size);
+  }
+
+  std::unique_ptr<RawTile> rawTile;
+  std::unique_ptr<Orthanc::ImageAccessor> toCrop;
+
+  {
+    OrthancWSI::DicomPyramidCache::Locker locker(*cache_, seriesId);
+
+    OrthancWSI::ITiledPyramid& pyramid = locker.GetPyramid();
+
+    unsigned int level;
+    for (level = 0; level < pyramid.GetLevelCount(); level++)
+    {
+      const unsigned int physicalTileWidth = GetPhysicalTileWidth(pyramid, level);
+      const unsigned int physicalTileHeight = GetPhysicalTileHeight(pyramid, level);
+
+      if (regionX % physicalTileWidth == 0 &&
+          regionY % physicalTileHeight == 0 &&
+          regionWidth <= physicalTileWidth &&
+          regionHeight <= physicalTileHeight)
+      {
+        break;
+      }
+    }
+
+    if (cropWidth > pyramid.GetTileWidth(level))
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadRequest, "IIIF - Request for a cropping that is too large for the tile size");
+    }
+
+    if (level == pyramid.GetLevelCount())
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadRequest, "IIIF - Cannot locate the level of interest");
+    }
+    else
+    {
+      rawTile.reset(new RawTile(locker.GetPyramid(), level,
+                                regionX / GetPhysicalTileWidth(pyramid, level),
+                                regionY / GetPhysicalTileHeight(pyramid, level)));
+
+      if (cropWidth < pyramid.GetTileWidth(level))
+      {
+        toCrop.reset(rawTile->Decode());
+        rawTile.reset(NULL);
+      }
+    }
+  }
+
+  if (rawTile.get() != NULL)
+  {
+    assert(toCrop.get() == NULL);
+
+    // Level 0 Compliance of IIIF expects JPEG files
+    rawTile->Answer(output, Orthanc::MimeType_Jpeg);
+  }
+  else if (toCrop.get() != NULL)
+  {
+    assert(rawTile.get() == NULL);
+    assert(cropWidth < toCrop->GetWidth());
+
+    Orthanc::ImageAccessor cropped;
+    toCrop->GetRegion(cropped, 0, 0, cropWidth, toCrop->GetHeight());
+
+    std::string encoded;
+    RawTile::Encode(encoded, cropped, Orthanc::MimeType_Jpeg);
+
+    OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, encoded.c_str(),
+                              encoded.size(), Orthanc::EnumerationToString(Orthanc::MimeType_Jpeg));
+  }
+  else
+  {
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+  }
+}
+
+
 extern "C"
 {
   ORTHANC_PLUGINS_API int32_t OrthancPluginInitialize(OrthancPluginContext* context)
@@ -348,6 +678,17 @@ extern "C"
     orthanc_.reset(new OrthancWSI::OrthancPluginConnection);
     cache_.reset(new OrthancWSI::DicomPyramidCache(*orthanc_, 10 /* Number of pyramids to be cached - TODO parameter */));
 
+    {
+      // TODO => CONFIG
+      publicIIIFUrl_ = "http://localhost:8042/wsi/iiif";
+
+      if (publicIIIFUrl_.empty() ||
+          publicIIIFUrl_[publicIIIFUrl_.size() - 1] != '/')
+      {
+        publicIIIFUrl_ += "/";
+      }
+    }
+
     OrthancPluginRegisterOnChangeCallback(OrthancPlugins::GetGlobalContext(), OnChangeCallback);
 
     OrthancPlugins::RegisterRestCallback<ServeFile>("/wsi/app/(ol.css)", true);
@@ -356,6 +697,9 @@ extern "C"
     OrthancPlugins::RegisterRestCallback<ServeFile>("/wsi/app/(viewer.js)", true);
     OrthancPlugins::RegisterRestCallback<ServePyramid>("/wsi/pyramids/([0-9a-f-]+)", true);
     OrthancPlugins::RegisterRestCallback<ServeTile>("/wsi/tiles/([0-9a-f-]+)/([0-9-]+)/([0-9-]+)/([0-9-]+)", true);
+
+    OrthancPlugins::RegisterRestCallback<ServeIIIFImageInfo>("/wsi/iiif/([0-9a-f-]+)/info.json", true);
+    OrthancPlugins::RegisterRestCallback<ServeIIIFImageTile>("/wsi/iiif/([0-9a-f-]+)/([0-9a-z,:]+)/([0-9a-z,!:]+)/([0-9,!]+)/([a-z]+)\\.([a-z]+)", true);
 
     // Extend the default Orthanc Explorer with custom JavaScript for WSI
     std::string explorer;
