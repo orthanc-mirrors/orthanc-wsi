@@ -489,11 +489,6 @@ void ServeIIIFImageTile(OrthancPluginRestOutput* output,
             << "region=" << region << "; size=" << size << "; rotation="
             << rotation << "; quality=" << quality << "; format=" << format;
 
-  if (region == "full")
-  {
-    throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "IIIF - Full region is not supported for whole-slide images");
-  }
-
   if (rotation != "0")
   {
     throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "IIIF - Unsupported rotation: " + rotation);
@@ -509,124 +504,165 @@ void ServeIIIFImageTile(OrthancPluginRestOutput* output,
     throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "IIIF - Unsupported format: " + format);
   }
 
-  int regionX, regionY, regionWidth, regionHeight;
-
-  bool ok = false;
-  boost::regex regionPattern("([0-9]+),([0-9]+),([0-9]+),([0-9]+)");
-  boost::cmatch regionWhat;
-  if (regex_match(region.c_str(), regionWhat, regionPattern))
-  {
-    try
-    {
-      regionX = boost::lexical_cast<int>(regionWhat[1]);
-      regionY = boost::lexical_cast<int>(regionWhat[2]);
-      regionWidth = boost::lexical_cast<int>(regionWhat[3]);
-      regionHeight = boost::lexical_cast<int>(regionWhat[4]);
-      ok = (regionX >= 0 &&
-            regionY >= 0 &&
-            regionWidth > 0 &&
-            regionHeight > 0);
-    }
-    catch (boost::bad_lexical_cast&)
-    {
-    }
-  }
-
-  if (!ok)
-  {
-    throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "IIIF - Not a (x,y,width,height) region: " + region);
-  }
-
-  int cropWidth;
-  boost::regex sizePattern("([0-9]+),");
-  boost::cmatch sizeWhat;
-  if (regex_match(size.c_str(), sizeWhat, sizePattern))
-  {
-    try
-    {
-      cropWidth = boost::lexical_cast<int>(sizeWhat[1]);
-      ok = (cropWidth > 0);
-    }
-    catch (boost::bad_lexical_cast&)
-    {
-    }
-  }
-
-  if (!ok)
-  {
-    throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "IIIF - Not a (width,) size: " + size);
-  }
-
-  std::unique_ptr<RawTile> rawTile;
-  std::unique_ptr<Orthanc::ImageAccessor> toCrop;
-
+  if (region == "full")
   {
     OrthancWSI::DicomPyramidCache::Locker locker(*cache_, seriesId);
 
     OrthancWSI::ITiledPyramid& pyramid = locker.GetPyramid();
+    const unsigned int level = pyramid.GetLevelCount() - 1;
 
-    unsigned int level;
-    for (level = 0; level < pyramid.GetLevelCount(); level++)
+    Orthanc::Image full(Orthanc::PixelFormat_RGB24, pyramid.GetLevelWidth(level), pyramid.GetLevelHeight(level), false);
+    Orthanc::ImageProcessing::Set(full, 255, 255, 255, 0);
+
+    const unsigned int nx = OrthancWSI::CeilingDivision(pyramid.GetLevelWidth(level), pyramid.GetTileWidth(level));
+    const unsigned int ny = OrthancWSI::CeilingDivision(pyramid.GetLevelHeight(level), pyramid.GetTileHeight(level));
+    for (unsigned int ty = 0; ty < ny; ty++)
     {
-      const unsigned int physicalTileWidth = GetPhysicalTileWidth(pyramid, level);
-      const unsigned int physicalTileHeight = GetPhysicalTileHeight(pyramid, level);
+      const unsigned int y = ty * pyramid.GetTileHeight(level);
+      const unsigned int height = std::min(pyramid.GetTileHeight(level), full.GetHeight() - y);
 
-      if (regionX % physicalTileWidth == 0 &&
-          regionY % physicalTileHeight == 0 &&
-          regionWidth <= physicalTileWidth &&
-          regionHeight <= physicalTileHeight)
+      for (unsigned int tx = 0; tx < nx; tx++)
       {
-        break;
+        const unsigned int x = tx * pyramid.GetTileWidth(level);
+        std::unique_ptr<Orthanc::ImageAccessor> tile(pyramid.DecodeTile(level, tx, ty));
+
+        const unsigned int width = std::min(pyramid.GetTileWidth(level), full.GetWidth() - x);
+
+        Orthanc::ImageAccessor source, target;
+        tile->GetRegion(source, 0, 0, width, height);
+        full.GetRegion(target, x, y, width, height);
+
+        Orthanc::ImageProcessing::Copy(target, source);
       }
     }
-
-    if (cropWidth > pyramid.GetTileWidth(level))
-    {
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadRequest, "IIIF - Request for a cropping that is too large for the tile size");
-    }
-
-    if (level == pyramid.GetLevelCount())
-    {
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadRequest, "IIIF - Cannot locate the level of interest");
-    }
-    else
-    {
-      rawTile.reset(new RawTile(locker.GetPyramid(), level,
-                                regionX / GetPhysicalTileWidth(pyramid, level),
-                                regionY / GetPhysicalTileHeight(pyramid, level)));
-
-      if (cropWidth < pyramid.GetTileWidth(level))
-      {
-        toCrop.reset(rawTile->Decode());
-        rawTile.reset(NULL);
-      }
-    }
-  }
-
-  if (rawTile.get() != NULL)
-  {
-    assert(toCrop.get() == NULL);
-
-    // Level 0 Compliance of IIIF expects JPEG files
-    rawTile->Answer(output, Orthanc::MimeType_Jpeg);
-  }
-  else if (toCrop.get() != NULL)
-  {
-    assert(rawTile.get() == NULL);
-    assert(cropWidth < toCrop->GetWidth());
-
-    Orthanc::ImageAccessor cropped;
-    toCrop->GetRegion(cropped, 0, 0, cropWidth, toCrop->GetHeight());
 
     std::string encoded;
-    RawTile::Encode(encoded, cropped, Orthanc::MimeType_Jpeg);
+    RawTile::Encode(encoded, full, Orthanc::MimeType_Jpeg);
 
     OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, encoded.c_str(),
                               encoded.size(), Orthanc::EnumerationToString(Orthanc::MimeType_Jpeg));
   }
   else
   {
-    throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+    int regionX, regionY, regionWidth, regionHeight;
+
+    bool ok = false;
+    boost::regex regionPattern("([0-9]+),([0-9]+),([0-9]+),([0-9]+)");
+    boost::cmatch regionWhat;
+    if (regex_match(region.c_str(), regionWhat, regionPattern))
+    {
+      try
+      {
+        regionX = boost::lexical_cast<int>(regionWhat[1]);
+        regionY = boost::lexical_cast<int>(regionWhat[2]);
+        regionWidth = boost::lexical_cast<int>(regionWhat[3]);
+        regionHeight = boost::lexical_cast<int>(regionWhat[4]);
+        ok = (regionX >= 0 &&
+              regionY >= 0 &&
+              regionWidth > 0 &&
+              regionHeight > 0);
+      }
+      catch (boost::bad_lexical_cast&)
+      {
+      }
+    }
+
+    if (!ok)
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "IIIF - Not a (x,y,width,height) region: " + region);
+    }
+
+    int cropWidth;
+    boost::regex sizePattern("([0-9]+),");
+    boost::cmatch sizeWhat;
+    if (regex_match(size.c_str(), sizeWhat, sizePattern))
+    {
+      try
+      {
+        cropWidth = boost::lexical_cast<int>(sizeWhat[1]);
+        ok = (cropWidth > 0);
+      }
+      catch (boost::bad_lexical_cast&)
+      {
+      }
+    }
+
+    if (!ok)
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "IIIF - Not a (width,) size: " + size);
+    }
+
+    std::unique_ptr<RawTile> rawTile;
+    std::unique_ptr<Orthanc::ImageAccessor> toCrop;
+
+    {
+      OrthancWSI::DicomPyramidCache::Locker locker(*cache_, seriesId);
+
+      OrthancWSI::ITiledPyramid& pyramid = locker.GetPyramid();
+
+      unsigned int level;
+      for (level = 0; level < pyramid.GetLevelCount(); level++)
+      {
+        const unsigned int physicalTileWidth = GetPhysicalTileWidth(pyramid, level);
+        const unsigned int physicalTileHeight = GetPhysicalTileHeight(pyramid, level);
+
+        if (regionX % physicalTileWidth == 0 &&
+            regionY % physicalTileHeight == 0 &&
+            regionWidth <= physicalTileWidth &&
+            regionHeight <= physicalTileHeight)
+        {
+          break;
+        }
+      }
+
+      if (cropWidth > pyramid.GetTileWidth(level))
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_BadRequest, "IIIF - Request for a cropping that is too large for the tile size");
+      }
+
+      if (level == pyramid.GetLevelCount())
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_BadRequest, "IIIF - Cannot locate the level of interest");
+      }
+      else
+      {
+        rawTile.reset(new RawTile(locker.GetPyramid(), level,
+                                  regionX / GetPhysicalTileWidth(pyramid, level),
+                                  regionY / GetPhysicalTileHeight(pyramid, level)));
+
+        if (cropWidth < pyramid.GetTileWidth(level))
+        {
+          toCrop.reset(rawTile->Decode());
+          rawTile.reset(NULL);
+        }
+      }
+    }
+
+    if (rawTile.get() != NULL)
+    {
+      assert(toCrop.get() == NULL);
+
+      // Level 0 Compliance of IIIF expects JPEG files
+      rawTile->Answer(output, Orthanc::MimeType_Jpeg);
+    }
+    else if (toCrop.get() != NULL)
+    {
+      assert(rawTile.get() == NULL);
+      assert(cropWidth < toCrop->GetWidth());
+
+      Orthanc::ImageAccessor cropped;
+      toCrop->GetRegion(cropped, 0, 0, cropWidth, toCrop->GetHeight());
+
+      std::string encoded;
+      RawTile::Encode(encoded, cropped, Orthanc::MimeType_Jpeg);
+
+      OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, encoded.c_str(),
+                                encoded.size(), Orthanc::EnumerationToString(Orthanc::MimeType_Jpeg));
+    }
+    else
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+    }
   }
 }
 
