@@ -391,7 +391,7 @@ void ServeIIIFImageInfo(OrthancPluginRestOutput* output,
 {
   std::string seriesId(request->groups[0]);
 
-  LOG(INFO) << "IIIF: Accessing whole-slide pyramid of series " << seriesId;
+  LOG(INFO) << "IIIF: Image API call to whole-slide pyramid of series " << seriesId;
 
   OrthancWSI::DicomPyramidCache::Locker locker(*cache_, seriesId);
 
@@ -485,7 +485,7 @@ void ServeIIIFImageTile(OrthancPluginRestOutput* output,
   std::string quality(request->groups[4]);
   std::string format(request->groups[5]);
 
-  LOG(INFO) << "IIIF: Accessing tile of series " << seriesId << ": "
+  LOG(INFO) << "IIIF: Image API call to tile of series " << seriesId << ": "
             << "region=" << region << "; size=" << size << "; rotation="
             << rotation << "; quality=" << quality << "; format=" << format;
 
@@ -667,6 +667,92 @@ void ServeIIIFImageTile(OrthancPluginRestOutput* output,
 }
 
 
+void ServeIIIFManifest(OrthancPluginRestOutput* output,
+                       const char* url,
+                       const OrthancPluginHttpRequest* request)
+{
+  /**
+   * This is based on IIIF cookbook: "Support Deep Viewing with Basic
+   * Use of a IIIF Image Service."
+   * https://iiif.io/api/cookbook/recipe/0005-image-service/
+   **/
+
+  std::string seriesId(request->groups[0]);
+
+  LOG(INFO) << "IIIF: Presentation API call to whole-slide pyramid of series " << seriesId;
+
+  Json::Value study, series;
+  if (!OrthancPlugins::RestApiGet(series, "/series/" + seriesId, false) ||
+      !OrthancPlugins::RestApiGet(study, "/series/" + seriesId + "/study", false))
+  {
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
+  }
+
+  unsigned int width, height;
+
+  {
+    OrthancWSI::DicomPyramidCache::Locker locker(*cache_, seriesId);
+    width = locker.GetPyramid().GetLevelWidth(0);
+    height = locker.GetPyramid().GetLevelHeight(0);
+  }
+
+  const std::string base = publicIIIFUrl_ + seriesId;
+
+  Json::Value service;
+  service["id"] = base;
+  service["profile"] = "level0";
+  service["type"] = "ImageService3";
+
+  Json::Value body;
+  body["id"] = base + "/full/max/0/default.jpg";
+  body["type"] = "Image";
+  body["format"] = Orthanc::EnumerationToString(Orthanc::MimeType_Jpeg);
+  body["height"] = height;
+  body["width"] = width;
+  body["service"].append(service);
+
+  Json::Value annotation;
+  annotation["id"] = base + "/annotation/p0001-image";
+  annotation["type"] = "Annotation";
+  annotation["motivation"] = "painting";
+  annotation["body"] = body;
+  annotation["target"] = base + "/canvas/p1";
+
+  Json::Value annotationPage;
+  annotationPage["id"] = base + "/page/p1/1";
+  annotationPage["type"] = "AnnotationPage";
+  annotationPage["items"].append(annotation);
+
+  Json::Value canvas;
+  canvas["id"] = annotation["target"];
+  canvas["type"] = "Canvas";
+  canvas["width"] = width;
+  canvas["height"] = height;
+
+  Json::Value labels = Json::arrayValue;
+  labels.append(series["MainDicomTags"]["SeriesDate"].asString() + " - " +
+                series["MainDicomTags"]["SeriesDescription"].asString());
+  canvas["label"]["en"] = labels;
+
+  canvas["items"].append(annotationPage);
+
+  Json::Value manifest;
+  manifest["@context"] = "http://iiif.io/api/presentation/3/context.json";
+  manifest["id"] = base + "/manifest.json";
+  manifest["type"] = "Manifest";
+
+  labels = Json::arrayValue;
+  labels.append(study["MainDicomTags"]["StudyDate"].asString() + " - " +
+                study["MainDicomTags"]["StudyDescription"].asString());
+  manifest["label"]["en"] = labels;
+
+  manifest["items"].append(canvas);
+
+  std::string s = manifest.toStyledString();
+  OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, s.c_str(), s.size(), "application/json");
+}
+
+
 extern "C"
 {
   ORTHANC_PLUGINS_API int32_t OrthancPluginInitialize(OrthancPluginContext* context)
@@ -736,6 +822,7 @@ extern "C"
 
     OrthancPlugins::RegisterRestCallback<ServeIIIFImageInfo>("/wsi/iiif/([0-9a-f-]+)/info.json", true);
     OrthancPlugins::RegisterRestCallback<ServeIIIFImageTile>("/wsi/iiif/([0-9a-f-]+)/([0-9a-z,:]+)/([0-9a-z,!:]+)/([0-9,!]+)/([a-z]+)\\.([a-z]+)", true);
+    OrthancPlugins::RegisterRestCallback<ServeIIIFManifest>("/wsi/iiif/([0-9a-f-]+)/manifest.json", true);
 
     // Extend the default Orthanc Explorer with custom JavaScript for WSI
     std::string explorer;
