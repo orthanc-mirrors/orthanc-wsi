@@ -190,7 +190,7 @@ namespace OrthancWSI
         throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
       }
 
-      frames_.resize(countFrames);
+      frames_.reserve(countFrames);
 
       for (size_t i = 0; i < countFrames; i++)
       {
@@ -225,11 +225,11 @@ namespace OrthancWSI
         {
           LOG(ERROR) << "Frame " << i << " with unexpected tile location (" 
                      << x << "," << y << ") in instance: " << instanceId;
-          throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
         }
-
-        frames_[i].first = x / tileWidth_;
-        frames_[i].second = y / tileHeight_;
+        else
+        {
+          frames_.push_back(std::make_pair(x / tileWidth_, y / tileHeight_));
+        }
       }
     }
     else
