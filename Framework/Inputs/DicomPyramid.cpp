@@ -99,8 +99,8 @@ namespace OrthancWSI
 
         // Don't consider the thumbnail and overview as part of the DICOM pyramid (new in 1.0)
         if (tokens.size() < 2 ||
-            (tokens[2] != "THUMBNAIL" &&
-             tokens[2] != "OVERVIEW"))
+            (tokens[1] != "THUMBNAIL" &&
+             tokens[1] != "OVERVIEW"))
         {
           instances_.push_back(instance.release());
         }        
