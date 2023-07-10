@@ -185,6 +185,7 @@ set(ORTHANC_WSI_SOURCES
   DicomPyramidCache.cpp
   OrthancPluginConnection.cpp
   Plugin.cpp
+  RawTile.cpp
 
   ${ORTHANC_WSI_DIR}/Framework/DicomToolbox.cpp
   ${ORTHANC_WSI_DIR}/Framework/Enumerations.cpp
