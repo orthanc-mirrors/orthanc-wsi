@@ -36,6 +36,10 @@
 #include <boost/math/special_functions/round.hpp>
 
 
+static const char* const ROWS = "0028,0010";
+static const char* const COLUMNS = "0028,0011";
+
+
 static std::string  iiifPublicUrl_;
 
 
@@ -43,7 +47,7 @@ static void ServeIIIFTiledImageInfo(OrthancPluginRestOutput* output,
                                     const char* url,
                                     const OrthancPluginHttpRequest* request)
 {
-  std::string seriesId(request->groups[0]);
+  const std::string seriesId(request->groups[0]);
 
   LOG(INFO) << "IIIF: Image API call to whole-slide pyramid of series " << seriesId;
 
@@ -111,7 +115,7 @@ static void ServeIIIFTiledImageInfo(OrthancPluginRestOutput* output,
   result["tiles"].append(tiles);
 
   std::string s = result.toStyledString();
-  OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, s.c_str(), s.size(), "application/json");
+  OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, s.c_str(), s.size(), Orthanc::EnumerationToString(Orthanc::MimeType_Json));
 }
 
 
@@ -139,12 +143,12 @@ static void ServeIIIFTiledImageTile(OrthancPluginRestOutput* output,
                                     const char* url,
                                     const OrthancPluginHttpRequest* request)
 {
-  std::string seriesId(request->groups[0]);
-  std::string region(request->groups[1]);
-  std::string size(request->groups[2]);
-  std::string rotation(request->groups[3]);
-  std::string quality(request->groups[4]);
-  std::string format(request->groups[5]);
+  const std::string seriesId(request->groups[0]);
+  const std::string region(request->groups[1]);
+  const std::string size(request->groups[2]);
+  const std::string rotation(request->groups[3]);
+  const std::string quality(request->groups[4]);
+  const std::string format(request->groups[5]);
 
   LOG(INFO) << "IIIF: Image API call to tile of series " << seriesId << ": "
             << "region=" << region << "; size=" << size << "; rotation="
@@ -383,12 +387,10 @@ static void ServeIIIFManifest(OrthancPluginRestOutput* output,
   static const char* const KEY_INSTANCES = "Instances";
   static const char* const SOP_CLASS_UID = "0008,0016";
   static const char* const SLICES_SHORT = "SlicesShort";
-  static const char* const ROWS = "0028,0010";
-  static const char* const COLUMNS = "0028,0011";
 
-  std::string seriesId(request->groups[0]);
+  const std::string seriesId(request->groups[0]);
 
-  LOG(INFO) << "IIIF: Presentation API call to whole-slide pyramid of series " << seriesId;
+  LOG(INFO) << "IIIF: Presentation API call to series " << seriesId;
 
   Json::Value study, series;
   if (!OrthancPlugins::RestApiGet(series, "/series/" + seriesId, false) ||
@@ -425,7 +427,9 @@ static void ServeIIIFManifest(OrthancPluginRestOutput* output,
   manifest["id"] = base + "/manifest.json";
   manifest["type"] = "Manifest";
   manifest["label"]["en"].append(study["MainDicomTags"]["StudyDate"].asString() + " - " +
-                                 study["MainDicomTags"]["StudyDescription"].asString());
+                                 series["MainDicomTags"]["Modality"].asString() + " - " +
+                                 study["MainDicomTags"]["StudyDescription"].asString() + " - " +
+                                 series["MainDicomTags"]["SeriesDescription"].asString());
 
   if (sopClassUid == OrthancWSI::VL_WHOLE_SLIDE_MICROSCOPY_IMAGE_STORAGE_IOD)
   {
@@ -442,10 +446,7 @@ static void ServeIIIFManifest(OrthancPluginRestOutput* output,
       height = locker.GetPyramid().GetLevelHeight(0);
     }
 
-    const std::string description = (series["MainDicomTags"]["SeriesDate"].asString() + " - " +
-                                     series["MainDicomTags"]["SeriesDescription"].asString());
-
-    AddCanvas(manifest, seriesId, "tiles/" + seriesId, 1, width, height, description);
+    AddCanvas(manifest, seriesId, "tiles/" + seriesId, 1, width, height, "");
   }
   else
   {
@@ -453,6 +454,8 @@ static void ServeIIIFManifest(OrthancPluginRestOutput* output,
      * This is based on IIIF cookbook: "Simple Manifest - Book"
      * https://iiif.io/api/cookbook/recipe/0009-book-1/
      **/
+
+    manifest["behavior"].append("individuals");
 
     uint32_t width, height;
     if (!oneInstance.isMember(COLUMNS) ||
@@ -498,14 +501,82 @@ static void ServeIIIFManifest(OrthancPluginRestOutput* output,
 
       for (unsigned int frame = start; frame < start + count; frame++, page++)
       {
-        const std::string description = "Page " + boost::lexical_cast<std::string>(page);
-        AddCanvas(manifest, instanceId, "instances/" + instanceId, page, width, height, description);
+        AddCanvas(manifest, instanceId, "frames/" + instanceId + "/" + boost::lexical_cast<std::string>(frame),
+                  page, width, height, "");
       }
     }
   }
 
   std::string s = manifest.toStyledString();
-  OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, s.c_str(), s.size(), "application/json");
+  OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, s.c_str(), s.size(), Orthanc::EnumerationToString(Orthanc::MimeType_Json));
+}
+
+
+static void ServeIIIFFrameInfo(OrthancPluginRestOutput* output,
+                               const char* url,
+                               const OrthancPluginHttpRequest* request)
+{
+  const std::string instanceId(request->groups[0]);
+  const std::string frame(request->groups[1]);
+
+  LOG(INFO) << "IIIF: Image API call to manifest of instance " << instanceId << " at frame " << frame;
+
+  Json::Value instance;
+  if (!OrthancPlugins::RestApiGet(instance, "/instances/" + instanceId + "/tags?short", false))
+  {
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
+  }
+
+  uint32_t width, height;
+  if (!instance.isMember(COLUMNS) ||
+      !instance.isMember(ROWS) ||
+      instance[COLUMNS].type() != Json::stringValue ||
+      instance[ROWS].type() != Json::stringValue ||
+      !Orthanc::SerializationToolbox::ParseFirstUnsignedInteger32(width, instance[COLUMNS].asString()) ||
+      !Orthanc::SerializationToolbox::ParseFirstUnsignedInteger32(height, instance[ROWS].asString()))
+  {
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
+  }
+
+  Json::Value tile;
+  tile["height"] = height;
+  tile["width"] = width;
+  tile["scaleFactors"].append(1);
+
+  Json::Value result;
+  result["@context"] = "http://iiif.io/api/image/2/context.json";
+  result["@id"] = iiifPublicUrl_ + "frames/" + instanceId + "/" + frame;
+  result["profile"] = "http://iiif.io/api/image/2/level0.json";
+  result["protocol"] = "http://iiif.io/api/image";
+  result["width"] = width;
+  result["height"] = height;
+  result["tiles"].append(tile);
+
+  std::string s = result.toStyledString();
+  OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, s.c_str(), s.size(), Orthanc::EnumerationToString(Orthanc::MimeType_Json));
+}
+
+
+static void ServeIIIFFrameImage(OrthancPluginRestOutput* output,
+                               const char* url,
+                               const OrthancPluginHttpRequest* request)
+{
+  const std::string instanceId(request->groups[0]);
+  const std::string frame(request->groups[1]);
+
+  LOG(INFO) << "IIIF: Image API call to JPEG of instance " << instanceId << " at frame " << frame;
+
+  std::map<std::string, std::string> httpHeaders;
+  httpHeaders["Accept"] = Orthanc::EnumerationToString(Orthanc::MimeType_Jpeg);
+
+  std::string jpeg;
+  if (!OrthancPlugins::RestApiGetString(jpeg, "/instances/" + instanceId + "/frames/" + frame + "/preview", httpHeaders, false))
+  {
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
+  }
+
+  OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, jpeg.empty() ? NULL : jpeg.c_str(),
+                            jpeg.size(), Orthanc::EnumerationToString(Orthanc::MimeType_Jpeg));
 }
 
 
@@ -516,4 +587,6 @@ void InitializeIIIF(const std::string& iiifPublicUrl)
   OrthancPlugins::RegisterRestCallback<ServeIIIFTiledImageInfo>("/wsi/iiif/tiles/([0-9a-f-]+)/info.json", true);
   OrthancPlugins::RegisterRestCallback<ServeIIIFTiledImageTile>("/wsi/iiif/tiles/([0-9a-f-]+)/([0-9a-z,:]+)/([0-9a-z,!:]+)/([0-9,!]+)/([a-z]+)\\.([a-z]+)", true);
   OrthancPlugins::RegisterRestCallback<ServeIIIFManifest>("/wsi/iiif/([0-9a-f-]+)/manifest.json", true);
+  OrthancPlugins::RegisterRestCallback<ServeIIIFFrameInfo>("/wsi/iiif/frames/([0-9a-f-]+)/([0-9]+)/info.json", true);
+  OrthancPlugins::RegisterRestCallback<ServeIIIFFrameImage>("/wsi/iiif/frames/([0-9a-f-]+)/([0-9]+)/full/max/0/default.jpg", true);
 }
