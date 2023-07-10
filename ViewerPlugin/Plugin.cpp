@@ -288,24 +288,33 @@ extern "C"
     OrthancPlugins::RegisterRestCallback<ServePyramid>("/wsi/pyramids/([0-9a-f-]+)", true);
     OrthancPlugins::RegisterRestCallback<ServeTile>("/wsi/tiles/([0-9a-f-]+)/([0-9-]+)/([0-9-]+)/([0-9-]+)", true);
 
-    bool serveMirador = true;  // TODO => CONFIG
+    bool serveMirador;
+    bool serveIIIF = true;  // TODO => CONFIG
+    std::string iiifPublicUrl;
 
-    if (serveMirador)
-    {
-      OrthancPlugins::RegisterRestCallback<ServeFile>("/wsi/app/(mirador.html)", true);
-    }
-
+    if (serveIIIF)
     {
       // TODO => CONFIG
-      std::string url = "http://localhost:8042/wsi/iiif";
+      iiifPublicUrl = "http://localhost:8042/wsi/iiif";
 
-      if (url.empty() ||
-          url[url.size() - 1] != '/')
+      if (iiifPublicUrl.empty() ||
+          iiifPublicUrl[iiifPublicUrl.size() - 1] != '/')
       {
-        url += "/";
+        iiifPublicUrl += "/";
       }
 
-      InitializeIIIF(url);
+      InitializeIIIF(iiifPublicUrl);
+
+      serveMirador = true;  // TODO => CONFIG
+
+      if (serveMirador)
+      {
+        OrthancPlugins::RegisterRestCallback<ServeFile>("/wsi/app/(mirador.html)", true);
+      }
+    }
+    else
+    {
+      serveMirador = false;
     }
 
     {
@@ -315,7 +324,9 @@ extern "C"
       Orthanc::EmbeddedResources::GetFileResource(explorer, Orthanc::EmbeddedResources::ORTHANC_EXPLORER);
 
       std::map<std::string, std::string> dictionary;
+      dictionary["SERVE_IIIF"] = (serveIIIF ? "true" : "false");
       dictionary["SERVE_MIRADOR"] = (serveMirador ? "true" : "false");
+      dictionary["IIIF_PUBLIC_URL"] = iiifPublicUrl;
       explorer = Orthanc::Toolbox::SubstituteVariables(explorer, dictionary);
 
       OrthancPluginExtendOrthancExplorer(OrthancPlugins::GetGlobalContext(), explorer.c_str());

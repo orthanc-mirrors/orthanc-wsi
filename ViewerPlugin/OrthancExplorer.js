@@ -23,8 +23,9 @@
 $('#series').live('pagebeforeshow', function() {
   var seriesId = $.mobile.pageData.uuid;
 
-  $('#wsi-button').remove();
   $('#mirador-button').remove();
+  $('#series-iiif').remove();
+  $('#wsi-button').remove();
 
   // Test whether this is a whole-slide image by check the SOP Class
   // UID of one instance of the series
@@ -51,6 +52,29 @@ $('#series').live('pagebeforeshow', function() {
           }
         });
 
+      }
+
+      if (${SERVE_IIIF}) {
+        var b = $('<a>')
+            .attr('id', 'series-iiif-button')
+            .attr('data-role', 'button')
+            .attr('href', '#')
+            .text('Copy link to IIIF manifest');
+
+        var li = $('<li>')
+            .attr('data-icon', 'gear')
+            .append(b);
+
+        $('#series-access').append(li);
+
+        b.click(function(e) {
+          if ($.mobile.pageData) {
+            e.preventDefault();
+            var url = new URL('${IIIF_PUBLIC_URL}' + seriesId + '/manifest.json', window.location.href);
+            navigator.clipboard.writeText(url.href);
+            $(e.target).closest('li').buttonMarkup({ icon: 'check' });
+          }
+        });
       }
 
       if (${SERVE_MIRADOR}) {
