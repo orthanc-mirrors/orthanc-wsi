@@ -221,6 +221,11 @@ void ServeFile(OrthancPluginRestOutput* output,
     resource = Orthanc::EmbeddedResources::MIRADOR_HTML;
     mime = "text/html";
   }
+  else if (f == "openseadragon.html")
+  {
+    resource = Orthanc::EmbeddedResources::OPEN_SEADRAGON_HTML;
+    mime = "text/html";
+  }
   else
   {
     throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
@@ -289,6 +294,7 @@ extern "C"
     OrthancPlugins::RegisterRestCallback<ServeTile>("/wsi/tiles/([0-9a-f-]+)/([0-9-]+)/([0-9-]+)/([0-9-]+)", true);
 
     bool serveMirador;
+    bool serveOpenSeadragon;
     bool serveIIIF = true;  // TODO => CONFIG
     std::string iiifPublicUrl;
 
@@ -306,15 +312,22 @@ extern "C"
       InitializeIIIF(iiifPublicUrl);
 
       serveMirador = true;  // TODO => CONFIG
+      serveOpenSeadragon = true;  // TODO => CONFIG
 
       if (serveMirador)
       {
         OrthancPlugins::RegisterRestCallback<ServeFile>("/wsi/app/(mirador.html)", true);
       }
+
+      if (serveOpenSeadragon)
+      {
+        OrthancPlugins::RegisterRestCallback<ServeFile>("/wsi/app/(openseadragon.html)", true);
+      }
     }
     else
     {
       serveMirador = false;
+      serveOpenSeadragon = false;
     }
 
     {
@@ -326,6 +339,7 @@ extern "C"
       std::map<std::string, std::string> dictionary;
       dictionary["SERVE_IIIF"] = (serveIIIF ? "true" : "false");
       dictionary["SERVE_MIRADOR"] = (serveMirador ? "true" : "false");
+      dictionary["SERVE_OPEN_SEADRAGON"] = (serveOpenSeadragon ? "true" : "false");
       dictionary["IIIF_PUBLIC_URL"] = iiifPublicUrl;
       explorer = Orthanc::Toolbox::SubstituteVariables(explorer, dictionary);
 

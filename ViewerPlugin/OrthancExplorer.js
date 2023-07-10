@@ -24,6 +24,7 @@ $('#series').live('pagebeforeshow', function() {
   var seriesId = $.mobile.pageData.uuid;
 
   $('#mirador-button').remove();
+  $('#openseadragon-button').remove();
   $('#wsi-button').remove();
 
   $('#series-iiif-button').remove();
@@ -54,6 +55,23 @@ $('#series').live('pagebeforeshow', function() {
           }
         });
 
+        if (${SERVE_OPEN_SEADRAGON}) {
+          var b = $('<a>')
+              .attr('id', 'openseadragon-button')
+              .attr('data-role', 'button')
+              .attr('href', '#')
+              .attr('data-icon', 'search')
+              .attr('data-theme', 'e')
+              .text('Test IIIF in OpenSeadragon')
+              .button();
+
+          b.insertAfter($('#series-info'));
+          b.click(function() {
+            if ($.mobile.pageData) {
+              window.open('../wsi/app/openseadragon.html?image=../iiif/tiles/' + seriesId + '/info.json');
+            }
+          });
+        }
       }
 
       if (${SERVE_IIIF}) {
@@ -86,7 +104,7 @@ $('#series').live('pagebeforeshow', function() {
             .attr('href', '#')
             .attr('data-icon', 'search')
             .attr('data-theme', 'e')
-            .text('Open IIIF in Mirador')
+            .text('Test IIIF in Mirador')
             .button();
 
         b.insertAfter($('#series-info'));
