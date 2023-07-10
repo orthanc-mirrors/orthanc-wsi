@@ -38,9 +38,9 @@
 static std::string  iiifPublicUrl_;
 
 
-static void ServeIIIFImageInfo(OrthancPluginRestOutput* output,
-                               const char* url,
-                               const OrthancPluginHttpRequest* request)
+static void ServeIIIFTiledImageInfo(OrthancPluginRestOutput* output,
+                                    const char* url,
+                                    const OrthancPluginHttpRequest* request)
 {
   std::string seriesId(request->groups[0]);
 
@@ -99,7 +99,7 @@ static void ServeIIIFImageInfo(OrthancPluginRestOutput* output,
 
   Json::Value result;
   result["@context"] = "http://iiif.io/api/image/2/context.json";
-  result["@id"] = iiifPublicUrl_ + seriesId;
+  result["@id"] = iiifPublicUrl_ + "tiles/" + seriesId;
   result["profile"] = "http://iiif.io/api/image/2/level0.json";
   result["protocol"] = "http://iiif.io/api/image";
   result["width"] = locker.GetPyramid().GetLevelWidth(0);
@@ -134,7 +134,7 @@ static unsigned int GetPhysicalTileHeight(const OrthancWSI::ITiledPyramid& pyram
 }
 
 
-static void ServeIIIFImageTile(OrthancPluginRestOutput* output,
+static void ServeIIIFTiledImageTile(OrthancPluginRestOutput* output,
                                const char* url,
                                const OrthancPluginHttpRequest* request)
 {
@@ -268,10 +268,10 @@ static void ServeIIIFImageTile(OrthancPluginRestOutput* output,
 
         if (regionX % physicalTileWidth == 0 &&
             regionY % physicalTileHeight == 0 &&
-            regionWidth <= physicalTileWidth &&
-            regionHeight <= physicalTileHeight &&
-            regionX + regionWidth <= pyramid.GetLevelWidth(0) &&
-            regionY + regionHeight <= pyramid.GetLevelHeight(0))
+            static_cast<unsigned int>(regionWidth) <= physicalTileWidth &&
+            static_cast<unsigned int>(regionHeight) <= physicalTileHeight &&
+            static_cast<unsigned int>(regionX + regionWidth) <= pyramid.GetLevelWidth(0) &&
+            static_cast<unsigned int>(regionY + regionHeight) <= pyramid.GetLevelHeight(0))
         {
           break;
         }
@@ -281,7 +281,7 @@ static void ServeIIIFImageTile(OrthancPluginRestOutput* output,
       {
         throw Orthanc::OrthancException(Orthanc::ErrorCode_BadRequest, "IIIF - Cannot locate the level of interest");
       }
-      else if (cropWidth > pyramid.GetTileWidth(level))
+      else if (static_cast<unsigned int>(cropWidth) > pyramid.GetTileWidth(level))
       {
         throw Orthanc::OrthancException(Orthanc::ErrorCode_BadRequest, "IIIF - Request for a cropping that is too large for the tile size");
       }
@@ -291,7 +291,7 @@ static void ServeIIIFImageTile(OrthancPluginRestOutput* output,
                                               regionX / GetPhysicalTileWidth(pyramid, level),
                                               regionY / GetPhysicalTileHeight(pyramid, level)));
 
-        if (cropWidth < pyramid.GetTileWidth(level))
+        if (static_cast<unsigned int>(cropWidth) < pyramid.GetTileWidth(level))
         {
           toCrop.reset(rawTile->Decode());
           rawTile.reset(NULL);
@@ -309,7 +309,7 @@ static void ServeIIIFImageTile(OrthancPluginRestOutput* output,
     else if (toCrop.get() != NULL)
     {
       assert(rawTile.get() == NULL);
-      assert(cropWidth < toCrop->GetWidth());
+      assert(static_cast<unsigned int>(cropWidth) < toCrop->GetWidth());
 
       Orthanc::ImageAccessor cropped;
       toCrop->GetRegion(cropped, 0, 0, cropWidth, toCrop->GetHeight());
@@ -360,12 +360,12 @@ static void ServeIIIFManifest(OrthancPluginRestOutput* output,
   const std::string base = iiifPublicUrl_ + seriesId;
 
   Json::Value service;
-  service["id"] = base;
+  service["id"] = iiifPublicUrl_ + "tiles/" + seriesId;
   service["profile"] = "level0";
   service["type"] = "ImageService3";
 
   Json::Value body;
-  body["id"] = base + "/full/max/0/default.jpg";
+  body["id"] = iiifPublicUrl_ + "tiles/" + seriesId + "/full/max/0/default.jpg";
   body["type"] = "Image";
   body["format"] = Orthanc::EnumerationToString(Orthanc::MimeType_Jpeg);
   body["height"] = height;
@@ -418,7 +418,7 @@ void InitializeIIIF(const std::string& iiifPublicUrl)
 {
   iiifPublicUrl_ = iiifPublicUrl;
 
-  OrthancPlugins::RegisterRestCallback<ServeIIIFImageInfo>("/wsi/iiif/([0-9a-f-]+)/info.json", true);
-  OrthancPlugins::RegisterRestCallback<ServeIIIFImageTile>("/wsi/iiif/([0-9a-f-]+)/([0-9a-z,:]+)/([0-9a-z,!:]+)/([0-9,!]+)/([a-z]+)\\.([a-z]+)", true);
+  OrthancPlugins::RegisterRestCallback<ServeIIIFTiledImageInfo>("/wsi/iiif/tiles/([0-9a-f-]+)/info.json", true);
+  OrthancPlugins::RegisterRestCallback<ServeIIIFTiledImageTile>("/wsi/iiif/tiles/([0-9a-f-]+)/([0-9a-z,:]+)/([0-9a-z,!:]+)/([0-9,!]+)/([a-z]+)\\.([a-z]+)", true);
   OrthancPlugins::RegisterRestCallback<ServeIIIFManifest>("/wsi/iiif/([0-9a-f-]+)/manifest.json", true);
 }
