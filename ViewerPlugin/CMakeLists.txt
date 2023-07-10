@@ -183,6 +183,7 @@ EmbedResources(
 
 set(ORTHANC_WSI_SOURCES
   DicomPyramidCache.cpp
+  IIIF.cpp
   OrthancPluginConnection.cpp
   Plugin.cpp
   RawTile.cpp

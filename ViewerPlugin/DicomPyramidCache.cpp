@@ -23,9 +23,14 @@
 #include "../Framework/PrecompiledHeadersWSI.h"
 #include "DicomPyramidCache.h"
 
+#include "OrthancPluginConnection.h"
+
 #include <Compatibility.h>  // For std::unique_ptr
 
 #include <cassert>
+
+static std::unique_ptr<OrthancWSI::DicomPyramidCache>  singleton_;
+
 
 namespace OrthancWSI
 {
@@ -67,8 +72,9 @@ namespace OrthancWSI
     // time-consuming operation, we don't want it to block other clients)
     lock.unlock();
 
+    assert(orthanc_.get() != NULL);
     std::unique_ptr<DicomPyramid> pyramid
-      (new DicomPyramid(orthanc_, seriesId, true /* use metadata cache */));
+      (new DicomPyramid(*orthanc_, seriesId, true /* use metadata cache */));
 
     {
       // The pyramid is constructed: Store it into the cache
@@ -112,11 +118,15 @@ namespace OrthancWSI
   }
 
 
-  DicomPyramidCache::DicomPyramidCache(OrthancStone::IOrthancConnection& orthanc,
+  DicomPyramidCache::DicomPyramidCache(OrthancStone::IOrthancConnection* orthanc /* takes ownership */,
                                        size_t maxSize) :
     orthanc_(orthanc),
     maxSize_(maxSize)
   {
+    if (orthanc == NULL)
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_NullPointer);
+    }
   }
 
 
@@ -131,6 +141,45 @@ namespace OrthancWSI
       {
         delete pyramid;
       }        
+    }
+  }
+
+
+  void DicomPyramidCache::InitializeInstance(size_t maxSize)
+  {
+    if (singleton_.get() == NULL)
+    {
+      singleton_.reset(new DicomPyramidCache(new OrthancWSI::OrthancPluginConnection, maxSize));
+    }
+    else
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
+    }
+  }
+
+
+  void DicomPyramidCache::FinalizeInstance()
+  {
+    if (singleton_.get() == NULL)
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
+    }
+    else
+    {
+      singleton_.reset(NULL);
+    }
+  }
+
+
+  DicomPyramidCache& DicomPyramidCache::GetInstance()
+  {
+    if (singleton_.get() == NULL)
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
+    }
+    else
+    {
+      return *singleton_;
     }
   }
 
@@ -151,10 +200,10 @@ namespace OrthancWSI
   }
 
 
-  DicomPyramidCache::Locker::Locker(DicomPyramidCache& cache,
-                                    const std::string& seriesId) :
-    lock_(cache.mutex_),
-    pyramid_(cache.GetPyramid(seriesId, lock_))
+  DicomPyramidCache::Locker::Locker(const std::string& seriesId) :
+    cache_(DicomPyramidCache::GetInstance()),
+    lock_(cache_.mutex_),
+    pyramid_(cache_.GetPyramid(seriesId, lock_))
   {
   }
 }

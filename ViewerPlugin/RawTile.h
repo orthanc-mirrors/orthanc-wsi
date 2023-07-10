@@ -28,40 +28,43 @@
 #include <orthanc/OrthancCPlugin.h>
 
 
-class RawTile : public boost::noncopyable
+namespace OrthancWSI
 {
-private:
-  Orthanc::PixelFormat               format_;
-  unsigned int                       tileWidth_;
-  unsigned int                       tileHeight_;
-  Orthanc::PhotometricInterpretation photometric_;
-  std::string                        tile_;
-  OrthancWSI::ImageCompression       compression_;
+  class RawTile : public boost::noncopyable
+  {
+  private:
+    Orthanc::PixelFormat               format_;
+    unsigned int                       tileWidth_;
+    unsigned int                       tileHeight_;
+    Orthanc::PhotometricInterpretation photometric_;
+    std::string                        tile_;
+    ImageCompression                   compression_;
 
-  Orthanc::ImageAccessor* DecodeInternal();
+    Orthanc::ImageAccessor* DecodeInternal();
 
-  static void EncodeInternal(std::string& encoded,
-                             const Orthanc::ImageAccessor& decoded,
-                             Orthanc::MimeType transcodingType);
+    static void EncodeInternal(std::string& encoded,
+                               const Orthanc::ImageAccessor& decoded,
+                               Orthanc::MimeType transcodingType);
 
-public:
-  RawTile(OrthancWSI::ITiledPyramid& pyramid,
-          unsigned int level,
-          unsigned int tileX,
-          unsigned int tileY);
+  public:
+    RawTile(ITiledPyramid& pyramid,
+            unsigned int level,
+            unsigned int tileX,
+            unsigned int tileY);
 
-  void Answer(OrthancPluginRestOutput* output,
-              Orthanc::MimeType transcodingType);
+    void Answer(OrthancPluginRestOutput* output,
+                Orthanc::MimeType transcodingType);
 
-  Orthanc::ImageAccessor* Decode();
+    Orthanc::ImageAccessor* Decode();
 
-  static void Encode(std::string& encoded,
-                     const Orthanc::ImageAccessor& decoded,
-                     Orthanc::MimeType transcodingType);
+    static void Encode(std::string& encoded,
+                       const Orthanc::ImageAccessor& decoded,
+                       Orthanc::MimeType transcodingType);
 
-  // This semaphore is used to implement throttling for the
-  // decoding/encoding of tiles
-  static void InitializeTranscoderSemaphore(unsigned int maxThreads);
+    // This semaphore is used to implement throttling for the
+    // decoding/encoding of tiles
+    static void InitializeTranscoderSemaphore(unsigned int maxThreads);
 
-  static void FinalizeTranscoderSemaphore();
-};
+    static void FinalizeTranscoderSemaphore();
+  };
+}

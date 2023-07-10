@@ -37,150 +37,153 @@
 
 static std::unique_ptr<Orthanc::Semaphore>  transcoderSemaphore_;
 
-Orthanc::ImageAccessor* RawTile::DecodeInternal()
+namespace OrthancWSI
 {
-  switch (compression_)
+  Orthanc::ImageAccessor* RawTile::DecodeInternal()
   {
-    case OrthancWSI::ImageCompression_Jpeg:
+    switch (compression_)
     {
-      std::unique_ptr<Orthanc::JpegReader> decoded(new Orthanc::JpegReader);
-      decoded->ReadFromMemory(tile_);
-      return decoded.release();
-    }
-
-    case OrthancWSI::ImageCompression_Jpeg2000:
-    {
-      std::unique_ptr<OrthancWSI::Jpeg2000Reader> decoded(new OrthancWSI::Jpeg2000Reader);
-      decoded->ReadFromMemory(tile_);
-
-      if (photometric_ == Orthanc::PhotometricInterpretation_YBR_ICT)
+      case ImageCompression_Jpeg:
       {
-        OrthancWSI::ImageToolbox::ConvertJpegYCbCrToRgb(*decoded);
+        std::unique_ptr<Orthanc::JpegReader> decoded(new Orthanc::JpegReader);
+        decoded->ReadFromMemory(tile_);
+        return decoded.release();
       }
 
-      return decoded.release();
-    }
-
-    case OrthancWSI::ImageCompression_None:
-    {
-      unsigned int bpp = Orthanc::GetBytesPerPixel(format_);
-      if (bpp * tileWidth_ * tileHeight_ != tile_.size())
+      case ImageCompression_Jpeg2000:
       {
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
+        std::unique_ptr<Jpeg2000Reader> decoded(new Jpeg2000Reader);
+        decoded->ReadFromMemory(tile_);
+
+        if (photometric_ == Orthanc::PhotometricInterpretation_YBR_ICT)
+        {
+          ImageToolbox::ConvertJpegYCbCrToRgb(*decoded);
+        }
+
+        return decoded.release();
       }
 
-      std::unique_ptr<Orthanc::ImageAccessor> decoded(new Orthanc::ImageAccessor);
-      decoded->AssignReadOnly(format_, tileWidth_, tileHeight_, bpp * tileWidth_, tile_.c_str());
+      case ImageCompression_None:
+      {
+        unsigned int bpp = Orthanc::GetBytesPerPixel(format_);
+        if (bpp * tileWidth_ * tileHeight_ != tile_.size())
+        {
+          throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
+        }
 
-      return decoded.release();
+        std::unique_ptr<Orthanc::ImageAccessor> decoded(new Orthanc::ImageAccessor);
+        decoded->AssignReadOnly(format_, tileWidth_, tileHeight_, bpp * tileWidth_, tile_.c_str());
+
+        return decoded.release();
+      }
+
+      default:
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
     }
-
-    default:
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
   }
-}
 
 
-void RawTile::EncodeInternal(std::string& encoded,
-                             const Orthanc::ImageAccessor& decoded,
-                             Orthanc::MimeType transcodingType)
-{
-  switch (transcodingType)
+  void RawTile::EncodeInternal(std::string& encoded,
+                               const Orthanc::ImageAccessor& decoded,
+                               Orthanc::MimeType transcodingType)
   {
-    case Orthanc::MimeType_Png:
+    switch (transcodingType)
     {
-      Orthanc::PngWriter writer;
-      Orthanc::IImageWriter::WriteToMemory(writer, encoded, decoded);
-      break;
-    }
+      case Orthanc::MimeType_Png:
+      {
+        Orthanc::PngWriter writer;
+        Orthanc::IImageWriter::WriteToMemory(writer, encoded, decoded);
+        break;
+      }
 
-    case Orthanc::MimeType_Jpeg:
+      case Orthanc::MimeType_Jpeg:
+      {
+        Orthanc::JpegWriter writer;
+        Orthanc::IImageWriter::WriteToMemory(writer, encoded, decoded);
+        break;
+      }
+
+      default:
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
+    }
+  }
+
+
+  RawTile::RawTile(ITiledPyramid& pyramid,
+                   unsigned int level,
+                   unsigned int tileX,
+                   unsigned int tileY) :
+    format_(pyramid.GetPixelFormat()),
+    tileWidth_(pyramid.GetTileWidth(level)),
+    tileHeight_(pyramid.GetTileHeight(level)),
+    photometric_(pyramid.GetPhotometricInterpretation())
+  {
+    if (!pyramid.ReadRawTile(tile_, compression_, level, tileX, tileY))
     {
-      Orthanc::JpegWriter writer;
-      Orthanc::IImageWriter::WriteToMemory(writer, encoded, decoded);
-      break;
+      // Handling of missing tile (for sparse tiling): TODO parameter?
+      // AnswerSparseTile(output, tileWidth, tileHeight); return;
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
     }
-
-    default:
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
   }
-}
 
 
-RawTile::RawTile(OrthancWSI::ITiledPyramid& pyramid,
-                 unsigned int level,
-                 unsigned int tileX,
-                 unsigned int tileY) :
-  format_(pyramid.GetPixelFormat()),
-  tileWidth_(pyramid.GetTileWidth(level)),
-  tileHeight_(pyramid.GetTileHeight(level)),
-  photometric_(pyramid.GetPhotometricInterpretation())
-{
-  if (!pyramid.ReadRawTile(tile_, compression_, level, tileX, tileY))
+  void RawTile::Answer(OrthancPluginRestOutput* output,
+                       Orthanc::MimeType transcodingType)
   {
-    // Handling of missing tile (for sparse tiling): TODO parameter?
-    // AnswerSparseTile(output, tileWidth, tileHeight); return;
-    throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
-  }
-}
-
-
-void RawTile::Answer(OrthancPluginRestOutput* output,
-                     Orthanc::MimeType transcodingType)
-{
-  if (compression_ == OrthancWSI::ImageCompression_Jpeg)
-  {
-    // The tile is already a JPEG image. In such a case, we can
-    // serve it as such, because any Web browser can handle JPEG.
-    OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, tile_.c_str(),
-                              tile_.size(), Orthanc::EnumerationToString(Orthanc::MimeType_Jpeg));
-  }
-  else
-  {
-    // This is a lossless frame (coming from a JPEG2000 or an
-    // uncompressed DICOM instance), which is not a DICOM-JPEG
-    // instance. We need to decompress the raw tile, then transcode
-    // it to the PNG/JPEG, depending on the "transcodingType".
-
-    std::string transcoded;
-
+    if (compression_ == ImageCompression_Jpeg)
     {
-      // The semaphore is used to throttle the number of simultaneous computations
-      Orthanc::Semaphore::Locker locker(*transcoderSemaphore_);
-
-      std::unique_ptr<Orthanc::ImageAccessor> decoded(DecodeInternal());
-      EncodeInternal(transcoded, *decoded, transcodingType);
+      // The tile is already a JPEG image. In such a case, we can
+      // serve it as such, because any Web browser can handle JPEG.
+      OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, tile_.c_str(),
+                                tile_.size(), Orthanc::EnumerationToString(Orthanc::MimeType_Jpeg));
     }
+    else
+    {
+      // This is a lossless frame (coming from a JPEG2000 or an
+      // uncompressed DICOM instance), which is not a DICOM-JPEG
+      // instance. We need to decompress the raw tile, then transcode
+      // it to the PNG/JPEG, depending on the "transcodingType".
 
-    OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, transcoded.c_str(),
-                              transcoded.size(), Orthanc::EnumerationToString(transcodingType));
+      std::string transcoded;
+
+      {
+        // The semaphore is used to throttle the number of simultaneous computations
+        Orthanc::Semaphore::Locker locker(*transcoderSemaphore_);
+
+        std::unique_ptr<Orthanc::ImageAccessor> decoded(DecodeInternal());
+        EncodeInternal(transcoded, *decoded, transcodingType);
+      }
+
+      OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, transcoded.c_str(),
+                                transcoded.size(), Orthanc::EnumerationToString(transcodingType));
+    }
   }
-}
 
 
-Orthanc::ImageAccessor* RawTile::Decode()
-{
-  Orthanc::Semaphore::Locker locker(*transcoderSemaphore_);
-  return DecodeInternal();
-}
+  Orthanc::ImageAccessor* RawTile::Decode()
+  {
+    Orthanc::Semaphore::Locker locker(*transcoderSemaphore_);
+    return DecodeInternal();
+  }
 
 
-void RawTile::Encode(std::string& encoded,
-                     const Orthanc::ImageAccessor& decoded,
-                     Orthanc::MimeType transcodingType)
-{
-  Orthanc::Semaphore::Locker locker(*transcoderSemaphore_);
-  EncodeInternal(encoded, decoded, transcodingType);
-}
+  void RawTile::Encode(std::string& encoded,
+                       const Orthanc::ImageAccessor& decoded,
+                       Orthanc::MimeType transcodingType)
+  {
+    Orthanc::Semaphore::Locker locker(*transcoderSemaphore_);
+    EncodeInternal(encoded, decoded, transcodingType);
+  }
 
 
-void RawTile::InitializeTranscoderSemaphore(unsigned int maxThreads)
-{
-  transcoderSemaphore_.reset(new Orthanc::Semaphore(maxThreads));
-}
+  void RawTile::InitializeTranscoderSemaphore(unsigned int maxThreads)
+  {
+    transcoderSemaphore_.reset(new Orthanc::Semaphore(maxThreads));
+  }
 
 
-void RawTile::FinalizeTranscoderSemaphore()
-{
-  transcoderSemaphore_.reset(NULL);
+  void RawTile::FinalizeTranscoderSemaphore()
+  {
+    transcoderSemaphore_.reset(NULL);
+  }
 }
