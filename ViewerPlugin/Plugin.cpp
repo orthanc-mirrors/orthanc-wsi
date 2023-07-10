@@ -417,19 +417,26 @@ void ServeIIIFImageInfo(OrthancPluginRestOutput* output,
   }
 
   Json::Value sizes = Json::arrayValue;
-  for (unsigned int i = locker.GetPyramid().GetLevelCount(); i > 0; i--)
-  {
-    Json::Value level;
-    level["width"] = locker.GetPyramid().GetLevelWidth(i - 1);
-    level["height"] = locker.GetPyramid().GetLevelHeight(i - 1);
-    sizes.append(level);
-  }
-
   Json::Value scaleFactors = Json::arrayValue;
+
   for (unsigned int i = locker.GetPyramid().GetLevelCount(); i > 0; i--)
   {
-    scaleFactors.append(static_cast<float>(locker.GetPyramid().GetLevelWidth(0)) /
-                        static_cast<float>(locker.GetPyramid().GetLevelWidth(i - 1)));
+    /**
+     * Openseadragon seems to have difficulties in rendering
+     * non-integer scale factors. Consequently, we only keep the
+     * levels with an integer scale factor.
+     **/
+    if (locker.GetPyramid().GetLevelWidth(0) % locker.GetPyramid().GetLevelWidth(i - 1) == 0 &&
+        locker.GetPyramid().GetLevelHeight(0) % locker.GetPyramid().GetLevelHeight(i - 1) == 0)
+    {
+      Json::Value level;
+      level["width"] = locker.GetPyramid().GetLevelWidth(i - 1);
+      level["height"] = locker.GetPyramid().GetLevelHeight(i - 1);
+      sizes.append(level);
+
+      scaleFactors.append(static_cast<float>(locker.GetPyramid().GetLevelWidth(0)) /
+                          static_cast<float>(locker.GetPyramid().GetLevelWidth(i - 1)));
+    }
   }
 
   Json::Value tiles;
@@ -609,20 +616,21 @@ void ServeIIIFImageTile(OrthancPluginRestOutput* output,
         if (regionX % physicalTileWidth == 0 &&
             regionY % physicalTileHeight == 0 &&
             regionWidth <= physicalTileWidth &&
-            regionHeight <= physicalTileHeight)
+            regionHeight <= physicalTileHeight &&
+            regionX + regionWidth <= pyramid.GetLevelWidth(0) &&
+            regionY + regionHeight <= pyramid.GetLevelHeight(0))
         {
           break;
         }
       }
 
-      if (cropWidth > pyramid.GetTileWidth(level))
-      {
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_BadRequest, "IIIF - Request for a cropping that is too large for the tile size");
-      }
-
       if (level == pyramid.GetLevelCount())
       {
         throw Orthanc::OrthancException(Orthanc::ErrorCode_BadRequest, "IIIF - Cannot locate the level of interest");
+      }
+      else if (cropWidth > pyramid.GetTileWidth(level))
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_BadRequest, "IIIF - Request for a cropping that is too large for the tile size");
       }
       else
       {
