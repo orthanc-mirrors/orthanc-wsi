@@ -24,6 +24,7 @@ $('#series').live('pagebeforeshow', function() {
   var seriesId = $.mobile.pageData.uuid;
 
   $('#wsi-button').remove();
+  $('#mirador-button').remove();
 
   // Test whether this is a whole-slide image by check the SOP Class
   // UID of one instance of the series
@@ -50,6 +51,24 @@ $('#series').live('pagebeforeshow', function() {
           }
         });
 
+      }
+
+      if (${SERVE_MIRADOR}) {
+        var b = $('<a>')
+            .attr('id', 'mirador-button')
+            .attr('data-role', 'button')
+            .attr('href', '#')
+            .attr('data-icon', 'search')
+            .attr('data-theme', 'e')
+            .text('Open IIIF in Mirador')
+            .button();
+
+        b.insertAfter($('#series-info'));
+        b.click(function() {
+          if ($.mobile.pageData) {
+            window.open('../wsi/app/mirador.html?iiif-content=../iiif/' + seriesId + '/manifest.json');
+          }
+        });
       }
     });
   });

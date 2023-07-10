@@ -173,6 +173,7 @@ EmbedResources(
   ORTHANC_EXPLORER  ${CMAKE_SOURCE_DIR}/OrthancExplorer.js
   VIEWER_HTML       ${CMAKE_SOURCE_DIR}/viewer.html
   VIEWER_JS         ${CMAKE_SOURCE_DIR}/viewer.js
+  MIRADOR_HTML      ${CMAKE_SOURCE_DIR}/mirador.html
   )
 
 

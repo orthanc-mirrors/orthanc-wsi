@@ -216,6 +216,11 @@ void ServeFile(OrthancPluginRestOutput* output,
     resource = Orthanc::EmbeddedResources::OPENLAYERS_CSS;
     mime = "text/css";
   }
+  else if (f == "mirador.html")
+  {
+    resource = Orthanc::EmbeddedResources::MIRADOR_HTML;
+    mime = "text/html";
+  }
   else
   {
     throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
@@ -283,6 +288,13 @@ extern "C"
     OrthancPlugins::RegisterRestCallback<ServePyramid>("/wsi/pyramids/([0-9a-f-]+)", true);
     OrthancPlugins::RegisterRestCallback<ServeTile>("/wsi/tiles/([0-9a-f-]+)/([0-9-]+)/([0-9-]+)/([0-9-]+)", true);
 
+    bool serveMirador = true;  // TODO => CONFIG
+
+    if (serveMirador)
+    {
+      OrthancPlugins::RegisterRestCallback<ServeFile>("/wsi/app/(mirador.html)", true);
+    }
+
     {
       // TODO => CONFIG
       std::string url = "http://localhost:8042/wsi/iiif";
@@ -296,10 +308,18 @@ extern "C"
       InitializeIIIF(url);
     }
 
-    // Extend the default Orthanc Explorer with custom JavaScript for WSI
-    std::string explorer;
-    Orthanc::EmbeddedResources::GetFileResource(explorer, Orthanc::EmbeddedResources::ORTHANC_EXPLORER);
-    OrthancPluginExtendOrthancExplorer(OrthancPlugins::GetGlobalContext(), explorer.c_str());
+    {
+      // Extend the default Orthanc Explorer with custom JavaScript for WSI
+
+      std::string explorer;
+      Orthanc::EmbeddedResources::GetFileResource(explorer, Orthanc::EmbeddedResources::ORTHANC_EXPLORER);
+
+      std::map<std::string, std::string> dictionary;
+      dictionary["SERVE_MIRADOR"] = (serveMirador ? "true" : "false");
+      explorer = Orthanc::Toolbox::SubstituteVariables(explorer, dictionary);
+
+      OrthancPluginExtendOrthancExplorer(OrthancPlugins::GetGlobalContext(), explorer.c_str());
+    }
 
     return 0;
   }
