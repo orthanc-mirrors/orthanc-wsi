@@ -160,7 +160,7 @@ namespace OrthancWSI
     FullOrthancDataset dataset(orthanc, "/instances/" + instanceId + "/tags");
     DicomDatasetReader reader(dataset);
 
-    if (reader.GetMandatoryStringValue(Orthanc::DicomPath(Orthanc::DICOM_TAG_SOP_CLASS_UID)) != "1.2.840.10008.5.1.4.1.1.77.1.6" ||
+    if (reader.GetMandatoryStringValue(Orthanc::DicomPath(Orthanc::DICOM_TAG_SOP_CLASS_UID)) != VL_WHOLE_SLIDE_MICROSCOPY_IMAGE_STORAGE_IOD ||
         reader.GetMandatoryStringValue(Orthanc::DicomPath(Orthanc::DICOM_TAG_MODALITY)) != "SM")
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);

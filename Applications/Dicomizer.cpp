@@ -344,7 +344,7 @@ static DcmDataset* ParseDataset(const std::string& path)
   }
 
   // VL Whole Slide Microscopy Image IOD
-  OrthancWSI::DicomToolbox::SetStringTag(*dataset, DCM_SOPClassUID, "1.2.840.10008.5.1.4.1.1.77.1.6");
+  OrthancWSI::DicomToolbox::SetStringTag(*dataset, DCM_SOPClassUID, VL_WHOLE_SLIDE_MICROSCOPY_IMAGE_STORAGE_IOD);
 
   // Slide Microscopy
   OrthancWSI::DicomToolbox::SetStringTag(*dataset, DCM_Modality, "SM");  

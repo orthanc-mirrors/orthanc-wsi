@@ -24,8 +24,10 @@ $('#series').live('pagebeforeshow', function() {
   var seriesId = $.mobile.pageData.uuid;
 
   $('#mirador-button').remove();
-  $('#series-iiif').remove();
   $('#wsi-button').remove();
+
+  $('#series-iiif-button').remove();
+  $('#series-access').listview("refresh");
 
   // Test whether this is a whole-slide image by check the SOP Class
   // UID of one instance of the series
@@ -56,16 +58,16 @@ $('#series').live('pagebeforeshow', function() {
 
       if (${SERVE_IIIF}) {
         var b = $('<a>')
-            .attr('id', 'series-iiif-button')
             .attr('data-role', 'button')
             .attr('href', '#')
             .text('Copy link to IIIF manifest');
 
         var li = $('<li>')
+            .attr('id', 'series-iiif-button')
             .attr('data-icon', 'gear')
             .append(b);
 
-        $('#series-access').append(li);
+        $('#series-access').append(li).listview("refresh");
 
         b.click(function(e) {
           if ($.mobile.pageData) {

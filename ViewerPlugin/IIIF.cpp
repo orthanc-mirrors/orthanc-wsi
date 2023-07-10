@@ -30,6 +30,7 @@
 #include <Images/Image.h>
 #include <Images/ImageProcessing.h>
 #include <Logging.h>
+#include <SerializationToolbox.h>
 
 #include <boost/regex.hpp>
 #include <boost/math/special_functions/round.hpp>
@@ -135,8 +136,8 @@ static unsigned int GetPhysicalTileHeight(const OrthancWSI::ITiledPyramid& pyram
 
 
 static void ServeIIIFTiledImageTile(OrthancPluginRestOutput* output,
-                               const char* url,
-                               const OrthancPluginHttpRequest* request)
+                                    const char* url,
+                                    const OrthancPluginHttpRequest* request)
 {
   std::string seriesId(request->groups[0]);
   std::string region(request->groups[1]);
@@ -328,15 +329,62 @@ static void ServeIIIFTiledImageTile(OrthancPluginRestOutput* output,
 }
 
 
+static void AddCanvas(Json::Value& manifest,
+                      const std::string& seriesId,
+                      const std::string& imageService,
+                      unsigned int page,
+                      unsigned int width,
+                      unsigned int height,
+                      const std::string& description)
+{
+  const std::string base = iiifPublicUrl_ + seriesId;
+
+  Json::Value service;
+  service["id"] = iiifPublicUrl_ + imageService;
+  service["profile"] = "level0";
+  service["type"] = "ImageService3";
+
+  Json::Value body;
+  body["id"] = iiifPublicUrl_ + imageService + "/full/max/0/default.jpg";
+  body["type"] = "Image";
+  body["format"] = Orthanc::EnumerationToString(Orthanc::MimeType_Jpeg);
+  body["height"] = height;
+  body["width"] = width;
+  body["service"].append(service);
+
+  Json::Value annotation;
+  annotation["id"] = base + "/annotation/p" + boost::lexical_cast<std::string>(page) + "-image";
+  annotation["type"] = "Annotation";
+  annotation["motivation"] = "painting";
+  annotation["body"] = body;
+  annotation["target"] = base + "/canvas/p" + boost::lexical_cast<std::string>(page);
+
+  Json::Value annotationPage;
+  annotationPage["id"] = base + "/page/p" + boost::lexical_cast<std::string>(page) + "/1";
+  annotationPage["type"] = "AnnotationPage";
+  annotationPage["items"].append(annotation);
+
+  Json::Value canvas;
+  canvas["id"] = annotation["target"];
+  canvas["type"] = "Canvas";
+  canvas["width"] = width;
+  canvas["height"] = height;
+  canvas["label"]["en"].append(description);
+  canvas["items"].append(annotationPage);
+
+  manifest["items"].append(canvas);
+}
+
+
 static void ServeIIIFManifest(OrthancPluginRestOutput* output,
                               const char* url,
                               const OrthancPluginHttpRequest* request)
 {
-  /**
-   * This is based on IIIF cookbook: "Support Deep Viewing with Basic
-   * Use of a IIIF Image Service."
-   * https://iiif.io/api/cookbook/recipe/0005-image-service/
-   **/
+  static const char* const KEY_INSTANCES = "Instances";
+  static const char* const SOP_CLASS_UID = "0008,0016";
+  static const char* const SLICES_SHORT = "SlicesShort";
+  static const char* const ROWS = "0028,0010";
+  static const char* const COLUMNS = "0028,0011";
 
   std::string seriesId(request->groups[0]);
 
@@ -349,65 +397,112 @@ static void ServeIIIFManifest(OrthancPluginRestOutput* output,
     throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
   }
 
-  unsigned int width, height;
-
+  if (study.type() != Json::objectValue ||
+      series.type() != Json::objectValue ||
+      !series.isMember(KEY_INSTANCES) ||
+      series[KEY_INSTANCES].type() != Json::arrayValue ||
+      series[KEY_INSTANCES].size() == 0u ||
+      series[KEY_INSTANCES][0].type() != Json::stringValue)
   {
-    OrthancWSI::DicomPyramidCache::Locker locker(seriesId);
-    width = locker.GetPyramid().GetLevelWidth(0);
-    height = locker.GetPyramid().GetLevelHeight(0);
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
   }
 
+  Json::Value oneInstance;
+  if (!OrthancPlugins::RestApiGet(oneInstance, "/instances/" + series[KEY_INSTANCES][0].asString() + "/tags?short", false) ||
+      oneInstance.type() != Json::objectValue ||
+      !oneInstance.isMember(SOP_CLASS_UID) ||
+      oneInstance[SOP_CLASS_UID].type() != Json::stringValue)
+  {
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
+  }
+
+  const std::string sopClassUid = Orthanc::Toolbox::StripSpaces(oneInstance[SOP_CLASS_UID].asString());
+
   const std::string base = iiifPublicUrl_ + seriesId;
-
-  Json::Value service;
-  service["id"] = iiifPublicUrl_ + "tiles/" + seriesId;
-  service["profile"] = "level0";
-  service["type"] = "ImageService3";
-
-  Json::Value body;
-  body["id"] = iiifPublicUrl_ + "tiles/" + seriesId + "/full/max/0/default.jpg";
-  body["type"] = "Image";
-  body["format"] = Orthanc::EnumerationToString(Orthanc::MimeType_Jpeg);
-  body["height"] = height;
-  body["width"] = width;
-  body["service"].append(service);
-
-  Json::Value annotation;
-  annotation["id"] = base + "/annotation/p0001-image";
-  annotation["type"] = "Annotation";
-  annotation["motivation"] = "painting";
-  annotation["body"] = body;
-  annotation["target"] = base + "/canvas/p1";
-
-  Json::Value annotationPage;
-  annotationPage["id"] = base + "/page/p1/1";
-  annotationPage["type"] = "AnnotationPage";
-  annotationPage["items"].append(annotation);
-
-  Json::Value canvas;
-  canvas["id"] = annotation["target"];
-  canvas["type"] = "Canvas";
-  canvas["width"] = width;
-  canvas["height"] = height;
-
-  Json::Value labels = Json::arrayValue;
-  labels.append(series["MainDicomTags"]["SeriesDate"].asString() + " - " +
-                series["MainDicomTags"]["SeriesDescription"].asString());
-  canvas["label"]["en"] = labels;
-
-  canvas["items"].append(annotationPage);
 
   Json::Value manifest;
   manifest["@context"] = "http://iiif.io/api/presentation/3/context.json";
   manifest["id"] = base + "/manifest.json";
   manifest["type"] = "Manifest";
+  manifest["label"]["en"].append(study["MainDicomTags"]["StudyDate"].asString() + " - " +
+                                 study["MainDicomTags"]["StudyDescription"].asString());
 
-  labels = Json::arrayValue;
-  labels.append(study["MainDicomTags"]["StudyDate"].asString() + " - " +
-                study["MainDicomTags"]["StudyDescription"].asString());
-  manifest["label"]["en"] = labels;
+  if (sopClassUid == OrthancWSI::VL_WHOLE_SLIDE_MICROSCOPY_IMAGE_STORAGE_IOD)
+  {
+    /**
+     * This is based on IIIF cookbook: "Support Deep Viewing with Basic
+     * Use of a IIIF Image Service."
+     * https://iiif.io/api/cookbook/recipe/0005-image-service/
+     **/
+    unsigned int width, height;
 
-  manifest["items"].append(canvas);
+    {
+      OrthancWSI::DicomPyramidCache::Locker locker(seriesId);
+      width = locker.GetPyramid().GetLevelWidth(0);
+      height = locker.GetPyramid().GetLevelHeight(0);
+    }
+
+    const std::string description = (series["MainDicomTags"]["SeriesDate"].asString() + " - " +
+                                     series["MainDicomTags"]["SeriesDescription"].asString());
+
+    AddCanvas(manifest, seriesId, "tiles/" + seriesId, 1, width, height, description);
+  }
+  else
+  {
+    /**
+     * This is based on IIIF cookbook: "Simple Manifest - Book"
+     * https://iiif.io/api/cookbook/recipe/0009-book-1/
+     **/
+
+    uint32_t width, height;
+    if (!oneInstance.isMember(COLUMNS) ||
+        !oneInstance.isMember(ROWS) ||
+        oneInstance[COLUMNS].type() != Json::stringValue ||
+        oneInstance[ROWS].type() != Json::stringValue ||
+        !Orthanc::SerializationToolbox::ParseFirstUnsignedInteger32(width, oneInstance[COLUMNS].asString()) ||
+        !Orthanc::SerializationToolbox::ParseFirstUnsignedInteger32(height, oneInstance[ROWS].asString()))
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
+    }
+
+    Json::Value orderedSlices;
+    if (!OrthancPlugins::RestApiGet(orderedSlices, "/series/" + seriesId + "/ordered-slices", false))
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
+    }
+
+    if (orderedSlices.type() != Json::objectValue ||
+        !orderedSlices.isMember(SLICES_SHORT) ||
+        orderedSlices[SLICES_SHORT].type() != Json::arrayValue)
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+    }
+
+    const Json::Value& slicesShort = orderedSlices[SLICES_SHORT];
+
+    unsigned int page = 1;
+    for (Json::ArrayIndex instance = 0; instance < slicesShort.size(); instance++)
+    {
+      if (slicesShort[instance].type() != Json::arrayValue ||
+          slicesShort[instance].size() != 3u ||
+          slicesShort[instance][0].type() != Json::stringValue ||
+          slicesShort[instance][1].type() != Json::intValue ||
+          slicesShort[instance][2].type() != Json::intValue)
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+      }
+
+      const std::string instanceId = slicesShort[instance][0].asString();
+      const unsigned int start = slicesShort[instance][1].asUInt();
+      const unsigned int count = slicesShort[instance][2].asUInt();
+
+      for (unsigned int frame = start; frame < start + count; frame++, page++)
+      {
+        const std::string description = "Page " + boost::lexical_cast<std::string>(page);
+        AddCanvas(manifest, instanceId, "instances/" + instanceId, page, width, height, description);
+      }
+    }
+  }
 
   std::string s = manifest.toStyledString();
   OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, s.c_str(), s.size(), "application/json");
