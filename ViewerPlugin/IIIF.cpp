@@ -43,9 +43,9 @@ static std::string  iiifPublicUrl_;
 static bool         iiifForcePowersOfTwoScaleFactors_ = false;
 
 
-static void ServeIIIFTiledImageInfo(OrthancPluginRestOutput* output,
-                                    const char* url,
-                                    const OrthancPluginHttpRequest* request)
+void ServeIIIFTiledImageInfo(OrthancPluginRestOutput* output,
+                             const char* url,
+                             const OrthancPluginHttpRequest* request)
 {
   const std::string seriesId(request->groups[0]);
 
@@ -168,9 +168,9 @@ static unsigned int GetPhysicalTileHeight(const OrthancWSI::ITiledPyramid& pyram
 }
 
 
-static void ServeIIIFTiledImageTile(OrthancPluginRestOutput* output,
-                                    const char* url,
-                                    const OrthancPluginHttpRequest* request)
+void ServeIIIFTiledImageTile(OrthancPluginRestOutput* output,
+                             const char* url,
+                             const OrthancPluginHttpRequest* request)
 {
   const std::string seriesId(request->groups[0]);
   const std::string region(request->groups[1]);
@@ -405,9 +405,9 @@ static void AddCanvas(Json::Value& manifest,
 }
 
 
-static void ServeIIIFManifest(OrthancPluginRestOutput* output,
-                              const char* url,
-                              const OrthancPluginHttpRequest* request)
+void ServeIIIFManifest(OrthancPluginRestOutput* output,
+                       const char* url,
+                       const OrthancPluginHttpRequest* request)
 {
   static const char* const KEY_INSTANCES = "Instances";
   static const char* const SOP_CLASS_UID = "0008,0016";
@@ -537,9 +537,9 @@ static void ServeIIIFManifest(OrthancPluginRestOutput* output,
 }
 
 
-static void ServeIIIFFrameInfo(OrthancPluginRestOutput* output,
-                               const char* url,
-                               const OrthancPluginHttpRequest* request)
+void ServeIIIFFrameInfo(OrthancPluginRestOutput* output,
+                        const char* url,
+                        const OrthancPluginHttpRequest* request)
 {
   const std::string instanceId(request->groups[0]);
   const std::string frame(request->groups[1]);
@@ -584,9 +584,9 @@ static void ServeIIIFFrameInfo(OrthancPluginRestOutput* output,
 }
 
 
-static void ServeIIIFFrameImage(OrthancPluginRestOutput* output,
-                               const char* url,
-                               const OrthancPluginHttpRequest* request)
+void ServeIIIFFrameImage(OrthancPluginRestOutput* output,
+                         const char* url,
+                         const OrthancPluginHttpRequest* request)
 {
   const std::string instanceId(request->groups[0]);
   const std::string frame(request->groups[1]);
