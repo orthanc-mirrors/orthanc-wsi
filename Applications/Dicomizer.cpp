@@ -1084,11 +1084,13 @@ OrthancWSI::ITiledPyramid* OpenInputPyramid(OrthancWSI::ImageCompression& source
       if (!volume.HasWidth())
       {
         volume.SetWidth(volumeWidth);
+        LOG(WARNING) << "Width of the imaged volume extracted using OpenSlide: " << volumeWidth << "mm";
       }
 
       if (!volume.HasHeight())
       {
         volume.SetHeight(volumeHeight);
+        LOG(WARNING) << "Height of the imaged volume extracted using OpenSlide: " << volumeHeight << "mm";
       }
     }
 
