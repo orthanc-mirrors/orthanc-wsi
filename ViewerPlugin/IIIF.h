@@ -25,3 +25,10 @@
 #include <string>
 
 void InitializeIIIF(const std::string& iiifPublicUrl);
+
+/**
+ * Filter pyramids whose level sizes don't follow a powers-of-two
+ * pattern. This can be used to bypass issue 2379 on OpenSeadragon <=
+ * 4.1: https://github.com/openseadragon/openseadragon/issues/2379
+ **/
+void SetIIIFForcePowersOfTwoScaleFactors(bool force);

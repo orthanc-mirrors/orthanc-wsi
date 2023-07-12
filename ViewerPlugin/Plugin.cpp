@@ -310,6 +310,7 @@ extern "C"
       }
 
       InitializeIIIF(iiifPublicUrl);
+      SetIIIFForcePowersOfTwoScaleFactors(true);  // TODO => CONFIG
 
       serveMirador = true;  // TODO => CONFIG
       serveOpenSeadragon = true;  // TODO => CONFIG

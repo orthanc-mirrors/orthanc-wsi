@@ -40,6 +40,7 @@ static const char* const COLUMNS = "0028,0011";
 
 
 static std::string  iiifPublicUrl_;
+static bool         iiifForcePowersOfTwoScaleFactors_ = false;
 
 
 static void ServeIIIFTiledImageInfo(OrthancPluginRestOutput* output,
@@ -77,7 +78,9 @@ static void ServeIIIFTiledImageInfo(OrthancPluginRestOutput* output,
   Json::Value sizes = Json::arrayValue;
   Json::Value scaleFactors = Json::arrayValue;
 
-  for (unsigned int i = pyramid.GetLevelCount(); i > 0; i--)
+  unsigned int power = 1;
+
+  for (unsigned int i = 0; i < pyramid.GetLevelCount(); i++)
   {
     /**
      * According to the IIIF Image API 3.0 specification,
@@ -90,16 +93,28 @@ static void ServeIIIFTiledImageInfo(OrthancPluginRestOutput* output,
      * width/height of the image is divisible by the width/height of
      * the level.
      **/
-    if (pyramid.GetLevelWidth(0) % pyramid.GetLevelWidth(i - 1) == 0 &&
-        pyramid.GetLevelHeight(0) % pyramid.GetLevelHeight(i - 1) == 0)
+    if (pyramid.GetLevelWidth(0) % pyramid.GetLevelWidth(i) == 0 &&
+        pyramid.GetLevelHeight(0) % pyramid.GetLevelHeight(i) == 0)
     {
-      Json::Value level;
-      level["width"] = pyramid.GetLevelWidth(i - 1);
-      level["height"] = pyramid.GetLevelHeight(i - 1);
-      sizes.append(level);
+      unsigned int scaleFactor = pyramid.GetLevelWidth(0) / pyramid.GetLevelWidth(i);
 
-      scaleFactors.append(pyramid.GetLevelWidth(0) /
-                          pyramid.GetLevelWidth(i - 1));
+      if (!iiifForcePowersOfTwoScaleFactors_ ||
+          scaleFactor == power)
+      {
+        Json::Value level;
+        level["width"] = pyramid.GetLevelWidth(i);
+        level["height"] = pyramid.GetLevelHeight(i);
+        sizes.append(level);
+
+        scaleFactors.append(scaleFactor);
+
+        power *= 2;
+      }
+      else
+      {
+        LOG(WARNING) << "IIIF - Dropping level " << i << " of series " << seriesId
+                     << ", as it doesn't follow the powers-of-two pattern";
+      }
     }
     else
     {
@@ -107,7 +122,7 @@ static void ServeIIIFTiledImageInfo(OrthancPluginRestOutput* output,
                    << ", as the full width/height ("
                    << pyramid.GetLevelWidth(0) << "x" << pyramid.GetLevelHeight(0)
                    << ") of the image is not an integer multiple of the level width/height ("
-                   << pyramid.GetLevelWidth(i - 1) << "x" << pyramid.GetLevelHeight(i - 1) << ")";
+                   << pyramid.GetLevelWidth(i) << "x" << pyramid.GetLevelHeight(i) << ")";
     }
   }
 
@@ -234,7 +249,7 @@ static void ServeIIIFTiledImageTile(OrthancPluginRestOutput* output,
         !Orthanc::SerializationToolbox::ParseUnsignedInteger32(regionWidth, tokens[2]) ||
         !Orthanc::SerializationToolbox::ParseUnsignedInteger32(regionHeight, tokens[3]))
     {
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "IIIF - Not a (x,y,width,height) region, found: " + region);
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "IIIF - Invalid (x,y,width,height) region, found: " + region);
     }
 
     uint32_t cropWidth, cropHeight;
@@ -258,7 +273,7 @@ static void ServeIIIFTiledImageTile(OrthancPluginRestOutput* output,
 
     if (!ok)
     {
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "IIIF - Not a (width,height) crop, found: " + size);
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "IIIF - Invalid (width,height) crop, found: " + size);
     }
 
     std::unique_ptr<OrthancWSI::RawTile> rawTile;
@@ -601,4 +616,9 @@ void InitializeIIIF(const std::string& iiifPublicUrl)
   OrthancPlugins::RegisterRestCallback<ServeIIIFManifest>("/wsi/iiif/([0-9a-f-]+)/manifest.json", true);
   OrthancPlugins::RegisterRestCallback<ServeIIIFFrameInfo>("/wsi/iiif/frames/([0-9a-f-]+)/([0-9]+)/info.json", true);
   OrthancPlugins::RegisterRestCallback<ServeIIIFFrameImage>("/wsi/iiif/frames/([0-9a-f-]+)/([0-9]+)/full/max/0/default.jpg", true);
+}
+
+void SetIIIFForcePowersOfTwoScaleFactors(bool force)
+{
+  iiifForcePowersOfTwoScaleFactors_ = force;
 }
