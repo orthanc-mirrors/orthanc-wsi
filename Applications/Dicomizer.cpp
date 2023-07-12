@@ -643,10 +643,10 @@ static bool ParseParameters(int& exitStatus,
 
   boost::program_options::options_description volumeOptions("Description of the imaged volume");
   volumeOptions.add_options()
-    (OPTION_IMAGED_WIDTH, boost::program_options::value<float>()->default_value(15),
-     "Width of the specimen (in mm)")
-    (OPTION_IMAGED_HEIGHT, boost::program_options::value<float>()->default_value(15),
-     "Height of the specimen (in mm)")
+    (OPTION_IMAGED_WIDTH, boost::program_options::value<float>(),
+     "Width of the specimen (in mm), defaults to 15mm if missing")
+    (OPTION_IMAGED_HEIGHT, boost::program_options::value<float>(),
+     "Height of the specimen (in mm), defaults to 15mm if missing")
     (OPTION_IMAGED_DEPTH, boost::program_options::value<float>()->default_value(1),
      "Depth of the specimen (in mm)")
     (OPTION_OFFSET_X, boost::program_options::value<float>()->default_value(20), 
@@ -1010,6 +1010,7 @@ static bool ParseParameters(int& exitStatus,
 
 
 OrthancWSI::ITiledPyramid* OpenInputPyramid(OrthancWSI::ImageCompression& sourceCompression,
+                                            OrthancWSI::ImagedVolumeParameters& volume,
                                             const std::string& path,
                                             const OrthancWSI::DicomizerParameters& parameters)
 {
@@ -1072,9 +1073,26 @@ OrthancWSI::ITiledPyramid* OpenInputPyramid(OrthancWSI::ImageCompression& source
   {
     LOG(WARNING) << "Trying to open the input pyramid with OpenSlide";
     sourceCompression = OrthancWSI::ImageCompression_Unknown;
-    return new OrthancWSI::OpenSlidePyramid(path, 
-                                            parameters.GetTargetTileWidth(512), 
-                                            parameters.GetTargetTileHeight(512));
+
+    std::unique_ptr<OrthancWSI::OpenSlidePyramid> openslide(
+      new OrthancWSI::OpenSlidePyramid(path, parameters.GetTargetTileWidth(512),
+                                       parameters.GetTargetTileHeight(512)));
+
+    float volumeWidth, volumeHeight;
+    if (openslide->LookupImagedVolumeSize(volumeWidth, volumeHeight))
+    {
+      if (!volume.HasWidth())
+      {
+        volume.SetWidth(volumeWidth);
+      }
+
+      if (!volume.HasHeight())
+      {
+        volume.SetHeight(volumeHeight);
+      }
+    }
+
+    return openslide.release();
   }
   catch (Orthanc::OrthancException&)
   {
@@ -1101,7 +1119,7 @@ int main(int argc, char* argv[])
       OrthancWSI::ImageCompression sourceCompression;
       std::unique_ptr<OrthancWSI::ITiledPyramid> source;
 
-      source.reset(OpenInputPyramid(sourceCompression, parameters.GetInputFile(), parameters));
+      source.reset(OpenInputPyramid(sourceCompression, volume, parameters.GetInputFile(), parameters));
       if (source.get() == NULL)
       {
         throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);

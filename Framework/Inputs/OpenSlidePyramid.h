@@ -79,5 +79,8 @@ namespace OrthancWSI
     {
       return Orthanc::PhotometricInterpretation_RGB;
     }
+
+    bool LookupImagedVolumeSize(float& width,
+                                float& height) const;
   };
 }

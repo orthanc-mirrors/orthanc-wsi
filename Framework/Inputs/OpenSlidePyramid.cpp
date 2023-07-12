@@ -26,6 +26,7 @@
 #include <Compatibility.h>  // For std::unique_ptr
 #include <Images/ImageProcessing.h>
 #include <OrthancException.h>
+#include <SerializationToolbox.h>
 #include <Logging.h>
 
 #include <memory>
@@ -49,5 +50,29 @@ namespace OrthancWSI
     tileWidth_(tileWidth),
     tileHeight_(tileHeight)
   {
+  }
+
+
+  bool OpenSlidePyramid::LookupImagedVolumeSize(float& width,
+                                                float& height) const
+  {
+    std::string s;
+    double mppx;
+    double mppy;
+
+    if (image_.LookupProperty(s, "openslide.mpp-x") &&
+        Orthanc::SerializationToolbox::ParseDouble(mppx, s) &&
+        image_.LookupProperty(s, "openslide.mpp-y") &&
+        Orthanc::SerializationToolbox::ParseDouble(mppy, s))
+    {
+      // In the 2 lines below, remember to switch X/Y when going from physical to pixel coordinates!
+      width = mppy / 1000.0 * static_cast<double>(image_.GetLevelHeight(0));
+      height = mppx / 1000.0 * static_cast<double>(image_.GetLevelWidth(0));
+      return true;
+    }
+    else
+    {
+      return false;
+    }
   }
 }

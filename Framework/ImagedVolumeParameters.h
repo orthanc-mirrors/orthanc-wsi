@@ -27,6 +27,8 @@ namespace OrthancWSI
   class ImagedVolumeParameters
   {
   private:
+    bool   hasWidth_;
+    bool   hasHeight_;
     float  width_;
     float  height_;
     float  depth_;
@@ -36,15 +38,19 @@ namespace OrthancWSI
   public:
     ImagedVolumeParameters();
 
-    float GetWidth() const
+    bool HasWidth() const
     {
-      return width_;
+      return hasWidth_;
+    }
+
+    bool HasHeight() const
+    {
+      return hasHeight_;
     }
     
-    float GetHeight() const
-    {
-      return height_;
-    }
+    float GetWidth() const;
+
+    float GetHeight() const;
     
     float GetDepth() const
     {
