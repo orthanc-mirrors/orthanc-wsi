@@ -27,14 +27,40 @@
 
 namespace OrthancWSI
 {
-  ImagedVolumeParameters::ImagedVolumeParameters()
+  ImagedVolumeParameters::ImagedVolumeParameters() :
+    hasWidth_(false),
+    hasHeight_(false)
   {
-    // Typical parameters of a specimen millimeters
-    width_ = 15;
-    height_ = 15;
+    // Typical parameters for a specimen, in millimeters
     depth_ = 1;
     offsetX_ = 20;
     offsetY_ = 40;
+  }
+
+
+  float ImagedVolumeParameters::GetWidth() const
+  {
+    if (hasWidth_)
+    {
+      return width_;
+    }
+    else
+    {
+      return 15;  // Typical width of a specimen
+    }
+  }
+
+
+  float ImagedVolumeParameters::GetHeight() const
+  {
+    if (hasHeight_)
+    {
+      return height_;
+    }
+    else
+    {
+      return 15;  // Typical height of a specimen
+    }
   }
 
 
@@ -44,8 +70,11 @@ namespace OrthancWSI
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
     }
-
-    width_ = width;
+    else
+    {
+      width_ = width;
+      hasWidth_ = true;
+    }
   }
     
 
@@ -55,8 +84,11 @@ namespace OrthancWSI
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
     }
-
-    height_ = height;
+    else
+    {
+      height_ = height;
+      hasHeight_ = true;
+    }
   }
 
     
