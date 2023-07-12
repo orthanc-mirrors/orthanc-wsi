@@ -44,7 +44,7 @@ namespace OrthancWSI
 
     static void EncodeInternal(std::string& encoded,
                                const Orthanc::ImageAccessor& decoded,
-                               Orthanc::MimeType transcodingType);
+                               Orthanc::MimeType encoding);
 
   public:
     RawTile(ITiledPyramid& pyramid,
@@ -52,14 +52,19 @@ namespace OrthancWSI
             unsigned int tileX,
             unsigned int tileY);
 
+    ImageCompression GetCompression() const
+    {
+      return compression_;
+    }
+
     void Answer(OrthancPluginRestOutput* output,
-                Orthanc::MimeType transcodingType);
+                Orthanc::MimeType encoding);
 
     Orthanc::ImageAccessor* Decode();
 
     static void Encode(std::string& encoded,
                        const Orthanc::ImageAccessor& decoded,
-                       Orthanc::MimeType transcodingType);
+                       Orthanc::MimeType encoding);
 
     // This semaphore is used to implement throttling for the
     // decoding/encoding of tiles

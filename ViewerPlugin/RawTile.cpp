@@ -85,9 +85,9 @@ namespace OrthancWSI
 
   void RawTile::EncodeInternal(std::string& encoded,
                                const Orthanc::ImageAccessor& decoded,
-                               Orthanc::MimeType transcodingType)
+                               Orthanc::MimeType encoding)
   {
-    switch (transcodingType)
+    switch (encoding)
     {
       case Orthanc::MimeType_Png:
       {
@@ -128,22 +128,17 @@ namespace OrthancWSI
 
 
   void RawTile::Answer(OrthancPluginRestOutput* output,
-                       Orthanc::MimeType transcodingType)
+                       Orthanc::MimeType encoding)
   {
-    if (compression_ == ImageCompression_Jpeg)
+    if ((compression_ == ImageCompression_Jpeg && encoding == Orthanc::MimeType_Jpeg) ||
+        (compression_ == ImageCompression_Jpeg2000 && encoding == Orthanc::MimeType_Jpeg2000))
     {
-      // The tile is already a JPEG image. In such a case, we can
-      // serve it as such, because any Web browser can handle JPEG.
+      // No transcoding is needed, the tile can be served as such
       OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, tile_.c_str(),
-                                tile_.size(), Orthanc::EnumerationToString(Orthanc::MimeType_Jpeg));
+                                tile_.size(), Orthanc::EnumerationToString(encoding));
     }
     else
     {
-      // This is a lossless frame (coming from a JPEG2000 or an
-      // uncompressed DICOM instance), which is not a DICOM-JPEG
-      // instance. We need to decompress the raw tile, then transcode
-      // it to the PNG/JPEG, depending on the "transcodingType".
-
       std::string transcoded;
 
       {
@@ -151,11 +146,11 @@ namespace OrthancWSI
         Orthanc::Semaphore::Locker locker(*transcoderSemaphore_);
 
         std::unique_ptr<Orthanc::ImageAccessor> decoded(DecodeInternal());
-        EncodeInternal(transcoded, *decoded, transcodingType);
+        EncodeInternal(transcoded, *decoded, encoding);
       }
 
       OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, transcoded.c_str(),
-                                transcoded.size(), Orthanc::EnumerationToString(transcodingType));
+                                transcoded.size(), Orthanc::EnumerationToString(encoding));
     }
   }
 
@@ -169,10 +164,10 @@ namespace OrthancWSI
 
   void RawTile::Encode(std::string& encoded,
                        const Orthanc::ImageAccessor& decoded,
-                       Orthanc::MimeType transcodingType)
+                       Orthanc::MimeType encoding)
   {
     Orthanc::Semaphore::Locker locker(*transcoderSemaphore_);
-    EncodeInternal(encoded, decoded, transcodingType);
+    EncodeInternal(encoded, decoded, encoding);
   }
 
 

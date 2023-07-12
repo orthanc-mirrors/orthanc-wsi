@@ -151,20 +151,30 @@ void ServeTile(OrthancPluginRestOutput* output,
   std::unique_ptr<OrthancWSI::RawTile> rawTile;
 
   {
+    // NB: Don't call "rawTile" while the Locker is around, as
+    // "Answer()" can be a costly operation.
     OrthancWSI::DicomPyramidCache::Locker locker(seriesId);
+
     rawTile.reset(new OrthancWSI::RawTile(locker.GetPyramid(),
                                           static_cast<unsigned int>(level),
                                           static_cast<unsigned int>(tileX),
                                           static_cast<unsigned int>(tileY)));
   }
 
-  /**
-   * In the case the DICOM file doesn't use the JPEG transfer syntax,
-   * transfer the tile (which is presumably lossless) as a PNG image
-   * so as to prevent lossy compression. Don't call "rawTile" while
-   * the Locker is around, as "Answer()" can be a costly operation.
-   **/
-  rawTile->Answer(output, Orthanc::MimeType_Png);
+  if (rawTile->GetCompression() == OrthancWSI::ImageCompression_Jpeg)
+  {
+    // The tile is already a JPEG image. In such a case, we can
+    // serve it as such, because any Web browser can handle JPEG.
+    rawTile->Answer(output, Orthanc::MimeType_Jpeg);
+  }
+  else
+  {
+    // This is a lossless frame (coming from a JPEG2000 or an
+    // uncompressed DICOM instance), which is not a DICOM-JPEG
+    // instance. We need to decompress the raw tile, then transcode it
+    // to the PNG/JPEG, depending on the "encoding".
+    rawTile->Answer(output, Orthanc::MimeType_Png);
+  }
 }
 
 
