@@ -27,6 +27,8 @@
 #include <Cache/LeastRecentlyUsedIndex.h>
 
 #include <boost/thread/mutex.hpp>
+#include <string>
+
 
 namespace OrthancWSI
 {
@@ -35,11 +37,14 @@ namespace OrthancWSI
   private:
     typedef Orthanc::LeastRecentlyUsedIndex<std::string, DicomPyramid*>  Cache;
 
-    boost::mutex                       mutex_;
-    OrthancStone::IOrthancConnection&  orthanc_;
-    size_t                             maxSize_;
-    Cache                              cache_;
+    std::unique_ptr<OrthancStone::IOrthancConnection>  orthanc_;
 
+    boost::mutex  mutex_;
+    size_t        maxSize_;
+    Cache         cache_;
+
+    DicomPyramidCache(OrthancStone::IOrthancConnection* orthanc /* takes ownership */,
+                      size_t maxSize);
 
     DicomPyramid* GetCachedPyramid(const std::string& seriesId);
 
@@ -47,22 +52,25 @@ namespace OrthancWSI
                              boost::mutex::scoped_lock& lock);
 
   public:
-    DicomPyramidCache(OrthancStone::IOrthancConnection& orthanc,
-                      size_t maxSize);
-
     ~DicomPyramidCache();
+
+    static void InitializeInstance(size_t maxSize);
+
+    static void FinalizeInstance();
+
+    static DicomPyramidCache& GetInstance();
 
     void Invalidate(const std::string& seriesId);
 
     class Locker : public boost::noncopyable
     {
     private:
+      DicomPyramidCache&         cache_;
       boost::mutex::scoped_lock  lock_;
       DicomPyramid&              pyramid_;
 
     public:
-      Locker(DicomPyramidCache& cache,
-             const std::string& seriesId);
+      Locker(const std::string& seriesId);
 
       DicomPyramid& GetPyramid() const
       {

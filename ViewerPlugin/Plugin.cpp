@@ -22,16 +22,14 @@
 
 #include "../Framework/PrecompiledHeadersWSI.h"
 
-#include "../Framework/ImageToolbox.h"
-#include "../Framework/Jpeg2000Reader.h"
 #include "DicomPyramidCache.h"
-#include "OrthancPluginConnection.h"
+#include "IIIF.h"
+#include "RawTile.h"
 
 #include <Compatibility.h>  // For std::unique_ptr
-#include <Logging.h>
+#include <Images/Image.h>
 #include <Images/ImageProcessing.h>
-#include <Images/PngWriter.h>
-#include <MultiThreading/Semaphore.h>
+#include <Logging.h>
 #include <OrthancException.h>
 #include <SystemToolbox.h>
 
@@ -40,11 +38,6 @@
 #include <EmbeddedResources.h>
 
 #include <cassert>
-
-std::unique_ptr<OrthancWSI::OrthancPluginConnection>  orthanc_;
-std::unique_ptr<OrthancWSI::DicomPyramidCache>        cache_;
-std::unique_ptr<Orthanc::Semaphore>                   transcoderSemaphore_;
-
 
 static void AnswerSparseTile(OrthancPluginRestOutput* output,
                              unsigned int tileWidth,
@@ -86,7 +79,7 @@ void ServePyramid(OrthancPluginRestOutput* output,
   OrthancPluginLogInfo(OrthancPlugins::GetGlobalContext(), tmp);
   
 
-  OrthancWSI::DicomPyramidCache::Locker locker(*cache_, seriesId);
+  OrthancWSI::DicomPyramidCache::Locker locker(seriesId);
 
   unsigned int totalWidth = locker.GetPyramid().GetLevelWidth(0);
   unsigned int totalHeight = locker.GetPyramid().GetLevelHeight(0);
@@ -155,88 +148,85 @@ void ServeTile(OrthancPluginRestOutput* output,
   }
 
   // Retrieve the raw tile from the WSI pyramid
-  OrthancWSI::ImageCompression compression;
-  Orthanc::PhotometricInterpretation photometric;
-  Orthanc::PixelFormat format;
-  std::string tile;
-  unsigned int tileWidth, tileHeight;
+  std::unique_ptr<OrthancWSI::RawTile> rawTile;
 
   {
-    OrthancWSI::DicomPyramidCache::Locker locker(*cache_, seriesId);
+    // NB: Don't call "rawTile" while the Locker is around, as
+    // "Answer()" can be a costly operation.
+    OrthancWSI::DicomPyramidCache::Locker locker(seriesId);
 
-    format = locker.GetPyramid().GetPixelFormat();
-    tileWidth = locker.GetPyramid().GetTileWidth(level);
-    tileHeight = locker.GetPyramid().GetTileHeight(level);
-    photometric = locker.GetPyramid().GetPhotometricInterpretation();
+    rawTile.reset(new OrthancWSI::RawTile(locker.GetPyramid(),
+                                          static_cast<unsigned int>(level),
+                                          static_cast<unsigned int>(tileX),
+                                          static_cast<unsigned int>(tileY)));
+  }
 
-    if (!locker.GetPyramid().ReadRawTile(tile, compression, 
-                                         static_cast<unsigned int>(level),
-                                         static_cast<unsigned int>(tileX),
-                                         static_cast<unsigned int>(tileY)))
+  Orthanc::MimeType mime;
+
+  if (rawTile->GetCompression() == OrthancWSI::ImageCompression_Jpeg)
+  {
+    // The tile is already a JPEG image. In such a case, we can
+    // serve it as such, because any Web browser can handle JPEG.
+    mime = Orthanc::MimeType_Jpeg;
+  }
+  else
+  {
+    // This is a lossless frame (coming from JPEG2000 or uncompressed
+    // DICOM instance), not a DICOM-JPEG instance. Decompress the raw
+    // tile, then transcode it to PNG to prevent lossy compression and
+    // to avoid JPEG2000 that is not supported by all the browsers.
+    mime = Orthanc::MimeType_Png;
+  }
+
+  // Lookup whether a "Accept" HTTP header is present, to overwrite
+  // the default MIME type
+  for (uint32_t i = 0; i < request->headersCount; i++)
+  {
+    std::string key(request->headersKeys[i]);
+    Orthanc::Toolbox::ToLowerCase(key);
+
+    if (key == "accept")
     {
-      // Handling of missing tile (for sparse tiling): TODO parameter?
-      // AnswerSparseTile(output, tileWidth, tileHeight); return;
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
+      std::vector<std::string> tokens;
+      Orthanc::Toolbox::TokenizeString(tokens, request->headersValues[i], ',');
+
+      bool found = false;
+
+      for (size_t j = 0; j < tokens.size(); j++)
+      {
+        std::string s = Orthanc::Toolbox::StripSpaces(tokens[j]);
+
+        if (s == Orthanc::EnumerationToString(Orthanc::MimeType_Png))
+        {
+          mime = Orthanc::MimeType_Png;
+          found = true;
+        }
+        else if (s == Orthanc::EnumerationToString(Orthanc::MimeType_Jpeg))
+        {
+          mime = Orthanc::MimeType_Jpeg;
+          found = true;
+        }
+        else if (s == Orthanc::EnumerationToString(Orthanc::MimeType_Jpeg2000))
+        {
+          mime = Orthanc::MimeType_Jpeg2000;
+          found = true;
+        }
+        else if (s == "*/*" ||
+                 s == "image/*")
+        {
+          found = true;
+        }
+      }
+
+      if (!found)
+      {
+        OrthancPluginSendHttpStatusCode(OrthancPlugins::GetGlobalContext(), output, 406 /* Not acceptable */);
+        return;
+      }
     }
   }
 
-  
-  // Test whether the tile is a JPEG image. In such a case, we can
-  // serve it as such, because any Web browser can handle JPEG
-
-  if (compression == OrthancWSI::ImageCompression_Jpeg)
-  {
-    OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, tile.c_str(), tile.size(), "image/jpeg");
-    return;   // We're done
-  }
-
-
-  // The tile does not come from a DICOM-JPEG instance, we need to
-  // decompress the raw tile
-  std::unique_ptr<Orthanc::ImageAccessor> decoded;
-
-  Orthanc::Semaphore::Locker locker(*transcoderSemaphore_);
-
-  switch (compression)
-  {
-    case OrthancWSI::ImageCompression_Jpeg2000:
-      decoded.reset(new OrthancWSI::Jpeg2000Reader);
-      dynamic_cast<OrthancWSI::Jpeg2000Reader&>(*decoded).ReadFromMemory(tile);
-
-      if (photometric == Orthanc::PhotometricInterpretation_YBR_ICT)
-      {
-        OrthancWSI::ImageToolbox::ConvertJpegYCbCrToRgb(*decoded);
-      }
-      
-      break;
-
-    case OrthancWSI::ImageCompression_None:
-    {
-      unsigned int bpp = Orthanc::GetBytesPerPixel(format);
-      if (bpp * tileWidth * tileHeight != tile.size())
-      {
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
-      }
-
-      decoded.reset(new Orthanc::ImageAccessor);
-      decoded->AssignReadOnly(format, tileWidth, tileHeight, bpp * tileWidth, tile.c_str());
-      break;
-    }
-
-    default:
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
-  }
-
-
-  // This is a lossless frame (coming from a JPEG2000 or uncompressed
-  // DICOM instance), serve it as a PNG image so as to prevent lossy
-  // compression
-
-  std::string png;
-  Orthanc::PngWriter writer;
-  Orthanc::IImageWriter::WriteToMemory(writer, png, *decoded);
-
-  OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, png.c_str(), png.size(), "image/png");
+  rawTile->Answer(output, mime);
 }
 
 
@@ -251,7 +241,7 @@ OrthancPluginErrorCode OnChangeCallback(OrthancPluginChangeType changeType,
     sprintf(tmp, "New instance has been added to series %s, invalidating it", resourceId);
     OrthancPluginLogInfo(OrthancPlugins::GetGlobalContext(), tmp);
 
-    cache_->Invalidate(resourceId);
+    OrthancWSI::DicomPyramidCache::GetInstance().Invalidate(resourceId);
   }
 
   return OrthancPluginErrorCode_Success;
@@ -288,6 +278,16 @@ void ServeFile(OrthancPluginRestOutput* output,
     resource = Orthanc::EmbeddedResources::OPENLAYERS_CSS;
     mime = "text/css";
   }
+  else if (f == "mirador.html")
+  {
+    resource = Orthanc::EmbeddedResources::MIRADOR_HTML;
+    mime = "text/html";
+  }
+  else if (f == "openseadragon.html")
+  {
+    resource = Orthanc::EmbeddedResources::OPEN_SEADRAGON_HTML;
+    mime = "text/html";
+  }
   else
   {
     throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
@@ -298,7 +298,6 @@ void ServeFile(OrthancPluginRestOutput* output,
 
   OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, content.c_str(), content.size(), mime.c_str());
 }
-
 
 
 extern "C"
@@ -337,7 +336,7 @@ extern "C"
     // hardware threads (e.g. number of CPUs or cores or
     // hyperthreading units)
     unsigned int threads = Orthanc::SystemToolbox::GetHardwareConcurrency();
-    transcoderSemaphore_.reset(new Orthanc::Semaphore(threads));
+    OrthancWSI::RawTile::InitializeTranscoderSemaphore(threads);
 
     char info[1024];
     sprintf(info, "The whole-slide imaging plugin will use at most %u threads to transcode the tiles", threads);
@@ -345,8 +344,7 @@ extern "C"
 
     OrthancPluginSetDescription(context, "Provides a Web viewer of whole-slide microscopic images within Orthanc.");
 
-    orthanc_.reset(new OrthancWSI::OrthancPluginConnection);
-    cache_.reset(new OrthancWSI::DicomPyramidCache(*orthanc_, 10 /* Number of pyramids to be cached - TODO parameter */));
+    OrthancWSI::DicomPyramidCache::InitializeInstance(10 /* Number of pyramids to be cached - TODO parameter */);
 
     OrthancPluginRegisterOnChangeCallback(OrthancPlugins::GetGlobalContext(), OnChangeCallback);
 
@@ -357,10 +355,81 @@ extern "C"
     OrthancPlugins::RegisterRestCallback<ServePyramid>("/wsi/pyramids/([0-9a-f-]+)", true);
     OrthancPlugins::RegisterRestCallback<ServeTile>("/wsi/tiles/([0-9a-f-]+)/([0-9-]+)/([0-9-]+)/([0-9-]+)", true);
 
-    // Extend the default Orthanc Explorer with custom JavaScript for WSI
-    std::string explorer;
-    Orthanc::EmbeddedResources::GetFileResource(explorer, Orthanc::EmbeddedResources::ORTHANC_EXPLORER);
-    OrthancPluginExtendOrthancExplorer(OrthancPlugins::GetGlobalContext(), explorer.c_str());
+    OrthancPlugins::OrthancConfiguration mainConfiguration;
+
+    OrthancPlugins::OrthancConfiguration wsiConfiguration;
+    mainConfiguration.GetSection(wsiConfiguration, "WholeSlideImaging");
+
+    const bool enableIIIF = wsiConfiguration.GetBooleanValue("EnableIIIF", true);
+    bool serveMirador = false;
+    bool serveOpenSeadragon = false;
+    std::string iiifPublicUrl;
+
+    if (enableIIIF)
+    {
+      if (!wsiConfiguration.LookupStringValue(iiifPublicUrl, "OrthancPublicURL"))
+      {
+        unsigned int port = mainConfiguration.GetUnsignedIntegerValue("HttpPort", 8042);
+        iiifPublicUrl = "http://localhost:" + boost::lexical_cast<std::string>(port) + "/";
+      }
+
+      if (iiifPublicUrl.empty() ||
+          iiifPublicUrl[iiifPublicUrl.size() - 1] != '/')
+      {
+        iiifPublicUrl += "/";
+      }
+
+      iiifPublicUrl += "wsi/iiif/";
+
+      InitializeIIIF(iiifPublicUrl);
+
+      serveMirador = wsiConfiguration.GetBooleanValue("ServeMirador", false);
+      serveOpenSeadragon = wsiConfiguration.GetBooleanValue("ServeOpenSeadragon", false);
+
+      bool value;
+      if (wsiConfiguration.LookupBooleanValue(value, "ForcePowersOfTwoScaleFactors"))
+      {
+        SetIIIFForcePowersOfTwoScaleFactors(value);
+      }
+      else
+      {
+        /**
+         * By default, compatibility mode is disabled. However, if
+         * Mirador or OSD are enabled, compatibility mode is
+         * automatically enabled to enhance user experience, at least
+         * until issue 2379 of OSD is solved:
+         * https://github.com/openseadragon/openseadragon/issues/2379
+         **/
+        SetIIIFForcePowersOfTwoScaleFactors(serveMirador || serveOpenSeadragon);
+      }
+    }
+
+    LOG(WARNING) << "Support of IIIF is " << (enableIIIF ? "enabled" : "disabled") << " in the whole-slide imaging plugin";
+
+    if (serveMirador)
+    {
+      OrthancPlugins::RegisterRestCallback<ServeFile>("/wsi/app/(mirador.html)", true);
+    }
+
+    if (serveOpenSeadragon)
+    {
+      OrthancPlugins::RegisterRestCallback<ServeFile>("/wsi/app/(openseadragon.html)", true);
+    }
+
+    {
+      // Extend the default Orthanc Explorer with custom JavaScript for WSI
+
+      std::string explorer;
+      Orthanc::EmbeddedResources::GetFileResource(explorer, Orthanc::EmbeddedResources::ORTHANC_EXPLORER);
+
+      std::map<std::string, std::string> dictionary;
+      dictionary["ENABLE_IIIF"] = (enableIIIF ? "true" : "false");
+      dictionary["SERVE_MIRADOR"] = (serveMirador ? "true" : "false");
+      dictionary["SERVE_OPEN_SEADRAGON"] = (serveOpenSeadragon ? "true" : "false");
+      explorer = Orthanc::Toolbox::SubstituteVariables(explorer, dictionary);
+
+      OrthancPluginExtendOrthancExplorer(OrthancPlugins::GetGlobalContext(), explorer.c_str());
+    }
 
     return 0;
   }
@@ -368,9 +437,8 @@ extern "C"
 
   ORTHANC_PLUGINS_API void OrthancPluginFinalize()
   {
-    cache_.reset(NULL);
-    orthanc_.reset(NULL);
-    transcoderSemaphore_.reset(NULL);
+    OrthancWSI::DicomPyramidCache::FinalizeInstance();
+    OrthancWSI::RawTile::FinalizeTranscoderSemaphore();
   }
 
 

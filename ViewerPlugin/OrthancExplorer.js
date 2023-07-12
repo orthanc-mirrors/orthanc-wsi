@@ -23,7 +23,12 @@
 $('#series').live('pagebeforeshow', function() {
   var seriesId = $.mobile.pageData.uuid;
 
+  $('#mirador-button').remove();
+  $('#openseadragon-button').remove();
   $('#wsi-button').remove();
+
+  $('#series-iiif-button').remove();
+  $('#series-access').listview("refresh");
 
   // Test whether this is a whole-slide image by check the SOP Class
   // UID of one instance of the series
@@ -50,6 +55,64 @@ $('#series').live('pagebeforeshow', function() {
           }
         });
 
+        if (${SERVE_OPEN_SEADRAGON}) {
+          var b = $('<a>')
+              .attr('id', 'openseadragon-button')
+              .attr('data-role', 'button')
+              .attr('href', '#')
+              .attr('data-icon', 'search')
+              .attr('data-theme', 'e')
+              .text('Test IIIF in OpenSeadragon')
+              .button();
+
+          b.insertAfter($('#series-info'));
+          b.click(function() {
+            if ($.mobile.pageData) {
+              window.open('../wsi/app/openseadragon.html?image=../iiif/tiles/' + seriesId + '/info.json');
+            }
+          });
+        }
+      }
+
+      if (${ENABLE_IIIF}) {
+        var b = $('<a>')
+            .attr('data-role', 'button')
+            .attr('href', '#')
+            .text('Copy link to IIIF manifest');
+
+        var li = $('<li>')
+            .attr('id', 'series-iiif-button')
+            .attr('data-icon', 'gear')
+            .append(b);
+
+        $('#series-access').append(li).listview("refresh");
+
+        b.click(function(e) {
+          if ($.mobile.pageData) {
+            e.preventDefault();
+            var url = new URL('../wsi/iiif/series/' + seriesId + '/manifest.json', window.location.href);
+            navigator.clipboard.writeText(url.href);
+            $(e.target).closest('li').buttonMarkup({ icon: 'check' });
+          }
+        });
+      }
+
+      if (${SERVE_MIRADOR}) {
+        var b = $('<a>')
+            .attr('id', 'mirador-button')
+            .attr('data-role', 'button')
+            .attr('href', '#')
+            .attr('data-icon', 'search')
+            .attr('data-theme', 'e')
+            .text('Test IIIF in Mirador')
+            .button();
+
+        b.insertAfter($('#series-info'));
+        b.click(function() {
+          if ($.mobile.pageData) {
+            window.open('../wsi/app/mirador.html?iiif-content=../iiif/series/' + seriesId + '/manifest.json');
+          }
+        });
       }
     });
   });

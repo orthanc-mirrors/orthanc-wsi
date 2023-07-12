@@ -170,9 +170,11 @@ endif()
 
 EmbedResources(
   ${OPENLAYERS_RESOURCES}
-  ORTHANC_EXPLORER  ${CMAKE_SOURCE_DIR}/OrthancExplorer.js
-  VIEWER_HTML       ${CMAKE_SOURCE_DIR}/viewer.html
-  VIEWER_JS         ${CMAKE_SOURCE_DIR}/viewer.js
+  ORTHANC_EXPLORER     ${CMAKE_SOURCE_DIR}/OrthancExplorer.js
+  VIEWER_HTML          ${CMAKE_SOURCE_DIR}/viewer.html
+  VIEWER_JS            ${CMAKE_SOURCE_DIR}/viewer.js
+  MIRADOR_HTML         ${CMAKE_SOURCE_DIR}/mirador.html
+  OPEN_SEADRAGON_HTML  ${CMAKE_SOURCE_DIR}/openseadragon.html
   )
 
 
@@ -183,8 +185,10 @@ EmbedResources(
 
 set(ORTHANC_WSI_SOURCES
   DicomPyramidCache.cpp
+  IIIF.cpp
   OrthancPluginConnection.cpp
   Plugin.cpp
+  RawTile.cpp
 
   ${ORTHANC_WSI_DIR}/Framework/DicomToolbox.cpp
   ${ORTHANC_WSI_DIR}/Framework/Enumerations.cpp

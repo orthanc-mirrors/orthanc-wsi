@@ -20,6 +20,7 @@
  **/
 
 
+#include "../Framework/PrecompiledHeadersWSI.h"
 #include "OrthancPluginConnection.h"
 
 #include "../Resources/Orthanc/Plugins/OrthancPluginCppWrapper.h"

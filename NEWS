@@ -1,7 +1,10 @@
 Pending changes in the mainline
 ===============================
 
+* Support of IIIF
 * Automated extraction of the imaged volume if using OpenSlide
+* URI "/wsi/tiles/{id}/{z}/{x}/{y}" supports the "Accept" HTTP header
+  to force JPEG, JPEG2k or PNG in the decoded tiles
 
 
 Version 1.1 (2021-12-11)
