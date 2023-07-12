@@ -52,22 +52,23 @@ static void ServeIIIFTiledImageInfo(OrthancPluginRestOutput* output,
   LOG(INFO) << "IIIF: Image API call to whole-slide pyramid of series " << seriesId;
 
   OrthancWSI::DicomPyramidCache::Locker locker(seriesId);
+  const OrthancWSI::ITiledPyramid& pyramid = locker.GetPyramid();
 
-  if (locker.GetPyramid().GetLevelCount() == 0)
+  if (pyramid.GetLevelCount() == 0)
   {
     throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
   }
 
-  if (locker.GetPyramid().GetTileWidth(0) != locker.GetPyramid().GetTileHeight(0))
+  if (pyramid.GetTileWidth(0) != pyramid.GetTileHeight(0))
   {
     throw Orthanc::OrthancException(Orthanc::ErrorCode_IncompatibleImageFormat,
                                     "IIIF doesn't support non-isotropic tile sizes");
   }
 
-  for (unsigned int i = 1; i < locker.GetPyramid().GetLevelCount(); i++)
+  for (unsigned int i = 1; i < pyramid.GetLevelCount(); i++)
   {
-    if (locker.GetPyramid().GetTileWidth(i) != locker.GetPyramid().GetTileWidth(0) ||
-        locker.GetPyramid().GetTileHeight(i) != locker.GetPyramid().GetTileHeight(0))
+    if (pyramid.GetTileWidth(i) != pyramid.GetTileWidth(0) ||
+        pyramid.GetTileHeight(i) != pyramid.GetTileHeight(0))
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_IncompatibleImageFormat,
                                       "IIIF doesn't support levels with varying tile sizes");
@@ -77,29 +78,43 @@ static void ServeIIIFTiledImageInfo(OrthancPluginRestOutput* output,
   Json::Value sizes = Json::arrayValue;
   Json::Value scaleFactors = Json::arrayValue;
 
-  for (unsigned int i = locker.GetPyramid().GetLevelCount(); i > 0; i--)
+  for (unsigned int i = pyramid.GetLevelCount(); i > 0; i--)
   {
     /**
-     * Openseadragon seems to have difficulties in rendering
-     * non-integer scale factors. Consequently, we only keep the
-     * levels with an integer scale factor.
+     * According to the IIIF Image API 3.0 specification,
+     * "scaleFactors" is: "The set of resolution scaling factors for
+     * the image's predefined tiles, expressed as POSITIVE INTEGERS by
+     * which to divide the full size of the image. For example, a
+     * scale factor of 4 indicates that the service can efficiently
+     * deliver images at 1/4 or 25% of the height and width of the
+     * full image." => We can only serve the levels for which the full
+     * width/height of the image is divisible by the width/height of
+     * the level.
      **/
-    if (locker.GetPyramid().GetLevelWidth(0) % locker.GetPyramid().GetLevelWidth(i - 1) == 0 &&
-        locker.GetPyramid().GetLevelHeight(0) % locker.GetPyramid().GetLevelHeight(i - 1) == 0)
+    if (pyramid.GetLevelWidth(0) % pyramid.GetLevelWidth(i - 1) == 0 &&
+        pyramid.GetLevelHeight(0) % pyramid.GetLevelHeight(i - 1) == 0)
     {
       Json::Value level;
-      level["width"] = locker.GetPyramid().GetLevelWidth(i - 1);
-      level["height"] = locker.GetPyramid().GetLevelHeight(i - 1);
+      level["width"] = pyramid.GetLevelWidth(i - 1);
+      level["height"] = pyramid.GetLevelHeight(i - 1);
       sizes.append(level);
 
-      scaleFactors.append(static_cast<float>(locker.GetPyramid().GetLevelWidth(0)) /
-                          static_cast<float>(locker.GetPyramid().GetLevelWidth(i - 1)));
+      scaleFactors.append(pyramid.GetLevelWidth(0) /
+                          pyramid.GetLevelWidth(i - 1));
+    }
+    else
+    {
+      LOG(WARNING) << "IIIF - Dropping level " << i << " of series " << seriesId
+                   << ", as the full width/height ("
+                   << pyramid.GetLevelWidth(0) << "x" << pyramid.GetLevelHeight(0)
+                   << ") of the image is not an integer multiple of the level width/height ("
+                   << pyramid.GetLevelWidth(i - 1) << "x" << pyramid.GetLevelHeight(i - 1) << ")";
     }
   }
 
   Json::Value tiles;
-  tiles["width"] = locker.GetPyramid().GetTileWidth(0);
-  tiles["height"] = locker.GetPyramid().GetTileHeight(0);
+  tiles["width"] = pyramid.GetTileWidth(0);
+  tiles["height"] = pyramid.GetTileHeight(0);
   tiles["scaleFactors"] = scaleFactors;
 
   Json::Value result;
@@ -107,8 +122,8 @@ static void ServeIIIFTiledImageInfo(OrthancPluginRestOutput* output,
   result["@id"] = iiifPublicUrl_ + "tiles/" + seriesId;
   result["profile"] = "http://iiif.io/api/image/2/level0.json";
   result["protocol"] = "http://iiif.io/api/image";
-  result["width"] = locker.GetPyramid().GetLevelWidth(0);
-  result["height"] = locker.GetPyramid().GetLevelHeight(0);
+  result["width"] = pyramid.GetLevelWidth(0);
+  result["height"] = pyramid.GetLevelHeight(0);
   result["sizes"] = sizes;
 
   result["tiles"] = Json::arrayValue;

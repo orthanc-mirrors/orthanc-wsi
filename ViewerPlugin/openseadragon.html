@@ -4,7 +4,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="theme-color" content="#000000">
     <title>OpenSeadragon</title>
-    <script src="https://unpkg.com/openseadragon@4.1.0/build/openseadragon/openseadragon.js"></script>
+
+    <!--
+
+        WARNING: OpenSeadragon v4.1.0 can sometimes request regions of
+        negative width. We thus stick to OSD v4.0.0 for the moment.
+        https://github.com/openseadragon/openseadragon/issues/2379
+
+      -->
+    <script src="https://unpkg.com/openseadragon@4.0.0/build/openseadragon/openseadragon.js"></script>
   </head>
 
   <body>
