@@ -74,7 +74,7 @@ $('#series').live('pagebeforeshow', function() {
         }
       }
 
-      if (${SERVE_IIIF}) {
+      if (${ENABLE_IIIF}) {
         var b = $('<a>')
             .attr('data-role', 'button')
             .attr('href', '#')
@@ -90,7 +90,7 @@ $('#series').live('pagebeforeshow', function() {
         b.click(function(e) {
           if ($.mobile.pageData) {
             e.preventDefault();
-            var url = new URL('${IIIF_PUBLIC_URL}' + seriesId + '/manifest.json', window.location.href);
+            var url = new URL('../wsi/iiif/series/' + seriesId + '/manifest.json', window.location.href);
             navigator.clipboard.writeText(url.href);
             $(e.target).closest('li').buttonMarkup({ icon: 'check' });
           }
@@ -110,7 +110,7 @@ $('#series').live('pagebeforeshow', function() {
         b.insertAfter($('#series-info'));
         b.click(function() {
           if ($.mobile.pageData) {
-            window.open('../wsi/app/mirador.html?iiif-content=../iiif/' + seriesId + '/manifest.json');
+            window.open('../wsi/app/mirador.html?iiif-content=../iiif/series/' + seriesId + '/manifest.json');
           }
         });
       }

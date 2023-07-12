@@ -445,7 +445,7 @@ static void ServeIIIFManifest(OrthancPluginRestOutput* output,
 
   const std::string sopClassUid = Orthanc::Toolbox::StripSpaces(oneInstance[SOP_CLASS_UID].asString());
 
-  const std::string base = iiifPublicUrl_ + seriesId;
+  const std::string base = iiifPublicUrl_ + "series/" + seriesId;
 
   Json::Value manifest;
   manifest["@context"] = "http://iiif.io/api/presentation/3/context.json";
@@ -613,7 +613,7 @@ void InitializeIIIF(const std::string& iiifPublicUrl)
 
   OrthancPlugins::RegisterRestCallback<ServeIIIFTiledImageInfo>("/wsi/iiif/tiles/([0-9a-f-]+)/info.json", true);
   OrthancPlugins::RegisterRestCallback<ServeIIIFTiledImageTile>("/wsi/iiif/tiles/([0-9a-f-]+)/([0-9a-z,:]+)/([0-9a-z,!:]+)/([0-9,!]+)/([a-z]+)\\.([a-z]+)", true);
-  OrthancPlugins::RegisterRestCallback<ServeIIIFManifest>("/wsi/iiif/([0-9a-f-]+)/manifest.json", true);
+  OrthancPlugins::RegisterRestCallback<ServeIIIFManifest>("/wsi/iiif/series/([0-9a-f-]+)/manifest.json", true);
   OrthancPlugins::RegisterRestCallback<ServeIIIFFrameInfo>("/wsi/iiif/frames/([0-9a-f-]+)/([0-9]+)/info.json", true);
   OrthancPlugins::RegisterRestCallback<ServeIIIFFrameImage>("/wsi/iiif/frames/([0-9a-f-]+)/([0-9]+)/full/max/0/default.jpg", true);
 }

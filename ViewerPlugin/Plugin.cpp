@@ -293,15 +293,23 @@ extern "C"
     OrthancPlugins::RegisterRestCallback<ServePyramid>("/wsi/pyramids/([0-9a-f-]+)", true);
     OrthancPlugins::RegisterRestCallback<ServeTile>("/wsi/tiles/([0-9a-f-]+)/([0-9-]+)/([0-9-]+)/([0-9-]+)", true);
 
-    bool serveMirador;
-    bool serveOpenSeadragon;
-    bool serveIIIF = true;  // TODO => CONFIG
+    OrthancPlugins::OrthancConfiguration mainConfiguration;
+
+    OrthancPlugins::OrthancConfiguration wsiConfiguration;
+    mainConfiguration.GetSection(wsiConfiguration, "WholeSlideImaging");
+
+    const bool enableIIIF = wsiConfiguration.GetBooleanValue("EnableIIIF", true);
+    bool serveMirador = false;
+    bool serveOpenSeadragon = false;
     std::string iiifPublicUrl;
 
-    if (serveIIIF)
+    if (enableIIIF)
     {
-      // TODO => CONFIG
-      iiifPublicUrl = "http://localhost:8042/wsi/iiif";
+      if (!wsiConfiguration.LookupStringValue(iiifPublicUrl, "OrthancPublicURL"))
+      {
+        unsigned int port = mainConfiguration.GetUnsignedIntegerValue("HttpPort", 8042);
+        iiifPublicUrl = "http://localhost:" + boost::lexical_cast<std::string>(port) + "/";
+      }
 
       if (iiifPublicUrl.empty() ||
           iiifPublicUrl[iiifPublicUrl.size() - 1] != '/')
@@ -309,26 +317,41 @@ extern "C"
         iiifPublicUrl += "/";
       }
 
+      iiifPublicUrl += "wsi/iiif/";
+
       InitializeIIIF(iiifPublicUrl);
-      SetIIIFForcePowersOfTwoScaleFactors(true);  // TODO => CONFIG
 
-      serveMirador = true;  // TODO => CONFIG
-      serveOpenSeadragon = true;  // TODO => CONFIG
+      serveMirador = wsiConfiguration.GetBooleanValue("ServeMirador", false);
+      serveOpenSeadragon = wsiConfiguration.GetBooleanValue("ServeOpenSeadragon", false);
 
-      if (serveMirador)
+      bool value;
+      if (wsiConfiguration.LookupBooleanValue(value, "ForcePowersOfTwoScaleFactors"))
       {
-        OrthancPlugins::RegisterRestCallback<ServeFile>("/wsi/app/(mirador.html)", true);
+        SetIIIFForcePowersOfTwoScaleFactors(value);
       }
-
-      if (serveOpenSeadragon)
+      else
       {
-        OrthancPlugins::RegisterRestCallback<ServeFile>("/wsi/app/(openseadragon.html)", true);
+        /**
+         * By default, compatibility mode is disabled. However, if
+         * Mirador or OSD are enabled, compatibility mode is
+         * automatically enabled to enhance user experience, at least
+         * until issue 2379 of OSD is solved:
+         * https://github.com/openseadragon/openseadragon/issues/2379
+         **/
+        SetIIIFForcePowersOfTwoScaleFactors(serveMirador || serveOpenSeadragon);
       }
     }
-    else
+
+    LOG(WARNING) << "Support of IIIF is " << (enableIIIF ? "enabled" : "disabled") << " in the whole-slide imaging plugin";
+
+    if (serveMirador)
     {
-      serveMirador = false;
-      serveOpenSeadragon = false;
+      OrthancPlugins::RegisterRestCallback<ServeFile>("/wsi/app/(mirador.html)", true);
+    }
+
+    if (serveOpenSeadragon)
+    {
+      OrthancPlugins::RegisterRestCallback<ServeFile>("/wsi/app/(openseadragon.html)", true);
     }
 
     {
@@ -338,10 +361,9 @@ extern "C"
       Orthanc::EmbeddedResources::GetFileResource(explorer, Orthanc::EmbeddedResources::ORTHANC_EXPLORER);
 
       std::map<std::string, std::string> dictionary;
-      dictionary["SERVE_IIIF"] = (serveIIIF ? "true" : "false");
+      dictionary["ENABLE_IIIF"] = (enableIIIF ? "true" : "false");
       dictionary["SERVE_MIRADOR"] = (serveMirador ? "true" : "false");
       dictionary["SERVE_OPEN_SEADRAGON"] = (serveOpenSeadragon ? "true" : "false");
-      dictionary["IIIF_PUBLIC_URL"] = iiifPublicUrl;
       explorer = Orthanc::Toolbox::SubstituteVariables(explorer, dictionary);
 
       OrthancPluginExtendOrthancExplorer(OrthancPlugins::GetGlobalContext(), explorer.c_str());
