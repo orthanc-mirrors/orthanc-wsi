@@ -27,9 +27,9 @@
 #include "RawTile.h"
 
 #include <Compatibility.h>  // For std::unique_ptr
-#include <Logging.h>
 #include <Images/Image.h>
 #include <Images/ImageProcessing.h>
+#include <Logging.h>
 #include <OrthancException.h>
 #include <SystemToolbox.h>
 
@@ -161,20 +161,72 @@ void ServeTile(OrthancPluginRestOutput* output,
                                           static_cast<unsigned int>(tileY)));
   }
 
+  Orthanc::MimeType mime;
+
   if (rawTile->GetCompression() == OrthancWSI::ImageCompression_Jpeg)
   {
     // The tile is already a JPEG image. In such a case, we can
     // serve it as such, because any Web browser can handle JPEG.
-    rawTile->Answer(output, Orthanc::MimeType_Jpeg);
+    mime = Orthanc::MimeType_Jpeg;
   }
   else
   {
-    // This is a lossless frame (coming from a JPEG2000 or an
-    // uncompressed DICOM instance), which is not a DICOM-JPEG
-    // instance. We need to decompress the raw tile, then transcode it
-    // to the PNG/JPEG, depending on the "encoding".
-    rawTile->Answer(output, Orthanc::MimeType_Png);
+    // This is a lossless frame (coming from JPEG2000 or uncompressed
+    // DICOM instance), not a DICOM-JPEG instance. Decompress the raw
+    // tile, then transcode it to PNG to prevent lossy compression and
+    // to avoid JPEG2000 that is not supported by all the browsers.
+    mime = Orthanc::MimeType_Png;
   }
+
+  // Lookup whether a "Accept" HTTP header is present, to overwrite
+  // the default MIME type
+  for (uint32_t i = 0; i < request->headersCount; i++)
+  {
+    std::string key(request->headersKeys[i]);
+    Orthanc::Toolbox::ToLowerCase(key);
+
+    if (key == "accept")
+    {
+      std::vector<std::string> tokens;
+      Orthanc::Toolbox::TokenizeString(tokens, request->headersValues[i], ',');
+
+      bool found = false;
+
+      for (size_t j = 0; j < tokens.size(); j++)
+      {
+        std::string s = Orthanc::Toolbox::StripSpaces(tokens[j]);
+
+        if (s == Orthanc::EnumerationToString(Orthanc::MimeType_Png))
+        {
+          mime = Orthanc::MimeType_Png;
+          found = true;
+        }
+        else if (s == Orthanc::EnumerationToString(Orthanc::MimeType_Jpeg))
+        {
+          mime = Orthanc::MimeType_Jpeg;
+          found = true;
+        }
+        else if (s == Orthanc::EnumerationToString(Orthanc::MimeType_Jpeg2000))
+        {
+          mime = Orthanc::MimeType_Jpeg2000;
+          found = true;
+        }
+        else if (s == "*/*" ||
+                 s == "image/*")
+        {
+          found = true;
+        }
+      }
+
+      if (!found)
+      {
+        OrthancPluginSendHttpStatusCode(OrthancPlugins::GetGlobalContext(), output, 406 /* Not acceptable */);
+        return;
+      }
+    }
+  }
+
+  rawTile->Answer(output, mime);
 }
 
 

@@ -39,6 +39,25 @@ static std::unique_ptr<Orthanc::Semaphore>  transcoderSemaphore_;
 
 namespace OrthancWSI
 {
+  static ImageCompression Convert(Orthanc::MimeType type)
+  {
+    switch (type)
+    {
+      case Orthanc::MimeType_Png:
+        return ImageCompression_Png;
+
+      case Orthanc::MimeType_Jpeg:
+        return ImageCompression_Jpeg;
+
+      case Orthanc::MimeType_Jpeg2000:
+        return ImageCompression_Jpeg2000;
+
+      default:
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
+    }
+  }
+
+
   Orthanc::ImageAccessor* RawTile::DecodeInternal()
   {
     switch (compression_)
@@ -82,30 +101,11 @@ namespace OrthancWSI
     }
   }
 
-
   void RawTile::EncodeInternal(std::string& encoded,
                                const Orthanc::ImageAccessor& decoded,
                                Orthanc::MimeType encoding)
   {
-    switch (encoding)
-    {
-      case Orthanc::MimeType_Png:
-      {
-        Orthanc::PngWriter writer;
-        Orthanc::IImageWriter::WriteToMemory(writer, encoded, decoded);
-        break;
-      }
-
-      case Orthanc::MimeType_Jpeg:
-      {
-        Orthanc::JpegWriter writer;
-        Orthanc::IImageWriter::WriteToMemory(writer, encoded, decoded);
-        break;
-      }
-
-      default:
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
-    }
+    ImageToolbox::EncodeTile(encoded, decoded, Convert(encoding), 90 /* only used for JPEG */);
   }
 
 
