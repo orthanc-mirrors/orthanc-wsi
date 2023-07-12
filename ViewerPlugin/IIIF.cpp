@@ -32,7 +32,6 @@
 #include <Logging.h>
 #include <SerializationToolbox.h>
 
-#include <boost/regex.hpp>
 #include <boost/math/special_functions/round.hpp>
 
 
@@ -224,48 +223,36 @@ static void ServeIIIFTiledImageTile(OrthancPluginRestOutput* output,
   }
   else
   {
-    int regionX, regionY, regionWidth, regionHeight;
+    std::vector<std::string> tokens;
+    Orthanc::Toolbox::TokenizeString(tokens, region, ',');
 
-    bool ok = false;
-    boost::regex regionPattern("([0-9]+),([0-9]+),([0-9]+),([0-9]+)");
-    boost::cmatch regionWhat;
-    if (regex_match(region.c_str(), regionWhat, regionPattern))
-    {
-      try
-      {
-        regionX = boost::lexical_cast<int>(regionWhat[1]);
-        regionY = boost::lexical_cast<int>(regionWhat[2]);
-        regionWidth = boost::lexical_cast<int>(regionWhat[3]);
-        regionHeight = boost::lexical_cast<int>(regionWhat[4]);
-        ok = (regionX >= 0 &&
-              regionY >= 0 &&
-              regionWidth > 0 &&
-              regionHeight > 0);
-      }
-      catch (boost::bad_lexical_cast&)
-      {
-      }
-    }
+    uint32_t regionX, regionY, regionWidth, regionHeight;
 
-    if (!ok)
+    if (tokens.size() != 4 ||
+        !Orthanc::SerializationToolbox::ParseUnsignedInteger32(regionX, tokens[0]) ||
+        !Orthanc::SerializationToolbox::ParseUnsignedInteger32(regionY, tokens[1]) ||
+        !Orthanc::SerializationToolbox::ParseUnsignedInteger32(regionWidth, tokens[2]) ||
+        !Orthanc::SerializationToolbox::ParseUnsignedInteger32(regionHeight, tokens[3]))
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "IIIF - Not a (x,y,width,height) region, found: " + region);
     }
 
-    ok = false;
-    int cropWidth, cropHeight;
-    boost::regex sizePattern("([0-9]+),([0-9]+)");
-    boost::cmatch sizeWhat;
-    if (regex_match(size.c_str(), sizeWhat, sizePattern))
+    uint32_t cropWidth, cropHeight;
+
+    Orthanc::Toolbox::TokenizeString(tokens, size, ',');
+
+    bool ok = false;
+    if (tokens.size() == 2 &&
+        Orthanc::SerializationToolbox::ParseUnsignedInteger32(cropWidth, tokens[0]))
     {
-      try
+      if (tokens[1].empty())
       {
-        cropWidth = boost::lexical_cast<int>(sizeWhat[1]);
-        cropHeight = boost::lexical_cast<int>(sizeWhat[2]);
-        ok = (cropWidth > 0 && cropHeight > 0);
+        cropHeight = cropWidth;
+        ok = true;
       }
-      catch (boost::bad_lexical_cast&)
+      else if (Orthanc::SerializationToolbox::ParseUnsignedInteger32(cropHeight, tokens[1]))
       {
+        ok = true;
       }
     }
 
