@@ -25,6 +25,7 @@
 #include <Images/ImageAccessor.h>
 #include <SharedLibrary.h>
 
+#include <map>
 #include <vector>
 
 namespace OrthancWSI
@@ -39,6 +40,10 @@ namespace OrthancWSI
     typedef void*   (*FunctionOpen) (const char*);
     typedef void    (*FunctionReadRegion) (void*, uint32_t*, int64_t, int64_t, int32_t, int64_t, int64_t);
 
+    // New in WSI 2.0
+    typedef const char* const* (*FunctionGetPropertyNames) (void*);
+    typedef const char*        (*FunctionGetPropertyValue) (void*, const char*);
+
     Orthanc::SharedLibrary      library_;
     FunctionClose               close_;
     FunctionGetLevelCount       getLevelCount_;
@@ -46,6 +51,8 @@ namespace OrthancWSI
     FunctionGetLevelDownsample  getLevelDownsample_;
     FunctionOpen                open_;
     FunctionReadRegion          readRegion_;
+    FunctionGetPropertyNames    getPropertyNames_;
+    FunctionGetPropertyValue    getPropertyValue_;
 
   public:
     explicit OpenSlideLibrary(const std::string& path);
@@ -72,9 +79,10 @@ namespace OrthancWSI
               double downsample);
       };
 
-      OpenSlideLibrary&   that_;
-      void*               handle_;
-      std::vector<Level>  levels_;
+      OpenSlideLibrary&                   that_;
+      void*                               handle_;
+      std::vector<Level>                  levels_;
+      std::map<std::string, std::string>  properties_;
 
       void Initialize(const std::string& path);
 
@@ -109,6 +117,9 @@ namespace OrthancWSI
                                          uint64_t y,
                                          unsigned int width,
                                          unsigned int height);
+
+      bool LookupProperty(std::string& value,
+                          const std::string& property) const;
     };
   };
 }

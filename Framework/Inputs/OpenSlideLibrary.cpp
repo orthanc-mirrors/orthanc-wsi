@@ -44,6 +44,8 @@ namespace OrthancWSI
     getLevelDownsample_ = (FunctionGetLevelDownsample) library_.GetFunction("openslide_get_level_downsample");
     open_ = (FunctionOpen) library_.GetFunction("openslide_open");
     readRegion_ = (FunctionReadRegion) library_.GetFunction("openslide_read_region");
+    getPropertyNames_ = (FunctionGetPropertyNames) library_.GetFunction("openslide_get_property_names");
+    getPropertyValue_ = (FunctionGetPropertyValue) library_.GetFunction("openslide_get_property_value");
   }
 
 
@@ -144,6 +146,27 @@ namespace OrthancWSI
     handle_(NULL)
   {
     Initialize(path);
+
+    const char* const* properties = that_.getPropertyNames_(handle_);
+    if (properties == NULL)
+    {
+      that_.close_(handle_);
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_NullPointer);
+    }
+
+    for (size_t i = 0; properties[i] != NULL; i++)
+    {
+      const char* value = that_.getPropertyValue_(handle_, properties[i]);
+      if (value == NULL)
+      {
+        that_.close_(handle_);
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_NullPointer);
+      }
+      else
+      {
+        properties_[properties[i]] = value;
+      }
+    }
   }
 
 
@@ -236,5 +259,22 @@ namespace OrthancWSI
   void OpenSlideLibrary::Finalize()
   {
     globalLibrary_.reset(NULL);
+  }
+
+
+  bool OpenSlideLibrary::Image::LookupProperty(std::string& value,
+                                               const std::string& property) const
+  {
+    std::map<std::string, std::string>::const_iterator found = properties_.find(property);
+
+    if (found == properties_.end())
+    {
+      return false;
+    }
+    else
+    {
+      value = found->second;
+      return true;
+    }
   }
 }
