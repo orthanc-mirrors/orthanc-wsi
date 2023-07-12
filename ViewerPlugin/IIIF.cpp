@@ -118,15 +118,15 @@ static void ServeIIIFTiledImageInfo(OrthancPluginRestOutput* output,
   tiles["scaleFactors"] = scaleFactors;
 
   Json::Value result;
-  result["@context"] = "http://iiif.io/api/image/2/context.json";
-  result["@id"] = iiifPublicUrl_ + "tiles/" + seriesId;
-  result["profile"] = "http://iiif.io/api/image/2/level0.json";
+  result["@context"] = "http://iiif.io/api/image/3/context.json";
+  result["profile"] = "level0";
   result["protocol"] = "http://iiif.io/api/image";
+  result["type"] = "ImageService3";
+
+  result["id"] = iiifPublicUrl_ + "tiles/" + seriesId;
   result["width"] = pyramid.GetLevelWidth(0);
   result["height"] = pyramid.GetLevelHeight(0);
   result["sizes"] = sizes;
-
-  result["tiles"] = Json::arrayValue;
   result["tiles"].append(tiles);
 
   std::string s = result.toStyledString();
@@ -249,18 +249,20 @@ static void ServeIIIFTiledImageTile(OrthancPluginRestOutput* output,
 
     if (!ok)
     {
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "IIIF - Not a (x,y,width,height) region: " + region);
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "IIIF - Not a (x,y,width,height) region, found: " + region);
     }
 
-    int cropWidth;
-    boost::regex sizePattern("([0-9]+),");
+    ok = false;
+    int cropWidth, cropHeight;
+    boost::regex sizePattern("([0-9]+),([0-9]+)");
     boost::cmatch sizeWhat;
     if (regex_match(size.c_str(), sizeWhat, sizePattern))
     {
       try
       {
         cropWidth = boost::lexical_cast<int>(sizeWhat[1]);
-        ok = (cropWidth > 0);
+        cropHeight = boost::lexical_cast<int>(sizeWhat[2]);
+        ok = (cropWidth > 0 && cropHeight > 0);
       }
       catch (boost::bad_lexical_cast&)
       {
@@ -269,7 +271,7 @@ static void ServeIIIFTiledImageTile(OrthancPluginRestOutput* output,
 
     if (!ok)
     {
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "IIIF - Not a (width,) size: " + size);
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "IIIF - Not a (width,height) crop, found: " + size);
     }
 
     std::unique_ptr<OrthancWSI::RawTile> rawTile;
@@ -311,7 +313,8 @@ static void ServeIIIFTiledImageTile(OrthancPluginRestOutput* output,
                                               regionX / GetPhysicalTileWidth(pyramid, level),
                                               regionY / GetPhysicalTileHeight(pyramid, level)));
 
-        if (static_cast<unsigned int>(cropWidth) < pyramid.GetTileWidth(level))
+        if (static_cast<unsigned int>(cropWidth) < pyramid.GetTileWidth(level) ||
+            static_cast<unsigned int>(cropHeight) < pyramid.GetTileHeight(level))
         {
           toCrop.reset(rawTile->Decode());
           rawTile.reset(NULL);
@@ -329,10 +332,15 @@ static void ServeIIIFTiledImageTile(OrthancPluginRestOutput* output,
     else if (toCrop.get() != NULL)
     {
       assert(rawTile.get() == NULL);
-      assert(static_cast<unsigned int>(cropWidth) < toCrop->GetWidth());
+
+      if (static_cast<unsigned int>(cropWidth) > toCrop->GetWidth() ||
+          static_cast<unsigned int>(cropHeight) > toCrop->GetHeight())
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_BadRequest, "IIIF - Asking to crop outside of the tile size");
+      }
 
       Orthanc::ImageAccessor cropped;
-      toCrop->GetRegion(cropped, 0, 0, cropWidth, toCrop->GetHeight());
+      toCrop->GetRegion(cropped, 0, 0, cropWidth, cropHeight);
 
       std::string encoded;
       OrthancWSI::RawTile::Encode(encoded, cropped, Orthanc::MimeType_Jpeg);
@@ -559,10 +567,12 @@ static void ServeIIIFFrameInfo(OrthancPluginRestOutput* output,
   tile["scaleFactors"].append(1);
 
   Json::Value result;
-  result["@context"] = "http://iiif.io/api/image/2/context.json";
-  result["@id"] = iiifPublicUrl_ + "frames/" + instanceId + "/" + frame;
-  result["profile"] = "http://iiif.io/api/image/2/level0.json";
+  result["@context"] = "http://iiif.io/api/image/3/context.json";
+  result["profile"] = "http://iiif.io/api/image/3/level0.json";
   result["protocol"] = "http://iiif.io/api/image";
+  result["type"] = "ImageService3";
+
+  result["id"] = iiifPublicUrl_ + "frames/" + instanceId + "/" + frame;
   result["width"] = width;
   result["height"] = height;
   result["tiles"].append(tile);
