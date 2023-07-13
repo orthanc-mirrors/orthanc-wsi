@@ -644,9 +644,9 @@ static bool ParseParameters(int& exitStatus,
   boost::program_options::options_description volumeOptions("Description of the imaged volume");
   volumeOptions.add_options()
     (OPTION_IMAGED_WIDTH, boost::program_options::value<float>(),
-     "Width of the specimen (in mm), defaults to 15mm if missing")
+     "Width of the specimen (in mm), in the coordinate system of the glass slide, defaults to 15mm if missing")
     (OPTION_IMAGED_HEIGHT, boost::program_options::value<float>(),
-     "Height of the specimen (in mm), defaults to 15mm if missing")
+     "Height of the specimen (in mm), in the coordinate system of the glass slide, defaults to 15mm if missing")
     (OPTION_IMAGED_DEPTH, boost::program_options::value<float>()->default_value(1),
      "Depth of the specimen (in mm)")
     (OPTION_OFFSET_X, boost::program_options::value<float>()->default_value(20), 
@@ -1125,6 +1125,16 @@ int main(int argc, char* argv[])
       if (source.get() == NULL)
       {
         throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
+      }
+
+      // In the 2 lines below, remember to switch X/Y when going from physical to pixel coordinates!
+      float pixelSpacingX = volume.GetWidth() / static_cast<float>(source->GetLevelHeight(0));
+      float pixelSpacingY = volume.GetHeight() / static_cast<float>(source->GetLevelWidth(0));
+      if (std::abs(pixelSpacingX - pixelSpacingY) >= 100.0f * std::numeric_limits<float>::epsilon())
+      {
+        LOG(WARNING) << "Your pixel spacing is different along the X and Y axes, make sure that "
+                     << "you have not inversed the --" << OPTION_IMAGED_WIDTH << " and the --"
+                     << OPTION_IMAGED_HEIGHT << " options: " << pixelSpacingX << " vs. " << pixelSpacingY;
       }
 
       LOG(WARNING) << "Compression of the individual source tiles: " << OrthancWSI::EnumerationToString(sourceCompression);
