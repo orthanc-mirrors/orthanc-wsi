@@ -70,7 +70,7 @@ namespace OrthancWSI
       DicomPyramid&              pyramid_;
 
     public:
-      Locker(const std::string& seriesId);
+      explicit Locker(const std::string& seriesId);
 
       DicomPyramid& GetPyramid() const
       {

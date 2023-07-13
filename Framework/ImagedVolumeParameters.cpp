@@ -29,12 +29,15 @@ namespace OrthancWSI
 {
   ImagedVolumeParameters::ImagedVolumeParameters() :
     hasWidth_(false),
-    hasHeight_(false)
-  {
+    hasHeight_(false),
+    width_(0),
+    height_(0),
+
     // Typical parameters for a specimen, in millimeters
-    depth_ = 1;
-    offsetX_ = 20;
-    offsetY_ = 40;
+    depth_(1),
+    offsetX_(20),
+    offsetY_(40)
+  {
   }
 
 
