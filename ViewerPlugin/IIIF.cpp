@@ -570,7 +570,7 @@ void ServeIIIFFrameInfo(OrthancPluginRestOutput* output,
 
   Json::Value result;
   result["@context"] = "http://iiif.io/api/image/3/context.json";
-  result["profile"] = "http://iiif.io/api/image/3/level0.json";
+  result["profile"] = "level0";
   result["protocol"] = "http://iiif.io/api/image";
   result["type"] = "ImageService3";
 
