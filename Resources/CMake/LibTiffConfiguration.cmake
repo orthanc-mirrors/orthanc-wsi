@@ -22,7 +22,7 @@
 
 if (STATIC_BUILD OR NOT USE_SYSTEM_LIBTIFF)
   SET(LIBTIFF_SOURCES_DIR ${CMAKE_BINARY_DIR}/tiff-4.2.0)
-  SET(LIBTIFF_URL "http://orthanc.osimis.io/ThirdPartyDownloads/tiff-4.2.0.tar.gz")
+  SET(LIBTIFF_URL "https://orthanc.uclouvain.be/third-party-downloads/tiff-4.2.0.tar.gz")
   SET(LIBTIFF_MD5 "2bbf6db1ddc4a59c89d6986b368fc063")
 
   DownloadPackage(${LIBTIFF_MD5} ${LIBTIFF_URL} "${LIBTIFF_SOURCES_DIR}")
