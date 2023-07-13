@@ -18,14 +18,19 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
-set(ORTHANC_WSI_VERSION "mainline")
+set(ORTHANC_WSI_VERSION "2.0")
 
 if (ORTHANC_WSI_VERSION STREQUAL "mainline")
   set(ORTHANC_FRAMEWORK_DEFAULT_VERSION "mainline")
   set(ORTHANC_FRAMEWORK_DEFAULT_SOURCE "hg")
 else()
-  set(ORTHANC_FRAMEWORK_DEFAULT_VERSION "b2e08d83e21d")  # Framework pre-1.9.8
+  set(ORTHANC_FRAMEWORK_DEFAULT_VERSION "1.12.1")
   set(ORTHANC_FRAMEWORK_DEFAULT_SOURCE "web")
+
+  # This definition is needed if Orthanc Framework <= 1.12.1
+  function(DefineSourceBasenameForTarget targetname)
+  endfunction()
+
 endif()
 
 add_definitions(
