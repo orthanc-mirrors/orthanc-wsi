@@ -51,14 +51,14 @@ include(${CMAKE_SOURCE_DIR}/../Resources/Orthanc/CMake/DownloadOrthancFramework.
 if (ORTHANC_FRAMEWORK_SOURCE STREQUAL "system")
   if (ORTHANC_FRAMEWORK_USE_SHARED)    
     include(FindBoost)
-    find_package(Boost COMPONENTS filesystem program_options regex system thread)
+    find_package(Boost COMPONENTS filesystem program_options regex system thread date_time)
     
     if (NOT Boost_FOUND)
       message(FATAL_ERROR "Unable to locate Boost on this system")
     endif()
 
     include(FindDCMTK)
-    link_libraries(${Boost_LIBRARIES} ${DCMTK_LIBRARIES} jsoncpp)
+    link_libraries(${Boost_LIBRARIES} ${DCMTK_LIBRARIES} jsoncpp crypto)
   endif()
   
   link_libraries(${ORTHANC_FRAMEWORK_LIBRARIES})
