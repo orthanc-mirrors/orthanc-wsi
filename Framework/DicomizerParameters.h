@@ -67,6 +67,9 @@ namespace OrthancWSI
     std::string                    cytominePrivateKey_;
     ImageCompression               cytomineCompression_;
 
+    // New in release 2.1
+    unsigned int  tiffAlignment_;
+
   public:
     DicomizerParameters();
 
@@ -278,5 +281,12 @@ namespace OrthancWSI
     int GetCytomineImageInstanceId() const;
 
     ImageCompression GetCytomineCompression() const;
+
+    void SetTiffAlignment(unsigned int alignment);
+
+    unsigned int GetTiffAlignment() const
+    {
+      return tiffAlignment_;
+    }
   };
 }

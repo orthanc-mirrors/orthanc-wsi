@@ -2,6 +2,7 @@ Pending changes in the mainline
 ===============================
 
 * OrthancWSIDicomizer supports plain TIFF, besides hierarchical TIFF
+* New option: "tiff-alignment" to control deep zoom of plain TIFF over IIIF
 
 
 Version 2.0 (2023-10-07)

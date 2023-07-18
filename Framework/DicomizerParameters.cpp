@@ -73,7 +73,8 @@ namespace OrthancWSI
     opticalPath_(OpticalPath_Brightfield),
     isCytomineSource_(false),
     cytomineImageInstanceId_(-1),
-    cytomineCompression_(ImageCompression_Png)
+    cytomineCompression_(ImageCompression_Png),
+    tiffAlignment_(1)
   {
     backgroundColor_[0] = 255;
     backgroundColor_[1] = 255;
@@ -357,6 +358,19 @@ namespace OrthancWSI
     else
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
+    }
+  }
+
+
+  void DicomizerParameters::SetTiffAlignment(unsigned int alignment)
+  {
+    if (alignment <= 0)
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
+    }
+    else
+    {
+      tiffAlignment_ = alignment;
     }
   }
 }
