@@ -23,9 +23,8 @@
 #pragma once
 
 #include "PyramidWithRawTiles.h"
+#include "../TiffReader.h"
 
-#include <tiff.h>
-#include <tiffio.h>
 #include <vector>
 #include <boost/thread.hpp>
 
@@ -50,7 +49,7 @@ namespace OrthancWSI
     struct Comparator;
 
     boost::mutex          mutex_;
-    TIFF*                 tiff_;
+    TiffReader            reader_;
     Orthanc::PixelFormat  pixelFormat_;
     ImageCompression      compression_;
     unsigned int          tileWidth_;
@@ -58,19 +57,10 @@ namespace OrthancWSI
     std::vector<Level>    levels_;
     Orthanc::PhotometricInterpretation  photometric_;
 
-    void Finalize();
-
     void CheckLevel(unsigned int level) const;
-
-    bool Initialize();
 
   public:
     explicit HierarchicalTiff(const std::string& path);
-
-    virtual ~HierarchicalTiff()
-    {
-      Finalize();
-    }
 
     virtual unsigned int GetLevelCount() const ORTHANC_OVERRIDE
     {
@@ -111,10 +101,5 @@ namespace OrthancWSI
     {
       return compression_;
     }
-
-    static bool GetCurrentDirectoryInformation(TIFF* tiff,
-                                               ImageCompression& compression,
-                                               Orthanc::PixelFormat& pixelFormat,
-                                               Orthanc::PhotometricInterpretation& photometric);
   };
 }

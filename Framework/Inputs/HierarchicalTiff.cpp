@@ -80,16 +80,6 @@ namespace OrthancWSI
   };
 
 
-  void HierarchicalTiff::Finalize()
-  {
-    if (tiff_)
-    {
-      TIFFClose(tiff_);
-      tiff_ = NULL;
-    }
-  }
-
-
   void HierarchicalTiff::CheckLevel(unsigned int level) const
   {
     if (level >= levels_.size())
@@ -99,91 +89,10 @@ namespace OrthancWSI
   }
 
 
-  bool HierarchicalTiff::GetCurrentDirectoryInformation(TIFF* tiff,
-                                                        ImageCompression& compression,
-                                                        Orthanc::PixelFormat& pixelFormat,
-                                                        Orthanc::PhotometricInterpretation& photometric)
-  {
-    uint16_t c;
-    if (!TIFFGetField(tiff, TIFFTAG_COMPRESSION, &c))
-    {
-      return false;
-    }
-
-    switch (c)
-    {
-      case COMPRESSION_NONE:
-        compression = ImageCompression_None;
-        break;
-
-      case COMPRESSION_JPEG:
-        compression = ImageCompression_Jpeg;
-        break;
-
-      default:
-        return false;
-    }
-
-    // http://www.awaresystems.be/imaging/tiff/tifftags/baseline.html
-
-    uint16_t channels, photometricTiff, bpp, planar;
-    if (!TIFFGetField(tiff, TIFFTAG_SAMPLESPERPIXEL, &channels) ||
-        channels == 0 ||
-        !TIFFGetField(tiff, TIFFTAG_PHOTOMETRIC, &photometricTiff) ||
-        !TIFFGetField(tiff, TIFFTAG_BITSPERSAMPLE, &bpp) ||
-        !TIFFGetField(tiff, TIFFTAG_PLANARCONFIG, &planar))
-    {
-      return false;
-    }
-
-    if (compression == ImageCompression_Jpeg &&
-        channels == 3 &&     // This is a color image
-        bpp == 8 &&
-        planar == PLANARCONFIG_CONTIG)  // This is interleaved RGB
-    {
-      pixelFormat = Orthanc::PixelFormat_RGB24;
-
-      switch (photometricTiff)
-      {
-        case PHOTOMETRIC_YCBCR:
-          photometric = Orthanc::PhotometricInterpretation_YBRFull422;
-          return true;
-          
-        case PHOTOMETRIC_RGB:
-          photometric = Orthanc::PhotometricInterpretation_RGB;
-          return true;
-
-        default:
-          LOG(ERROR) << "Unknown photometric interpretation in TIFF: " << photometricTiff;
-          return false;
-      }
-    }
-    else if (compression == ImageCompression_None &&
-             channels == 3 &&     // This is a color image
-             bpp == 8 &&
-             planar == PLANARCONFIG_CONTIG)  // This is interleaved RGB
-    {
-      pixelFormat = Orthanc::PixelFormat_RGB24;
-      photometric = Orthanc::PhotometricInterpretation_RGB;
-      return true;
-    }
-    else if (compression == ImageCompression_Jpeg &&
-             channels == 1 &&     // This is a grayscale image
-             bpp == 8)
-    {
-      pixelFormat = Orthanc::PixelFormat_Grayscale8;
-      photometric = Orthanc::PhotometricInterpretation_Monochrome2;
-    }
-    else
-    {
-      return false;
-    }
-
-    return true;
-  }
-
-
-  bool  HierarchicalTiff::Initialize()
+  HierarchicalTiff::HierarchicalTiff(const std::string& path) :
+    reader_(path),
+    tileWidth_(0),
+    tileHeight_(0)
   {
     bool first = true;
     tdir_t pos = 0;
@@ -195,16 +104,16 @@ namespace OrthancWSI
       Orthanc::PixelFormat pixelFormat;
       Orthanc::PhotometricInterpretation photometric;
 
-      if (TIFFSetDirectory(tiff_, pos) &&
-          TIFFGetField(tiff_, TIFFTAG_IMAGEWIDTH, &w) &&
-          TIFFGetField(tiff_, TIFFTAG_IMAGELENGTH, &h) &&
-          TIFFGetField(tiff_, TIFFTAG_TILEWIDTH, &tw) &&
-          TIFFGetField(tiff_, TIFFTAG_TILELENGTH, &th) &&
+      if (TIFFSetDirectory(reader_.GetTiff(), pos) &&
+          TIFFGetField(reader_.GetTiff(), TIFFTAG_IMAGEWIDTH, &w) &&
+          TIFFGetField(reader_.GetTiff(), TIFFTAG_IMAGELENGTH, &h) &&
+          TIFFGetField(reader_.GetTiff(), TIFFTAG_TILEWIDTH, &tw) &&
+          TIFFGetField(reader_.GetTiff(), TIFFTAG_TILELENGTH, &th) &&
           w > 0 &&
           h > 0 &&
           tw > 0 &&
           th > 0 &&
-          GetCurrentDirectoryInformation(tiff_, compression, pixelFormat, photometric))
+          reader_.GetCurrentDirectoryInformation(compression, pixelFormat, photometric))
       {
         if (first)
         {
@@ -221,44 +130,23 @@ namespace OrthancWSI
                  pixelFormat_ != pixelFormat ||
                  photometric_ != photometric)
         {
-          LOG(ERROR) << "The tile size or compression of the TIFF file varies along levels, this is not supported";
-          return false;
+          throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat,
+                                          "The tile size or compression of the TIFF file varies along levels, this is not supported");
         }
 
-        levels_.push_back(Level(tiff_, pos, w, h));
+        levels_.push_back(Level(reader_.GetTiff(), pos, w, h));
       }
 
       pos++;
     }
-    while (TIFFReadDirectory(tiff_));
+    while (TIFFReadDirectory(reader_.GetTiff()));
 
     if (levels_.size() == 0)
     {
-      LOG(ERROR) << "This is not a tiled TIFF image";
-      return false;
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat, "This is not a tiled TIFF image");
     }
 
     std::sort(levels_.begin(), levels_.end(), Comparator());
-    return true;
-  }
-
-
-  HierarchicalTiff::HierarchicalTiff(const std::string& path) :
-    tileWidth_(0),
-    tileHeight_(0)
-  {
-    tiff_ = TIFFOpen(path.c_str(), "r");
-    if (tiff_ == NULL)
-    {
-      LOG(ERROR) << "libtiff cannot open: " << path;
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_InexistentFile);
-    }
-
-    if (!Initialize())
-    {
-      Finalize();
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
-    }
   }
 
 
@@ -289,17 +177,17 @@ namespace OrthancWSI
     compression = compression_;
 
     // Make the TIFF context point to the level of interest
-    if (!TIFFSetDirectory(tiff_, levels_[level].directory_))
+    if (!TIFFSetDirectory(reader_.GetTiff(), levels_[level].directory_))
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_CorruptedFile);
     }
 
     // Get the index of the tile
-    ttile_t index = TIFFComputeTile(tiff_, tileX * tileWidth_, tileY * tileHeight_, 0 /*z*/, 0 /*sample*/);
+    ttile_t index = TIFFComputeTile(reader_.GetTiff(), tileX * tileWidth_, tileY * tileHeight_, 0 /*z*/, 0 /*sample*/);
 
     // Read the raw tile
     toff_t *sizes;
-    if (!TIFFGetField(tiff_, TIFFTAG_TILEBYTECOUNTS, &sizes))
+    if (!TIFFGetField(reader_.GetTiff(), TIFFTAG_TILEBYTECOUNTS, &sizes))
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_CorruptedFile);
     }
@@ -307,7 +195,7 @@ namespace OrthancWSI
     std::string raw;
     raw.resize(sizes[index]);
 
-    tsize_t read = TIFFReadRawTile(tiff_, index, &raw[0], raw.size());
+    tsize_t read = TIFFReadRawTile(reader_.GetTiff(), index, &raw[0], raw.size());
     if (read != static_cast<tsize_t>(sizes[index]))
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_CorruptedFile);
