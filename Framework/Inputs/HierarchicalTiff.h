@@ -62,12 +62,6 @@ namespace OrthancWSI
 
     void CheckLevel(unsigned int level) const;
 
-    bool GetCurrentCompression(ImageCompression& compression);
-
-    bool GetCurrentPixelFormat(Orthanc::PixelFormat& pixelFormat,
-                               Orthanc::PhotometricInterpretation& photometric,
-                               ImageCompression compression);
-
     bool Initialize();
 
   public:
@@ -117,5 +111,10 @@ namespace OrthancWSI
     {
       return compression_;
     }
+
+    static bool GetCurrentDirectoryInformation(TIFF* tiff,
+                                               ImageCompression& compression,
+                                               Orthanc::PixelFormat& pixelFormat,
+                                               Orthanc::PhotometricInterpretation& photometric);
   };
 }

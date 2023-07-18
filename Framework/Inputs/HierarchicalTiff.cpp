@@ -99,10 +99,13 @@ namespace OrthancWSI
   }
 
 
-  bool HierarchicalTiff::GetCurrentCompression(ImageCompression& compression)
+  bool HierarchicalTiff::GetCurrentDirectoryInformation(TIFF* tiff,
+                                                        ImageCompression& compression,
+                                                        Orthanc::PixelFormat& pixelFormat,
+                                                        Orthanc::PhotometricInterpretation& photometric)
   {
     uint16_t c;
-    if (!TIFFGetField(tiff_, TIFFTAG_COMPRESSION, &c))
+    if (!TIFFGetField(tiff, TIFFTAG_COMPRESSION, &c))
     {
       return false;
     }
@@ -111,30 +114,24 @@ namespace OrthancWSI
     {
       case COMPRESSION_NONE:
         compression = ImageCompression_None;
-        return true;
+        break;
 
       case COMPRESSION_JPEG:
         compression = ImageCompression_Jpeg;
-        return true;
+        break;
 
       default:
         return false;
     }
-  }
 
-
-  bool HierarchicalTiff::GetCurrentPixelFormat(Orthanc::PixelFormat& pixelFormat,
-                                               Orthanc::PhotometricInterpretation& photometric,
-                                               ImageCompression compression)
-  {
     // http://www.awaresystems.be/imaging/tiff/tifftags/baseline.html
 
     uint16_t channels, photometricTiff, bpp, planar;
-    if (!TIFFGetField(tiff_, TIFFTAG_SAMPLESPERPIXEL, &channels) ||
+    if (!TIFFGetField(tiff, TIFFTAG_SAMPLESPERPIXEL, &channels) ||
         channels == 0 ||
-        !TIFFGetField(tiff_, TIFFTAG_PHOTOMETRIC, &photometricTiff) ||
-        !TIFFGetField(tiff_, TIFFTAG_BITSPERSAMPLE, &bpp) ||
-        !TIFFGetField(tiff_, TIFFTAG_PLANARCONFIG, &planar))
+        !TIFFGetField(tiff, TIFFTAG_PHOTOMETRIC, &photometricTiff) ||
+        !TIFFGetField(tiff, TIFFTAG_BITSPERSAMPLE, &bpp) ||
+        !TIFFGetField(tiff, TIFFTAG_PLANARCONFIG, &planar))
     {
       return false;
     }
@@ -160,6 +157,15 @@ namespace OrthancWSI
           LOG(ERROR) << "Unknown photometric interpretation in TIFF: " << photometricTiff;
           return false;
       }
+    }
+    else if (compression == ImageCompression_None &&
+             channels == 3 &&     // This is a color image
+             bpp == 8 &&
+             planar == PLANARCONFIG_CONTIG)  // This is interleaved RGB
+    {
+      pixelFormat = Orthanc::PixelFormat_RGB24;
+      photometric = Orthanc::PhotometricInterpretation_RGB;
+      return true;
     }
     else if (compression == ImageCompression_Jpeg &&
              channels == 1 &&     // This is a grayscale image
@@ -198,8 +204,7 @@ namespace OrthancWSI
           h > 0 &&
           tw > 0 &&
           th > 0 &&
-          GetCurrentCompression(compression) &&
-          GetCurrentPixelFormat(pixelFormat, photometric, compression))
+          GetCurrentDirectoryInformation(tiff_, compression, pixelFormat, photometric))
       {
         if (first)
         {
