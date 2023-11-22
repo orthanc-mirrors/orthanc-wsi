@@ -52,10 +52,10 @@ Installation and usage
 ----------------------
 
 Build instructions are similar to that of Orthanc:
-http://book.orthanc-server.com/faq/compiling.html
+https://orthanc.uclouvain.be/book/faq/compiling.html
 
 Usage details are available as part of the Orthanc Book:
-http://book.orthanc-server.com/plugins/wsi.html
+https://orthanc.uclouvain.be/book/plugins/wsi.html
 
 The two command-line tools can be found in folder "Applications".
 They come with an extensive "--help" option.
@@ -72,7 +72,7 @@ Contributing
 
 Instructions for contributing to the Orthanc project are included in
 the Orthanc Book:
-https://book.orthanc-server.com/developers/repositories.html
+https://orthanc.uclouvain.be/book/developers/repositories.html
 
 
 

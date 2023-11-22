@@ -145,7 +145,7 @@ endif()
 if (STATIC_BUILD OR NOT USE_SYSTEM_OPENLAYERS)
   DownloadPackage(
     "77e57aad873c2d4deea8bb1446e9b87a"
-    "https://orthanc.uclouvain.be/third-party-downloads/openlayers-3.19.0-dist.zip"
+    "https://orthanc.uclouvain.be/downloads/third-party-downloads/openlayers-3.19.0-dist.zip"
     "v3.19.0-dist")
   
   set(OPENLAYERS_RESOURCES

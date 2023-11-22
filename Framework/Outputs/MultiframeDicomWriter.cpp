@@ -224,7 +224,7 @@ namespace OrthancWSI
        * Generate a shared SOP Instance UID that corresponds to the
        * main instance containing all the instances. This main
        * instance is purely "virtual", as it is never generated.
-       * https://bugs.orthanc-server.com/show_bug.cgi?id=145
+       * https://orthanc.uclouvain.be/bugs/show_bug.cgi?id=145
        * http://dicom.nema.org/medical/dicom/2020d/output/chtml/part03/figures/PS3.3_C.7.6.16-1a.svg
        **/
       DicomToolbox::SetStringTag(sharedTags_, DCM_SOPInstanceUIDOfConcatenationSource,
