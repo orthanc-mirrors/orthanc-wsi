@@ -240,7 +240,9 @@ add_library(OrthancWSI SHARED
   ${OPENJPEG_SOURCES}
   )
 
-DefineSourceBasenameForTarget(OrthancWSI)
+if (COMMAND DefineSourceBasenameForTarget)
+  DefineSourceBasenameForTarget(OrthancWSI)
+endif()
 
 message("Setting the version of the library to ${ORTHANC_WSI_VERSION}")
 set_target_properties(OrthancWSI PROPERTIES 

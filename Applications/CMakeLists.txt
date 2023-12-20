@@ -199,7 +199,9 @@ add_library(OrthancWSIFramework STATIC
   ${OPENJPEG_SOURCES}
   )
 
-DefineSourceBasenameForTarget(OrthancWSIFramework)
+if (COMMAND DefineSourceBasenameForTarget)
+  DefineSourceBasenameForTarget(OrthancWSIFramework)
+endif()
 
 
 #####################################################################
@@ -230,7 +232,9 @@ add_executable(OrthancWSIDicomizer
   ${DICOMIZER_RESOURCES}
   )
 
-DefineSourceBasenameForTarget(OrthancWSIDicomizer)
+if (COMMAND DefineSourceBasenameForTarget)
+  DefineSourceBasenameForTarget(OrthancWSIDicomizer)
+endif()
 
 target_link_libraries(OrthancWSIDicomizer OrthancWSIFramework ${DCMTK_LIBRARIES})
 
@@ -268,7 +272,9 @@ add_executable(OrthancWSIDicomToTiff
   ${DICOM_TO_TIFF_RESOURCES}
   )
 
-DefineSourceBasenameForTarget(OrthancWSIDicomToTiff)
+if (COMMAND DefineSourceBasenameForTarget)
+  DefineSourceBasenameForTarget(OrthancWSIDicomToTiff)
+endif()
 
 target_link_libraries(OrthancWSIDicomToTiff OrthancWSIFramework ${DCMTK_LIBRARIES})
 
