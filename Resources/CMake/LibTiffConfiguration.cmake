@@ -70,10 +70,15 @@ if (STATIC_BUILD OR NOT USE_SYSTEM_LIBTIFF)
     -DTIFF_SSIZE_T=ssize_t
     -DHAVE_IEEEFP=1
     -DHOST_FILLORDER=${TIFF_FILLORDER}
-    -DHAVE_SNPRINTF=1
     -DJPEG_SUPPORT=1
     -DLZW_SUPPORT=1
     )
+
+  if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows" AND
+      CMAKE_COMPILER_IS_GNUCXX)
+    # MinGW
+    add_definitions(-DHAVE_SNPRINTF=1)
+  endif()
 
   if (MSVC)
     # The "%" must be escaped if using Visual Studio
@@ -135,7 +140,7 @@ if (STATIC_BUILD OR NOT USE_SYSTEM_LIBTIFF)
 
   include_directories(${LIBTIFF_SOURCES_DIR}/libtiff)
 
-  if ("${CMAKE_SYSTEM_VERSION}" STREQUAL "Windows")
+  if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
     list(APPEND LIBTIFF_SOURCES
       ${LIBTIFF_SOURCES_DIR}/libtiff/tif_win32.c
       )
