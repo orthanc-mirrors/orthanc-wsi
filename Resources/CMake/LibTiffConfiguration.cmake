@@ -135,6 +135,7 @@ if (STATIC_BUILD OR NOT USE_SYSTEM_LIBTIFF)
     ${LIBTIFF_SOURCES_DIR}/libtiff/tif_warning.c
     ${LIBTIFF_SOURCES_DIR}/libtiff/tif_write.c
     ${LIBTIFF_SOURCES_DIR}/libtiff/tif_zip.c
+    ${LIBTIFF_SOURCES_DIR}/port/snprintf.c   # Necessary for Visual Studio
     )
 
   include_directories(${LIBTIFF_SOURCES_DIR}/libtiff)
