@@ -74,9 +74,8 @@ if (STATIC_BUILD OR NOT USE_SYSTEM_LIBTIFF)
     -DLZW_SUPPORT=1
     )
 
-  if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows" AND
-      CMAKE_COMPILER_IS_GNUCXX)
-    # MinGW
+  if (NOT MSVC)
+    # snprintf() is not available on Visual Studio 2008
     add_definitions(-DHAVE_SNPRINTF=1)
   endif()
 
@@ -139,12 +138,6 @@ if (STATIC_BUILD OR NOT USE_SYSTEM_LIBTIFF)
     )
 
   include_directories(${LIBTIFF_SOURCES_DIR}/libtiff)
-
-  if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
-    list(APPEND LIBTIFF_SOURCES
-      ${LIBTIFF_SOURCES_DIR}/libtiff/tif_win32.c
-      )
-  endif()
 
   source_group(ThirdParty\\libtiff REGULAR_EXPRESSION ${LIBTIFF_SOURCES_DIR}/.*)
 
