@@ -71,8 +71,9 @@ if (STATIC_BUILD OR NOT USE_SYSTEM_LIBTIFF)
     -DLZW_SUPPORT=1
     )
 
-  if (NOT MSVC)
-    # snprintf() is not available on Visual Studio 2008
+  # snprintf() is not available on Visual Studio 2008
+  check_symbol_exists(snprintf "stdio.h" HAVE_SNPRINTF)
+  if (HAVE_SNPRINTF)
     add_definitions(-DHAVE_SNPRINTF=1)
   endif()
 
