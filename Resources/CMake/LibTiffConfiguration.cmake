@@ -41,7 +41,7 @@ if (STATIC_BUILD OR NOT USE_SYSTEM_LIBTIFF)
 #    include <windows.h>
 #    define ssize_t SSIZE_T
 #  endif
-#  if !defined(snprintf) && (_MSC_VER < 1900)
+#  if !defined(snprintf)
 #    define snprintf _snprintf
 #  endif
 #endif
