@@ -39,6 +39,9 @@
 
 #include <cassert>
 
+#define ORTHANC_PLUGIN_NAME "wsi"
+
+
 static void AnswerSparseTile(OrthancPluginRestOutput* output,
                              unsigned int tileWidth,
                              unsigned int tileHeight)
@@ -342,7 +345,7 @@ extern "C"
     sprintf(info, "The whole-slide imaging plugin will use at most %u threads to transcode the tiles", threads);
     OrthancPluginLogWarning(OrthancPlugins::GetGlobalContext(), info);
 
-    OrthancPluginSetDescription(context, "Provides a Web viewer of whole-slide microscopic images within Orthanc.");
+    OrthancPlugins::SetDescription(ORTHANC_PLUGIN_NAME, "Provides a Web viewer of whole-slide microscopic images within Orthanc.");
 
     OrthancWSI::DicomPyramidCache::InitializeInstance(10 /* Number of pyramids to be cached - TODO parameter */);
 
@@ -428,7 +431,7 @@ extern "C"
       dictionary["SERVE_OPEN_SEADRAGON"] = (serveOpenSeadragon ? "true" : "false");
       explorer = Orthanc::Toolbox::SubstituteVariables(explorer, dictionary);
 
-      OrthancPluginExtendOrthancExplorer(OrthancPlugins::GetGlobalContext(), explorer.c_str());
+      OrthancPlugins::ExtendOrthancExplorer(ORTHANC_PLUGIN_NAME, explorer);
     }
 
     return 0;
@@ -444,7 +447,7 @@ extern "C"
 
   ORTHANC_PLUGINS_API const char* OrthancPluginGetName()
   {
-    return "wsi";
+    return ORTHANC_PLUGIN_NAME;
   }
 
 
