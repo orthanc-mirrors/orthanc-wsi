@@ -3,6 +3,7 @@ Pending changes in the mainline
 
 * OrthancWSIDicomizer supports plain TIFF, besides hierarchical TIFF
 * New option: "tiff-alignment" to control deep zoom of plain TIFF over IIIF
+* Force version of Mirador to 3.3.0
 
 
 Version 2.0 (2023-10-07)
@@ -12,6 +13,7 @@ Version 2.0 (2023-10-07)
 * Automated extraction of the imaged volume if using OpenSlide
 * URI "/wsi/tiles/{id}/{z}/{x}/{y}" supports the "Accept" HTTP header
   to force JPEG, JPEG2k, or PNG in the decoded tiles
+* Force version of OpenSeadragon to 4.0.0
 
 
 Version 1.1 (2021-12-11)
