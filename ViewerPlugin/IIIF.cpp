@@ -127,6 +127,18 @@ void ServeIIIFTiledImageInfo(OrthancPluginRestOutput* output,
     }
   }
 
+  /**
+   * Reversing the order of the "sizes" field seems to be necessary
+   * for recent version of OpenSeadragon (>= 4.1.0) and Mirador (>=
+   * 4.0.0). This fix was included in release 2.1 of the WSI plugin.
+   * https://github.com/openseadragon/openseadragon/issues/2379
+   **/
+  Json::Value reversedSizes = Json::arrayValue;
+  for (Json::Value::ArrayIndex i = sizes.size(); i > 0; i--)
+  {
+    reversedSizes.append(sizes[i - 1]);
+  }
+
   Json::Value tiles;
   tiles["width"] = pyramid.GetTileWidth(0);
   tiles["height"] = pyramid.GetTileHeight(0);
@@ -141,7 +153,7 @@ void ServeIIIFTiledImageInfo(OrthancPluginRestOutput* output,
   result["id"] = iiifPublicUrl_ + "tiles/" + seriesId;
   result["width"] = pyramid.GetLevelWidth(0);
   result["height"] = pyramid.GetLevelHeight(0);
-  result["sizes"] = sizes;
+  result["sizes"] = reversedSizes;
   result["tiles"].append(tiles);
 
   std::string s = result.toStyledString();
