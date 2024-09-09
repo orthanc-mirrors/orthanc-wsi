@@ -1,6 +1,7 @@
 Pending changes in the mainline
 ===============================
 
+* Support of transparency in OpenSlide
 * OrthancWSIDicomizer supports plain TIFF, besides hierarchical TIFF
 * New option: "tiff-alignment" to control deep zoom of plain TIFF over IIIF
 * Force version of Mirador to 3.3.0
