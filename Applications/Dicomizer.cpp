@@ -1109,6 +1109,10 @@ OrthancWSI::ITiledPyramid* OpenInputPyramid(OrthancWSI::ImageCompression& source
       new OrthancWSI::OpenSlidePyramid(path, parameters.GetTargetTileWidth(512),
                                        parameters.GetTargetTileHeight(512)));
 
+    openslide->SetBackgroundColor(parameters.GetBackgroundColorRed(),
+                                  parameters.GetBackgroundColorGreen(),
+                                  parameters.GetBackgroundColorBlue());
+
     float volumeWidth, volumeHeight;
     if (openslide->LookupImagedVolumeSize(volumeWidth, volumeHeight))
     {

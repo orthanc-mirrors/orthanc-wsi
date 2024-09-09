@@ -34,6 +34,7 @@ namespace OrthancWSI
     OpenSlideLibrary::Image  image_;
     unsigned int             tileWidth_;
     unsigned int             tileHeight_;
+    uint8_t                  backgroundColor_[3];
 
   protected:
     virtual void ReadRegion(Orthanc::ImageAccessor& target,
@@ -83,5 +84,9 @@ namespace OrthancWSI
 
     bool LookupImagedVolumeSize(float& width,
                                 float& height) const;
+
+    void SetBackgroundColor(uint8_t red,
+                            uint8_t green,
+                            uint8_t blue);
   };
 }
