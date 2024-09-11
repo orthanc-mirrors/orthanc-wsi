@@ -29,8 +29,8 @@
 #include "../Resources/Orthanc/Plugins/OrthancPluginCppWrapper.h"
 
 #include <Compatibility.h>  // For std::unique_ptr
+#include <Images/ImageProcessing.h>
 #include <Images/JpegReader.h>
-#include <Images/JpegWriter.h>
 #include <Images/PngWriter.h>
 #include <MultiThreading/Semaphore.h>
 #include <OrthancException.h>
@@ -119,11 +119,19 @@ namespace OrthancWSI
     tileHeight_(pyramid.GetTileHeight(level)),
     photometric_(pyramid.GetPhotometricInterpretation())
   {
-    if (!pyramid.ReadRawTile(tile_, compression_, level, tileX, tileY))
+    isEmpty_ = !pyramid.ReadRawTile(tile_, compression_, level, tileX, tileY);
+  }
+
+
+  ImageCompression RawTile::GetCompression() const
+  {
+    if (isEmpty_)
     {
-      // Handling of missing tile (for sparse tiling): TODO parameter?
-      // AnswerSparseTile(output, tileWidth, tileHeight); return;
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
+    }
+    else
+    {
+      return compression_;
     }
   }
 
@@ -131,6 +139,11 @@ namespace OrthancWSI
   void RawTile::Answer(OrthancPluginRestOutput* output,
                        Orthanc::MimeType encoding)
   {
+    if (isEmpty_)
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
+    }
+
     if ((compression_ == ImageCompression_Jpeg && encoding == Orthanc::MimeType_Jpeg) ||
         (compression_ == ImageCompression_Jpeg2000 && encoding == Orthanc::MimeType_Jpeg2000))
     {
@@ -158,6 +171,11 @@ namespace OrthancWSI
 
   Orthanc::ImageAccessor* RawTile::Decode()
   {
+    if (isEmpty_)
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
+    }
+
     Orthanc::Semaphore::Locker locker(*transcoderSemaphore_);
     return DecodeInternal();
   }
@@ -181,5 +199,42 @@ namespace OrthancWSI
   void RawTile::FinalizeTranscoderSemaphore()
   {
     transcoderSemaphore_.reset(NULL);
+  }
+
+
+  void RawTile::AnswerBackgroundTile(OrthancPluginRestOutput* output,
+                                     unsigned int tileWidth,
+                                     unsigned int tileHeight)
+  {
+    std::string answer;
+
+    {
+      static boost::mutex mutex;
+      static std::string cachedTile;
+      static unsigned int cachedWidth = 0;
+      static unsigned int cachedHeight = 0;
+
+      boost::mutex::scoped_lock lock(mutex);
+
+      if (cachedTile.empty() ||
+          cachedWidth != tileWidth ||
+          cachedHeight != tileHeight)
+      {
+        Orthanc::Image tile(Orthanc::PixelFormat_RGBA32, tileWidth, tileHeight, false);
+
+        Orthanc::ImageProcessing::Set(tile, 255 /* red */, 255 /* green */,
+                                      255 /* blue */, 0 /* alpha - fully transparent */);
+
+        Orthanc::PngWriter writer;
+        Orthanc::IImageWriter::WriteToMemory(writer, cachedTile, tile);
+        cachedWidth = tileWidth;
+        cachedHeight = tileHeight;
+      }
+
+      answer = cachedTile;  // Make a private copy to avoid mutex on "OrthancPluginAnswerBuffer()"
+    }
+
+    OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, answer.c_str(),
+                              answer.size(), Orthanc::EnumerationToString(Orthanc::MimeType_Png));
   }
 }

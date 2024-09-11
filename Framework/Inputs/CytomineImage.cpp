@@ -156,10 +156,13 @@ namespace OrthancWSI
 
 
   void CytomineImage::ReadRegion(Orthanc::ImageAccessor& target,
+                                 bool& isEmpty,
                                  unsigned int level,
                                  unsigned int x,
                                  unsigned int y)
   {
+    isEmpty = false;
+
     if (level != 0 ||
         x >= fullWidth_ ||
         y >= fullHeight_)

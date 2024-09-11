@@ -43,6 +43,7 @@ namespace OrthancWSI
     bool              hasRawTile_;
     std::string       rawTile_;
     ImageCompression  rawTileCompression_;
+    bool              isEmpty_;
 
     std::unique_ptr<Orthanc::ImageAccessor>  decoded_;
 
@@ -107,11 +108,13 @@ namespace OrthancWSI
           that_.source_.ReadRawTile(rawTile_, rawTileCompression_, that_.level_, tileX, tileY))
       {
         hasRawTile_ = true;
+        isEmpty_ = false;
       }
       else
       {
         hasRawTile_ = false;
-        decoded_.reset(that_.source_.DecodeTile(that_.level_, tileX, tileY));
+
+        decoded_.reset(that_.source_.DecodeTile(isEmpty_, that_.level_, tileX, tileY));
         if (decoded_.get() == NULL)
         {
           throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
@@ -165,6 +168,11 @@ namespace OrthancWSI
       }
 
       return *decoded_;
+    }
+
+    bool IsEmpty() const
+    {
+      return isEmpty_;
     }
   };
 
@@ -290,6 +298,7 @@ namespace OrthancWSI
 
 
   void PyramidReader::GetDecodedTile(Orthanc::ImageAccessor& target,
+                                     bool& isEmpty,
                                      unsigned int tileX,
                                      unsigned int tileY)
   {
@@ -298,6 +307,7 @@ namespace OrthancWSI
     {
       // Accessing a tile out of the source image
       GetOutsideTile().GetReadOnlyAccessor(target);
+      isEmpty = true;
     }
     else
     {
@@ -319,7 +329,8 @@ namespace OrthancWSI
       target.AssignReadOnly(tile.GetFormat(),
                             targetTileWidth_,
                             targetTileHeight_,
-                            tile.GetPitch(), bytes);                                    
+                            tile.GetPitch(), bytes);
+      isEmpty = source.IsEmpty();
     }
   }
 }

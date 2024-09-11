@@ -31,10 +31,13 @@
 namespace OrthancWSI
 {
   void SingleLevelDecodedPyramid::ReadRegion(Orthanc::ImageAccessor& target,
+                                             bool& isEmpty,
                                              unsigned int level,
                                              unsigned int x,
                                              unsigned int y)
   {
+    isEmpty = false;
+
     Orthanc::ImageAccessor region;
     image_.GetRegion(region, x, y, target.GetWidth(), target.GetHeight());
     Orthanc::ImageProcessing::Copy(target, region);

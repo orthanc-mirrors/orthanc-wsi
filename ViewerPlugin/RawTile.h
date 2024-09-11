@@ -34,6 +34,7 @@ namespace OrthancWSI
   class RawTile : public boost::noncopyable
   {
   private:
+    bool                               isEmpty_;
     Orthanc::PixelFormat               format_;
     unsigned int                       tileWidth_;
     unsigned int                       tileHeight_;
@@ -53,10 +54,22 @@ namespace OrthancWSI
             unsigned int tileX,
             unsigned int tileY);
 
-    ImageCompression GetCompression() const
+    bool IsEmpty() const
     {
-      return compression_;
+      return isEmpty_;
     }
+
+    unsigned int GetTileWidth() const
+    {
+      return tileWidth_;
+    }
+
+    unsigned int GetTileHeight() const
+    {
+      return tileHeight_;
+    }
+
+    ImageCompression GetCompression() const;
 
     void Answer(OrthancPluginRestOutput* output,
                 Orthanc::MimeType encoding);
@@ -72,5 +85,9 @@ namespace OrthancWSI
     static void InitializeTranscoderSemaphore(unsigned int maxThreads);
 
     static void FinalizeTranscoderSemaphore();
+
+    static void AnswerBackgroundTile(OrthancPluginRestOutput* output,
+                                     unsigned int tileWidth,
+                                     unsigned int tileHeight);
   };
 }

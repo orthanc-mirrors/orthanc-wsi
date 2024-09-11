@@ -64,7 +64,8 @@ namespace OrthancWSI
   }
 
 
-  Orthanc::ImageAccessor* TiledPyramidStatistics::DecodeTile(unsigned int level,
+  Orthanc::ImageAccessor* TiledPyramidStatistics::DecodeTile(bool& isEmpty,
+                                                             unsigned int level,
                                                              unsigned int tileX,
                                                              unsigned int tileY)
   {
@@ -73,6 +74,6 @@ namespace OrthancWSI
       countDecodedTiles_++;
     }
 
-    return source_.DecodeTile(level, tileX, tileY);
+    return source_.DecodeTile(isEmpty, level, tileX, tileY);
   }
 }

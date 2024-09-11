@@ -61,7 +61,8 @@ namespace OrthancWSI
                              unsigned int tileX,
                              unsigned int tileY) = 0;
 
-    virtual Orthanc::ImageAccessor* DecodeTile(unsigned int level,
+    virtual Orthanc::ImageAccessor* DecodeTile(bool& isEmpty,
+                                               unsigned int level,
                                                unsigned int tileX,
                                                unsigned int tileY) = 0;
 

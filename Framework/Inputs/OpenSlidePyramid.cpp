@@ -36,6 +36,7 @@
 namespace OrthancWSI
 {
   void OpenSlidePyramid::ReadRegion(Orthanc::ImageAccessor& target,
+                                    bool& isEmpty,
                                     unsigned int level,
                                     unsigned int x,
                                     unsigned int y)
@@ -50,6 +51,29 @@ namespace OrthancWSI
 
     const unsigned int width = source->GetWidth();
     const unsigned int height = source->GetHeight();
+
+    if (source->GetFormat() == Orthanc::PixelFormat_BGRA32)
+    {
+      isEmpty = true;
+
+      for (unsigned int y = 0; y < height && isEmpty; y++)
+      {
+        const uint8_t* p = reinterpret_cast<const uint8_t*>(source->GetConstRow(y));
+        for (unsigned int x = 0; x < width && isEmpty; x++)
+        {
+          if (p[3] != 0)
+          {
+            isEmpty = false;
+          }
+
+          p += 4;
+        }
+      }
+    }
+    else
+    {
+      isEmpty = false;
+    }
 
     if (target.GetFormat() == Orthanc::PixelFormat_RGB24 &&
         source->GetFormat() == Orthanc::PixelFormat_BGRA32)

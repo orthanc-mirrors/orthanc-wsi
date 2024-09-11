@@ -231,7 +231,9 @@ void ServeIIIFTiledImageTile(OrthancPluginRestOutput* output,
       for (unsigned int tx = 0; tx < nx; tx++)
       {
         const unsigned int x = tx * pyramid.GetTileWidth(level);
-        std::unique_ptr<Orthanc::ImageAccessor> tile(pyramid.DecodeTile(level, tx, ty));
+
+        bool isEmpty;  // Unused
+        std::unique_ptr<Orthanc::ImageAccessor> tile(pyramid.DecodeTile(isEmpty, level, tx, ty));
 
         const unsigned int width = std::min(pyramid.GetTileWidth(level), full.GetWidth() - x);
 
@@ -328,8 +330,12 @@ void ServeIIIFTiledImageTile(OrthancPluginRestOutput* output,
                                               regionX / GetPhysicalTileWidth(pyramid, level),
                                               regionY / GetPhysicalTileHeight(pyramid, level)));
 
-        if (static_cast<unsigned int>(cropWidth) < pyramid.GetTileWidth(level) ||
-            static_cast<unsigned int>(cropHeight) < pyramid.GetTileHeight(level))
+        assert(rawTile->GetTileWidth() == pyramid.GetTileWidth(level));
+        assert(rawTile->GetTileHeight() == pyramid.GetTileHeight(level));
+
+        if (!rawTile->IsEmpty() &&
+            (static_cast<unsigned int>(cropWidth) < pyramid.GetTileWidth(level) ||
+             static_cast<unsigned int>(cropHeight) < pyramid.GetTileHeight(level)))
         {
           toCrop.reset(rawTile->Decode());
           rawTile.reset(NULL);
@@ -341,8 +347,23 @@ void ServeIIIFTiledImageTile(OrthancPluginRestOutput* output,
     {
       assert(toCrop.get() == NULL);
 
-      // Level 0 Compliance of IIIF expects JPEG files
-      rawTile->Answer(output, Orthanc::MimeType_Jpeg);
+      if (rawTile->IsEmpty())
+      {
+        if (static_cast<unsigned int>(cropWidth) < rawTile->GetTileWidth() ||
+            static_cast<unsigned int>(cropHeight) < rawTile->GetTileHeight())
+        {
+          OrthancWSI::RawTile::AnswerBackgroundTile(output, static_cast<unsigned int>(cropWidth), static_cast<unsigned int>(cropHeight));
+        }
+        else
+        {
+          OrthancWSI::RawTile::AnswerBackgroundTile(output, rawTile->GetTileWidth(), rawTile->GetTileHeight());
+        }
+      }
+      else
+      {
+        // Level 0 Compliance of IIIF expects JPEG files
+        rawTile->Answer(output, Orthanc::MimeType_Jpeg);
+      }
     }
     else if (toCrop.get() != NULL)
     {

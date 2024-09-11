@@ -240,8 +240,9 @@ namespace OrthancWSI
       {
         for (unsigned int x = 0; x < width; x += pyramid.GetTileWidth(level))
         {
+          bool isEmpty;  // Unused in this case
           std::unique_ptr<Orthanc::ImageAccessor> tile(
-            pyramid.DecodeTile(level,
+            pyramid.DecodeTile(isEmpty, level,
                                x / pyramid.GetTileWidth(level),
                                y / pyramid.GetTileHeight(level)));
           Embed(*result, *tile, x, y);

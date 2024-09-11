@@ -59,7 +59,8 @@ namespace OrthancWSI
   }
 
 
-  Orthanc::ImageAccessor* DecodedTiledPyramid::DecodeTile(unsigned int level,
+  Orthanc::ImageAccessor* DecodedTiledPyramid::DecodeTile(bool& isEmpty,
+                                                          unsigned int level,
                                                           unsigned int tileX,
                                                           unsigned int tileY)
   {
@@ -72,6 +73,7 @@ namespace OrthancWSI
     if (x >= GetLevelWidth(level) ||
         y >= GetLevelHeight(level))   // (*)
     {
+      isEmpty = true;
       ImageToolbox::Set(*tile, backgroundColor_[0], backgroundColor_[1], backgroundColor_[2]);
       return tile.release();
     }
@@ -104,14 +106,14 @@ namespace OrthancWSI
     if (fit)
     {
       // The tile entirely lies inside the image
-      ReadRegion(*tile, level, x, y);
+      ReadRegion(*tile, isEmpty, level, x, y);
     }
     else
     {
       // The tile exceeds the size of image, decode it to a temporary buffer
       std::unique_ptr<Orthanc::ImageAccessor> cropped
         (ImageToolbox::Allocate(GetPixelFormat(), regionWidth, regionHeight));
-      ReadRegion(*cropped, level, x, y);
+      ReadRegion(*cropped, isEmpty, level, x, y);
 
       // Create a white tile, and fill it with the cropped content
       ImageToolbox::Set(*tile, backgroundColor_[0], backgroundColor_[1], backgroundColor_[2]);

@@ -43,26 +43,6 @@
 #define ORTHANC_PLUGIN_NAME "wsi"
 
 
-static void AnswerSparseTile(OrthancPluginRestOutput* output,
-                             unsigned int tileWidth,
-                             unsigned int tileHeight)
-{
-  Orthanc::Image tile(Orthanc::PixelFormat_RGB24, tileWidth, tileHeight, false);
-
-  // Black (TODO parameter)
-  uint8_t red = 0;
-  uint8_t green = 0;
-  uint8_t blue = 0;
-  Orthanc::ImageProcessing::Set(tile, red, green, blue, 255);
-
-  // TODO Cache the tile
-  OrthancPluginCompressAndAnswerPngImage(OrthancPlugins::GetGlobalContext(),
-                                         output, OrthancPluginPixelFormat_RGB24, 
-                                         tile.GetWidth(), tile.GetHeight(), 
-                                         tile.GetPitch(), tile.GetBuffer());
-}
-
-
 static bool DisplayPerformanceWarning()
 {
   (void) DisplayPerformanceWarning;   // Disable warning about unused function
@@ -163,6 +143,12 @@ void ServeTile(OrthancPluginRestOutput* output,
                                           static_cast<unsigned int>(level),
                                           static_cast<unsigned int>(tileX),
                                           static_cast<unsigned int>(tileY)));
+  }
+
+  if (rawTile->IsEmpty())
+  {
+    OrthancWSI::RawTile::AnswerBackgroundTile(output, rawTile->GetTileWidth(), rawTile->GetTileHeight());
+    return;
   }
 
   Orthanc::MimeType mime;

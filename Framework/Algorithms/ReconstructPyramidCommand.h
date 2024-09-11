@@ -41,7 +41,8 @@ namespace OrthancWSI
     unsigned int y_;
     unsigned int shiftTargetLevel_;
 
-    Orthanc::ImageAccessor* Explore(unsigned int level,
+    Orthanc::ImageAccessor* Explore(bool& isEmpty,
+                                    unsigned int level,
                                     unsigned int offsetX,
                                     unsigned int offsetY);
 

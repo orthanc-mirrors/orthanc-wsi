@@ -107,10 +107,13 @@ namespace OrthancWSI
   }
 
 
-  Orthanc::ImageAccessor* InMemoryTiledImage::DecodeTile(unsigned int level,
+  Orthanc::ImageAccessor* InMemoryTiledImage::DecodeTile(bool& isEmpty,
+                                                         unsigned int level,
                                                          unsigned int tileX,
                                                          unsigned int tileY)
   {
+    isEmpty = false;
+
     CheckLevel(level);
 
     if (tileX >= countTilesX_ ||

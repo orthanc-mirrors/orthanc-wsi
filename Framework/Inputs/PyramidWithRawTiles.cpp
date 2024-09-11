@@ -28,10 +28,13 @@
 
 namespace OrthancWSI
 {
-  Orthanc::ImageAccessor* PyramidWithRawTiles::DecodeTile(unsigned int level,
+  Orthanc::ImageAccessor* PyramidWithRawTiles::DecodeTile(bool& isEmpty,
+                                                          unsigned int level,
                                                           unsigned int tileX,
                                                           unsigned int tileY)
   {
+    isEmpty = false;
+
     std::string tile;
     ImageCompression compression;
 

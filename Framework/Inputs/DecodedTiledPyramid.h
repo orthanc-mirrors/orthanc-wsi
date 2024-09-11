@@ -43,6 +43,7 @@ namespace OrthancWSI
     // the image, and that target has the proper size to store the
     // region. Pay attention to implement mutual exclusion in subclasses.
     virtual void ReadRegion(Orthanc::ImageAccessor& target,
+                            bool& isEmpty,
                             unsigned int level,
                             unsigned int x,
                             unsigned int y) = 0;
@@ -58,7 +59,8 @@ namespace OrthancWSI
                             uint8_t& green,
                             uint8_t& blue) const;
 
-    virtual Orthanc::ImageAccessor* DecodeTile(unsigned int level,
+    virtual Orthanc::ImageAccessor* DecodeTile(bool& isEmpty,
+                                               unsigned int level,
                                                unsigned int tileX,
                                                unsigned int tileY) ORTHANC_OVERRIDE;
 

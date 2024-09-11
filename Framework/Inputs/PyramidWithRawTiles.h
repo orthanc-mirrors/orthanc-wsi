@@ -30,7 +30,8 @@ namespace OrthancWSI
   class PyramidWithRawTiles : public ITiledPyramid
   {
   public:
-    virtual Orthanc::ImageAccessor* DecodeTile(unsigned int level,
+    virtual Orthanc::ImageAccessor* DecodeTile(bool& isEmpty,
+                                               unsigned int level,
                                                unsigned int tileX,
                                                unsigned int tileY) ORTHANC_OVERRIDE;
   };

@@ -36,7 +36,8 @@
 
 namespace OrthancWSI
 {
-  Orthanc::ImageAccessor* ReconstructPyramidCommand::Explore(unsigned int level,
+  Orthanc::ImageAccessor* ReconstructPyramidCommand::Explore(bool& isEmpty,
+                                                             unsigned int level,
                                                              unsigned int offsetX,
                                                              unsigned int offsetY)
   {
@@ -56,20 +57,25 @@ namespace OrthancWSI
     if (level == 0)
     {
       result.reset(new Orthanc::ImageAccessor);
-      source_.GetDecodedTile(*result, x, y);
+      source_.GetDecodedTile(*result, isEmpty, x, y);
 
-      ImageCompression compression;
-      const std::string* rawTile = source_.GetRawTile(compression, x, y);
+      if ((x == 0 && y == 0) ||  // Make sure to have at least 1 tile at each level
+          !isEmpty ||
+          level == upToLevel_)
+      {
+        ImageCompression compression;
+        const std::string* rawTile = source_.GetRawTile(compression, x, y);
 
-      if (rawTile != NULL)
-      {
-        // Simple transcoding
-        target_.WriteRawTile(*rawTile, compression, level + shiftTargetLevel_, x, y);
-      }
-      else
-      {
-        // Re-encoding the file
-        target_.EncodeTile(*result, level + shiftTargetLevel_, x, y);
+        if (rawTile != NULL)
+        {
+          // Simple transcoding
+          target_.WriteRawTile(*rawTile, compression, level + shiftTargetLevel_, x, y);
+        }
+        else
+        {
+          // Re-encoding the file
+          target_.EncodeTile(*result, level + shiftTargetLevel_, x, y);
+        }
       }
     }
     else
@@ -82,35 +88,57 @@ namespace OrthancWSI
                         source_.GetParameters().GetBackgroundColorGreen(),
                         source_.GetParameters().GetBackgroundColorBlue());
 
+      isEmpty = true;
+
       {
-        std::unique_ptr<Orthanc::ImageAccessor> subTile(Explore(level - 1, 2 * offsetX, 2 * offsetY));
+        bool tmpIsEmpty;
+        std::unique_ptr<Orthanc::ImageAccessor> subTile(Explore(tmpIsEmpty, level - 1, 2 * offsetX, 2 * offsetY));
         if (subTile.get() != NULL)
         {
           ImageToolbox::Embed(*mosaic, *subTile, 0, 0);
+          if (!tmpIsEmpty)
+          {
+            isEmpty = false;
+          }
         }
       }
 
       {
-        std::unique_ptr<Orthanc::ImageAccessor> subTile(Explore(level - 1, 2 * offsetX + 1, 2 * offsetY));
+        bool tmpIsEmpty;
+        std::unique_ptr<Orthanc::ImageAccessor> subTile(Explore(tmpIsEmpty, level - 1, 2 * offsetX + 1, 2 * offsetY));
         if (subTile.get() != NULL)
         {
           ImageToolbox::Embed(*mosaic, *subTile, target_.GetTileWidth(), 0);
+          if (!tmpIsEmpty)
+          {
+            isEmpty = false;
+          }
         }
       }
 
       {
-        std::unique_ptr<Orthanc::ImageAccessor> subTile(Explore(level - 1, 2 * offsetX, 2 * offsetY + 1));
+        bool tmpIsEmpty;
+        std::unique_ptr<Orthanc::ImageAccessor> subTile(Explore(tmpIsEmpty, level - 1, 2 * offsetX, 2 * offsetY + 1));
         if (subTile.get() != NULL)
         {
           ImageToolbox::Embed(*mosaic, *subTile, 0, target_.GetTileHeight());
+          if (!tmpIsEmpty)
+          {
+            isEmpty = false;
+          }
         }
       }
 
       {
-        std::unique_ptr<Orthanc::ImageAccessor> subTile(Explore(level - 1, 2 * offsetX + 1, 2 * offsetY + 1));
+        bool tmpIsEmpty;
+        std::unique_ptr<Orthanc::ImageAccessor> subTile(Explore(tmpIsEmpty, level - 1, 2 * offsetX + 1, 2 * offsetY + 1));
         if (subTile.get() != NULL)
         {
           ImageToolbox::Embed(*mosaic, *subTile, target_.GetTileWidth(), target_.GetTileHeight());
+          if (!tmpIsEmpty)
+          {
+            isEmpty = false;
+          }
         }
       }
 
@@ -121,7 +149,12 @@ namespace OrthancWSI
 
       result.reset(Orthanc::ImageProcessing::Halve(*mosaic, false /* don't force minimal pitch */));
 
-      target_.EncodeTile(*result, level + shiftTargetLevel_, x, y);
+      if ((x == 0 && y == 0) ||  // Make sure to have at least 1 tile at each level
+          !isEmpty ||
+          level == upToLevel_)
+      {
+        target_.EncodeTile(*result, level + shiftTargetLevel_, x, y);
+      }
     }
 
     return result.release();
@@ -157,7 +190,8 @@ namespace OrthancWSI
 
   bool ReconstructPyramidCommand::Execute()
   {
-    std::unique_ptr<Orthanc::ImageAccessor> root(Explore(upToLevel_, 0, 0));
+    bool isEmpty;  // Unused
+    std::unique_ptr<Orthanc::ImageAccessor> root(Explore(isEmpty, upToLevel_, 0, 0));
     return true;
   }
 

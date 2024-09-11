@@ -41,6 +41,7 @@ namespace OrthancWSI
     }
 
     virtual void ReadRegion(Orthanc::ImageAccessor& target,
+                            bool& isEmpty,
                             unsigned int level,
                             unsigned int x,
                             unsigned int y) ORTHANC_OVERRIDE;

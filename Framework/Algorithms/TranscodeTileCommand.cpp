@@ -75,11 +75,19 @@ namespace OrthancWSI
         }
         else
         {
+          bool isEmpty;
           Orthanc::ImageAccessor tile;
-          source_.GetDecodedTile(tile, x, y);
+          source_.GetDecodedTile(tile, isEmpty, x, y);
 
-          // Re-encoding the file
-          target_.EncodeTile(tile, level_, x, y);
+          if (!isEmpty)
+          {
+            // Re-encoding the file
+            target_.EncodeTile(tile, level_, x, y);
+          }
+          else
+          {
+            printf("ICI\n");
+          }
         }
       }
     }

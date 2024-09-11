@@ -93,6 +93,7 @@ namespace OrthancWSI
                                   unsigned int tileY);
 
     void GetDecodedTile(Orthanc::ImageAccessor& target,
+                        bool& isEmpty,
                         unsigned int tileX,
                         unsigned int tileY);  
   };
