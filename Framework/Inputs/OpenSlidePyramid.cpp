@@ -55,6 +55,10 @@ namespace OrthancWSI
         source->GetFormat() == Orthanc::PixelFormat_BGRA32)
     {
       // Implements alpha blending: https://en.wikipedia.org/wiki/Alpha_compositing#Alpha_blending
+
+      uint8_t backgroundRed, backgroundGreen, backgroundBlue;
+      GetBackgroundColor(backgroundRed, backgroundGreen, backgroundBlue);
+
       for (unsigned int y = 0; y < height; y++)
       {
         const uint8_t* p = reinterpret_cast<const uint8_t*>(source->GetConstRow(y));
@@ -71,9 +75,9 @@ namespace OrthancWSI
            **/
 
           uint16_t alpha = p[3];
-          q[0] = static_cast<uint8_t>(((255 - alpha) * backgroundColor_[0] + alpha * p[2]) / 255);
-          q[1] = static_cast<uint8_t>(((255 - alpha) * backgroundColor_[1] + alpha * p[1]) / 255);
-          q[2] = static_cast<uint8_t>(((255 - alpha) * backgroundColor_[2] + alpha * p[0]) / 255);
+          q[0] = static_cast<uint8_t>(((255 - alpha) * backgroundRed + alpha * p[2]) / 255);
+          q[1] = static_cast<uint8_t>(((255 - alpha) * backgroundGreen + alpha * p[1]) / 255);
+          q[2] = static_cast<uint8_t>(((255 - alpha) * backgroundBlue + alpha * p[0]) / 255);
 
           p += 4;
           q += 3;
@@ -94,9 +98,6 @@ namespace OrthancWSI
     tileWidth_(tileWidth),
     tileHeight_(tileHeight)
   {
-    backgroundColor_[0] = 255;
-    backgroundColor_[1] = 255;
-    backgroundColor_[2] = 255;
   }
 
 
@@ -121,15 +122,5 @@ namespace OrthancWSI
     {
       return false;
     }
-  }
-
-
-  void OpenSlidePyramid::SetBackgroundColor(uint8_t red,
-                                            uint8_t green,
-                                            uint8_t blue)
-  {
-    backgroundColor_[0] = red;
-    backgroundColor_[1] = green;
-    backgroundColor_[2] = blue;
   }
 }
