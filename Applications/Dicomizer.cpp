@@ -1084,6 +1084,7 @@ OrthancWSI::ITiledPyramid* OpenInputPyramid(OrthancWSI::ImageCompression& source
       catch (Orthanc::OrthancException&)
       {
         LOG(WARNING) << "This is not a standard hierarchical TIFF file, fallback to plain TIFF";
+        break;
       }
 
       sourceCompression = OrthancWSI::ImageCompression_Unknown;
