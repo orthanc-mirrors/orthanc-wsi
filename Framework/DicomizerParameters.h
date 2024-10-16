@@ -70,7 +70,7 @@ namespace OrthancWSI
 
     // New in release 2.1
     bool          forceOpenSlide_;
-    unsigned int  tiffAlignment_;
+    unsigned int  padding_;
 
   public:
     DicomizerParameters();
@@ -284,11 +284,11 @@ namespace OrthancWSI
 
     ImageCompression GetCytomineCompression() const;
 
-    void SetTiffAlignment(unsigned int alignment);
+    void SetPadding(unsigned int padding);
 
-    unsigned int GetTiffAlignment() const
+    unsigned int GetPadding() const
     {
-      return tiffAlignment_;
+      return padding_;
     }
 
     void SetForceOpenSlide(bool force)

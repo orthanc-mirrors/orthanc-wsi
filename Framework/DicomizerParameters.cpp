@@ -76,7 +76,7 @@ namespace OrthancWSI
     cytomineImageInstanceId_(-1),
     cytomineCompression_(ImageCompression_Png),
     forceOpenSlide_(false),
-    tiffAlignment_(1)
+    padding_(1)
   {
     backgroundColor_[0] = 255;
     backgroundColor_[1] = 255;
@@ -364,15 +364,15 @@ namespace OrthancWSI
   }
 
 
-  void DicomizerParameters::SetTiffAlignment(unsigned int alignment)
+  void DicomizerParameters::SetPadding(unsigned int padding)
   {
-    if (alignment == 0)
+    if (padding == 0)
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
     }
     else
     {
-      tiffAlignment_ = alignment;
+      padding_ = padding;
     }
   }
 }

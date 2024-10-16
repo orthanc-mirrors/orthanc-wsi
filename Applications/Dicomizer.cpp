@@ -60,7 +60,6 @@ static const char* OPTION_COMPRESSION = "compression";
 static const char* OPTION_DATASET = "dataset";
 static const char* OPTION_FOLDER = "folder";
 static const char* OPTION_FOLDER_PATTERN = "folder-pattern";
-static const char* OPTION_FORCE_OPENSLIDE = "force-openslide";
 static const char* OPTION_HELP = "help";
 static const char* OPTION_ICC_PROFILE = "icc-profile";
 static const char* OPTION_IMAGED_DEPTH = "imaged-depth";
@@ -95,7 +94,8 @@ static const char* OPTION_CYTOMINE_PRIVATE_KEY = "cytomine-private-key";
 static const char* OPTION_CYTOMINE_COMPRESSION = "cytomine-compression";
 
 // New in release 2.1
-static const char* OPTION_TIFF_ALIGNMENT = "tiff-alignment";
+static const char* OPTION_FORCE_OPENSLIDE = "force-openslide";
+static const char* OPTION_PADDING = "padding";
 
 
 #if ORTHANC_FRAMEWORK_VERSION_IS_ABOVE(1, 9, 0)
@@ -581,7 +581,7 @@ static bool ParseParameters(int& exitStatus,
     (OPTION_THREADS,
      boost::program_options::value<int>()->default_value(parameters.GetThreadsCount()), 
      "Number of processing threads to be used")
-    (OPTION_FORCE_OPENSLIDE, boost::program_options::value<bool>(),
+    (OPTION_FORCE_OPENSLIDE, boost::program_options::value<bool>()->default_value(false),
      "Whether to force the use of OpenSlide on input TIFF-like files (Boolean)")
     (OPTION_OPENSLIDE, boost::program_options::value<std::string>(), 
      "Path to the shared library of OpenSlide "
@@ -600,9 +600,9 @@ static bool ParseParameters(int& exitStatus,
      "Whether to repaint the background of the image (Boolean)")
     (OPTION_COLOR, boost::program_options::value<std::string>(),
      "Color of the background (e.g. \"255,0,0\")")
-    (OPTION_TIFF_ALIGNMENT, boost::program_options::value<int>()->default_value(64),
-     "Add padding to plain TIFF images to align the width/height to multiples "
-     "of this value, very useful to enable deep zoom with IIIF (1 means no padding)")
+    (OPTION_PADDING, boost::program_options::value<int>()->default_value(1),
+     "Add padding to plain PNG/JPEG/TIFF images to align the width/height to multiples "
+     "of this value, which enables deep zoom with IIIF (1 means no padding)")
     ;
 
   boost::program_options::options_description cytomine("Options if importing from Cytomine");
@@ -1021,17 +1021,17 @@ static bool ParseParameters(int& exitStatus,
     parameters.SetIccProfilePath(options[OPTION_ICC_PROFILE].as<std::string>());
   }
 
-  if (options.count(OPTION_TIFF_ALIGNMENT))
+  if (options.count(OPTION_PADDING))
   {
-    int value = options[OPTION_TIFF_ALIGNMENT].as<int>();
+    int value = options[OPTION_PADDING].as<int>();
     if (value <= 0)
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange,
-                                      "TIFF alignment must be >= 1");
+                                      "Padding must be >= 1");
     }
     else
     {
-      parameters.SetTiffAlignment(static_cast<unsigned int>(value));
+      parameters.SetPadding(static_cast<unsigned int>(value));
     }
   }
 
@@ -1107,7 +1107,7 @@ OrthancWSI::ITiledPyramid* OpenInputPyramid(OrthancWSI::ImageCompression& source
         return new OrthancWSI::PlainTiff(path,
                                          parameters.GetTargetTileWidth(512),
                                          parameters.GetTargetTileHeight(512),
-                                         parameters.GetTiffAlignment(),
+                                         parameters.GetPadding(),
                                          parameters.GetBackgroundColorRed(),
                                          parameters.GetBackgroundColorGreen(),
                                          parameters.GetBackgroundColorBlue());
