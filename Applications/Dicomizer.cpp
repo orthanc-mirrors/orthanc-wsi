@@ -1084,17 +1084,23 @@ OrthancWSI::ITiledPyramid* OpenInputPyramid(OrthancWSI::ImageCompression& source
       catch (Orthanc::OrthancException&)
       {
         LOG(WARNING) << "This is not a standard hierarchical TIFF file, fallback to plain TIFF";
-        break;
       }
 
-      sourceCompression = OrthancWSI::ImageCompression_Unknown;
-      return new OrthancWSI::PlainTiff(path,
-                                       parameters.GetTargetTileWidth(512),
-                                       parameters.GetTargetTileHeight(512),
-                                       parameters.GetTiffAlignment(),
-                                       parameters.GetBackgroundColorRed(),
-                                       parameters.GetBackgroundColorGreen(),
-                                       parameters.GetBackgroundColorBlue());
+      try
+      {
+        sourceCompression = OrthancWSI::ImageCompression_Unknown;
+        return new OrthancWSI::PlainTiff(path,
+                                         parameters.GetTargetTileWidth(512),
+                                         parameters.GetTargetTileHeight(512),
+                                         parameters.GetTiffAlignment(),
+                                         parameters.GetBackgroundColorRed(),
+                                         parameters.GetBackgroundColorGreen(),
+                                         parameters.GetBackgroundColorBlue());
+      }
+      catch (Orthanc::OrthancException&)
+      {
+        LOG(WARNING) << "This is not a standard plain TIFF file, fallback to OpenSlide (if enabled)";
+      }
     }
 
     default:
