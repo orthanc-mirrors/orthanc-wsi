@@ -3,7 +3,8 @@ Pending changes in the mainline
 
 * Support of sparse encoding of tiles in OpenSlide (notably for MIRAX format)
 * OrthancWSIDicomizer supports plain TIFF, besides hierarchical TIFF
-* New option: "tiff-alignment" to control deep zoom of plain TIFF over IIIF
+* New option: "--force-openslide" to force the use of OpenSlide on TIFF-like files
+* New option: "--tiff-alignment" to control deep zoom of plain TIFF over IIIF
 * Force version of Mirador to 3.3.0
 * In the IIIF manifest, reverse the order of the "sizes" field, which
   seems to fix compatibility with Mirador v4.0.0-alpha

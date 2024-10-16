@@ -60,6 +60,7 @@ static const char* OPTION_COMPRESSION = "compression";
 static const char* OPTION_DATASET = "dataset";
 static const char* OPTION_FOLDER = "folder";
 static const char* OPTION_FOLDER_PATTERN = "folder-pattern";
+static const char* OPTION_FORCE_OPENSLIDE = "force-openslide";
 static const char* OPTION_HELP = "help";
 static const char* OPTION_ICC_PROFILE = "icc-profile";
 static const char* OPTION_IMAGED_DEPTH = "imaged-depth";
@@ -580,6 +581,8 @@ static bool ParseParameters(int& exitStatus,
     (OPTION_THREADS,
      boost::program_options::value<int>()->default_value(parameters.GetThreadsCount()), 
      "Number of processing threads to be used")
+    (OPTION_FORCE_OPENSLIDE, boost::program_options::value<bool>(),
+     "Whether to force the use of OpenSlide on input TIFF-like files (Boolean)")
     (OPTION_OPENSLIDE, boost::program_options::value<std::string>(), 
      "Path to the shared library of OpenSlide "
      "(not necessary if converting from standard hierarchical TIFF)")
@@ -834,6 +837,12 @@ static bool ParseParameters(int& exitStatus,
     OrthancWSI::OpenSlideLibrary::Initialize(options[OPTION_OPENSLIDE].as<std::string>());
   }
 
+  if (options.count(OPTION_FORCE_OPENSLIDE) &&
+      options[OPTION_FORCE_OPENSLIDE].as<bool>())
+  {
+    parameters.SetForceOpenSlide(true);
+  }
+
   if (options.count(OPTION_PYRAMID) &&
       options[OPTION_PYRAMID].as<bool>())
   {
@@ -1075,6 +1084,12 @@ OrthancWSI::ITiledPyramid* OpenInputPyramid(OrthancWSI::ImageCompression& source
 
     case OrthancWSI::ImageCompression_Tiff:
     {
+      if (parameters.IsForceOpenSlide())
+      {
+        LOG(WARNING) << "Forcing the use of OpenSlide on a TIFF-like file";
+        break;
+      }
+
       try
       {
         std::unique_ptr<OrthancWSI::HierarchicalTiff> tiff(new OrthancWSI::HierarchicalTiff(path));

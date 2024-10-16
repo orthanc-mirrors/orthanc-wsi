@@ -75,6 +75,7 @@ namespace OrthancWSI
     isCytomineSource_(false),
     cytomineImageInstanceId_(-1),
     cytomineCompression_(ImageCompression_Png),
+    forceOpenSlide_(false),
     tiffAlignment_(1)
   {
     backgroundColor_[0] = 255;

@@ -69,6 +69,7 @@ namespace OrthancWSI
     ImageCompression               cytomineCompression_;
 
     // New in release 2.1
+    bool          forceOpenSlide_;
     unsigned int  tiffAlignment_;
 
   public:
@@ -288,6 +289,16 @@ namespace OrthancWSI
     unsigned int GetTiffAlignment() const
     {
       return tiffAlignment_;
+    }
+
+    void SetForceOpenSlide(bool force)
+    {
+      forceOpenSlide_ = force;
+    }
+
+    bool IsForceOpenSlide() const
+    {
+      return forceOpenSlide_;
     }
   };
 }

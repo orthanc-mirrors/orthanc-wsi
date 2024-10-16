@@ -23,6 +23,7 @@
 
 #include "PlainTiff.h"
 
+#include "../ImageToolbox.h"
 #include "../TiffReader.h"
 
 #include <Images/Image.h>
@@ -160,6 +161,11 @@ namespace OrthancWSI
         p += stripPitch;
         q += decoded_->GetPitch();
       }
+    }
+
+    if (photometric == Orthanc::PhotometricInterpretation_YBRFull422)
+    {
+      ImageToolbox::ConvertJpegYCbCrToRgb(*decoded_);
     }
 
     SetImage(*decoded_);
