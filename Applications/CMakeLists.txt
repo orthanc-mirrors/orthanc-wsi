@@ -194,6 +194,7 @@ add_library(OrthancWSIFramework STATIC
   ${ORTHANC_WSI_DIR}/Resources/Orthanc/Stone/FullOrthancDataset.cpp
   ${ORTHANC_WSI_DIR}/Resources/Orthanc/Stone/IOrthancConnection.cpp
   ${ORTHANC_WSI_DIR}/Resources/Orthanc/Stone/OrthancHttpConnection.cpp
+  ${ORTHANC_WSI_DIR}/Resources/Orthanc/StoneToolbox.cpp
 
   # Mandatory components
   ${LIBTIFF_SOURCES}

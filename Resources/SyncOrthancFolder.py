@@ -33,6 +33,8 @@ FILES = [
     ('orthanc', 'OrthancServer/Plugins/Samples/Common/OrthancPluginsExports.cmake', 'Plugins'),
     ('orthanc', 'OrthancServer/Plugins/Samples/Common/VersionScriptPlugins.map', 'Plugins'),
 
+    ('orthanc-stone', 'OrthancStone/Sources/Toolbox/StoneToolbox.cpp', '.'),
+    ('orthanc-stone', 'OrthancStone/Sources/Toolbox/StoneToolbox.h', '.'),
     ('orthanc-stone', 'OrthancStone/Sources/Toolbox/OrthancDatasets/DicomDatasetReader.cpp', 'Stone'),
     ('orthanc-stone', 'OrthancStone/Sources/Toolbox/OrthancDatasets/DicomDatasetReader.h', 'Stone'),
     ('orthanc-stone', 'OrthancStone/Sources/Toolbox/OrthancDatasets/FullOrthancDataset.cpp', 'Stone'),

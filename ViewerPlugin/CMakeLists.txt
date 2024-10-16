@@ -205,6 +205,7 @@ set(ORTHANC_WSI_SOURCES
   ${ORTHANC_WSI_DIR}/Resources/Orthanc/Stone/DicomDatasetReader.cpp
   ${ORTHANC_WSI_DIR}/Resources/Orthanc/Stone/FullOrthancDataset.cpp
   ${ORTHANC_WSI_DIR}/Resources/Orthanc/Stone/IOrthancConnection.cpp
+  ${ORTHANC_WSI_DIR}/Resources/Orthanc/StoneToolbox.cpp
   )
 
 

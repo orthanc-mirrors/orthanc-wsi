@@ -21,26 +21,30 @@
  **/
 
 
-#pragma once
-
-#include <DicomFormat/DicomPath.h>  // From Orthanc framework
-
-#include <boost/noncopyable.hpp>
-#include <string>
+#include "StoneToolbox.h"
 
 namespace OrthancStone
 {
-  class IDicomDataset : public boost::noncopyable
+  namespace StoneToolbox
   {
-  public:
-    virtual ~IDicomDataset()
+    std::string JoinUrl(const std::string& base,
+                        const std::string& path)
     {
+      size_t end = base.size();
+      while (end > 0 &&
+             base[end - 1] == '/')
+      {
+        end--;
+      }
+
+      size_t start = 0;
+      while (start < path.size() &&
+             path[start] == '/')
+      {
+        start++;
+      }
+
+      return base.substr(0, end) + "/" + path.substr(start);
     }
-
-    virtual bool GetStringValue(std::string& result,
-                                const Orthanc::DicomPath& path) const = 0;
-
-    virtual bool GetSequenceSize(size_t& size,
-                                 const Orthanc::DicomPath& path) const = 0;
-  };
+  }
 }
