@@ -365,7 +365,7 @@ namespace OrthancWSI
 
   void DicomizerParameters::SetTiffAlignment(unsigned int alignment)
   {
-    if (alignment <= 0)
+    if (alignment == 0)
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
     }

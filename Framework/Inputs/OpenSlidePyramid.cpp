@@ -56,10 +56,10 @@ namespace OrthancWSI
     {
       isEmpty = true;
 
-      for (unsigned int y = 0; y < height && isEmpty; y++)
+      for (unsigned int yy = 0; yy < height && isEmpty; yy++)
       {
-        const uint8_t* p = reinterpret_cast<const uint8_t*>(source->GetConstRow(y));
-        for (unsigned int x = 0; x < width && isEmpty; x++)
+        const uint8_t* p = reinterpret_cast<const uint8_t*>(source->GetConstRow(yy));
+        for (unsigned int xx = 0; xx < width && isEmpty; xx++)
         {
           if (p[3] != 0)
           {
@@ -83,11 +83,11 @@ namespace OrthancWSI
       uint8_t backgroundRed, backgroundGreen, backgroundBlue;
       GetBackgroundColor(backgroundRed, backgroundGreen, backgroundBlue);
 
-      for (unsigned int y = 0; y < height; y++)
+      for (unsigned int yy = 0; yy < height; yy++)
       {
-        const uint8_t* p = reinterpret_cast<const uint8_t*>(source->GetConstRow(y));
-        uint8_t* q = reinterpret_cast<uint8_t*>(target.GetRow(y));
-        for (unsigned int x = 0; x < width; x++)
+        const uint8_t* p = reinterpret_cast<const uint8_t*>(source->GetConstRow(yy));
+        uint8_t* q = reinterpret_cast<uint8_t*>(target.GetRow(yy));
+        for (unsigned int xx = 0; xx < width; xx++)
         {
           /**
              Alpha blending using integer arithmetics only (16 bits avoids overflows)

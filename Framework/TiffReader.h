@@ -37,7 +37,7 @@ namespace OrthancWSI
     TIFF*  tiff_;
 
   public:
-    TiffReader(const std::string& path);
+    explicit TiffReader(const std::string& path);
 
     ~TiffReader();
 
