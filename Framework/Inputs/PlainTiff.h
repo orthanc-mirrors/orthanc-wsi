@@ -36,10 +36,6 @@ namespace OrthancWSI
   public:
     PlainTiff(const std::string& path,
               unsigned int tileWidth,
-              unsigned int tileHeight,
-              unsigned int paddingAlignement,
-              uint8_t paddingRed,
-              uint8_t paddingGreen,
-              uint8_t paddingBlue);
+              unsigned int tileHeight);
   };
 }

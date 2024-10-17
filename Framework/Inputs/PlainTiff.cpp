@@ -39,11 +39,7 @@ namespace OrthancWSI
 {
   PlainTiff::PlainTiff(const std::string& path,
                        unsigned int tileWidth,
-                       unsigned int tileHeight,
-                       unsigned int paddingAlignement,
-                       uint8_t paddingRed,
-                       uint8_t paddingGreen,
-                       uint8_t paddingBlue) :
+                       unsigned int tileHeight) :
     SingleLevelDecodedPyramid(tileWidth, tileHeight)
   {
     TiffReader reader(path);
@@ -113,17 +109,9 @@ namespace OrthancWSI
       throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
     }
 
-    LOG(WARNING) << "Size of the source TIFF image: " << width << "x" << height;
+    LOG(INFO) << "Size of the source plain TIFF image: " << width << "x" << height;
 
-    const unsigned int paddedWidth = paddingAlignement * CeilingDivision(width, paddingAlignement);
-    const unsigned int paddedHeight = paddingAlignement * CeilingDivision(height, paddingAlignement);
-    assert(paddedWidth >= width &&
-           paddedHeight >= height);
-
-    LOG(WARNING) << "Size of the padded TIFF image: " << paddedWidth << "x" << paddedHeight;
-
-    decoded_.reset(new Orthanc::Image(pixelFormat, paddedWidth, paddedHeight, false));
-    Orthanc::ImageProcessing::Set(*decoded_, paddingRed, paddingGreen, paddingBlue, 255);
+    decoded_.reset(new Orthanc::Image(pixelFormat, width, height, false));
 
     std::string strip;
     strip.resize(TIFFStripSize(reader.GetTiff()));

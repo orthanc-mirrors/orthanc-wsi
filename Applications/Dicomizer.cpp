@@ -1064,22 +1064,26 @@ OrthancWSI::ITiledPyramid* OpenInputPyramid(OrthancWSI::ImageCompression& source
   OrthancWSI::ImageCompression format = OrthancWSI::DetectFormatFromFile(path);
   LOG(WARNING) << "File format of the input image: " << EnumerationToString(format);
 
+  std::unique_ptr<OrthancWSI::SingleLevelDecodedPyramid> plainImage;
+
   switch (format)
   {
     case OrthancWSI::ImageCompression_Png:
     {
       sourceCompression = OrthancWSI::ImageCompression_Unknown;
-      return new OrthancWSI::TiledPngImage(path, 
-                                           parameters.GetTargetTileWidth(512), 
-                                           parameters.GetTargetTileHeight(512));
+      plainImage.reset(new OrthancWSI::TiledPngImage(path,
+                                                     parameters.GetTargetTileWidth(512),
+                                                     parameters.GetTargetTileHeight(512)));
+      break;
     }
 
     case OrthancWSI::ImageCompression_Jpeg:
     {
       sourceCompression = OrthancWSI::ImageCompression_Unknown;
-      return new OrthancWSI::TiledJpegImage(path, 
-                                            parameters.GetTargetTileWidth(512), 
-                                            parameters.GetTargetTileHeight(512));
+      plainImage.reset(new OrthancWSI::TiledJpegImage(path,
+                                                      parameters.GetTargetTileWidth(512),
+                                                      parameters.GetTargetTileHeight(512)));
+      break;
     }
 
     case OrthancWSI::ImageCompression_Tiff:
@@ -1104,13 +1108,9 @@ OrthancWSI::ITiledPyramid* OpenInputPyramid(OrthancWSI::ImageCompression& source
       try
       {
         sourceCompression = OrthancWSI::ImageCompression_Unknown;
-        return new OrthancWSI::PlainTiff(path,
-                                         parameters.GetTargetTileWidth(512),
-                                         parameters.GetTargetTileHeight(512),
-                                         parameters.GetPadding(),
-                                         parameters.GetBackgroundColorRed(),
-                                         parameters.GetBackgroundColorGreen(),
-                                         parameters.GetBackgroundColorBlue());
+        plainImage.reset(new OrthancWSI::PlainTiff(path,
+                                                   parameters.GetTargetTileWidth(512),
+                                                   parameters.GetTargetTileHeight(512)));
       }
       catch (Orthanc::OrthancException&)
       {
@@ -1120,6 +1120,19 @@ OrthancWSI::ITiledPyramid* OpenInputPyramid(OrthancWSI::ImageCompression& source
 
     default:
       break;
+  }
+
+  if (plainImage.get() != NULL)
+  {
+    if (parameters.GetPadding() > 1)
+    {
+      plainImage->SetPadding(parameters.GetPadding(),
+                             parameters.GetBackgroundColorRed(),
+                             parameters.GetBackgroundColorGreen(),
+                             parameters.GetBackgroundColorBlue());
+    }
+
+    return plainImage.release();
   }
 
   try

@@ -79,5 +79,10 @@ namespace OrthancWSI
     }
 
     virtual Orthanc::PhotometricInterpretation GetPhotometricInterpretation() const ORTHANC_OVERRIDE;
+
+    void SetPadding(unsigned int paddingAlignement,
+                    uint8_t paddingRed,
+                    uint8_t paddingGreen,
+                    uint8_t paddingBlue);
   };
 }

@@ -80,4 +80,13 @@ namespace OrthancWSI
         throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
     }
   }
+
+
+  void SingleLevelDecodedPyramid::SetPadding(unsigned int paddingAlignement,
+                                             uint8_t paddingRed,
+                                             uint8_t paddingGreen,
+                                             uint8_t paddingBlue)
+  {
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);  // TODO
+  }
 }
