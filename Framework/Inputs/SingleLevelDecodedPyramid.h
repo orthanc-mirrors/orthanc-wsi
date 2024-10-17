@@ -33,6 +33,10 @@ namespace OrthancWSI
     Orthanc::ImageAccessor  image_;
     unsigned int            tileWidth_;
     unsigned int            tileHeight_;
+    unsigned int            padding_;
+    uint8_t                 backgroundRed_;
+    uint8_t                 backgroundGreen_;
+    uint8_t                 backgroundBlue_;
 
   protected:
     void SetImage(const Orthanc::ImageAccessor& image)
@@ -48,11 +52,7 @@ namespace OrthancWSI
 
   public:
     SingleLevelDecodedPyramid(unsigned int tileWidth,
-                              unsigned int tileHeight) :
-      tileWidth_(tileWidth),
-      tileHeight_(tileHeight)
-    {
-    }
+                              unsigned int tileHeight);
 
     virtual unsigned int GetTileWidth(unsigned int level) const ORTHANC_OVERRIDE
     {
@@ -80,9 +80,9 @@ namespace OrthancWSI
 
     virtual Orthanc::PhotometricInterpretation GetPhotometricInterpretation() const ORTHANC_OVERRIDE;
 
-    void SetPadding(unsigned int paddingAlignement,
-                    uint8_t paddingRed,
-                    uint8_t paddingGreen,
-                    uint8_t paddingBlue);
+    void SetPadding(unsigned int padding,
+                    uint8_t backgroundRed,
+                    uint8_t backgroundGreen,
+                    uint8_t backgroundBlue);
   };
 }

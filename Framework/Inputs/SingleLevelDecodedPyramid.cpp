@@ -38,9 +38,42 @@ namespace OrthancWSI
   {
     isEmpty = false;
 
-    Orthanc::ImageAccessor region;
-    image_.GetRegion(region, x, y, target.GetWidth(), target.GetHeight());
-    Orthanc::ImageProcessing::Copy(target, region);
+    if (x + target.GetWidth() <= image_.GetWidth() &&
+        y + target.GetHeight() <= image_.GetHeight())
+    {
+      Orthanc::ImageAccessor region;
+      image_.GetRegion(region, x, y, target.GetWidth(), target.GetHeight());
+      Orthanc::ImageProcessing::Copy(target, region);
+    }
+    else
+    {
+      Orthanc::ImageProcessing::Set(target, backgroundRed_, backgroundGreen_, backgroundBlue_, 255);
+
+      if (x < image_.GetWidth() &&
+          y < image_.GetHeight())
+      {
+        unsigned int w = std::min(image_.GetWidth() - x, target.GetWidth());
+        unsigned int h = std::min(image_.GetHeight() - y, target.GetHeight());
+
+        Orthanc::ImageAccessor a, b;
+        image_.GetRegion(a, x, y, w, h);
+        target.GetRegion(b, 0, 0, w, h);
+
+        Orthanc::ImageProcessing::Copy(b, a);
+      }
+    }
+  }
+
+
+  SingleLevelDecodedPyramid::SingleLevelDecodedPyramid(unsigned int tileWidth,
+                                                       unsigned int tileHeight) :
+    tileWidth_(tileWidth),
+    tileHeight_(tileHeight),
+    padding_(0),
+    backgroundRed_(255),
+    backgroundGreen_(255),
+    backgroundBlue_(255)
+  {
   }
 
 
@@ -51,7 +84,14 @@ namespace OrthancWSI
       throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
     }
 
-    return image_.GetWidth();
+    if (padding_ <= 1)
+    {
+      return image_.GetWidth();  // No padding
+    }
+    else
+    {
+      return padding_ * CeilingDivision(image_.GetWidth(), padding_);
+    }
   }
 
 
@@ -62,7 +102,14 @@ namespace OrthancWSI
       throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
     }
 
-    return image_.GetHeight();
+    if (padding_ <= 1)
+    {
+      return image_.GetHeight();  // No padding
+    }
+    else
+    {
+      return padding_ * CeilingDivision(image_.GetHeight(), padding_);
+    }
   }
   
 
@@ -82,11 +129,14 @@ namespace OrthancWSI
   }
 
 
-  void SingleLevelDecodedPyramid::SetPadding(unsigned int paddingAlignement,
-                                             uint8_t paddingRed,
-                                             uint8_t paddingGreen,
-                                             uint8_t paddingBlue)
+  void SingleLevelDecodedPyramid::SetPadding(unsigned int padding,
+                                             uint8_t backgroundRed,
+                                             uint8_t backgroundGreen,
+                                             uint8_t backgroundBlue)
   {
-    throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);  // TODO
+    padding_ = padding;
+    backgroundRed_ = backgroundRed;
+    backgroundGreen_ = backgroundGreen;
+    backgroundBlue_ = backgroundBlue;
   }
 }
