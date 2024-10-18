@@ -1,6 +1,10 @@
 Pending changes in the mainline
 ===============================
 
+
+Version 2.1 (2024-10-18)
+========================
+
 * Support of sparse encoding of tiles in OpenSlide (notably for MIRAX format)
 * OrthancWSIDicomizer supports plain TIFF, besides hierarchical TIFF
 * New option: "--force-openslide" to force the use of OpenSlide on TIFF-like files
