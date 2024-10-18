@@ -110,10 +110,17 @@ namespace OrthancWSI
         return ImageCompression_Unknown;
       }
       else if (tmp == ImageCompression_Tiff &&
+               boost::algorithm::ends_with(lower, ".ndpi"))
+      {
+        LOG(WARNING) << "The file extension \".ndpi\" indicates a Hamamatsu image, "
+                     << "use the flag \"--force-openslide 1\" if you do not have enough RAM to store the entire image";
+        return ImageCompression_Tiff;
+      }
+      else if (tmp == ImageCompression_Tiff &&
                boost::algorithm::ends_with(lower, ".scn"))
       {
-        LOG(INFO) << "The file extension \".scn\" indicates a Leica image, "
-                  << "use the flag \"--reencode 1\" or \"--force-openslide 1\" if you encounter problems";
+        LOG(WARNING) << "The file extension \".scn\" indicates a Leica image, "
+                     << "use the flag \"--reencode 1\" or \"--force-openslide 1\" if you encounter problems";
         return ImageCompression_Tiff;
       }
       else
