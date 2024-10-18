@@ -24,6 +24,7 @@
 #include "../PrecompiledHeadersWSI.h"
 #include "DicomPyramidInstance.h"
 
+#include "../ColorSpaces.h"
 #include "../DicomToolbox.h"
 #include "../../Resources/Orthanc/Stone/DicomDatasetReader.h"
 #include "../../Resources/Orthanc/Stone/FullOrthancDataset.h"
@@ -51,6 +52,7 @@ namespace OrthancWSI
   static const Orthanc::DicomTag DICOM_TAG_TOTAL_PIXEL_MATRIX_COLUMNS(0x0048, 0x0006);
   static const Orthanc::DicomTag DICOM_TAG_TOTAL_PIXEL_MATRIX_ROWS(0x0048, 0x0007);
   static const Orthanc::DicomTag DICOM_TAG_IMAGE_TYPE(0x0008, 0x0008);
+  static const Orthanc::DicomTag DICOM_TAG_RECOMMENDED_ABSENT_PIXEL_CIELAB(0x0048, 0x0015);
 
   static ImageCompression DetectImageCompression(OrthancStone::IOrthancConnection& orthanc,
                                                  const std::string& instanceId)
@@ -263,6 +265,23 @@ namespace OrthancWSI
         frames_[i].second = i / w;
       }
     }
+
+    // New in WSI 2.1
+    std::string background;
+    if (dataset.GetStringValue(background, Orthanc::DicomPath(DICOM_TAG_RECOMMENDED_ABSENT_PIXEL_CIELAB)))
+    {
+      LABColor lab;
+      if (LABColor::DecodeDicomRecommendedAbsentPixelCIELab(lab, background))
+      {
+        XYZColor xyz(lab);
+        sRGBColor srgb(xyz);
+        RGBColor rgb(srgb);
+        hasBackgroundColor_ = true;
+        backgroundRed_ = rgb.GetR();
+        backgroundGreen_ = rgb.GetG();
+        backgroundBlue_ = rgb.GetB();
+      }
+    }
   }
 
 
@@ -271,7 +290,11 @@ namespace OrthancWSI
                                              bool useCache) :
     instanceId_(instanceId),
     hasCompression_(false),
-    compression_(ImageCompression_None)  // Dummy initialization for serialization
+    compression_(ImageCompression_None),  // Dummy initialization for serialization
+    hasBackgroundColor_(false),
+    backgroundRed_(0),
+    backgroundGreen_(0),
+    backgroundBlue_(0)
   {
     if (useCache)
     {
@@ -327,6 +350,7 @@ namespace OrthancWSI
   static const char* const TOTAL_HEIGHT = "TotalHeight";
   static const char* const PHOTOMETRIC_INTERPRETATION = "PhotometricInterpretation";
   static const char* const IMAGE_TYPE = "ImageType";
+  static const char* const BACKGROUND_COLOR = "BackgroundColor";
   
   
   void DicomPyramidInstance::Serialize(std::string& result) const
@@ -354,6 +378,15 @@ namespace OrthancWSI
     content[TOTAL_HEIGHT] = totalHeight_;
     content[PHOTOMETRIC_INTERPRETATION] = Orthanc::EnumerationToString(photometric_);
     content[IMAGE_TYPE] = imageType_;
+
+    if (hasBackgroundColor_)
+    {
+      Json::Value color = Json::arrayValue;
+      color.append(backgroundRed_);
+      color.append(backgroundGreen_);
+      color.append(backgroundBlue_);
+      content[BACKGROUND_COLOR] = color;
+    }
 
 #if ORTHANC_FRAMEWORK_VERSION_IS_ABOVE(1, 9, 0)
     Orthanc::Toolbox::WriteFastJson(result, content);
@@ -406,6 +439,62 @@ namespace OrthancWSI
 
       frames_[i].first = f[i][0].asInt();
       frames_[i].second = f[i][1].asInt();
+    }
+
+    hasBackgroundColor_ = false;
+    if (content.isMember(BACKGROUND_COLOR))
+    {
+      const Json::Value& color = content[BACKGROUND_COLOR];
+      if (color.type() == Json::arrayValue &&
+          color.size() == 3u &&
+          color[0].isUInt() &&
+          color[1].isUInt() &&
+          color[2].isUInt())
+      {
+        hasBackgroundColor_ = true;
+        backgroundRed_ = color[0].asUInt();
+        backgroundGreen_ = color[1].asUInt();
+        backgroundBlue_ = color[2].asUInt();
+      }
+    }
+  }
+
+
+  uint8_t DicomPyramidInstance::GetBackgroundRed() const
+  {
+    if (hasBackgroundColor_)
+    {
+      return backgroundRed_;
+    }
+    else
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
+    }
+  }
+
+
+  uint8_t DicomPyramidInstance::GetBackgroundGreen() const
+  {
+    if (hasBackgroundColor_)
+    {
+      return backgroundGreen_;
+    }
+    else
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
+    }
+  }
+
+
+  uint8_t DicomPyramidInstance::GetBackgroundBlue() const
+  {
+    if (hasBackgroundColor_)
+    {
+      return backgroundBlue_;
+    }
+    else
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
     }
   }
 }

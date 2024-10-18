@@ -107,6 +107,7 @@ set(ORTHANC_WSI_SOURCES
   ${ORTHANC_WSI_DIR}/Framework/Algorithms/PyramidReader.cpp
   ${ORTHANC_WSI_DIR}/Framework/Algorithms/ReconstructPyramidCommand.cpp
   ${ORTHANC_WSI_DIR}/Framework/Algorithms/TranscodeTileCommand.cpp
+  ${ORTHANC_WSI_DIR}/Framework/ColorSpaces.cpp
   ${ORTHANC_WSI_DIR}/Framework/DicomToolbox.cpp
   ${ORTHANC_WSI_DIR}/Framework/DicomizerParameters.cpp
   ${ORTHANC_WSI_DIR}/Framework/Enumerations.cpp

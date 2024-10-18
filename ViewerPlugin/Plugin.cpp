@@ -106,6 +106,15 @@ void ServePyramid(OrthancPluginRestOutput* output,
   result["TotalHeight"] = totalHeight;
   result["TotalWidth"] = totalWidth;
 
+  {
+    // New in WSI 2.1
+    char tmp[16];
+    sprintf(tmp, "#%02x%02x%02x", locker.GetPyramid().GetBackgroundRed(),
+            locker.GetPyramid().GetBackgroundGreen(),
+            locker.GetPyramid().GetBackgroundBlue());
+    result["BackgroundColor"] = tmp;
+  }
+
   std::string s = result.toStyledString();
   OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, s.c_str(), s.size(), "application/json");
 }

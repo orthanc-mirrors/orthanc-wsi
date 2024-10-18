@@ -38,6 +38,9 @@ namespace OrthancWSI
     std::string                         seriesId_;
     std::vector<DicomPyramidInstance*>  instances_;
     std::vector<DicomPyramidLevel*>     levels_;
+    uint8_t                             backgroundRed_;
+    uint8_t                             backgroundGreen_;
+    uint8_t                             backgroundBlue_;
 
     void Clear();
 
@@ -85,5 +88,20 @@ namespace OrthancWSI
     virtual Orthanc::PixelFormat GetPixelFormat() const ORTHANC_OVERRIDE;
 
     virtual Orthanc::PhotometricInterpretation GetPhotometricInterpretation() const ORTHANC_OVERRIDE;
+
+    uint8_t GetBackgroundRed() const
+    {
+      return backgroundRed_;
+    }
+
+    uint8_t GetBackgroundGreen() const
+    {
+      return backgroundGreen_;
+    }
+
+    uint8_t GetBackgroundBlue() const
+    {
+      return backgroundBlue_;
+    }
   };
 }

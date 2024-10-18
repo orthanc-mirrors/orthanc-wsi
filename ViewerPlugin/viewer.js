@@ -63,6 +63,8 @@ $(document).ready(function() {
         alert('Error - Cannot get the pyramid structure of series: ' + seriesId);
       },
       success : function(series) {
+        $('#map').css('background', series['BackgroundColor']);  // New in WSI 2.1
+
         var width = series['TotalWidth'];
         var height = series['TotalHeight'];
         var countLevels = series['Resolutions'].length;

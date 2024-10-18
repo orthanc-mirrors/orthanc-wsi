@@ -47,6 +47,10 @@ namespace OrthancWSI
     std::vector<FrameLocation>          frames_;
     Orthanc::PhotometricInterpretation  photometric_;
     std::string                         imageType_;
+    bool                                hasBackgroundColor_;
+    uint8_t                             backgroundRed_;
+    uint8_t                             backgroundGreen_;
+    uint8_t                             backgroundBlue_;
 
     void Load(OrthancStone::IOrthancConnection&  orthanc,
               const std::string& instanceId);
@@ -110,5 +114,16 @@ namespace OrthancWSI
     unsigned int GetFrameLocationY(size_t frame) const;
 
     void Serialize(std::string& result) const;
+
+    bool HasBackgroundColor() const
+    {
+      return hasBackgroundColor_;
+    }
+
+    uint8_t GetBackgroundRed() const;
+
+    uint8_t GetBackgroundGreen() const;
+
+    uint8_t GetBackgroundBlue() const;
   };
 }

@@ -191,6 +191,7 @@ set(ORTHANC_WSI_SOURCES
   Plugin.cpp
   RawTile.cpp
 
+  ${ORTHANC_WSI_DIR}/Framework/ColorSpaces.cpp
   ${ORTHANC_WSI_DIR}/Framework/DicomToolbox.cpp
   ${ORTHANC_WSI_DIR}/Framework/Enumerations.cpp
   ${ORTHANC_WSI_DIR}/Framework/ImageToolbox.cpp

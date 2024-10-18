@@ -103,8 +103,15 @@ namespace OrthancWSI
             (tokens[1] != "THUMBNAIL" &&
              tokens[1] != "OVERVIEW"))
         {
+          if (instance->HasBackgroundColor())
+          {
+            backgroundRed_ = instance->GetBackgroundRed();
+            backgroundGreen_ = instance->GetBackgroundGreen();
+            backgroundBlue_ = instance->GetBackgroundBlue();
+          }
+
           instances_.push_back(instance.release());
-        }        
+        }
       }
       catch (Orthanc::OrthancException&)
       {
@@ -157,7 +164,10 @@ namespace OrthancWSI
                              const std::string& seriesId,
                              bool useCache) :
     orthanc_(orthanc),
-    seriesId_(seriesId)
+    seriesId_(seriesId),
+    backgroundRed_(255),
+    backgroundGreen_(255),
+    backgroundBlue_(255)
   {
     RegisterInstances(seriesId, useCache);
 

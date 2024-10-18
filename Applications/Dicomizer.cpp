@@ -23,6 +23,7 @@
 
 #include "../Framework/Algorithms/ReconstructPyramidCommand.h"
 #include "../Framework/Algorithms/TranscodeTileCommand.h"
+#include "../Framework/ColorSpaces.h"
 #include "../Framework/DicomToolbox.h"
 #include "../Framework/DicomizerParameters.h"
 #include "../Framework/ImageToolbox.h"
@@ -53,6 +54,8 @@
 #include <dcmtk/dcmdata/dcuid.h>
 #include <dcmtk/dcmdata/dcvrobow.h>
 #include <dcmtk/dcmdata/dcvrat.h>
+
+#include <boost/math/special_functions/round.hpp>
 
 
 static const char* OPTION_COLOR = "color";
@@ -563,6 +566,26 @@ static void EnrichDataset(DcmDataset& dataset,
   }
 
   SetupDimension(dataset, opticalPathId, source, volume);
+
+
+  // New in release 2.1
+  if (!dataset.tagExists(DCM_RecommendedAbsentPixelCIELabValue))
+  {
+    OrthancWSI::RGBColor rgb(parameters.GetBackgroundColorRed(),
+                             parameters.GetBackgroundColorGreen(),
+                             parameters.GetBackgroundColorBlue());
+    OrthancWSI::sRGBColor srgb(rgb);
+    OrthancWSI::XYZColor xyz(srgb);
+    OrthancWSI::LABColor lab(xyz);
+
+    uint16_t encoded[3];
+    lab.EncodeDicomRecommendedAbsentPixelCIELab(encoded);
+
+    if (!dataset.putAndInsertUint16Array(DCM_RecommendedAbsentPixelCIELabValue, encoded, 3).good())
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+    }
+  }
 }
 
 
@@ -1173,6 +1196,8 @@ OrthancWSI::ITiledPyramid* OpenInputPyramid(OrthancWSI::ImageCompression& source
   }
 }
 
+
+#include "../Framework/ColorSpaces.h"
 
 int main(int argc, char* argv[])
 {
