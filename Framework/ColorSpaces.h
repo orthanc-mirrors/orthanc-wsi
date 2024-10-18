@@ -51,7 +51,7 @@ namespace OrthancWSI
     {
     }
 
-    RGBColor(const sRGBColor& srgb);
+    explicit RGBColor(const sRGBColor& srgb);
 
     uint8_t GetR() const
     {
@@ -89,9 +89,9 @@ namespace OrthancWSI
     {
     }
 
-    sRGBColor(const RGBColor& rgb);
+    explicit sRGBColor(const RGBColor& rgb);
 
-    sRGBColor(const XYZColor& xyz);
+    explicit sRGBColor(const XYZColor& xyz);
 
     float GetR() const
     {
@@ -118,9 +118,9 @@ namespace OrthancWSI
     float  z_;
 
   public:
-    XYZColor(const sRGBColor& srgb);
+    explicit XYZColor(const sRGBColor& srgb);
 
-    XYZColor(const LABColor& lab);
+    explicit XYZColor(const LABColor& lab);
 
     float GetX() const
     {
@@ -163,7 +163,7 @@ namespace OrthancWSI
     {
     }
 
-    LABColor(const XYZColor& xyz);
+    explicit LABColor(const XYZColor& xyz);
 
     float GetL() const
     {

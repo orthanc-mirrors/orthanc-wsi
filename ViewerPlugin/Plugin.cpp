@@ -108,7 +108,6 @@ void ServePyramid(OrthancPluginRestOutput* output,
 
   {
     // New in WSI 2.1
-    char tmp[16];
     sprintf(tmp, "#%02x%02x%02x", locker.GetPyramid().GetBackgroundRed(),
             locker.GetPyramid().GetBackgroundGreen(),
             locker.GetPyramid().GetBackgroundBlue());
