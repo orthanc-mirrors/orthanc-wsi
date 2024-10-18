@@ -109,6 +109,13 @@ namespace OrthancWSI
                      << "skipping auto-detection of the file format";
         return ImageCompression_Unknown;
       }
+      else if (tmp == ImageCompression_Tiff &&
+               boost::algorithm::ends_with(lower, ".scn"))
+      {
+        LOG(INFO) << "The file extension \".scn\" indicates a Leica image, "
+                  << "use the flag \"--reencode 1\" or \"--force-openslide 1\" if you encounter problems";
+        return ImageCompression_Tiff;
+      }
       else
       {
         return tmp;
