@@ -35,6 +35,40 @@
 
 namespace OrthancWSI
 {
+  // Test whether the full alpha channel (if any) equals 255
+  static bool IsFullyTransparent(const Orthanc::ImageAccessor& source)
+  {
+    if (source.GetFormat() == Orthanc::PixelFormat_BGRA32 ||
+        source.GetFormat() == Orthanc::PixelFormat_RGBA32)
+    {
+      const unsigned int width = source.GetWidth();
+      const unsigned int height = source.GetHeight();
+
+      bool isEmpty = true;
+
+      for (unsigned int yy = 0; yy < height && isEmpty; yy++)
+      {
+        const uint8_t* p = reinterpret_cast<const uint8_t*>(source.GetConstRow(yy));
+        for (unsigned int xx = 0; xx < width && isEmpty; xx++)
+        {
+          if (p[3] != 0)
+          {
+            isEmpty = false;
+          }
+
+          p += 4;
+        }
+      }
+
+      return isEmpty;
+    }
+    else
+    {
+      return false;
+    }
+  }
+
+
   void OpenSlidePyramid::ReadRegion(Orthanc::ImageAccessor& target,
                                     bool& isEmpty,
                                     unsigned int level,
@@ -49,31 +83,10 @@ namespace OrthancWSI
       throw Orthanc::OrthancException(Orthanc::ErrorCode_IncompatibleImageSize);
     }
 
+    isEmpty = IsFullyTransparent(*source);
+
     const unsigned int width = source->GetWidth();
     const unsigned int height = source->GetHeight();
-
-    if (source->GetFormat() == Orthanc::PixelFormat_BGRA32)
-    {
-      isEmpty = true;
-
-      for (unsigned int yy = 0; yy < height && isEmpty; yy++)
-      {
-        const uint8_t* p = reinterpret_cast<const uint8_t*>(source->GetConstRow(yy));
-        for (unsigned int xx = 0; xx < width && isEmpty; xx++)
-        {
-          if (p[3] != 0)
-          {
-            isEmpty = false;
-          }
-
-          p += 4;
-        }
-      }
-    }
-    else
-    {
-      isEmpty = false;
-    }
 
     if (target.GetFormat() == Orthanc::PixelFormat_RGB24 &&
         source->GetFormat() == Orthanc::PixelFormat_BGRA32)
