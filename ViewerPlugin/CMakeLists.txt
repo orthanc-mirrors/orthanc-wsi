@@ -195,9 +195,11 @@ set(ORTHANC_WSI_SOURCES
   ${ORTHANC_WSI_DIR}/Framework/DicomToolbox.cpp
   ${ORTHANC_WSI_DIR}/Framework/Enumerations.cpp
   ${ORTHANC_WSI_DIR}/Framework/ImageToolbox.cpp
+  ${ORTHANC_WSI_DIR}/Framework/Inputs/DecodedTiledPyramid.cpp
   ${ORTHANC_WSI_DIR}/Framework/Inputs/DicomPyramid.cpp
   ${ORTHANC_WSI_DIR}/Framework/Inputs/DicomPyramidInstance.cpp
   ${ORTHANC_WSI_DIR}/Framework/Inputs/DicomPyramidLevel.cpp
+  ${ORTHANC_WSI_DIR}/Framework/Inputs/OnTheFlyPyramid.cpp
   ${ORTHANC_WSI_DIR}/Framework/Inputs/PyramidWithRawTiles.cpp
   ${ORTHANC_WSI_DIR}/Framework/Jpeg2000Reader.cpp
   ${ORTHANC_WSI_DIR}/Framework/Jpeg2000Writer.cpp

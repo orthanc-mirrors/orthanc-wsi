@@ -119,6 +119,7 @@ set(ORTHANC_WSI_SOURCES
   ${ORTHANC_WSI_DIR}/Framework/Inputs/DicomPyramidInstance.cpp
   ${ORTHANC_WSI_DIR}/Framework/Inputs/DicomPyramidLevel.cpp
   ${ORTHANC_WSI_DIR}/Framework/Inputs/HierarchicalTiff.cpp
+  ${ORTHANC_WSI_DIR}/Framework/Inputs/OnTheFlyPyramid.cpp
   ${ORTHANC_WSI_DIR}/Framework/Inputs/OpenSlideLibrary.cpp
   ${ORTHANC_WSI_DIR}/Framework/Inputs/OpenSlidePyramid.cpp
   ${ORTHANC_WSI_DIR}/Framework/Inputs/PlainTiff.cpp
