@@ -1,5 +1,5 @@
 /**
-* Orthanc - A Lightweight, RESTful DICOM Store
+ * Orthanc - A Lightweight, RESTful DICOM Store
  * Copyright (C) 2012-2016 Sebastien Jodogne, Medical Physics
  * Department, University Hospital of Liege, Belgium
  * Copyright (C) 2017-2023 Osimis S.A., Belgium
@@ -29,66 +29,67 @@
 
 #include <vector>
 
+
 namespace OrthancWSI
 {
- class OnTheFlyPyramid : public DecodedTiledPyramid
- {
- private:
-   std::unique_ptr<Orthanc::ImageAccessor>  baseLevel_;
-   std::vector<Orthanc::ImageAccessor*>     higherLevels_;
-   unsigned int                             tileWidth_;
-   unsigned int                             tileHeight_;
+  class OnTheFlyPyramid : public DecodedTiledPyramid
+  {
+  private:
+    std::unique_ptr<Orthanc::ImageAccessor>  baseLevel_;
+    std::vector<Orthanc::ImageAccessor*>     higherLevels_;
+    unsigned int                             tileWidth_;
+    unsigned int                             tileHeight_;
 
- protected:
-   void ReadRegion(Orthanc::ImageAccessor &target,
-                   bool &isEmpty,
-                   unsigned level,
-                   unsigned x,
-                   unsigned y) ORTHANC_OVERRIDE;
+  protected:
+    void ReadRegion(Orthanc::ImageAccessor &target,
+                    bool &isEmpty,
+                    unsigned level,
+                    unsigned x,
+                    unsigned y) ORTHANC_OVERRIDE;
 
- public:
-   OnTheFlyPyramid(Orthanc::ImageAccessor* baseLevel /* takes ownership */,
-                   unsigned int tileWidth,
-                   unsigned int tileHeight,
-                   bool smooth);
+  public:
+    OnTheFlyPyramid(Orthanc::ImageAccessor* baseLevel /* takes ownership */,
+                    unsigned int tileWidth,
+                    unsigned int tileHeight,
+                    bool smooth);
 
-   virtual ~OnTheFlyPyramid();
+    virtual ~OnTheFlyPyramid();
 
-   const Orthanc::ImageAccessor& GetLevel(unsigned int level) const;
+    const Orthanc::ImageAccessor& GetLevel(unsigned int level) const;
 
-   unsigned GetLevelCount() const ORTHANC_OVERRIDE
-   {
-     return higherLevels_.size() + 1 /* base level */;
-   }
+    unsigned GetLevelCount() const ORTHANC_OVERRIDE
+    {
+      return higherLevels_.size() + 1 /* base level */;
+    }
 
-   unsigned GetLevelWidth(unsigned int level) const ORTHANC_OVERRIDE
-   {
-     return GetLevel(level).GetWidth();
-   }
+    unsigned GetLevelWidth(unsigned int level) const ORTHANC_OVERRIDE
+    {
+      return GetLevel(level).GetWidth();
+    }
 
-   unsigned GetLevelHeight(unsigned int level) const ORTHANC_OVERRIDE
-   {
-     return GetLevel(level).GetHeight();
-   }
+    unsigned GetLevelHeight(unsigned int level) const ORTHANC_OVERRIDE
+    {
+      return GetLevel(level).GetHeight();
+    }
 
-   unsigned GetTileWidth(unsigned int level) const ORTHANC_OVERRIDE
-   {
-     return tileWidth_;
-   }
+    unsigned GetTileWidth(unsigned int level) const ORTHANC_OVERRIDE
+    {
+      return tileWidth_;
+    }
 
-   unsigned GetTileHeight(unsigned level) const ORTHANC_OVERRIDE
-   {
-     return tileHeight_;
-   }
+    unsigned GetTileHeight(unsigned level) const ORTHANC_OVERRIDE
+    {
+      return tileHeight_;
+    }
 
-   Orthanc::PixelFormat GetPixelFormat() const ORTHANC_OVERRIDE
-   {
-     return baseLevel_->GetFormat();
-   }
+    Orthanc::PixelFormat GetPixelFormat() const ORTHANC_OVERRIDE
+    {
+      return baseLevel_->GetFormat();
+    }
 
-   Orthanc::PhotometricInterpretation GetPhotometricInterpretation() const ORTHANC_OVERRIDE
-   {
-     return Orthanc::PhotometricInterpretation_RGB;
-   }
- };
+    Orthanc::PhotometricInterpretation GetPhotometricInterpretation() const ORTHANC_OVERRIDE
+    {
+      return Orthanc::PhotometricInterpretation_RGB;
+    }
+  };
 }

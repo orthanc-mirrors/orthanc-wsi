@@ -1,5 +1,5 @@
 /**
-* Orthanc - A Lightweight, RESTful DICOM Store
+ * Orthanc - A Lightweight, RESTful DICOM Store
  * Copyright (C) 2012-2016 Sebastien Jodogne, Medical Physics
  * Department, University Hospital of Liege, Belgium
  * Copyright (C) 2017-2023 Osimis S.A., Belgium
@@ -30,7 +30,6 @@
 #include <Images/Image.h>
 #include <Images/ImageProcessing.h>
 
-#include "../../Resources/Orthanc/Plugins/OrthancPluginCppWrapper.h"
 
 namespace OrthancWSI
 {
