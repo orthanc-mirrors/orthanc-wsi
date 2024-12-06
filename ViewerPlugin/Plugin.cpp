@@ -43,7 +43,6 @@
 
 #include <cassert>
 #include <Images/PngReader.h>
-#include <boost/atomic/detail/lock_pool.hpp>
 
 
 #define ORTHANC_PLUGIN_NAME "wsi"
