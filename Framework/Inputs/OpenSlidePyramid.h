@@ -84,5 +84,7 @@ namespace OrthancWSI
 
     bool LookupImagedVolumeSize(float& width,
                                 float& height) const;
+
+    size_t GetMemoryUsage() const ORTHANC_OVERRIDE;
   };
 }

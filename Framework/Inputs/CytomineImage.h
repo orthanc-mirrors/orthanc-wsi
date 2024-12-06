@@ -91,5 +91,10 @@ namespace OrthancWSI
     }
 
     void SetImageCompression(ImageCompression compression);
+
+    virtual size_t GetMemoryUsage() const ORTHANC_OVERRIDE
+    {
+      return 0;  // Image is stored on the remote Cytomine server
+    }
   };
 }

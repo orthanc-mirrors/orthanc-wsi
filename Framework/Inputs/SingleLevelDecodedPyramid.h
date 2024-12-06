@@ -84,5 +84,10 @@ namespace OrthancWSI
                     uint8_t backgroundRed,
                     uint8_t backgroundGreen,
                     uint8_t backgroundBlue);
+
+    size_t GetMemoryUsage() const ORTHANC_OVERRIDE
+    {
+      return image_.GetSize();
+    }
   };
 }

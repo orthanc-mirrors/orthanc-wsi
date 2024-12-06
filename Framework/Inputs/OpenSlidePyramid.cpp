@@ -160,4 +160,17 @@ namespace OrthancWSI
       return false;
     }
   }
+
+
+  size_t OpenSlidePyramid::GetMemoryUsage() const
+  {
+    size_t countPixels = 0;
+
+    for (unsigned int i = 0; i < image_.GetLevelCount(); i++)
+    {
+      countPixels += image_.GetLevelWidth(i) * image_.GetLevelHeight(i);
+    }
+
+    return countPixels * Orthanc::GetBytesPerPixel(Orthanc::PixelFormat_RGBA32);
+  }
 }

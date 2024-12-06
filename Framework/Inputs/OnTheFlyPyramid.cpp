@@ -118,4 +118,18 @@ namespace OrthancWSI
       return *higherLevels_[level - 1];
     }
   }
+
+
+  size_t OnTheFlyPyramid::GetMemoryUsage() const
+  {
+    size_t memory = baseLevel_->GetSize();
+
+    for (size_t i= 0; i < higherLevels_.size(); i++)
+    {
+      assert(higherLevels_[i] != NULL);
+      memory += higherLevels_[i]->GetSize();
+    }
+
+    return memory;
+  }
 }

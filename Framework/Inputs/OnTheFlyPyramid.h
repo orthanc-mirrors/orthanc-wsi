@@ -91,5 +91,7 @@ namespace OrthancWSI
     {
       return Orthanc::PhotometricInterpretation_RGB;
     }
+
+    size_t GetMemoryUsage() const ORTHANC_OVERRIDE;
   };
 }

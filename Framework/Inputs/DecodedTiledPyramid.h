@@ -72,5 +72,7 @@ namespace OrthancWSI
     {
       return false;   // No access to the raw tiles
     }
+
+    virtual size_t GetMemoryUsage() const = 0;
   };
 }

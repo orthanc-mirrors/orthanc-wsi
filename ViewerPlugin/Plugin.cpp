@@ -26,6 +26,9 @@
 #include "DicomPyramidCache.h"
 #include "IIIF.h"
 #include "RawTile.h"
+#include "../Framework/Inputs/DecodedTiledPyramid.h"
+#include "../Framework/Inputs/OnTheFlyPyramid.h"
+#include "../Framework/Inputs/OnTheFlyPyramidsCache.h"
 
 #include <Compatibility.h>  // For std::unique_ptr
 #include <Images/Image.h>
@@ -39,8 +42,46 @@
 #include <EmbeddedResources.h>
 
 #include <cassert>
+#include <Images/PngReader.h>
+#include <boost/atomic/detail/lock_pool.hpp>
+
 
 #define ORTHANC_PLUGIN_NAME "wsi"
+
+
+namespace OrthancWSI
+{
+  class OrthancPyramidFrameFetcher : public OnTheFlyPyramidsCache::IPyramidFetcher
+  {
+  private:
+    std::unique_ptr<OrthancStone::IOrthancConnection>  orthanc_;
+    bool                                               smooth_;
+
+  public:
+    explicit OrthancPyramidFrameFetcher(OrthancStone::IOrthancConnection* orthanc,
+                                        bool smooth) :
+      orthanc_(orthanc),
+      smooth_(smooth)
+    {
+      if (orthanc == NULL)
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_NullPointer);
+      }
+    }
+
+    DecodedTiledPyramid * Fetch(const std::string &instanceId,
+                                unsigned frameNumber) ORTHANC_OVERRIDE
+    {
+      std::string png;
+      orthanc_->RestApiGet(png, "/instances/" + instanceId + "/frames/" + boost::lexical_cast<std::string>(frameNumber) + "/preview");
+
+      std::unique_ptr<Orthanc::PngReader> reader(new Orthanc::PngReader());
+      reader->ReadFromMemory(png);
+
+      return new OnTheFlyPyramid(reader.release(), 512, 512, smooth_);
+    }
+  };
+}
 
 
 static bool DisplayPerformanceWarning()
