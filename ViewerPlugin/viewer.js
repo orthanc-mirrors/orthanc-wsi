@@ -48,81 +48,105 @@ function GetUrlParameter(sParam)
 };
 
 
+function InitializePyramid(pyramid, tilesBaseUrl)
+{
+  $('#map').css('background', pyramid['BackgroundColor']);  // New in WSI 2.1
+
+  var width = pyramid['TotalWidth'];
+  var height = pyramid['TotalHeight'];
+  var countLevels = pyramid['Resolutions'].length;
+
+  // Maps always need a projection, but Zoomify layers are not geo-referenced, and
+  // are only measured in pixels.  So, we create a fake projection that the map
+  // can use to properly display the layer.
+  var proj = new ol.proj.Projection({
+    code: 'pixel',
+    units: 'pixels',
+    extent: [0, 0, width, height]
+  });
+
+  var extent = [0, -height, width, 0];
+
+  // Disable the rotation of the map, and inertia while panning
+  // http://stackoverflow.com/a/25682186
+  var interactions = ol.interaction.defaults({
+    altShiftDragRotate : false,
+    pinchRotate : false,
+    dragPan: false
+  }).extend([
+    new ol.interaction.DragPan({kinetic: false})
+  ]);
+
+  var layer = new ol.layer.Tile({
+    extent: extent,
+    source: new ol.source.TileImage({
+      projection: proj,
+      tileUrlFunction: function(tileCoord, pixelRatio, projection) {
+        return (tilesBaseUrl + (countLevels - 1 - tileCoord[0]) + '/' + tileCoord[1] + '/' + (-tileCoord[2] - 1));
+      },
+      tileGrid: new ol.tilegrid.TileGrid({
+        extent: extent,
+        resolutions: pyramid['Resolutions'].reverse(),
+        tileSizes: pyramid['TilesSizes'].reverse()
+      })
+    }),
+    wrapX: false,
+    projection: proj
+  });
+
+
+  var map = new ol.Map({
+    target: 'map',
+    layers: [ layer ],
+    view: new ol.View({
+      projection: proj,
+      center: [width / 2, -height / 2],
+      zoom: 0,
+      minResolution: 1   // Do not interpelate over pixels
+    }),
+    interactions: interactions
+  });
+
+  map.getView().fit(extent, map.getSize());
+}
+
 
 $(document).ready(function() {
   var seriesId = GetUrlParameter('series');
-  if (seriesId.length == 0)
-  {
-    alert('Error - No series ID specified!');
-  }
-  else
+  var instanceId = GetUrlParameter('instance');
+
+  if (seriesId.length != 0)
   {
     $.ajax({
       url : '../pyramids/' + seriesId,
       error: function() {
         alert('Error - Cannot get the pyramid structure of series: ' + seriesId);
       },
-      success : function(series) {
-        $('#map').css('background', series['BackgroundColor']);  // New in WSI 2.1
-
-        var width = series['TotalWidth'];
-        var height = series['TotalHeight'];
-        var countLevels = series['Resolutions'].length;
-
-        // Maps always need a projection, but Zoomify layers are not geo-referenced, and
-        // are only measured in pixels.  So, we create a fake projection that the map
-        // can use to properly display the layer.
-        var proj = new ol.proj.Projection({
-          code: 'pixel',
-          units: 'pixels',
-          extent: [0, 0, width, height]
-        });
-
-        var extent = [0, -height, width, 0];
-        
-        // Disable the rotation of the map, and inertia while panning
-        // http://stackoverflow.com/a/25682186
-        var interactions = ol.interaction.defaults({
-          altShiftDragRotate : false, 
-          pinchRotate : false,
-          dragPan: false
-        }).extend([
-          new ol.interaction.DragPan({kinetic: false})
-        ]);
-
-        var layer = new ol.layer.Tile({
-          extent: extent,
-          source: new ol.source.TileImage({
-            projection: proj,
-            tileUrlFunction: function(tileCoord, pixelRatio, projection) {
-              return ('../tiles/' + seriesId + '/' + 
-                      (countLevels - 1 - tileCoord[0]) + '/' + tileCoord[1] + '/' + (-tileCoord[2] - 1));
-            },
-            tileGrid: new ol.tilegrid.TileGrid({
-              extent: extent,
-              resolutions: series['Resolutions'].reverse(),
-              tileSizes: series['TilesSizes'].reverse()
-            })
-          }),
-          wrapX: false,
-          projection: proj
-        });
-
-
-        var map = new ol.Map({
-          target: 'map',
-          layers: [ layer ],
-          view: new ol.View({
-            projection: proj,
-            center: [width / 2, -height / 2],
-            zoom: 0,
-            minResolution: 1   // Do not interpelate over pixels
-          }),
-          interactions: interactions
-        });
-
-        map.getView().fit(extent, map.getSize());
+      success : function(pyramid) {
+        InitializePyramid(pyramid, '../tiles/' + seriesId + '/');
       }
     });
+  }
+  else if (instanceId.length != 0)
+  {
+    var frameNumber = GetUrlParameter('frame');
+    if (frameNumber.length == 0)
+    {
+      frameNumber = 0;
+    }
+
+    $.ajax({
+      url : '../frames-pyramids/' + instanceId + '/' + frameNumber,
+      error: function() {
+        alert('Error - Cannot get the pyramid structure of frame ' + frameNumber + ' of instance: ' + instanceId);
+      },
+      success : function(pyramid) {
+        InitializePyramid(pyramid, '../frames-tiles/' + instanceId + '/' + frameNumber + '/');
+      }
+    });
+  }
+  else
+  {
+    alert('Error - No series ID and no instance ID specified!');
   }
 });

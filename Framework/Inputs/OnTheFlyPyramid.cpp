@@ -64,7 +64,7 @@ namespace OrthancWSI
     }
 
     if (fromWidth == tileWidth_ &&
-      fromHeight == tileHeight_)
+        fromHeight == tileHeight_)
     {
       source.GetRegion(target, x, y, tileWidth_, tileHeight_);
     }
@@ -72,11 +72,11 @@ namespace OrthancWSI
     {
       uint8_t red, green, blue;
       GetBackgroundColor(red, green, blue);
-      Orthanc::ImageProcessing::Set(target, 255, green, blue, 255);
+      Orthanc::ImageProcessing::Set(target, red, green, blue, 255);
 
       Orthanc::ImageAccessor from, to;
       source.GetRegion(from, x, y, fromWidth, fromHeight);
-      target.GetRegion(to, x, y, fromWidth, fromHeight);
+      target.GetRegion(to, 0, 0, fromWidth, fromHeight);
       Orthanc::ImageProcessing::Copy(to, from);
     }
   }

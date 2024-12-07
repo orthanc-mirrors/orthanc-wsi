@@ -118,3 +118,26 @@ $('#series').live('pagebeforeshow', function() {
     });
   });
 });
+
+
+$('#instance').live('pagebeforeshow', function() {
+  var instanceId = $.mobile.pageData.uuid;
+
+  $('#wsi-instance-button').remove();
+
+  var b = $('<a>')
+    .attr('id', 'wsi-button')
+    .attr('data-role', 'button')
+    .attr('href', '#')
+    .attr('data-icon', 'search')
+    .attr('data-theme', 'e')
+    .text('On-the-fly pyramid viewer')
+    .button();
+
+  b.insertAfter($('#instance-info'));
+  b.click(function() {
+    if ($.mobile.pageData) {
+      window.open('../wsi/app/viewer.html?instance=' + instanceId);
+    }
+  });
+});
