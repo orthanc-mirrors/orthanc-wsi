@@ -72,5 +72,7 @@ namespace OrthancWSI
     void CheckConstantTileSize(const ITiledPyramid& source);
 
     void ConvertJpegYCbCrToRgb(Orthanc::ImageAccessor& image /* inplace */);
+
+    ImageCompression Convert(Orthanc::MimeType type);
   }
 }

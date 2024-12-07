@@ -329,5 +329,24 @@ namespace OrthancWSI
       }
 #endif
     }
+
+
+    ImageCompression Convert(Orthanc::MimeType type)
+    {
+      switch (type)
+      {
+        case Orthanc::MimeType_Png:
+          return ImageCompression_Png;
+
+        case Orthanc::MimeType_Jpeg:
+          return ImageCompression_Jpeg;
+
+        case Orthanc::MimeType_Jpeg2000:
+          return ImageCompression_Jpeg2000;
+
+        default:
+          throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
+      }
+    }
   }
 }

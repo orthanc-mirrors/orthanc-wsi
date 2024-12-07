@@ -89,7 +89,7 @@ namespace OrthancWSI
       CachedPyramid*            pyramid_;
 
     public:
-      Accessor(OnTheFlyPyramidsCache that,
+      Accessor(OnTheFlyPyramidsCache& that,
                const std::string& instanceId,
                unsigned int frameNumber);
 
@@ -108,7 +108,7 @@ namespace OrthancWSI
         return identifier_.second;
       }
 
-      const DecodedTiledPyramid& GetPyramid() const;
+      DecodedTiledPyramid& GetPyramid() const;
     };
   };
 }

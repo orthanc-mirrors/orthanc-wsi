@@ -29,6 +29,7 @@
 #include "../Framework/Inputs/DecodedTiledPyramid.h"
 #include "../Framework/Inputs/OnTheFlyPyramid.h"
 #include "../Framework/Inputs/OnTheFlyPyramidsCache.h"
+#include "../Framework/ImageToolbox.h"
 
 #include <Compatibility.h>  // For std::unique_ptr
 #include <Images/Image.h>
@@ -43,6 +44,8 @@
 
 #include <cassert>
 #include <Images/PngReader.h>
+
+#include "OrthancPluginConnection.h"
 
 
 #define ORTHANC_PLUGIN_NAME "wsi"
@@ -71,13 +74,31 @@ namespace OrthancWSI
     DecodedTiledPyramid * Fetch(const std::string &instanceId,
                                 unsigned frameNumber) ORTHANC_OVERRIDE
     {
-      std::string png;
-      orthanc_->RestApiGet(png, "/instances/" + instanceId + "/frames/" + boost::lexical_cast<std::string>(frameNumber) + "/preview");
+      OrthancPlugins::MemoryBuffer buffer;
+      buffer.GetDicomInstance(instanceId.c_str());
 
-      std::unique_ptr<Orthanc::PngReader> reader(new Orthanc::PngReader());
-      reader->ReadFromMemory(png);
+      OrthancPlugins::DicomInstance dicom(buffer.GetData(), buffer.GetSize());
 
-      return new OnTheFlyPyramid(reader.release(), 512, 512, smooth_);
+      std::unique_ptr<OrthancPlugins::OrthancImage> frame(dicom.GetDecodedFrame(frameNumber));
+
+      Orthanc::PixelFormat format;
+      switch (frame->GetPixelFormat())
+      {
+        case OrthancPluginPixelFormat_RGB24:
+          format = Orthanc::PixelFormat_RGB24;
+          break;
+
+        default:
+          throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
+      }
+
+      Orthanc::ImageAccessor source;
+      source.AssignReadOnly(format, frame->GetWidth(), frame->GetHeight(), frame->GetPitch(), frame->GetBuffer());
+
+      std::unique_ptr<Orthanc::ImageAccessor> copy(new Orthanc::Image(Orthanc::PixelFormat_RGB24, source.GetWidth(), source.GetHeight(), false));
+      Orthanc::ImageProcessing::Convert(*copy, source);
+
+      return new OnTheFlyPyramid(copy.release(), 512, 512, smooth_);
     }
   };
 }
@@ -268,7 +289,172 @@ void ServeTile(OrthancPluginRestOutput* output,
 }
 
 
-OrthancPluginErrorCode OnChangeCallback(OrthancPluginChangeType changeType, 
+void ServeFramePyramid(OrthancPluginRestOutput* output,
+                       const char* url,
+                       const OrthancPluginHttpRequest* request)
+{
+  std::string instanceId(request->groups[0]);
+  int frameNumber = boost::lexical_cast<int>(request->groups[1]);
+
+  LOG(INFO) << "Accessing pyramid of frame " << frameNumber << " in instance " << instanceId;
+
+  if (frameNumber < 0)
+  {
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
+  }
+
+  OrthancWSI::OnTheFlyPyramidsCache::Accessor accessor(OrthancWSI::OnTheFlyPyramidsCache::GetInstance(), instanceId, frameNumber);
+
+  unsigned int totalWidth = accessor.GetPyramid().GetLevelWidth(0);
+  unsigned int totalHeight = accessor.GetPyramid().GetLevelHeight(0);
+
+  Json::Value sizes = Json::arrayValue;
+  Json::Value resolutions = Json::arrayValue;
+  Json::Value tilesCount = Json::arrayValue;
+  Json::Value tilesSizes = Json::arrayValue;
+  for (unsigned int i = 0; i < accessor.GetPyramid().GetLevelCount(); i++)
+  {
+    const unsigned int levelWidth = accessor.GetPyramid().GetLevelWidth(i);
+    const unsigned int levelHeight = accessor.GetPyramid().GetLevelHeight(i);
+    const unsigned int tileWidth = accessor.GetPyramid().GetTileWidth(i);
+    const unsigned int tileHeight = accessor.GetPyramid().GetTileHeight(i);
+
+    resolutions.append(static_cast<float>(totalWidth) / static_cast<float>(levelWidth));
+
+    Json::Value s = Json::arrayValue;
+    s.append(levelWidth);
+    s.append(levelHeight);
+    sizes.append(s);
+
+    s = Json::arrayValue;
+    s.append(OrthancWSI::CeilingDivision(levelWidth, tileWidth));
+    s.append(OrthancWSI::CeilingDivision(levelHeight, tileHeight));
+    tilesCount.append(s);
+
+    s = Json::arrayValue;
+    s.append(tileWidth);
+    s.append(tileHeight);
+    tilesSizes.append(s);
+  }
+
+  Json::Value result;
+  result["ID"] = instanceId;
+  result["FrameNumber"] = frameNumber;
+  result["Resolutions"] = resolutions;
+  result["Sizes"] = sizes;
+  result["TilesCount"] = tilesCount;
+  result["TilesSizes"] = tilesSizes;
+  result["TotalHeight"] = totalHeight;
+  result["TotalWidth"] = totalWidth;
+
+  {
+    uint8_t red, green, blue;
+    accessor.GetPyramid().GetBackgroundColor(red, green, blue);  // TODO
+
+    char tmp[64];
+    sprintf(tmp, "#%02x%02x%02x", red, green, blue);
+    result["BackgroundColor"] = tmp;
+  }
+
+  std::string s = result.toStyledString();
+  OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, s.c_str(), s.size(), "application/json");
+}
+
+
+void ServeFrameTile(OrthancPluginRestOutput* output,
+                    const char* url,
+                    const OrthancPluginHttpRequest* request)
+{
+  std::string instanceId(request->groups[0]);
+  int frameNumber = boost::lexical_cast<int>(request->groups[1]);
+  int level = boost::lexical_cast<int>(request->groups[2]);
+  int tileY = boost::lexical_cast<int>(request->groups[4]);
+  int tileX = boost::lexical_cast<int>(request->groups[3]);
+
+  char tmp[1024];
+  sprintf(tmp, "Accessing on-the-fly tile in frame %d of instance %s: (%d,%d) at level %d", frameNumber, instanceId.c_str(), tileX, tileY, level);
+  OrthancPluginLogInfo(OrthancPlugins::GetGlobalContext(), tmp);
+
+  if (frameNumber < 0 ||
+      level < 0 ||
+      tileX < 0 ||
+      tileY < 0)
+  {
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
+  }
+
+  std::unique_ptr<Orthanc::ImageAccessor> tile;
+
+  {
+    OrthancWSI::OnTheFlyPyramidsCache::Accessor accessor(OrthancWSI::OnTheFlyPyramidsCache::GetInstance(), instanceId, frameNumber);
+    if (!accessor.IsValid())
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
+    }
+
+    bool isEmpty;  // Ignored
+    tile.reset(accessor.GetPyramid().DecodeTile(isEmpty, level, tileX, tileY));
+  }
+
+  Orthanc::MimeType mime = Orthanc::MimeType_Png;  // By default, use lossless compression
+
+  // Lookup whether a "Accept" HTTP header is present, to overwrite
+  // the default MIME type
+  for (uint32_t i = 0; i < request->headersCount; i++)
+  {
+    std::string key(request->headersKeys[i]);
+    Orthanc::Toolbox::ToLowerCase(key);
+
+    if (key == "accept")
+    {
+      std::vector<std::string> tokens;
+      Orthanc::Toolbox::TokenizeString(tokens, request->headersValues[i], ',');
+
+      bool found = false;
+
+      for (size_t j = 0; j < tokens.size(); j++)
+      {
+        std::string s = Orthanc::Toolbox::StripSpaces(tokens[j]);
+
+        if (s == Orthanc::EnumerationToString(Orthanc::MimeType_Png))
+        {
+          mime = Orthanc::MimeType_Png;
+          found = true;
+        }
+        else if (s == Orthanc::EnumerationToString(Orthanc::MimeType_Jpeg))
+        {
+          mime = Orthanc::MimeType_Jpeg;
+          found = true;
+        }
+        else if (s == Orthanc::EnumerationToString(Orthanc::MimeType_Jpeg2000))
+        {
+          mime = Orthanc::MimeType_Jpeg2000;
+          found = true;
+        }
+        else if (s == "*/*" ||
+                 s == "image/*")
+        {
+          found = true;
+        }
+      }
+
+      if (!found)
+      {
+        OrthancPluginSendHttpStatusCode(OrthancPlugins::GetGlobalContext(), output, 406 /* Not acceptable */);
+        return;
+      }
+    }
+  }
+
+  std::string encoded;
+  OrthancWSI::ImageToolbox::EncodeTile(encoded, *tile, OrthancWSI::ImageToolbox::Convert(mime), 90 /* only used for JPEG */);
+
+  OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, encoded.c_str(),
+                            encoded.size(), Orthanc::EnumerationToString(mime));
+}
+
+
+OrthancPluginErrorCode OnChangeCallback(OrthancPluginChangeType changeType,
                                         OrthancPluginResourceType resourceType, 
                                         const char *resourceId)
 {
@@ -342,7 +528,7 @@ extern "C"
 {
   ORTHANC_PLUGINS_API int32_t OrthancPluginInitialize(OrthancPluginContext* context)
   {
-    OrthancPlugins::SetGlobalContext(context);
+    OrthancPlugins::SetGlobalContext(context, ORTHANC_PLUGIN_NAME);
     assert(DisplayPerformanceWarning());
 
     /* Check the version of the Orthanc core */
@@ -364,7 +550,9 @@ extern "C"
       return -1;
     }
 
-#if ORTHANC_FRAMEWORK_VERSION_IS_ABOVE(1, 7, 2)
+#if ORTHANC_FRAMEWORK_VERSION_IS_ABOVE(1, 12, 4)
+    Orthanc::Logging::InitializePluginContext(context, ORTHANC_PLUGIN_NAME);
+#elif ORTHANC_FRAMEWORK_VERSION_IS_ABOVE(1, 7, 2)
     Orthanc::Logging::InitializePluginContext(context);
 #else
     Orthanc::Logging::Initialize(context);
@@ -383,6 +571,10 @@ extern "C"
     OrthancPlugins::SetDescription(ORTHANC_PLUGIN_NAME, "Provides a Web viewer of whole-slide microscopic images within Orthanc.");
 
     OrthancWSI::DicomPyramidCache::InitializeInstance(10 /* Number of pyramids to be cached - TODO parameter */);
+    OrthancWSI::OnTheFlyPyramidsCache::InitializeInstance(
+      new OrthancWSI::OrthancPyramidFrameFetcher(new OrthancWSI::OrthancPluginConnection(), false /* TODO PARAMETER */),
+      10 /* TODO - PARAMETER */,
+      256 * 1024 * 1024 /* TODO - PARAMETER */);
 
     OrthancPluginRegisterOnChangeCallback(OrthancPlugins::GetGlobalContext(), OnChangeCallback);
 
@@ -392,6 +584,8 @@ extern "C"
     OrthancPlugins::RegisterRestCallback<ServeFile>("/wsi/app/(viewer.js)", true);
     OrthancPlugins::RegisterRestCallback<ServePyramid>("/wsi/pyramids/([0-9a-f-]+)", true);
     OrthancPlugins::RegisterRestCallback<ServeTile>("/wsi/tiles/([0-9a-f-]+)/([0-9-]+)/([0-9-]+)/([0-9-]+)", true);
+    OrthancPlugins::RegisterRestCallback<ServeFramePyramid>("/wsi/frames-pyramids/([0-9a-f-]+)/([0-9-]+)", true);
+    OrthancPlugins::RegisterRestCallback<ServeFrameTile>("/wsi/frames-tiles/([0-9a-f-]+)/([0-9-]+)/([0-9-]+)/([0-9-]+)/([0-9-]+)", true);
 
     OrthancPlugins::OrthancConfiguration mainConfiguration;
 
@@ -475,6 +669,7 @@ extern "C"
 
   ORTHANC_PLUGINS_API void OrthancPluginFinalize()
   {
+    OrthancWSI::OnTheFlyPyramidsCache::FinalizeInstance();
     OrthancWSI::DicomPyramidCache::FinalizeInstance();
     OrthancWSI::RawTile::FinalizeTranscoderSemaphore();
   }

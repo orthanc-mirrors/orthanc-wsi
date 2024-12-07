@@ -40,7 +40,45 @@ namespace OrthancWSI
                                    unsigned y)
   {
     isEmpty = false;
-    GetLevel(level).GetRegion(target, x, y, tileWidth_, tileHeight_);
+
+    const Orthanc::ImageAccessor& source = GetLevel(level);
+
+    unsigned int fromWidth;
+    if (x + tileWidth_ <= source.GetWidth())
+    {
+      fromWidth = tileWidth_;
+    }
+    else
+    {
+      fromWidth = source.GetWidth() - x;
+    }
+
+    unsigned int fromHeight;
+    if (y + tileHeight_ <= source.GetHeight())
+    {
+      fromHeight = tileHeight_;
+    }
+    else
+    {
+      fromHeight = source.GetHeight() - y;
+    }
+
+    if (fromWidth == tileWidth_ &&
+      fromHeight == tileHeight_)
+    {
+      source.GetRegion(target, x, y, tileWidth_, tileHeight_);
+    }
+    else
+    {
+      uint8_t red, green, blue;
+      GetBackgroundColor(red, green, blue);
+      Orthanc::ImageProcessing::Set(target, 255, green, blue, 255);
+
+      Orthanc::ImageAccessor from, to;
+      source.GetRegion(from, x, y, fromWidth, fromHeight);
+      target.GetRegion(to, x, y, fromWidth, fromHeight);
+      Orthanc::ImageProcessing::Copy(to, from);
+    }
   }
 
 

@@ -49,7 +49,7 @@ namespace OrthancWSI
       }
     }
 
-    const DecodedTiledPyramid& GetPyramid() const
+    DecodedTiledPyramid& GetPyramid() const
     {
       assert(pyramid_ != NULL);
       return *pyramid_;
@@ -106,10 +106,11 @@ namespace OrthancWSI
 
     MakeRoom(payload->GetMemoryUsage());
 
+    memoryUsage_ += payload->GetMemoryUsage();
+
     // Add a new element to the cache and make it the most
     // recently used entry
     cache_.Add(identifier, payload.release());
-    memoryUsage_ += payload->GetMemoryUsage();
 
     assert(SanityCheck());
     return result;
@@ -179,7 +180,7 @@ namespace OrthancWSI
   }
 
 
-  OnTheFlyPyramidsCache::Accessor::Accessor(OnTheFlyPyramidsCache that,
+  OnTheFlyPyramidsCache::Accessor::Accessor(OnTheFlyPyramidsCache& that,
                                             const std::string &instanceId,
                                             unsigned int frameNumber):
     lock_(that.mutex_),
@@ -210,7 +211,7 @@ namespace OrthancWSI
   }
 
 
-  const DecodedTiledPyramid & OnTheFlyPyramidsCache::Accessor::GetPyramid() const
+  DecodedTiledPyramid & OnTheFlyPyramidsCache::Accessor::GetPyramid() const
   {
     if (IsValid())
     {
