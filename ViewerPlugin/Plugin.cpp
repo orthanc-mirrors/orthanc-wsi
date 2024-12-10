@@ -164,9 +164,7 @@ void ServePyramid(OrthancPluginRestOutput* output,
 {
   std::string seriesId(request->groups[0]);
 
-  char tmp[1024];
-  sprintf(tmp, "Accessing whole-slide pyramid of series %s", seriesId.c_str());
-  OrthancPluginLogInfo(OrthancPlugins::GetGlobalContext(), tmp);
+  LOG(INFO) << "Accessing whole-slide pyramid of series " << seriesId;
 
   Json::Value answer;
   answer["ID"] = seriesId;
@@ -177,6 +175,7 @@ void ServePyramid(OrthancPluginRestOutput* output,
 
     {
       // New in WSI 2.1
+      char tmp[16];
       sprintf(tmp, "#%02x%02x%02x", locker.GetPyramid().GetBackgroundRed(),
               locker.GetPyramid().GetBackgroundGreen(),
               locker.GetPyramid().GetBackgroundBlue());
@@ -215,7 +214,7 @@ void ServeFramePyramid(OrthancPluginRestOutput* output,
       uint8_t red, green, blue;
       accessor.GetPyramid().GetBackgroundColor(red, green, blue);  // TODO
 
-      char tmp[64];
+      char tmp[16];
       sprintf(tmp, "#%02x%02x%02x", red, green, blue);
       answer["BackgroundColor"] = tmp;
     }
@@ -289,10 +288,8 @@ void ServeTile(OrthancPluginRestOutput* output,
   int tileY = boost::lexical_cast<int>(request->groups[3]);
   int tileX = boost::lexical_cast<int>(request->groups[2]);
 
-  char tmp[1024];
-  sprintf(tmp, "Accessing tile in series %s: (%d,%d) at level %d", seriesId.c_str(), tileX, tileY, level);
-  OrthancPluginLogInfo(OrthancPlugins::GetGlobalContext(), tmp);
-  
+  LOG(INFO) << "Accessing tile in series " << seriesId << ": (" << tileX << "," << tileY << ") at level " << level;
+
   if (level < 0 ||
       tileX < 0 ||
       tileY < 0)
@@ -357,9 +354,7 @@ void ServeFrameTile(OrthancPluginRestOutput* output,
   int tileY = boost::lexical_cast<int>(request->groups[4]);
   int tileX = boost::lexical_cast<int>(request->groups[3]);
 
-  char tmp[1024];
-  sprintf(tmp, "Accessing on-the-fly tile in frame %d of instance %s: (%d,%d) at level %d", frameNumber, instanceId.c_str(), tileX, tileY, level);
-  OrthancPluginLogInfo(OrthancPlugins::GetGlobalContext(), tmp);
+  LOG(INFO) << "Accessing on-the-fly tile in frame " << frameNumber << " of instance " << instanceId <<": (" << tileX << "," << tileY << ") at level " << level;
 
   if (frameNumber < 0 ||
       level < 0 ||
@@ -402,11 +397,8 @@ OrthancPluginErrorCode OnChangeCallback(OrthancPluginChangeType changeType,
 {
   if (resourceType == OrthancPluginResourceType_Series &&
       changeType == OrthancPluginChangeType_NewChildInstance)
-  { 
-    char tmp[1024];
-    sprintf(tmp, "New instance has been added to series %s, invalidating it", resourceId);
-    OrthancPluginLogInfo(OrthancPlugins::GetGlobalContext(), tmp);
-
+  {
+    LOG(INFO) << "New instance has been added to series " << resourceId << ", invalidating it";
     OrthancWSI::DicomPyramidCache::GetInstance().Invalidate(resourceId);
   }
 
@@ -506,9 +498,7 @@ extern "C"
     unsigned int threads = Orthanc::SystemToolbox::GetHardwareConcurrency();
     OrthancWSI::RawTile::InitializeTranscoderSemaphore(threads);
 
-    char info[1024];
-    sprintf(info, "The whole-slide imaging plugin will use at most %u threads to transcode the tiles", threads);
-    OrthancPluginLogWarning(OrthancPlugins::GetGlobalContext(), info);
+    LOG(WARNING) << "The whole-slide imaging plugin will use at most " << threads << " threads to transcode the tiles";
 
     OrthancPlugins::SetDescription(ORTHANC_PLUGIN_NAME, "Provides a Web viewer of whole-slide microscopic images within Orthanc.");
 
