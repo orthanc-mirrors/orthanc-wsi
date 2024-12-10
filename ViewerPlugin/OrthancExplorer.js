@@ -126,12 +126,12 @@ $('#instance').live('pagebeforeshow', function() {
   $('#wsi-instance-button').remove();
 
   var b = $('<a>')
-    .attr('id', 'wsi-button')
+    .attr('id', 'wsi-instance-button')
     .attr('data-role', 'button')
     .attr('href', '#')
     .attr('data-icon', 'search')
     .attr('data-theme', 'e')
-    .text('On-the-fly pyramid viewer')
+    .text('Deep zoom viewer')
     .button();
 
   b.insertAfter($('#instance-info'));
