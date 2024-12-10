@@ -174,26 +174,6 @@ void ServeIIIFSeriesPyramidInfo(OrthancPluginRestOutput* output,
 }
 
 
-static unsigned int GetPhysicalTileWidth(const OrthancWSI::ITiledPyramid& pyramid,
-                                         unsigned int level)
-{
-  return static_cast<unsigned int>(boost::math::iround(
-                                     static_cast<float>(pyramid.GetTileWidth(level)) *
-                                     static_cast<float>(pyramid.GetLevelWidth(0)) /
-                                     static_cast<float>(pyramid.GetLevelWidth(level))));
-}
-
-
-static unsigned int GetPhysicalTileHeight(const OrthancWSI::ITiledPyramid& pyramid,
-                                          unsigned int level)
-{
-  return static_cast<unsigned int>(boost::math::iround(
-                                     static_cast<float>(pyramid.GetTileHeight(level)) *
-                                     static_cast<float>(pyramid.GetLevelHeight(0)) /
-                                     static_cast<float>(pyramid.GetLevelHeight(level))));
-}
-
-
 namespace
 {
   class RegionParameters
@@ -338,6 +318,22 @@ namespace
     std::unique_ptr<OrthancWSI::RawTile>     rawTile_;
     std::unique_ptr<Orthanc::ImageAccessor>  toCrop_;
 
+    static unsigned int GetPhysicalTileWidth(const OrthancWSI::ITiledPyramid& pyramid,
+                                             unsigned int level)
+    {
+      return static_cast<unsigned int>(boost::math::iround(static_cast<float>(pyramid.GetTileWidth(level)) *
+                                                           static_cast<float>(pyramid.GetLevelWidth(0)) /
+                                                           static_cast<float>(pyramid.GetLevelWidth(level))));
+    }
+
+    static unsigned int GetPhysicalTileHeight(const OrthancWSI::ITiledPyramid& pyramid,
+                                              unsigned int level)
+    {
+      return static_cast<unsigned int>(boost::math::iround(static_cast<float>(pyramid.GetTileHeight(level)) *
+                                                           static_cast<float>(pyramid.GetLevelHeight(0)) /
+                                                           static_cast<float>(pyramid.GetLevelHeight(level))));
+    }
+
   public:
     RegionRenderer(const RegionParameters& parameters,
                    OrthancWSI::ITiledPyramid& pyramid) :
@@ -370,19 +366,35 @@ namespace
       }
       else
       {
-        rawTile_.reset(new OrthancWSI::RawTile(pyramid, level,
-                                              parameters.GetX() / GetPhysicalTileWidth(pyramid, level),
-                                              parameters.GetY() / GetPhysicalTileHeight(pyramid, level)));
+        const unsigned int tileX = parameters.GetX() / GetPhysicalTileWidth(pyramid, level);
+        const unsigned int tileY = parameters.GetY() / GetPhysicalTileHeight(pyramid, level);
+        rawTile_.reset(new OrthancWSI::RawTile(pyramid, level, tileX, tileY));
 
-        assert(rawTile_->GetTileWidth() == pyramid.GetTileWidth(level));
-        assert(rawTile_->GetTileHeight() == pyramid.GetTileHeight(level));
-
-        if (!rawTile_->IsEmpty() &&
-            (parameters.GetCropWidth() < pyramid.GetTileWidth(level) ||
-             parameters.GetCropHeight() < pyramid.GetTileHeight(level)))
+        if (rawTile_->IsEmpty())
         {
-          toCrop_.reset(rawTile_->Decode());
-          rawTile_.reset(NULL);
+          bool isEmpty;
+          toCrop_.reset(pyramid.DecodeTile(isEmpty, level, tileX, tileY));
+          if (isEmpty)
+          {
+            toCrop_.reset(NULL);
+          }
+          else
+          {
+            rawTile_.reset(NULL);
+          }
+        }
+        else
+        {
+          assert(rawTile_->GetTileWidth() == pyramid.GetTileWidth(level));
+          assert(rawTile_->GetTileHeight() == pyramid.GetTileHeight(level));
+
+          if (!rawTile_->IsEmpty() &&
+              (parameters.GetCropWidth() < pyramid.GetTileWidth(level) ||
+               parameters.GetCropHeight() < pyramid.GetTileHeight(level)))
+          {
+            toCrop_.reset(rawTile_->Decode());
+            rawTile_.reset(NULL);
+          }
         }
       }
     }
@@ -769,6 +781,85 @@ void ServeIIIFFrameImage(OrthancPluginRestOutput* output,
 }
 
 
+void ServeIIIFFramePyramidInfo(OrthancPluginRestOutput* output,
+                               const char* url,
+                               const OrthancPluginHttpRequest* request)
+{
+  const std::string instanceId(request->groups[0]);
+  unsigned int frameNumber;
+  if (!Orthanc::SerializationToolbox::ParseUnsignedInteger32(frameNumber, request->groups[1]))
+  {
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
+  }
+
+  LOG(INFO) << "IIIF: Image API call to whole-slide pyramid of frame " << frameNumber << " of instance " << instanceId;
+
+  Json::Value result;
+
+  {
+    OrthancWSI::DecodedPyramidCache::Accessor accessor(OrthancWSI::DecodedPyramidCache::GetInstance(), instanceId, frameNumber);
+    GeneratePyramidInfo(result, accessor.GetPyramid(), "instance " + instanceId + " (frame " + boost::lexical_cast<std::string>(frameNumber) + ")");
+  }
+
+  result["id"] = iiifPublicUrl_ + "frames-pyramids/" + instanceId + "/" + boost::lexical_cast<std::string>(frameNumber);
+
+  std::string s = result.toStyledString();
+  OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, s.c_str(), s.size(), Orthanc::EnumerationToString(Orthanc::MimeType_Json));
+}
+
+
+void ServeIIIFFramePyramidTile(OrthancPluginRestOutput* output,
+                               const char* url,
+                               const OrthancPluginHttpRequest* request)
+{
+  const std::string instanceId(request->groups[0]);
+  const std::string region(request->groups[2]);
+  const std::string size(request->groups[3]);
+  const std::string rotation(request->groups[4]);
+  const std::string quality(request->groups[5]);
+  const std::string format(request->groups[6]);
+
+  unsigned int frameNumber;
+  if (!Orthanc::SerializationToolbox::ParseUnsignedInteger32(frameNumber, request->groups[1]))
+  {
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
+  }
+
+  LOG(INFO) << "IIIF: Image API call to tile of frame " << frameNumber << " in instance " << instanceId << ": "
+            << "region=" << region << "; size=" << size << "; rotation="
+            << rotation << "; quality=" << quality << "; format=" << format;
+
+  const RegionParameters parameters(region, size, rotation, quality, format);
+
+  if (parameters.IsFull())
+  {
+    std::unique_ptr<Orthanc::ImageAccessor> image;
+
+    {
+      OrthancWSI::DecodedPyramidCache::Accessor accessor(OrthancWSI::DecodedPyramidCache::GetInstance(), instanceId, frameNumber);
+      image.reset(RenderFullImage(accessor.GetPyramid()));
+    }
+
+    std::string encoded;
+    OrthancWSI::RawTile::Encode(encoded, *image, Orthanc::MimeType_Jpeg);
+
+    OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, encoded.c_str(),
+                              encoded.size(), Orthanc::EnumerationToString(Orthanc::MimeType_Jpeg));
+  }
+  else
+  {
+    std::unique_ptr<RegionRenderer> renderer;
+
+    {
+      OrthancWSI::DecodedPyramidCache::Accessor accessor(OrthancWSI::DecodedPyramidCache::GetInstance(), instanceId, frameNumber);
+      renderer.reset(new RegionRenderer(parameters, accessor.GetPyramid()));
+    }
+
+    renderer->Answer(output);
+  }
+}
+
+
 void InitializeIIIF(const std::string& iiifPublicUrl)
 {
   iiifPublicUrl_ = iiifPublicUrl;
@@ -778,6 +869,10 @@ void InitializeIIIF(const std::string& iiifPublicUrl)
   OrthancPlugins::RegisterRestCallback<ServeIIIFManifest>("/wsi/iiif/series/([0-9a-f-]+)/manifest.json", true);
   OrthancPlugins::RegisterRestCallback<ServeIIIFFrameInfo>("/wsi/iiif/frames/([0-9a-f-]+)/([0-9]+)/info.json", true);
   OrthancPlugins::RegisterRestCallback<ServeIIIFFrameImage>("/wsi/iiif/frames/([0-9a-f-]+)/([0-9]+)/full/max/0/default.jpg", true);
+
+  // New in WSI 3.0
+  OrthancPlugins::RegisterRestCallback<ServeIIIFFramePyramidInfo>("/wsi/iiif/frames-pyramids/([0-9a-f-]+)/([0-9]+)/info.json", true);
+  OrthancPlugins::RegisterRestCallback<ServeIIIFFramePyramidTile>("/wsi/iiif/frames-pyramids/([0-9a-f-]+)/([0-9]+)/([0-9a-z,:]+)/([0-9a-z,!:]+)/([0-9,!]+)/([a-z]+)\\.([a-z]+)", true);
 }
 
 void SetIIIFForcePowersOfTwoScaleFactors(bool force)

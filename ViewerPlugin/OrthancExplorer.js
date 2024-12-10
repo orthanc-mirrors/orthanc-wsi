@@ -124,6 +124,7 @@ $('#instance').live('pagebeforeshow', function() {
   var instanceId = $.mobile.pageData.uuid;
 
   $('#wsi-instance-button').remove();
+  $('#openseadragon-instance-button').remove();
 
   var b = $('<a>')
     .attr('id', 'wsi-instance-button')
@@ -140,4 +141,22 @@ $('#instance').live('pagebeforeshow', function() {
       window.open('../wsi/app/viewer.html?instance=' + instanceId);
     }
   });
+
+  if (${SERVE_OPEN_SEADRAGON}) {
+    var b = $('<a>')
+        .attr('id', 'openseadragon-instance-button')
+        .attr('data-role', 'button')
+        .attr('href', '#')
+        .attr('data-icon', 'search')
+        .attr('data-theme', 'e')
+        .text('Test IIIF in OpenSeadragon')
+        .button();
+
+    b.insertAfter($('#instance-info'));
+    b.click(function () {
+      if ($.mobile.pageData) {
+        window.open('../wsi/app/openseadragon.html?image=../iiif/frames-pyramids/' + instanceId + '/0/info.json');
+      }
+    });
+  }
 });
