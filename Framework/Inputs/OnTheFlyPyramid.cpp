@@ -43,41 +43,19 @@ namespace OrthancWSI
 
     const Orthanc::ImageAccessor& source = GetLevel(level);
 
-    unsigned int fromWidth;
-    if (x + tileWidth_ <= source.GetWidth())
+    if (target.GetWidth() > tileWidth_ ||
+      target.GetHeight() > tileHeight_ ||
+      x + target.GetWidth() > source.GetWidth() ||
+      y + target.GetHeight() > source.GetHeight())
     {
-      fromWidth = tileWidth_;
+      // This should be handled by the base class
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
     }
     else
     {
-      fromWidth = source.GetWidth() - x;
-    }
-
-    unsigned int fromHeight;
-    if (y + tileHeight_ <= source.GetHeight())
-    {
-      fromHeight = tileHeight_;
-    }
-    else
-    {
-      fromHeight = source.GetHeight() - y;
-    }
-
-    if (fromWidth == tileWidth_ &&
-        fromHeight == tileHeight_)
-    {
-      source.GetRegion(target, x, y, tileWidth_, tileHeight_);
-    }
-    else
-    {
-      uint8_t red, green, blue;
-      GetBackgroundColor(red, green, blue);
-      Orthanc::ImageProcessing::Set(target, red, green, blue, 255);
-
-      Orthanc::ImageAccessor from, to;
-      source.GetRegion(from, x, y, fromWidth, fromHeight);
-      target.GetRegion(to, 0, 0, fromWidth, fromHeight);
-      Orthanc::ImageProcessing::Copy(to, from);
+      Orthanc::ImageAccessor from;
+      source.GetRegion(from, x, y, target.GetWidth(), target.GetHeight());
+      Orthanc::ImageProcessing::Copy(target, from);
     }
   }
 
