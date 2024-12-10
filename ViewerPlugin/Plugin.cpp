@@ -113,35 +113,25 @@ static bool DisplayPerformanceWarning()
 }
 
 
-void ServePyramid(OrthancPluginRestOutput* output,
-                  const char* url,
-                  const OrthancPluginHttpRequest* request)
+static void DescribePyramid(Json::Value& result,
+                            const OrthancWSI::ITiledPyramid& pyramid)
 {
-  std::string seriesId(request->groups[0]);
-
-  char tmp[1024];
-  sprintf(tmp, "Accessing whole-slide pyramid of series %s", seriesId.c_str());
-  OrthancPluginLogInfo(OrthancPlugins::GetGlobalContext(), tmp);
-  
-
-  OrthancWSI::DicomPyramidCache::Locker locker(seriesId);
-
-  unsigned int totalWidth = locker.GetPyramid().GetLevelWidth(0);
-  unsigned int totalHeight = locker.GetPyramid().GetLevelHeight(0);
+  unsigned int totalWidth = pyramid.GetLevelWidth(0);
+  unsigned int totalHeight = pyramid.GetLevelHeight(0);
 
   Json::Value sizes = Json::arrayValue;
   Json::Value resolutions = Json::arrayValue;
   Json::Value tilesCount = Json::arrayValue;
   Json::Value tilesSizes = Json::arrayValue;
-  for (unsigned int i = 0; i < locker.GetPyramid().GetLevelCount(); i++)
+  for (unsigned int i = 0; i < pyramid.GetLevelCount(); i++)
   {
-    const unsigned int levelWidth = locker.GetPyramid().GetLevelWidth(i);
-    const unsigned int levelHeight = locker.GetPyramid().GetLevelHeight(i);
-    const unsigned int tileWidth = locker.GetPyramid().GetTileWidth(i);
-    const unsigned int tileHeight = locker.GetPyramid().GetTileHeight(i);
-    
+    const unsigned int levelWidth = pyramid.GetLevelWidth(i);
+    const unsigned int levelHeight = pyramid.GetLevelHeight(i);
+    const unsigned int tileWidth = pyramid.GetTileWidth(i);
+    const unsigned int tileHeight = pyramid.GetTileHeight(i);
+
     resolutions.append(static_cast<float>(totalWidth) / static_cast<float>(levelWidth));
-    
+
     Json::Value s = Json::arrayValue;
     s.append(levelWidth);
     s.append(levelHeight);
@@ -158,25 +148,135 @@ void ServePyramid(OrthancPluginRestOutput* output,
     tilesSizes.append(s);
   }
 
-  Json::Value result;
-  result["ID"] = seriesId;
+  result = Json::objectValue;
   result["Resolutions"] = resolutions;
   result["Sizes"] = sizes;
   result["TilesCount"] = tilesCount;
   result["TilesSizes"] = tilesSizes;
   result["TotalHeight"] = totalHeight;
   result["TotalWidth"] = totalWidth;
+}
+
+
+void ServePyramid(OrthancPluginRestOutput* output,
+                  const char* url,
+                  const OrthancPluginHttpRequest* request)
+{
+  std::string seriesId(request->groups[0]);
+
+  char tmp[1024];
+  sprintf(tmp, "Accessing whole-slide pyramid of series %s", seriesId.c_str());
+  OrthancPluginLogInfo(OrthancPlugins::GetGlobalContext(), tmp);
+
+  Json::Value answer;
+  answer["ID"] = seriesId;
 
   {
-    // New in WSI 2.1
-    sprintf(tmp, "#%02x%02x%02x", locker.GetPyramid().GetBackgroundRed(),
-            locker.GetPyramid().GetBackgroundGreen(),
-            locker.GetPyramid().GetBackgroundBlue());
-    result["BackgroundColor"] = tmp;
+    OrthancWSI::DicomPyramidCache::Locker locker(seriesId);
+    DescribePyramid(answer, locker.GetPyramid());
+
+    {
+      // New in WSI 2.1
+      sprintf(tmp, "#%02x%02x%02x", locker.GetPyramid().GetBackgroundRed(),
+              locker.GetPyramid().GetBackgroundGreen(),
+              locker.GetPyramid().GetBackgroundBlue());
+      answer["BackgroundColor"] = tmp;
+    }
   }
 
-  std::string s = result.toStyledString();
+  std::string s = answer.toStyledString();
   OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, s.c_str(), s.size(), "application/json");
+}
+
+
+void ServeFramePyramid(OrthancPluginRestOutput* output,
+                       const char* url,
+                       const OrthancPluginHttpRequest* request)
+{
+  std::string instanceId(request->groups[0]);
+  int frameNumber = boost::lexical_cast<int>(request->groups[1]);
+
+  LOG(INFO) << "Accessing pyramid of frame " << frameNumber << " in instance " << instanceId;
+
+  if (frameNumber < 0)
+  {
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
+  }
+
+  Json::Value answer;
+  answer["ID"] = instanceId;
+  answer["FrameNumber"] = frameNumber;
+
+  {
+    OrthancWSI::DecodedPyramidCache::Accessor accessor(OrthancWSI::DecodedPyramidCache::GetInstance(), instanceId, frameNumber);
+    DescribePyramid(answer, accessor.GetPyramid());
+
+    {
+      uint8_t red, green, blue;
+      accessor.GetPyramid().GetBackgroundColor(red, green, blue);  // TODO
+
+      char tmp[64];
+      sprintf(tmp, "#%02x%02x%02x", red, green, blue);
+      answer["BackgroundColor"] = tmp;
+    }
+  }
+
+  std::string s = answer.toStyledString();
+  OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, s.c_str(), s.size(), "application/json");
+}
+
+
+static bool LookupAcceptHeader(Orthanc::MimeType& target,
+                               const OrthancPluginHttpRequest* request)
+{
+  // Lookup whether a "Accept" HTTP header is present, to overwrite
+  // the default MIME type
+  for (uint32_t i = 0; i < request->headersCount; i++)
+  {
+    std::string key(request->headersKeys[i]);
+    Orthanc::Toolbox::ToLowerCase(key);
+
+    if (key == "accept")
+    {
+      std::vector<std::string> tokens;
+      Orthanc::Toolbox::TokenizeString(tokens, request->headersValues[i], ',');
+
+      bool compatible = false;
+
+      for (size_t j = 0; j < tokens.size(); j++)
+      {
+        std::string s = Orthanc::Toolbox::StripSpaces(tokens[j]);
+
+        if (s == Orthanc::EnumerationToString(Orthanc::MimeType_Png))
+        {
+          target = Orthanc::MimeType_Png;
+          return true;
+        }
+        else if (s == Orthanc::EnumerationToString(Orthanc::MimeType_Jpeg))
+        {
+          target = Orthanc::MimeType_Jpeg;
+          return true;
+        }
+        else if (s == Orthanc::EnumerationToString(Orthanc::MimeType_Jpeg2000))
+        {
+          target = Orthanc::MimeType_Jpeg2000;
+          return true;
+        }
+        else if (s == "*/*" ||
+                 s == "image/*")
+        {
+          compatible = true;
+        }
+      }
+
+      if (!compatible)
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_NotAcceptable);
+      }
+    }
+  }
+
+  return false;
 }
 
 
@@ -237,127 +337,13 @@ void ServeTile(OrthancPluginRestOutput* output,
     mime = Orthanc::MimeType_Png;
   }
 
-  // Lookup whether a "Accept" HTTP header is present, to overwrite
-  // the default MIME type
-  for (uint32_t i = 0; i < request->headersCount; i++)
+  Orthanc::MimeType accept;
+  if (LookupAcceptHeader(accept, request))
   {
-    std::string key(request->headersKeys[i]);
-    Orthanc::Toolbox::ToLowerCase(key);
-
-    if (key == "accept")
-    {
-      std::vector<std::string> tokens;
-      Orthanc::Toolbox::TokenizeString(tokens, request->headersValues[i], ',');
-
-      bool found = false;
-
-      for (size_t j = 0; j < tokens.size(); j++)
-      {
-        std::string s = Orthanc::Toolbox::StripSpaces(tokens[j]);
-
-        if (s == Orthanc::EnumerationToString(Orthanc::MimeType_Png))
-        {
-          mime = Orthanc::MimeType_Png;
-          found = true;
-        }
-        else if (s == Orthanc::EnumerationToString(Orthanc::MimeType_Jpeg))
-        {
-          mime = Orthanc::MimeType_Jpeg;
-          found = true;
-        }
-        else if (s == Orthanc::EnumerationToString(Orthanc::MimeType_Jpeg2000))
-        {
-          mime = Orthanc::MimeType_Jpeg2000;
-          found = true;
-        }
-        else if (s == "*/*" ||
-                 s == "image/*")
-        {
-          found = true;
-        }
-      }
-
-      if (!found)
-      {
-        OrthancPluginSendHttpStatusCode(OrthancPlugins::GetGlobalContext(), output, 406 /* Not acceptable */);
-        return;
-      }
-    }
+    mime = accept;
   }
 
   rawTile->Answer(output, mime);
-}
-
-
-void ServeFramePyramid(OrthancPluginRestOutput* output,
-                       const char* url,
-                       const OrthancPluginHttpRequest* request)
-{
-  std::string instanceId(request->groups[0]);
-  int frameNumber = boost::lexical_cast<int>(request->groups[1]);
-
-  LOG(INFO) << "Accessing pyramid of frame " << frameNumber << " in instance " << instanceId;
-
-  if (frameNumber < 0)
-  {
-    throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
-  }
-
-  OrthancWSI::DecodedPyramidCache::Accessor accessor(OrthancWSI::DecodedPyramidCache::GetInstance(), instanceId, frameNumber);
-
-  unsigned int totalWidth = accessor.GetPyramid().GetLevelWidth(0);
-  unsigned int totalHeight = accessor.GetPyramid().GetLevelHeight(0);
-
-  Json::Value sizes = Json::arrayValue;
-  Json::Value resolutions = Json::arrayValue;
-  Json::Value tilesCount = Json::arrayValue;
-  Json::Value tilesSizes = Json::arrayValue;
-  for (unsigned int i = 0; i < accessor.GetPyramid().GetLevelCount(); i++)
-  {
-    const unsigned int levelWidth = accessor.GetPyramid().GetLevelWidth(i);
-    const unsigned int levelHeight = accessor.GetPyramid().GetLevelHeight(i);
-    const unsigned int tileWidth = accessor.GetPyramid().GetTileWidth(i);
-    const unsigned int tileHeight = accessor.GetPyramid().GetTileHeight(i);
-
-    resolutions.append(static_cast<float>(totalWidth) / static_cast<float>(levelWidth));
-
-    Json::Value s = Json::arrayValue;
-    s.append(levelWidth);
-    s.append(levelHeight);
-    sizes.append(s);
-
-    s = Json::arrayValue;
-    s.append(OrthancWSI::CeilingDivision(levelWidth, tileWidth));
-    s.append(OrthancWSI::CeilingDivision(levelHeight, tileHeight));
-    tilesCount.append(s);
-
-    s = Json::arrayValue;
-    s.append(tileWidth);
-    s.append(tileHeight);
-    tilesSizes.append(s);
-  }
-
-  Json::Value result;
-  result["ID"] = instanceId;
-  result["FrameNumber"] = frameNumber;
-  result["Resolutions"] = resolutions;
-  result["Sizes"] = sizes;
-  result["TilesCount"] = tilesCount;
-  result["TilesSizes"] = tilesSizes;
-  result["TotalHeight"] = totalHeight;
-  result["TotalWidth"] = totalWidth;
-
-  {
-    uint8_t red, green, blue;
-    accessor.GetPyramid().GetBackgroundColor(red, green, blue);  // TODO
-
-    char tmp[64];
-    sprintf(tmp, "#%02x%02x%02x", red, green, blue);
-    result["BackgroundColor"] = tmp;
-  }
-
-  std::string s = result.toStyledString();
-  OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, s.c_str(), s.size(), "application/json");
 }
 
 
@@ -396,54 +382,10 @@ void ServeFrameTile(OrthancPluginRestOutput* output,
     tile.reset(accessor.GetPyramid().DecodeTile(isEmpty, level, tileX, tileY));
   }
 
-  Orthanc::MimeType mime = Orthanc::MimeType_Png;  // By default, use lossless compression
-
-  // Lookup whether a "Accept" HTTP header is present, to overwrite
-  // the default MIME type
-  for (uint32_t i = 0; i < request->headersCount; i++)
+  Orthanc::MimeType mime;
+  if (!LookupAcceptHeader(mime, request))
   {
-    std::string key(request->headersKeys[i]);
-    Orthanc::Toolbox::ToLowerCase(key);
-
-    if (key == "accept")
-    {
-      std::vector<std::string> tokens;
-      Orthanc::Toolbox::TokenizeString(tokens, request->headersValues[i], ',');
-
-      bool found = false;
-
-      for (size_t j = 0; j < tokens.size(); j++)
-      {
-        std::string s = Orthanc::Toolbox::StripSpaces(tokens[j]);
-
-        if (s == Orthanc::EnumerationToString(Orthanc::MimeType_Png))
-        {
-          mime = Orthanc::MimeType_Png;
-          found = true;
-        }
-        else if (s == Orthanc::EnumerationToString(Orthanc::MimeType_Jpeg))
-        {
-          mime = Orthanc::MimeType_Jpeg;
-          found = true;
-        }
-        else if (s == Orthanc::EnumerationToString(Orthanc::MimeType_Jpeg2000))
-        {
-          mime = Orthanc::MimeType_Jpeg2000;
-          found = true;
-        }
-        else if (s == "*/*" ||
-                 s == "image/*")
-        {
-          found = true;
-        }
-      }
-
-      if (!found)
-      {
-        OrthancPluginSendHttpStatusCode(OrthancPlugins::GetGlobalContext(), output, 406 /* Not acceptable */);
-        return;
-      }
-    }
+    mime = Orthanc::MimeType_Png;  // By default, use lossless compression
   }
 
   std::string encoded;
