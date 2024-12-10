@@ -22,14 +22,14 @@
 
 
 #include "../PrecompiledHeadersWSI.h"
-#include "OnTheFlyPyramidsCache.h"
+#include "DecodedPyramidCache.h"
 
 
-static std::unique_ptr<OrthancWSI::OnTheFlyPyramidsCache>  singleton_;
+static std::unique_ptr<OrthancWSI::DecodedPyramidCache>  singleton_;
 
 namespace OrthancWSI
 {
-  class OnTheFlyPyramidsCache::CachedPyramid : public boost::noncopyable
+  class DecodedPyramidCache::CachedPyramid : public boost::noncopyable
   {
   private:
     std::unique_ptr<DecodedTiledPyramid>  pyramid_;
@@ -62,14 +62,14 @@ namespace OrthancWSI
   };
 
 
-  bool OnTheFlyPyramidsCache::SanityCheck()
+  bool DecodedPyramidCache::SanityCheck()
   {
     return (cache_.GetSize() < maxCount_ &&
             (cache_.IsEmpty() || maxMemory_ == 0 || memoryUsage_ <= maxMemory_));
   }
 
 
-  void OnTheFlyPyramidsCache::MakeRoom(size_t memory)
+  void DecodedPyramidCache::MakeRoom(size_t memory)
   {
     // Mutex must be locked
 
@@ -96,7 +96,7 @@ namespace OrthancWSI
   }
 
 
-  OnTheFlyPyramidsCache::CachedPyramid * OnTheFlyPyramidsCache::Store(FrameIdentifier identifier,
+  DecodedPyramidCache::CachedPyramid * DecodedPyramidCache::Store(FrameIdentifier identifier,
                                                                       DecodedTiledPyramid *pyramid)
   {
     // Mutex must be locked
@@ -117,7 +117,7 @@ namespace OrthancWSI
   }
 
 
-  OnTheFlyPyramidsCache::OnTheFlyPyramidsCache(IPyramidFetcher *fetcher,
+  DecodedPyramidCache::DecodedPyramidCache(IPyramidFetcher *fetcher,
                                                size_t maxCount,
                                                size_t maxMemory):
     fetcher_(fetcher),
@@ -139,7 +139,7 @@ namespace OrthancWSI
   }
 
 
-  OnTheFlyPyramidsCache::~OnTheFlyPyramidsCache()
+  DecodedPyramidCache::~DecodedPyramidCache()
   {
     while (!cache_.IsEmpty())
     {
@@ -154,13 +154,13 @@ namespace OrthancWSI
   }
 
 
-  void OnTheFlyPyramidsCache::InitializeInstance(IPyramidFetcher *fetcher,
+  void DecodedPyramidCache::InitializeInstance(IPyramidFetcher *fetcher,
                                                  size_t maxSize,
                                                  size_t maxMemory)
   {
     if (singleton_.get() == NULL)
     {
-      singleton_.reset(new OnTheFlyPyramidsCache(fetcher, maxSize, maxMemory));
+      singleton_.reset(new DecodedPyramidCache(fetcher, maxSize, maxMemory));
     }
     else
     {
@@ -169,7 +169,7 @@ namespace OrthancWSI
   }
 
 
-  void OnTheFlyPyramidsCache::FinalizeInstance()
+  void DecodedPyramidCache::FinalizeInstance()
   {
     if (singleton_.get() == NULL)
     {
@@ -182,7 +182,7 @@ namespace OrthancWSI
   }
 
 
-  OnTheFlyPyramidsCache & OnTheFlyPyramidsCache::GetInstance()
+  DecodedPyramidCache & DecodedPyramidCache::GetInstance()
   {
     if (singleton_.get() == NULL)
     {
@@ -195,7 +195,7 @@ namespace OrthancWSI
   }
 
 
-  OnTheFlyPyramidsCache::Accessor::Accessor(OnTheFlyPyramidsCache& that,
+  DecodedPyramidCache::Accessor::Accessor(DecodedPyramidCache& that,
                                             const std::string &instanceId,
                                             unsigned int frameNumber):
     lock_(that.mutex_),
@@ -226,7 +226,7 @@ namespace OrthancWSI
   }
 
 
-  DecodedTiledPyramid & OnTheFlyPyramidsCache::Accessor::GetPyramid() const
+  DecodedTiledPyramid & DecodedPyramidCache::Accessor::GetPyramid() const
   {
     if (IsValid())
     {

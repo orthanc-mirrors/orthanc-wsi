@@ -28,7 +28,7 @@
 #include "RawTile.h"
 #include "../Framework/Inputs/DecodedTiledPyramid.h"
 #include "../Framework/Inputs/OnTheFlyPyramid.h"
-#include "../Framework/Inputs/OnTheFlyPyramidsCache.h"
+#include "../Framework/Inputs/DecodedPyramidCache.h"
 #include "../Framework/ImageToolbox.h"
 
 #include <Compatibility.h>  // For std::unique_ptr
@@ -53,7 +53,7 @@
 
 namespace OrthancWSI
 {
-  class OrthancPyramidFrameFetcher : public OnTheFlyPyramidsCache::IPyramidFetcher
+  class OrthancPyramidFrameFetcher : public DecodedPyramidCache::IPyramidFetcher
   {
   private:
     std::unique_ptr<OrthancStone::IOrthancConnection>  orthanc_;
@@ -303,7 +303,7 @@ void ServeFramePyramid(OrthancPluginRestOutput* output,
     throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
   }
 
-  OrthancWSI::OnTheFlyPyramidsCache::Accessor accessor(OrthancWSI::OnTheFlyPyramidsCache::GetInstance(), instanceId, frameNumber);
+  OrthancWSI::DecodedPyramidCache::Accessor accessor(OrthancWSI::DecodedPyramidCache::GetInstance(), instanceId, frameNumber);
 
   unsigned int totalWidth = accessor.GetPyramid().GetLevelWidth(0);
   unsigned int totalHeight = accessor.GetPyramid().GetLevelHeight(0);
@@ -386,7 +386,7 @@ void ServeFrameTile(OrthancPluginRestOutput* output,
   std::unique_ptr<Orthanc::ImageAccessor> tile;
 
   {
-    OrthancWSI::OnTheFlyPyramidsCache::Accessor accessor(OrthancWSI::OnTheFlyPyramidsCache::GetInstance(), instanceId, frameNumber);
+    OrthancWSI::DecodedPyramidCache::Accessor accessor(OrthancWSI::DecodedPyramidCache::GetInstance(), instanceId, frameNumber);
     if (!accessor.IsValid())
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
@@ -571,7 +571,7 @@ extern "C"
     OrthancPlugins::SetDescription(ORTHANC_PLUGIN_NAME, "Provides a Web viewer of whole-slide microscopic images within Orthanc.");
 
     OrthancWSI::DicomPyramidCache::InitializeInstance(10 /* Number of pyramids to be cached - TODO parameter */);
-    OrthancWSI::OnTheFlyPyramidsCache::InitializeInstance(
+    OrthancWSI::DecodedPyramidCache::InitializeInstance(
       new OrthancWSI::OrthancPyramidFrameFetcher(new OrthancWSI::OrthancPluginConnection(), false /* TODO PARAMETER */),
       10 /* TODO - PARAMETER */,
       256 * 1024 * 1024 /* TODO - PARAMETER */);
@@ -669,7 +669,7 @@ extern "C"
 
   ORTHANC_PLUGINS_API void OrthancPluginFinalize()
   {
-    OrthancWSI::OnTheFlyPyramidsCache::FinalizeInstance();
+    OrthancWSI::DecodedPyramidCache::FinalizeInstance();
     OrthancWSI::DicomPyramidCache::FinalizeInstance();
     OrthancWSI::RawTile::FinalizeTranscoderSemaphore();
   }

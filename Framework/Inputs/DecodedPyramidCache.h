@@ -32,7 +32,7 @@
 
 namespace OrthancWSI
 {
-  class OnTheFlyPyramidsCache : public boost::noncopyable
+  class DecodedPyramidCache : public boost::noncopyable
   {
   public:
     class IPyramidFetcher : public boost::noncopyable
@@ -68,12 +68,12 @@ namespace OrthancWSI
     CachedPyramid* Store(FrameIdentifier identifier,
                          DecodedTiledPyramid* pyramid);
 
-    OnTheFlyPyramidsCache(IPyramidFetcher* fetcher /* takes ownership */,
+    DecodedPyramidCache(IPyramidFetcher* fetcher /* takes ownership */,
                           size_t maxCount,
                           size_t maxMemory);
 
   public:
-    ~OnTheFlyPyramidsCache();
+    ~DecodedPyramidCache();
 
     static void InitializeInstance(IPyramidFetcher* fetcher,
                                    size_t maxSize,
@@ -81,7 +81,7 @@ namespace OrthancWSI
 
     static void FinalizeInstance();
 
-    static OnTheFlyPyramidsCache& GetInstance();
+    static DecodedPyramidCache& GetInstance();
 
     class Accessor : public boost::noncopyable
     {
@@ -91,7 +91,7 @@ namespace OrthancWSI
       CachedPyramid*            pyramid_;
 
     public:
-      Accessor(OnTheFlyPyramidsCache& that,
+      Accessor(DecodedPyramidCache& that,
                const std::string& instanceId,
                unsigned int frameNumber);
 
