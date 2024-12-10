@@ -73,6 +73,8 @@ namespace OrthancWSI
                           size_t maxMemory);
 
   public:
+    ~OnTheFlyPyramidsCache();
+
     static void InitializeInstance(IPyramidFetcher* fetcher,
                                    size_t maxSize,
                                    size_t maxMemory);

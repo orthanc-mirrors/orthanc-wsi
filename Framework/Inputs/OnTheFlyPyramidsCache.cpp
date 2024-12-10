@@ -139,6 +139,21 @@ namespace OrthancWSI
   }
 
 
+  OnTheFlyPyramidsCache::~OnTheFlyPyramidsCache()
+  {
+    while (!cache_.IsEmpty())
+    {
+      CachedPyramid* pyramid = NULL;
+      cache_.RemoveOldest(pyramid);
+
+      if (pyramid != NULL)
+      {
+        delete pyramid;
+      }
+    }
+  }
+
+
   void OnTheFlyPyramidsCache::InitializeInstance(IPyramidFetcher *fetcher,
                                                  size_t maxSize,
                                                  size_t maxMemory)
