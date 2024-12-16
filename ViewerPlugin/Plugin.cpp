@@ -148,7 +148,6 @@ static void DescribePyramid(Json::Value& result,
     tilesSizes.append(s);
   }
 
-  result = Json::objectValue;
   result["Resolutions"] = resolutions;
   result["Sizes"] = sizes;
   result["TilesCount"] = tilesCount;
