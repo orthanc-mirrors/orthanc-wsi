@@ -24,24 +24,22 @@
 $('#series').live('pagebeforeshow', function() {
   var seriesId = $.mobile.pageData.uuid;
 
-  $('#mirador-button').remove();
-  $('#openseadragon-button').remove();
-  $('#wsi-button').remove();
+  $('#wsi-series-button').remove();
+  $('#wsi-series-mirador-button').remove();
+  $('#wsi-series-openseadragon-button').remove();
+  $('#wsi-series-iiif-button').remove();
 
-  $('#series-iiif-button').remove();
-  $('#series-access').listview("refresh");
+  $('#series-access').listview('refresh');
 
   // Test whether this is a whole-slide image by check the SOP Class
   // UID of one instance of the series
   GetResource('/series/' + seriesId, function(series) {
     GetResource('/instances/' + series['Instances'][0] + '/tags?simplify', function(instance) {
-      console.log(instance['SOPClassUID']);
-
       if (instance['SOPClassUID'] == '1.2.840.10008.5.1.4.1.1.77.1.6') {
 
         // This is a whole-slide image, register the button
         var b = $('<a>')
-          .attr('id', 'wsi-button')
+          .attr('id', 'wsi-series-button')
           .attr('data-role', 'button')
           .attr('href', '#')
           .attr('data-icon', 'search')
@@ -56,9 +54,10 @@ $('#series').live('pagebeforeshow', function() {
           }
         });
 
-        if (${SERVE_OPEN_SEADRAGON}) {
+        if (${ENABLE_IIIF} &&
+            ${SERVE_OPEN_SEADRAGON}) {
           var b = $('<a>')
-              .attr('id', 'openseadragon-button')
+              .attr('id', 'wsi-series-openseadragon-button')
               .attr('data-role', 'button')
               .attr('href', '#')
               .attr('data-icon', 'search')
@@ -82,11 +81,11 @@ $('#series').live('pagebeforeshow', function() {
             .text('Copy link to IIIF manifest');
 
         var li = $('<li>')
-            .attr('id', 'series-iiif-button')
+            .attr('id', 'wsi-series-iiif-button')
             .attr('data-icon', 'gear')
             .append(b);
 
-        $('#series-access').append(li).listview("refresh");
+        $('#series-access').append(li).listview('refresh');
 
         b.click(function(e) {
           if ($.mobile.pageData) {
@@ -98,9 +97,10 @@ $('#series').live('pagebeforeshow', function() {
         });
       }
 
-      if (${SERVE_MIRADOR}) {
+      if (${ENABLE_IIIF} &&
+          ${SERVE_MIRADOR}) {
         var b = $('<a>')
-            .attr('id', 'mirador-button')
+            .attr('id', 'wsi-series-mirador-button')
             .attr('data-role', 'button')
             .attr('href', '#')
             .attr('data-icon', 'search')
@@ -124,7 +124,7 @@ $('#instance').live('pagebeforeshow', function() {
   var instanceId = $.mobile.pageData.uuid;
 
   $('#wsi-instance-button').remove();
-  $('#openseadragon-instance-button').remove();
+  $('#wsi-instance-openseadragon-button').remove();
 
   var b = $('<a>')
     .attr('id', 'wsi-instance-button')
@@ -142,9 +142,10 @@ $('#instance').live('pagebeforeshow', function() {
     }
   });
 
-  if (${SERVE_OPEN_SEADRAGON}) {
+  if (${ENABLE_IIIF} &&
+      ${SERVE_OPEN_SEADRAGON}) {
     var b = $('<a>')
-        .attr('id', 'openseadragon-instance-button')
+        .attr('id', 'wsi-instance-openseadragon-button')
         .attr('data-role', 'button')
         .attr('href', '#')
         .attr('data-icon', 'search')
