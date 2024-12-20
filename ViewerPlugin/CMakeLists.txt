@@ -188,6 +188,7 @@ set(ORTHANC_WSI_SOURCES
   DicomPyramidCache.cpp
   IIIF.cpp
   OrthancPluginConnection.cpp
+  OrthancPyramidFrameFetcher.cpp
   Plugin.cpp
   RawTile.cpp
 
