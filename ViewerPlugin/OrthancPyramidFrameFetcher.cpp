@@ -63,12 +63,55 @@ namespace OrthancWSI
   OrthancPyramidFrameFetcher::OrthancPyramidFrameFetcher(OrthancStone::IOrthancConnection* orthanc,
                                                          bool smooth) :
     orthanc_(orthanc),
-    smooth_(smooth)
+    smooth_(smooth),
+    tileWidth_(512),
+    tileHeight_(512),
+    paddingX_(0),
+    paddingY_(0),
+    backgroundRed_(0),
+    backgroundGreen_(0),
+    backgroundBlue_(0)
   {
     if (orthanc == NULL)
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_NullPointer);
     }
+  }
+
+
+  void OrthancPyramidFrameFetcher::SetTileWidth(unsigned int tileWidth)
+  {
+    if (tileWidth <= 2)
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
+    }
+    else
+    {
+      tileWidth_ = tileWidth;
+    }
+  }
+
+
+  void OrthancPyramidFrameFetcher::SetTileHeight(unsigned int tileHeight)
+  {
+    if (tileHeight <= 2)
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
+    }
+    else
+    {
+      tileHeight_ = tileHeight;
+    }
+  }
+
+
+  void OrthancPyramidFrameFetcher::SetBackgroundColor(uint8_t red,
+                                                      uint8_t green,
+                                                      uint8_t blue)
+  {
+    backgroundRed_ = red;
+    backgroundGreen_ = green;
+    backgroundBlue_ = blue;
   }
 
 
@@ -104,26 +147,55 @@ namespace OrthancWSI
     Orthanc::ImageAccessor source;
     source.AssignReadOnly(format, frame->GetWidth(), frame->GetHeight(), frame->GetPitch(), frame->GetBuffer());
 
-    std::unique_ptr<Orthanc::ImageAccessor> rendered(new Orthanc::Image(Orthanc::PixelFormat_RGB24, source.GetWidth(), source.GetHeight(), false));
+    unsigned int paddedWidth, paddedHeight;
+
+    if (paddingX_ >= 2)
+    {
+      paddedWidth = OrthancWSI::CeilingDivision(source.GetWidth(), paddingX_) * paddingX_;
+    }
+    else
+    {
+      paddedWidth = source.GetWidth();
+    }
+
+    if (paddingY_ >= 2)
+    {
+      paddedHeight = OrthancWSI::CeilingDivision(source.GetHeight(), paddingY_) * paddingY_;
+    }
+    else
+    {
+      paddedHeight = source.GetHeight();
+    }
+
+    std::unique_ptr<Orthanc::ImageAccessor> rendered(new Orthanc::Image(Orthanc::PixelFormat_RGB24, paddedWidth, paddedHeight, false));
+
+    if (paddedWidth != source.GetWidth() ||
+        paddedHeight != source.GetHeight())
+    {
+      Orthanc::ImageProcessing::Set(*rendered, backgroundRed_, backgroundGreen_, backgroundBlue_, 255 /* alpha */);
+    }
+
+    Orthanc::ImageAccessor region;
+    rendered->GetRegion(region, 0, 0, source.GetWidth(), source.GetHeight());
 
     switch (format)
     {
     case Orthanc::PixelFormat_RGB24:
-      Orthanc::ImageProcessing::Copy(*rendered, source);
+      Orthanc::ImageProcessing::Copy(region, source);
       break;
 
     case Orthanc::PixelFormat_Grayscale8:
-      Orthanc::ImageProcessing::Convert(*rendered, source);
+      Orthanc::ImageProcessing::Convert(region, source);
       break;
 
     case Orthanc::PixelFormat_Grayscale16:
-      RenderGrayscale(*rendered, source);
+      RenderGrayscale(region, source);
       break;
 
     default:
       throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
     }
 
-    return new OnTheFlyPyramid(rendered.release(), 512, 512, smooth_);
+    return new OnTheFlyPyramid(rendered.release(), tileWidth_, tileHeight_, smooth_);
   }
 }

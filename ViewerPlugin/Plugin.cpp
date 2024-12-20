@@ -450,10 +450,18 @@ extern "C"
     OrthancPlugins::SetDescription(ORTHANC_PLUGIN_NAME, "Provides a Web viewer of whole-slide microscopic images within Orthanc.");
 
     OrthancWSI::DicomPyramidCache::InitializeInstance(10 /* Number of pyramids to be cached - TODO parameter */);
-    OrthancWSI::DecodedPyramidCache::InitializeInstance(
-      new OrthancWSI::OrthancPyramidFrameFetcher(new OrthancWSI::OrthancPluginConnection(), false /* TODO PARAMETER */),
-      10 /* TODO - PARAMETER */,
-      256 * 1024 * 1024 /* TODO - PARAMETER */);
+
+    {
+      std::unique_ptr<OrthancWSI::OrthancPyramidFrameFetcher> fetcher(
+        new OrthancWSI::OrthancPyramidFrameFetcher(new OrthancWSI::OrthancPluginConnection(), false /* TODO PARAMETER */));
+      fetcher->SetPaddingX(64);  // TODO PARAMETER
+      fetcher->SetPaddingY(64);  // TODO PARAMETER
+      fetcher->SetBackgroundColor(255, 255, 255);  // TODO PARAMETER
+
+      OrthancWSI::DecodedPyramidCache::InitializeInstance(fetcher.release(),
+                                                          10 /* TODO - PARAMETER */,
+                                                          256 * 1024 * 1024 /* TODO - PARAMETER */);
+    }
 
     OrthancPluginRegisterOnChangeCallback(OrthancPlugins::GetGlobalContext(), OnChangeCallback);
 

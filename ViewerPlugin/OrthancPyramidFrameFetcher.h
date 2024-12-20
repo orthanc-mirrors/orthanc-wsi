@@ -34,6 +34,13 @@ namespace OrthancWSI
   private:
     std::unique_ptr<OrthancStone::IOrthancConnection>  orthanc_;
     bool                                               smooth_;
+    unsigned int                                       tileWidth_;
+    unsigned int                                       tileHeight_;
+    unsigned int                                       paddingX_;
+    unsigned int                                       paddingY_;
+    uint8_t                                            backgroundRed_;
+    uint8_t                                            backgroundGreen_;
+    uint8_t                                            backgroundBlue_;
 
     static void RenderGrayscale(Orthanc::ImageAccessor& target,
                                 const Orthanc::ImageAccessor& source);
@@ -41,6 +48,46 @@ namespace OrthancWSI
   public:
     OrthancPyramidFrameFetcher(OrthancStone::IOrthancConnection* orthanc,
                                bool smooth);
+
+    unsigned int GetTileWidth() const
+    {
+      return tileWidth_;
+    }
+
+    void SetTileWidth(unsigned int tileWidth);
+
+    unsigned int GetTileHeight() const
+    {
+      return tileHeight_;
+    }
+
+    void SetTileHeight(unsigned int tileHeight);
+
+    unsigned int GetPaddingX() const
+    {
+      return paddingX_;
+    }
+
+    // "0" or "1" implies no padding
+    void SetPaddingX(unsigned int paddingX)
+    {
+      paddingX_ = paddingX;
+    }
+
+    unsigned int GetPaddingY() const
+    {
+      return paddingY_;
+    }
+
+    // "0" or "1" implies no padding
+    void SetPaddingY(unsigned int paddingY)
+    {
+      paddingY_ = paddingY;
+    }
+
+    void SetBackgroundColor(uint8_t red,
+                            uint8_t green,
+                            uint8_t blue);
 
     DecodedTiledPyramid* Fetch(const std::string &instanceId,
                                unsigned frameNumber) ORTHANC_OVERRIDE;
