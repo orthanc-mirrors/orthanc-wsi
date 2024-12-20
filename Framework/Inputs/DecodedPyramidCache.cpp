@@ -97,23 +97,41 @@ namespace OrthancWSI
 
 
   DecodedPyramidCache::CachedPyramid * DecodedPyramidCache::Store(FrameIdentifier identifier,
-                                                                      DecodedTiledPyramid *pyramid)
+                                                                  DecodedTiledPyramid *pyramid)
   {
     // Mutex must be locked
 
     std::unique_ptr<CachedPyramid> payload(new CachedPyramid(pyramid));
-    CachedPyramid* result = payload.get();
+    CachedPyramid* result;
 
-    MakeRoom(payload->GetMemoryUsage());
+    if (cache_.Contains(identifier, result))
+    {
+      // This element has already been cached by another thread
+      if (result == NULL)
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+      }
 
-    memoryUsage_ += payload->GetMemoryUsage();
+      // Tag the series as the most recently used
+      cache_.MakeMostRecent(identifier);
 
-    // Add a new element to the cache and make it the most
-    // recently used entry
-    cache_.Add(identifier, payload.release());
+      return result;
+    }
+    else
+    {
+      result = payload.get();
 
-    assert(SanityCheck());
-    return result;
+      MakeRoom(payload->GetMemoryUsage());
+
+      memoryUsage_ += payload->GetMemoryUsage();
+
+      // Add a new element to the cache and make it the most
+      // recently used entry
+      cache_.Add(identifier, payload.release());
+
+      assert(SanityCheck());
+      return result;
+    }
   }
 
 
