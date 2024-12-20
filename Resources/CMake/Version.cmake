@@ -19,13 +19,13 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
-set(ORTHANC_WSI_VERSION "mainline")
+set(ORTHANC_WSI_VERSION "3.0")
 
 if (ORTHANC_WSI_VERSION STREQUAL "mainline")
   set(ORTHANC_FRAMEWORK_DEFAULT_VERSION "mainline")
   set(ORTHANC_FRAMEWORK_DEFAULT_SOURCE "hg")
 else()
-  set(ORTHANC_FRAMEWORK_DEFAULT_VERSION "1.12.4")
+  set(ORTHANC_FRAMEWORK_DEFAULT_VERSION "1.12.5")
   set(ORTHANC_FRAMEWORK_DEFAULT_SOURCE "web")
 endif()
 
