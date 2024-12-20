@@ -533,14 +533,14 @@ void ServeIIIFTiledImageTile(OrthancPluginRestOutput* output,
 
 
 static void AddCanvas(Json::Value& manifest,
-                      const std::string& seriesId,
+                      const std::string& resourceBase,
                       const std::string& imageService,
                       unsigned int page,
                       unsigned int width,
                       unsigned int height,
                       const std::string& description)
 {
-  const std::string base = iiifPublicUrl_ + seriesId;
+  const std::string base = iiifPublicUrl_ + resourceBase;
 
   Json::Value service;
   service["id"] = iiifPublicUrl_ + imageService;
@@ -781,6 +781,67 @@ void ServeIIIFFrameImage(OrthancPluginRestOutput* output,
 }
 
 
+void ServeIIIFFramePyramidManifest(OrthancPluginRestOutput* output,
+                                   const char* url,
+                                   const OrthancPluginHttpRequest* request)
+{
+  const std::string instanceId(request->groups[0]);
+
+  unsigned int frameNumber;
+  if (!Orthanc::SerializationToolbox::ParseUnsignedInteger32(frameNumber, request->groups[1]))
+  {
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
+  }
+
+  LOG(INFO) << "IIIF: Presentation API call to frame " << frameNumber << " of instance " << instanceId;
+
+  Json::Value instance, study, series;
+  if (!OrthancPlugins::RestApiGet(instance, "/instances/" + instanceId, false) ||
+      !OrthancPlugins::RestApiGet(series, "/instances/" + instanceId + "/series", false) ||
+      !OrthancPlugins::RestApiGet(study, "/instances/" + instanceId + "/study", false))
+  {
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
+  }
+
+  if (instance.type() != Json::objectValue ||
+      series.type() != Json::objectValue ||
+      study.type() != Json::objectValue)
+  {
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+  }
+
+  const std::string resourceBase = "frames-pyramids/" + instanceId + "/" + boost::lexical_cast<std::string>(frameNumber);
+  const std::string base = iiifPublicUrl_ + resourceBase;
+
+  Json::Value manifest;
+  manifest["@context"] = "http://iiif.io/api/presentation/3/context.json";
+  manifest["id"] = base + "/manifest.json";
+  manifest["type"] = "Manifest";
+  manifest["label"]["en"].append(study["MainDicomTags"]["StudyDate"].asString() + " - " +
+                                 series["MainDicomTags"]["Modality"].asString() + " - " +
+                                 study["MainDicomTags"]["StudyDescription"].asString() + " - " +
+                                 series["MainDicomTags"]["SeriesDescription"].asString());
+
+  /**
+   * This is based on IIIF cookbook: "Support Deep Viewing with Basic
+   * Use of a IIIF Image Service."
+   * https://iiif.io/api/cookbook/recipe/0005-image-service/
+   **/
+  unsigned int width, height;
+
+  {
+    OrthancWSI::DecodedPyramidCache::Accessor accessor(OrthancWSI::DecodedPyramidCache::GetInstance(), instanceId, frameNumber);
+    width = accessor.GetPyramid().GetLevelWidth(0);
+    height = accessor.GetPyramid().GetLevelHeight(0);
+  }
+
+  AddCanvas(manifest, resourceBase, resourceBase, 1, width, height, "");
+
+  std::string s = manifest.toStyledString();
+  OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, s.c_str(), s.size(), Orthanc::EnumerationToString(Orthanc::MimeType_Json));
+}
+
+
 void ServeIIIFFramePyramidInfo(OrthancPluginRestOutput* output,
                                const char* url,
                                const OrthancPluginHttpRequest* request)
@@ -871,6 +932,7 @@ void InitializeIIIF(const std::string& iiifPublicUrl)
   OrthancPlugins::RegisterRestCallback<ServeIIIFFrameImage>("/wsi/iiif/frames/([0-9a-f-]+)/([0-9]+)/full/max/0/default.jpg", true);
 
   // New in WSI 3.0
+  OrthancPlugins::RegisterRestCallback<ServeIIIFFramePyramidManifest>("/wsi/iiif/frames-pyramids/([0-9a-f-]+)/([0-9]+)/manifest.json", true);
   OrthancPlugins::RegisterRestCallback<ServeIIIFFramePyramidInfo>("/wsi/iiif/frames-pyramids/([0-9a-f-]+)/([0-9]+)/info.json", true);
   OrthancPlugins::RegisterRestCallback<ServeIIIFFramePyramidTile>("/wsi/iiif/frames-pyramids/([0-9a-f-]+)/([0-9]+)/([0-9a-z,:]+)/([0-9a-z,!:]+)/([0-9,!]+)/([a-z]+)\\.([a-z]+)", true);
 }

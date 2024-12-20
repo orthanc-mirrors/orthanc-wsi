@@ -25,9 +25,9 @@ $('#series').live('pagebeforeshow', function() {
   var seriesId = $.mobile.pageData.uuid;
 
   $('#wsi-series-button').remove();
+  $('#wsi-series-iiif-button').remove();
   $('#wsi-series-mirador-button').remove();
   $('#wsi-series-openseadragon-button').remove();
-  $('#wsi-series-iiif-button').remove();
 
   $('#series-access').listview('refresh');
 
@@ -124,6 +124,8 @@ $('#instance').live('pagebeforeshow', function() {
   var instanceId = $.mobile.pageData.uuid;
 
   $('#wsi-instance-button').remove();
+  $('#wsi-instance-iiif-button').remove();
+  $('#wsi-instance-mirador-button').remove();
   $('#wsi-instance-openseadragon-button').remove();
 
   var b = $('<a>')
@@ -157,6 +159,48 @@ $('#instance').live('pagebeforeshow', function() {
     b.click(function () {
       if ($.mobile.pageData) {
         window.open('../wsi/app/openseadragon.html?image=../iiif/frames-pyramids/' + instanceId + '/0/info.json');
+      }
+    });
+  }
+
+  if (${ENABLE_IIIF}) {
+    var b = $('<a>')
+        .attr('data-role', 'button')
+        .attr('href', '#')
+        .text('Copy link to IIIF manifest');
+
+    var li = $('<li>')
+        .attr('id', 'wsi-instance-iiif-button')
+        .attr('data-icon', 'gear')
+        .append(b);
+
+    $('#instance-access').append(li).listview('refresh');
+
+    b.click(function(e) {
+      if ($.mobile.pageData) {
+        e.preventDefault();
+        var url = new URL('../wsi/iiif/frames-pyramids/' + instanceId + '/0/manifest.json', window.location.href);
+        navigator.clipboard.writeText(url.href);
+        $(e.target).closest('li').buttonMarkup({ icon: 'check' });
+      }
+    });
+  }
+
+  if (${ENABLE_IIIF} &&
+      ${SERVE_MIRADOR}) {
+    var b = $('<a>')
+        .attr('id', 'wsi-instance-mirador-button')
+        .attr('data-role', 'button')
+        .attr('href', '#')
+        .attr('data-icon', 'search')
+        .attr('data-theme', 'e')
+        .text('Test IIIF in Mirador')
+        .button();
+
+    b.insertAfter($('#instance-info'));
+    b.click(function() {
+      if ($.mobile.pageData) {
+        window.open('../wsi/app/mirador.html?iiif-content=../iiif/frames-pyramids/' + instanceId + '/0/manifest.json');
       }
     });
   }
