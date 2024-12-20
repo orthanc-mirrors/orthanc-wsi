@@ -68,9 +68,9 @@ namespace OrthancWSI
     tileHeight_(512),
     paddingX_(0),
     paddingY_(0),
-    backgroundRed_(0),
-    backgroundGreen_(0),
-    backgroundBlue_(0)
+    defaultBackgroundRed_(0),
+    defaultBackgroundGreen_(0),
+    defaultBackgroundBlue_(0)
   {
     if (orthanc == NULL)
     {
@@ -105,13 +105,13 @@ namespace OrthancWSI
   }
 
 
-  void OrthancPyramidFrameFetcher::SetBackgroundColor(uint8_t red,
-                                                      uint8_t green,
-                                                      uint8_t blue)
+  void OrthancPyramidFrameFetcher::SetDefaultBackgroundColor(uint8_t red,
+                                                             uint8_t green,
+                                                             uint8_t blue)
   {
-    backgroundRed_ = red;
-    backgroundGreen_ = green;
-    backgroundBlue_ = blue;
+    defaultBackgroundRed_ = red;
+    defaultBackgroundGreen_ = green;
+    defaultBackgroundBlue_ = blue;
   }
 
 
@@ -122,6 +122,33 @@ namespace OrthancWSI
     buffer.GetDicomInstance(instanceId.c_str());
 
     OrthancPlugins::DicomInstance dicom(buffer.GetData(), buffer.GetSize());
+
+    uint8_t backgroundRed = defaultBackgroundRed_;
+    uint8_t backgroundGreen = defaultBackgroundGreen_;
+    uint8_t backgroundBlue = defaultBackgroundBlue_;
+
+    Json::Value tags;
+    dicom.GetSimplifiedJson(tags);
+
+    static const char* const PHOTOMETRIC_INTERPRETATION = "PhotometricInterpretation";
+
+    if (tags.isMember(PHOTOMETRIC_INTERPRETATION) &&
+        tags[PHOTOMETRIC_INTERPRETATION].type() == Json::stringValue)
+    {
+      std::string p = tags[PHOTOMETRIC_INTERPRETATION].asString();
+      if (p == "MONOCHROME1")
+      {
+        backgroundRed = 255;
+        backgroundGreen = 255;
+        backgroundBlue = 255;
+      }
+      else if (p == "MONOCHROME2")
+      {
+        backgroundRed = 0;
+        backgroundGreen = 0;
+        backgroundBlue = 0;
+      }
+    }
 
     std::unique_ptr<OrthancPlugins::OrthancImage> frame(dicom.GetDecodedFrame(frameNumber));
 
@@ -172,7 +199,7 @@ namespace OrthancWSI
     if (paddedWidth != source.GetWidth() ||
         paddedHeight != source.GetHeight())
     {
-      Orthanc::ImageProcessing::Set(*rendered, backgroundRed_, backgroundGreen_, backgroundBlue_, 255 /* alpha */);
+      Orthanc::ImageProcessing::Set(*rendered, backgroundRed, backgroundGreen, backgroundBlue, 255 /* alpha */);
     }
 
     Orthanc::ImageAccessor region;
@@ -196,6 +223,9 @@ namespace OrthancWSI
       throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
     }
 
-    return new OnTheFlyPyramid(rendered.release(), tileWidth_, tileHeight_, smooth_);
+    std::unique_ptr<DecodedTiledPyramid> result(new OnTheFlyPyramid(rendered.release(), tileWidth_, tileHeight_, smooth_));
+    result->SetBackgroundColor(backgroundRed, backgroundGreen, backgroundBlue);
+
+    return result.release();
   }
 }

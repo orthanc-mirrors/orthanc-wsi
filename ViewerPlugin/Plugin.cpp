@@ -159,7 +159,7 @@ void ServeFramePyramid(OrthancPluginRestOutput* output,
 
     {
       uint8_t red, green, blue;
-      accessor.GetPyramid().GetBackgroundColor(red, green, blue);  // TODO
+      accessor.GetPyramid().GetBackgroundColor(red, green, blue);
 
       char tmp[16];
       sprintf(tmp, "#%02x%02x%02x", red, green, blue);
@@ -453,10 +453,10 @@ extern "C"
 
     {
       std::unique_ptr<OrthancWSI::OrthancPyramidFrameFetcher> fetcher(
-        new OrthancWSI::OrthancPyramidFrameFetcher(new OrthancWSI::OrthancPluginConnection(), false /* TODO PARAMETER */));
+        new OrthancWSI::OrthancPyramidFrameFetcher(new OrthancWSI::OrthancPluginConnection(), false /* smooth - TODO PARAMETER */));
       fetcher->SetPaddingX(64);  // TODO PARAMETER
       fetcher->SetPaddingY(64);  // TODO PARAMETER
-      fetcher->SetBackgroundColor(255, 255, 255);  // TODO PARAMETER
+      fetcher->SetDefaultBackgroundColor(255, 255, 255);  // TODO PARAMETER
 
       OrthancWSI::DecodedPyramidCache::InitializeInstance(fetcher.release(),
                                                           10 /* TODO - PARAMETER */,

@@ -38,9 +38,9 @@ namespace OrthancWSI
     unsigned int                                       tileHeight_;
     unsigned int                                       paddingX_;
     unsigned int                                       paddingY_;
-    uint8_t                                            backgroundRed_;
-    uint8_t                                            backgroundGreen_;
-    uint8_t                                            backgroundBlue_;
+    uint8_t                                            defaultBackgroundRed_;
+    uint8_t                                            defaultBackgroundGreen_;
+    uint8_t                                            defaultBackgroundBlue_;
 
     static void RenderGrayscale(Orthanc::ImageAccessor& target,
                                 const Orthanc::ImageAccessor& source);
@@ -85,9 +85,9 @@ namespace OrthancWSI
       paddingY_ = paddingY;
     }
 
-    void SetBackgroundColor(uint8_t red,
-                            uint8_t green,
-                            uint8_t blue);
+    void SetDefaultBackgroundColor(uint8_t red,
+                                   uint8_t green,
+                                   uint8_t blue);
 
     DecodedTiledPyramid* Fetch(const std::string &instanceId,
                                unsigned frameNumber) ORTHANC_OVERRIDE;
