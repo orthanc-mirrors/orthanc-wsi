@@ -579,6 +579,37 @@ static void AddCanvas(Json::Value& manifest,
 }
 
 
+static std::string GetTagValue(const Json::Value& tags,
+                               const std::string& key)
+{
+  if (tags.isMember(key))
+  {
+    return tags[key].asString();
+  }
+  else
+  {
+    return "";
+  }
+}
+
+
+static void FillManifest(Json::Value& manifest,
+                         const std::string& base,
+                         const Json::Value& study,
+                         const Json::Value& series)
+{
+  static const char* const MAIN_DICOM_TAGS = "MainDicomTags";
+
+  manifest["@context"] = "http://iiif.io/api/presentation/3/context.json";
+  manifest["id"] = base + "/manifest.json";
+  manifest["type"] = "Manifest";
+  manifest["label"]["en"].append(GetTagValue(study[MAIN_DICOM_TAGS], "StudyDate") + " - " +
+                                 GetTagValue(series[MAIN_DICOM_TAGS], "Modality") + " - " +
+                                 GetTagValue(study[MAIN_DICOM_TAGS], "StudyDescription") + " - " +
+                                 GetTagValue(series[MAIN_DICOM_TAGS], "SeriesDescription"));
+}
+
+
 void ServeIIIFManifest(OrthancPluginRestOutput* output,
                        const char* url,
                        const OrthancPluginHttpRequest* request)
@@ -619,16 +650,8 @@ void ServeIIIFManifest(OrthancPluginRestOutput* output,
 
   const std::string sopClassUid = Orthanc::Toolbox::StripSpaces(oneInstance[SOP_CLASS_UID].asString());
 
-  const std::string base = iiifPublicUrl_ + "series/" + seriesId;
-
   Json::Value manifest;
-  manifest["@context"] = "http://iiif.io/api/presentation/3/context.json";
-  manifest["id"] = base + "/manifest.json";
-  manifest["type"] = "Manifest";
-  manifest["label"]["en"].append(study["MainDicomTags"]["StudyDate"].asString() + " - " +
-                                 series["MainDicomTags"]["Modality"].asString() + " - " +
-                                 study["MainDicomTags"]["StudyDescription"].asString() + " - " +
-                                 series["MainDicomTags"]["SeriesDescription"].asString());
+  FillManifest(manifest, iiifPublicUrl_ + "series/" + seriesId, study, series);
 
   if (sopClassUid == OrthancWSI::VL_WHOLE_SLIDE_MICROSCOPY_IMAGE_STORAGE_IOD)
   {
@@ -811,16 +834,9 @@ void ServeIIIFFramePyramidManifest(OrthancPluginRestOutput* output,
   }
 
   const std::string resourceBase = "frames-pyramids/" + instanceId + "/" + boost::lexical_cast<std::string>(frameNumber);
-  const std::string base = iiifPublicUrl_ + resourceBase;
 
   Json::Value manifest;
-  manifest["@context"] = "http://iiif.io/api/presentation/3/context.json";
-  manifest["id"] = base + "/manifest.json";
-  manifest["type"] = "Manifest";
-  manifest["label"]["en"].append(study["MainDicomTags"]["StudyDate"].asString() + " - " +
-                                 series["MainDicomTags"]["Modality"].asString() + " - " +
-                                 study["MainDicomTags"]["StudyDescription"].asString() + " - " +
-                                 series["MainDicomTags"]["SeriesDescription"].asString());
+  FillManifest(manifest, iiifPublicUrl_ + resourceBase, study, series);
 
   /**
    * This is based on IIIF cookbook: "Support Deep Viewing with Basic
