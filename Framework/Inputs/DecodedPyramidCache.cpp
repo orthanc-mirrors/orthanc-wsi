@@ -64,8 +64,7 @@ namespace OrthancWSI
 
   bool DecodedPyramidCache::SanityCheck()
   {
-    return (cache_.GetSize() < maxCount_ &&
-            (cache_.IsEmpty() || maxMemory_ == 0 || memoryUsage_ <= maxMemory_));
+    return (cache_.GetSize() < maxCount_);
   }
 
 
