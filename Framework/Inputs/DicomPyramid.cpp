@@ -98,10 +98,15 @@ namespace OrthancWSI
         std::vector<std::string> tokens;
         Orthanc::Toolbox::TokenizeString(tokens, instance->GetImageType(), '\\');
 
-        // Don't consider the thumbnail and overview as part of the DICOM pyramid (new in 1.0)
-        if (tokens.size() < 2 ||
-            (tokens[1] != "THUMBNAIL" &&
-             tokens[1] != "OVERVIEW"))
+        /**
+         * Don't consider the "LABEL" and "OVERVIEW" that are not part
+         * of the pyramid. Originally introduced in release 1.0, but
+         * fixed in release 3.1.
+         * https://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_C.8.12.4.html#sect_C.8.12.4.1.1
+         **/
+        if (tokens.size() < 3 ||
+            tokens[2] == "VOLUME" ||
+            tokens[2] == "THUMBNAIL" /* "may be the apex (lowest resolution) layer of a Multi-Resolution Pyramid" */)
         {
           if (instance->HasBackgroundColor())
           {

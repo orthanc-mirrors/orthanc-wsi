@@ -1,6 +1,8 @@
 Pending changes in the mainline
 ===============================
 
+* Fix handling of "Image Type" in the viewer for compatibility with other vendors
+
 
 Version 3.0 (2024-12-20)
 ========================
