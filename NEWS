@@ -3,6 +3,14 @@ Pending changes in the mainline
 
 * Fix handling of "Image Type" in the viewer for compatibility with other vendors
 
+* Compatibility tested against sample DICOM images shipped by OpenSlide:
+  3DHISTECH-1.zip, CMU-1-JP2K-33005.zip, JP2K-33003-1.zip, and Leica-4.zip:
+  https://openslide.cs.cmu.edu/download/openslide-testdata/DICOM/
+
+* Compatibility tested against the images of the 2023 DICOM WG26 Connectathon
+  from vendors: Hamamatsu, Leica, Objective Imaging, Philips, and Roche
+  ftp://medical.nema.org/medical/dicom/Datasets/WG26/
+
 
 Version 3.0 (2024-12-20)
 ========================
