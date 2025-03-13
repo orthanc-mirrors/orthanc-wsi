@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 # Orthanc - A Lightweight, RESTful DICOM Store
 # Copyright (C) 2012-2016 Sebastien Jodogne, Medical Physics
@@ -40,10 +40,13 @@ For instance: %s 127.0.0.1 8042
     exit(-1)
 
 
-METADATA=4200
+METADATA = [
+    4200,  # For versions <= 0.7 of the plugin
+    4201,  # For versions >= 1.0 of the plugin
+]
 
 
-def RunHttpRequest(uri, method, body = None):
+def RunHttpRequest(uri, method, ignore_errors, body = None):
     http = httplib2.Http()
     headers = { }
 
@@ -65,7 +68,7 @@ def RunHttpRequest(uri, method, body = None):
                                  body = body,
                                  headers = headers)
 
-    if resp.status != 200:
+    if not ignore_errors and resp.status != 200:
         raise Exception('Cannot %s on URL %s, HTTP status %d '
                         '(Is Orthanc running? Is there a password?)' % 
                         (method, url, resp.status))
@@ -73,8 +76,9 @@ def RunHttpRequest(uri, method, body = None):
         return content.decode('utf8')
 
 
-for instance in json.loads(RunHttpRequest('/instances', 'GET')):
+for instance in json.loads(RunHttpRequest('/instances', 'GET', ignore_errors = False)):
     print('Clearing cache for instance %s' % instance)
-    RunHttpRequest('/instances/%s/metadata/%s' % (instance, METADATA), 'DELETE')
+    for metadata in METADATA:
+        RunHttpRequest('/instances/%s/metadata/%s' % (instance, metadata), 'DELETE', ignore_errors = True)
 
 print('The WSI cache was successfully cleared')

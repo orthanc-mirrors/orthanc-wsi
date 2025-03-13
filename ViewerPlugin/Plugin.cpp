@@ -27,6 +27,7 @@
 #include "DicomPyramidCache.h"
 #include "IIIF.h"
 #include "RawTile.h"
+#include "../Framework/ColorSpaces.h"
 #include "../Framework/Inputs/DecodedTiledPyramid.h"
 #include "../Framework/Inputs/OnTheFlyPyramid.h"
 #include "../Framework/Inputs/DecodedPyramidCache.h"
@@ -405,6 +406,12 @@ void ServeFile(OrthancPluginRestOutput* output,
 }
 
 
+static bool IsNear(float a, float b)
+{
+  return std::abs(a - b) < 100.0f * std::numeric_limits<float>::epsilon();
+}
+
+
 extern "C"
 {
   ORTHANC_PLUGINS_API int32_t OrthancPluginInitialize(OrthancPluginContext* context)
@@ -438,6 +445,49 @@ extern "C"
 #else
     Orthanc::Logging::Initialize(context);
 #endif
+
+    try
+    {
+      /**
+
+         C.10.7.1.1 Encoding of CIELab Values
+
+         Attributes such as Graphic Layer Recommended Display CIELab
+         Value (0070,0401) consist of three unsigned short values:
+
+         An L value linearly scaled to 16 bits, such that 0x0000
+         corresponds to an L of 0.0, and 0xFFFF corresponds to an L of
+         100.0.
+
+         An a* then a b* value, each linearly scaled to 16 bits and
+         offset to an unsigned range, such that 0x0000 corresponds to
+         an a* or b* of -128.0, 0x8080 corresponds to an a* or b* of
+         0.0 and 0xFFFF corresponds to an a* or b* of 127.0
+
+       **/
+
+      OrthancWSI::LABColor lab;
+      if (!OrthancWSI::LABColor::DecodeDicomRecommendedAbsentPixelCIELab(lab, "65535\\0\\0") ||
+          !IsNear(lab.GetL(), 100.0f) ||
+          !IsNear(lab.GetA(), -128.0f) ||
+          !IsNear(lab.GetB(), -128.0f))
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+      }
+
+      if (!OrthancWSI::LABColor::DecodeDicomRecommendedAbsentPixelCIELab(lab, "0\\32896\\65535") ||
+          !IsNear(lab.GetL(), 0.0f) ||
+          !IsNear(lab.GetA(), 0.0f) ||
+          !IsNear(lab.GetB(), 127.0f))
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+      }
+    }
+    catch (Orthanc::OrthancException& e)
+    {
+      LOG(ERROR) << "Exception in startup tests: " << e.What();
+      return -1;
+    }
 
     // Limit the number of PNG transcoders to the number of available
     // hardware threads (e.g. number of CPUs or cores or
