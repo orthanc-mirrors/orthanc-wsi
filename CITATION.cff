@@ -37,5 +37,5 @@ authors:
 doi: "10.5220/0006155100810087"
 license: "AGPL-3.0-or-later"
 repository-code: "https://orthanc.uclouvain.be/hg/orthanc-wsi/"
-version: "3.0"
-date-released: 2024-12-20
+version: "3.1"
+date-released: 2025-03-17
