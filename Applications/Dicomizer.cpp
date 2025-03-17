@@ -481,8 +481,14 @@ static void EnrichDataset(DcmDataset& dataset,
     OrthancWSI::DicomToolbox::SetStringTag(dataset, DCM_LossyImageCompression, "00");
   }
 
-  OrthancWSI::DicomToolbox::SetStringTag(dataset, DCM_ImagedVolumeWidth, boost::lexical_cast<std::string>(volume.GetWidth()));
-  OrthancWSI::DicomToolbox::SetStringTag(dataset, DCM_ImagedVolumeHeight, boost::lexical_cast<std::string>(volume.GetHeight()));
+  if (volume.HasWidth() ||
+      volume.HasHeight())
+  {
+    // In WSI <= 3.0, these two fields were filled even if no information about the imaged volume size was available
+    OrthancWSI::DicomToolbox::SetStringTag(dataset, DCM_ImagedVolumeWidth, boost::lexical_cast<std::string>(volume.GetWidth()));
+    OrthancWSI::DicomToolbox::SetStringTag(dataset, DCM_ImagedVolumeHeight, boost::lexical_cast<std::string>(volume.GetHeight()));
+  }
+
   OrthancWSI::DicomToolbox::SetStringTag(dataset, DCM_ImagedVolumeDepth, boost::lexical_cast<std::string>(volume.GetDepth()));
 
   std::unique_ptr<DcmItem> origin(new DcmItem);
@@ -1222,14 +1228,23 @@ int main(int argc, char* argv[])
         throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
       }
 
-      // In the 2 lines below, remember to switch X/Y when going from physical to pixel coordinates!
-      float pixelSpacingX = volume.GetWidth() / static_cast<float>(source->GetLevelHeight(0));
-      float pixelSpacingY = volume.GetHeight() / static_cast<float>(source->GetLevelWidth(0));
-      if (std::abs(pixelSpacingX - pixelSpacingY) >= 100.0f * std::numeric_limits<float>::epsilon())
+      if (volume.HasWidth() ||
+          volume.HasHeight())
       {
-        LOG(WARNING) << "Your pixel spacing is different along the X and Y axes, make sure that "
-                     << "you have not inversed the --" << OPTION_IMAGED_WIDTH << " and the --"
-                     << OPTION_IMAGED_HEIGHT << " options: " << pixelSpacingX << " vs. " << pixelSpacingY;
+        // In the 2 lines below, remember to switch X/Y when going from physical to pixel coordinates!
+        float pixelSpacingX = volume.GetWidth() / static_cast<float>(source->GetLevelHeight(0));
+        float pixelSpacingY = volume.GetHeight() / static_cast<float>(source->GetLevelWidth(0));
+        if (std::abs(pixelSpacingX - pixelSpacingY) >= 100.0f * std::numeric_limits<float>::epsilon())
+        {
+          LOG(WARNING) << "Your pixel spacing is different along the X and Y axes, make sure that "
+                       << "you have not inversed the --" << OPTION_IMAGED_WIDTH << " and the --"
+                       << OPTION_IMAGED_HEIGHT << " options: " << pixelSpacingX << " vs. " << pixelSpacingY;
+        }
+      }
+      else
+      {
+        LOG(WARNING) << "Unknown imaged volume size, use the --" << OPTION_IMAGED_WIDTH << " and the --"
+                     << OPTION_IMAGED_HEIGHT << " options to fill the (0048,0001) and (0048,0002) DICOM tags";
       }
 
       LOG(WARNING) << "Compression of the individual source tiles: " << OrthancWSI::EnumerationToString(sourceCompression);
