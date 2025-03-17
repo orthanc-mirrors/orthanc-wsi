@@ -43,19 +43,23 @@ namespace OrthancWSI
     boost::mutex  mutex_;
     size_t        maxSize_;
     Cache         cache_;
+    bool          useMetadataCache_;
 
     DicomPyramidCache(OrthancStone::IOrthancConnection* orthanc /* takes ownership */,
-                      size_t maxSize);
+                      size_t maxSize,
+                      bool useMetadataCache);
 
     DicomPyramid* GetCachedPyramid(const std::string& seriesId);
 
     DicomPyramid& GetPyramid(const std::string& seriesId,
-                             boost::mutex::scoped_lock& lock);
+                             boost::mutex::scoped_lock& lock,
+                             bool useMetadataCache);
 
   public:
     ~DicomPyramidCache();
 
-    static void InitializeInstance(size_t maxSize);
+    static void InitializeInstance(size_t maxSize,
+                                   bool useMetadataCache);
 
     static void FinalizeInstance();
 

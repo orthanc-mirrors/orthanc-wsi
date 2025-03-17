@@ -56,12 +56,22 @@ function InitializePyramid(pyramid, tilesBaseUrl)
   var height = pyramid['TotalHeight'];
   var countLevels = pyramid['Resolutions'].length;
 
+  var metersPerUnit = null;
+  var imagedVolumeWidth = pyramid['ImagedVolumeWidth'];  // In millimeters
+  var imagedVolumeHeight = pyramid['ImagedVolumeHeight'];
+  if (imagedVolumeWidth !== undefined &&
+      imagedVolumeHeight !== undefined) {
+    metersPerUnit = parseFloat(imagedVolumeWidth) / (1000.0 * parseFloat(height));
+    //metersPerUnit = parseFloat(imagedVolumeHeight) / (1000.0 * parseFloat(width));
+  }
+
   // Maps always need a projection, but Zoomify layers are not geo-referenced, and
   // are only measured in pixels.  So, we create a fake projection that the map
   // can use to properly display the layer.
   var proj = new ol.proj.Projection({
     code: 'pixel',
-    units: 'pixels',
+    units: 'pixel',
+    metersPerUnit: metersPerUnit,
     extent: [0, 0, width, height]
   });
 

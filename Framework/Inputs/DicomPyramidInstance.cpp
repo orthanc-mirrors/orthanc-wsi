@@ -41,6 +41,7 @@
 #endif
 
 #define SERIALIZED_METADATA  "4201"   // Was "4200" if versions <= 0.7 of this plugin
+#define SERIALIZED_VERSION   "2"      // Introduced in WSI 3.1
 
 
 namespace OrthancWSI
@@ -53,6 +54,8 @@ namespace OrthancWSI
   static const Orthanc::DicomTag DICOM_TAG_TOTAL_PIXEL_MATRIX_ROWS(0x0048, 0x0007);
   static const Orthanc::DicomTag DICOM_TAG_IMAGE_TYPE(0x0008, 0x0008);
   static const Orthanc::DicomTag DICOM_TAG_RECOMMENDED_ABSENT_PIXEL_CIELAB(0x0048, 0x0015);
+  static const Orthanc::DicomTag DICOM_TAG_IMAGED_VOLUME_WIDTH(0x0048, 0x0001);
+  static const Orthanc::DicomTag DICOM_TAG_IMAGED_VOLUME_HEIGHT(0x0048, 0x0002);
 
   static ImageCompression DetectImageCompression(OrthancStone::IOrthancConnection& orthanc,
                                                  const std::string& instanceId)
@@ -282,6 +285,11 @@ namespace OrthancWSI
         backgroundBlue_ = rgb.GetB();
       }
     }
+
+    // New in WSI 3.1
+    hasImagedVolumeSize_ = (
+      reader.GetDoubleValue(imagedVolumeWidth_, Orthanc::DicomPath(DICOM_TAG_IMAGED_VOLUME_WIDTH)) &&
+      reader.GetDoubleValue(imagedVolumeHeight_, Orthanc::DicomPath(DICOM_TAG_IMAGED_VOLUME_HEIGHT)));
   }
 
 
@@ -294,7 +302,10 @@ namespace OrthancWSI
     hasBackgroundColor_(false),
     backgroundRed_(0),
     backgroundGreen_(0),
-    backgroundBlue_(0)
+    backgroundBlue_(0),
+    hasImagedVolumeSize_(false),
+    imagedVolumeWidth_(0),
+    imagedVolumeHeight_(0)
   {
     if (useCache)
     {
@@ -303,8 +314,10 @@ namespace OrthancWSI
         // Try and deserialized the cached information about this instance
         std::string serialized;
         orthanc.RestApiGet(serialized, "/instances/" + instanceId + "/metadata/" + SERIALIZED_METADATA);
-        Deserialize(serialized);
-        return;  // Success
+        if (Deserialize(serialized))
+        {
+          return;  // Success
+        }
       }
       catch (Orthanc::OrthancException&)
       {
@@ -351,6 +364,8 @@ namespace OrthancWSI
   static const char* const PHOTOMETRIC_INTERPRETATION = "PhotometricInterpretation";
   static const char* const IMAGE_TYPE = "ImageType";
   static const char* const BACKGROUND_COLOR = "BackgroundColor";
+  static const char* const VERSION = "Version";
+  static const char* const IMAGED_VOLUME_SIZE = "ImagedVolumeSize";
   
   
   void DicomPyramidInstance::Serialize(std::string& result) const
@@ -378,6 +393,7 @@ namespace OrthancWSI
     content[TOTAL_HEIGHT] = totalHeight_;
     content[PHOTOMETRIC_INTERPRETATION] = Orthanc::EnumerationToString(photometric_);
     content[IMAGE_TYPE] = imageType_;
+    content[VERSION] = SERIALIZED_VERSION;
 
     if (hasBackgroundColor_)
     {
@@ -386,6 +402,14 @@ namespace OrthancWSI
       color.append(backgroundGreen_);
       color.append(backgroundBlue_);
       content[BACKGROUND_COLOR] = color;
+    }
+
+    if (hasImagedVolumeSize_)
+    {
+      Json::Value size = Json::arrayValue;
+      size.append(imagedVolumeWidth_);
+      size.append(imagedVolumeHeight_);
+      content[IMAGED_VOLUME_SIZE] = size;
     }
 
 #if ORTHANC_FRAMEWORK_VERSION_IS_ABOVE(1, 9, 0)
@@ -397,7 +421,7 @@ namespace OrthancWSI
   }
 
 
-  void DicomPyramidInstance::Deserialize(const std::string& s)
+  bool DicomPyramidInstance::Deserialize(const std::string& s)
   {
     Json::Value content;
     OrthancStone::IOrthancConnection::ParseJson(content, s);
@@ -407,6 +431,12 @@ namespace OrthancWSI
         content[FRAMES].type() != Json::arrayValue)
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
+    }
+
+    std::string version = Orthanc::SerializationToolbox::ReadString(content, VERSION, "1");
+    if (version != SERIALIZED_VERSION)
+    {
+      return false;  // Serialized using a different version of the plugin, must be reconstructed
     }
 
     hasCompression_ = Orthanc::SerializationToolbox::ReadBoolean(content, HAS_COMPRESSION);
@@ -457,6 +487,23 @@ namespace OrthancWSI
         backgroundBlue_ = color[2].asUInt();
       }
     }
+
+    hasImagedVolumeSize_ = false;
+    if (content.isMember(IMAGED_VOLUME_SIZE))
+    {
+      const Json::Value& size = content[IMAGED_VOLUME_SIZE];
+      if (size.type() == Json::arrayValue &&
+          size.size() == 2u &&
+          size[0].isDouble() &&
+          size[1].isDouble())
+      {
+        hasImagedVolumeSize_ = true;
+        imagedVolumeWidth_ = size[0].asDouble();
+        imagedVolumeHeight_ = size[1].asDouble();
+      }
+    }
+
+    return true;  // Success
   }
 
 
@@ -491,6 +538,32 @@ namespace OrthancWSI
     if (hasBackgroundColor_)
     {
       return backgroundBlue_;
+    }
+    else
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
+    }
+  }
+
+
+  double DicomPyramidInstance::GetImagedVolumeWidth() const
+  {
+    if (hasImagedVolumeSize_)
+    {
+      return imagedVolumeWidth_;
+    }
+    else
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
+    }
+  }
+
+
+  double DicomPyramidInstance::GetImagedVolumeHeight() const
+  {
+    if (hasImagedVolumeSize_)
+    {
+      return imagedVolumeHeight_;
     }
     else
     {

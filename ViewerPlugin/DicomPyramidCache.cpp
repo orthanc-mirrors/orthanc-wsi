@@ -57,7 +57,8 @@ namespace OrthancWSI
 
 
   DicomPyramid& DicomPyramidCache::GetPyramid(const std::string& seriesId,
-                                              boost::mutex::scoped_lock& lock)
+                                              boost::mutex::scoped_lock& lock,
+                                              bool useMetadataCache)
   {
     // Mutex is assumed to be locked
 
@@ -75,7 +76,7 @@ namespace OrthancWSI
 
     assert(orthanc_.get() != NULL);
     std::unique_ptr<DicomPyramid> pyramid
-      (new DicomPyramid(*orthanc_, seriesId, true /* use metadata cache */));
+      (new DicomPyramid(*orthanc_, seriesId, useMetadataCache));
 
     {
       // The pyramid is constructed: Store it into the cache
@@ -120,9 +121,11 @@ namespace OrthancWSI
 
 
   DicomPyramidCache::DicomPyramidCache(OrthancStone::IOrthancConnection* orthanc /* takes ownership */,
-                                       size_t maxSize) :
+                                       size_t maxSize,
+                                       bool useMetadataCache) :
     orthanc_(orthanc),
-    maxSize_(maxSize)
+    maxSize_(maxSize),
+    useMetadataCache_(useMetadataCache)
   {
     if (orthanc == NULL)
     {
@@ -146,11 +149,12 @@ namespace OrthancWSI
   }
 
 
-  void DicomPyramidCache::InitializeInstance(size_t maxSize)
+  void DicomPyramidCache::InitializeInstance(size_t maxSize,
+                                             bool useMetadataCache)
   {
     if (singleton_.get() == NULL)
     {
-      singleton_.reset(new DicomPyramidCache(new OrthancWSI::OrthancPluginConnection, maxSize));
+      singleton_.reset(new DicomPyramidCache(new OrthancWSI::OrthancPluginConnection, maxSize, useMetadataCache));
     }
     else
     {
@@ -204,7 +208,7 @@ namespace OrthancWSI
   DicomPyramidCache::Locker::Locker(const std::string& seriesId) :
     cache_(DicomPyramidCache::GetInstance()),
     lock_(cache_.mutex_),
-    pyramid_(cache_.GetPyramid(seriesId, lock_))
+    pyramid_(cache_.GetPyramid(seriesId, lock_, cache_.useMetadataCache_))
   {
   }
 }

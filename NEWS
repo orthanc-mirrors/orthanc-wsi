@@ -2,6 +2,7 @@ Pending changes in the mainline
 ===============================
 
 * Upgraded to OpenLayers 10.4.0 (was previously 3.19.0)
+* The viewer now displays the scale if the imaged volume size is available
 * Fix handling of "Image Type" in the viewer for compatibility with other vendors
 
 Compatibility notes about the viewer

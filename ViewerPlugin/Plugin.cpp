@@ -129,6 +129,14 @@ void ServePyramid(OrthancPluginRestOutput* output,
               locker.GetPyramid().GetBackgroundBlue());
       answer["BackgroundColor"] = tmp;
     }
+
+    // New in WSI 3.1
+    double imagedVolumeWidth, imagedVolumeHeight;
+    if (locker.GetPyramid().LookupImagedVolumeSize(imagedVolumeWidth, imagedVolumeHeight))
+    {
+      answer["ImagedVolumeWidth"] = imagedVolumeWidth;
+      answer["ImagedVolumeHeight"] = imagedVolumeHeight;
+    }
   }
 
   std::string s = answer.toStyledString();
@@ -501,7 +509,8 @@ extern "C"
 
     OrthancPlugins::SetDescription(ORTHANC_PLUGIN_NAME, "Provides a Web viewer of whole-slide microscopic images within Orthanc.");
 
-    OrthancWSI::DicomPyramidCache::InitializeInstance(10 /* Number of pyramids to be cached - TODO parameter */);
+    OrthancWSI::DicomPyramidCache::InitializeInstance(10 /* Number of pyramids to be cached - TODO parameter */,
+                                                      true /* Use the metadata cache - Should be "false" only during development */);
 
     {
       std::unique_ptr<OrthancWSI::OrthancPyramidFrameFetcher> fetcher(

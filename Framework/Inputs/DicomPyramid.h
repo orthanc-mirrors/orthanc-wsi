@@ -103,5 +103,8 @@ namespace OrthancWSI
     {
       return backgroundBlue_;
     }
+
+    bool LookupImagedVolumeSize(double& width,
+                                double& height) const;
   };
 }

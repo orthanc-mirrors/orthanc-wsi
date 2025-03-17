@@ -51,11 +51,14 @@ namespace OrthancWSI
     uint8_t                             backgroundRed_;
     uint8_t                             backgroundGreen_;
     uint8_t                             backgroundBlue_;
+    bool                                hasImagedVolumeSize_;
+    double                              imagedVolumeWidth_;
+    double                              imagedVolumeHeight_;
 
     void Load(OrthancStone::IOrthancConnection&  orthanc,
               const std::string& instanceId);
 
-    void Deserialize(const std::string& content);
+    bool Deserialize(const std::string& content);
 
   public:
     DicomPyramidInstance(OrthancStone::IOrthancConnection&  orthanc,
@@ -125,5 +128,14 @@ namespace OrthancWSI
     uint8_t GetBackgroundGreen() const;
 
     uint8_t GetBackgroundBlue() const;
+
+    bool HasImagedVolumeSize() const
+    {
+      return hasImagedVolumeSize_;
+    }
+
+    double GetImagedVolumeWidth() const;
+
+    double GetImagedVolumeHeight() const;
   };
 }

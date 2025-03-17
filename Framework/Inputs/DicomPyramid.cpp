@@ -271,4 +271,34 @@ namespace OrthancWSI
     assert(!instances_.empty() && instances_[0] != NULL);
     return instances_[0]->GetPhotometricInterpretation();
   }
+
+
+  bool DicomPyramid::LookupImagedVolumeSize(double& width,
+                                            double& height) const
+  {
+    bool found = false;
+
+    for (size_t i = 0; i < instances_.size(); i++)
+    {
+      assert(instances_[i] != NULL);
+
+      if (instances_[i]->HasImagedVolumeSize())
+      {
+        if (!found)
+        {
+          found = true;
+          width = instances_[i]->GetImagedVolumeWidth();
+          height = instances_[i]->GetImagedVolumeHeight();
+        }
+        else if (std::abs(width - instances_[i]->GetImagedVolumeWidth()) > 100.0 * std::numeric_limits<double>::epsilon() ||
+                 std::abs(height - instances_[i]->GetImagedVolumeHeight()) > 100.0 * std::numeric_limits<double>::epsilon())
+        {
+          LOG(WARNING) << "Inconsistency of imaged volume width/height in series: " << seriesId_;
+          return false;
+        }
+      }
+    }
+
+    return found;
+  }
 }
