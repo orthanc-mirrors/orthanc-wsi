@@ -481,11 +481,14 @@ static void EnrichDataset(DcmDataset& dataset,
     OrthancWSI::DicomToolbox::SetStringTag(dataset, DCM_LossyImageCompression, "00");
   }
 
-  if (volume.HasWidth() ||
-      volume.HasHeight())
+  // In WSI <= 3.0, imaged volume width/height were filled even if no information about the imaged volume size was available
+  if (volume.HasWidth())
   {
-    // In WSI <= 3.0, these two fields were filled even if no information about the imaged volume size was available
     OrthancWSI::DicomToolbox::SetStringTag(dataset, DCM_ImagedVolumeWidth, boost::lexical_cast<std::string>(volume.GetWidth()));
+  }
+
+  if (volume.HasHeight())
+  {
     OrthancWSI::DicomToolbox::SetStringTag(dataset, DCM_ImagedVolumeHeight, boost::lexical_cast<std::string>(volume.GetHeight()));
   }
 
@@ -1228,10 +1231,10 @@ int main(int argc, char* argv[])
         throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
       }
 
-      if (volume.HasWidth() ||
+      // In the lines below, remember to switch X/Y when going from physical to pixel coordinates!
+      if (volume.HasWidth() &&
           volume.HasHeight())
       {
-        // In the 2 lines below, remember to switch X/Y when going from physical to pixel coordinates!
         float pixelSpacingX = volume.GetWidth() / static_cast<float>(source->GetLevelHeight(0));
         float pixelSpacingY = volume.GetHeight() / static_cast<float>(source->GetLevelWidth(0));
         if (std::abs(pixelSpacingX - pixelSpacingY) >= 100.0f * std::numeric_limits<float>::epsilon())
@@ -1241,10 +1244,23 @@ int main(int argc, char* argv[])
                        << OPTION_IMAGED_HEIGHT << " options: " << pixelSpacingX << " vs. " << pixelSpacingY;
         }
       }
-      else
+      else if (!volume.HasWidth() &&
+               !volume.HasHeight())
       {
         LOG(WARNING) << "Unknown imaged volume size, use the --" << OPTION_IMAGED_WIDTH << " and the --"
                      << OPTION_IMAGED_HEIGHT << " options to fill the (0048,0001) and (0048,0002) DICOM tags";
+      }
+      else if (volume.HasWidth())
+      {
+        assert(!volume.HasHeight());
+        volume.SetHeight(volume.GetWidth() / static_cast<float>(source->GetLevelHeight(0)) *
+                         static_cast<float>(source->GetLevelWidth(0)));
+      }
+      else
+      {
+        assert(!volume.HasWidth());
+        volume.SetWidth(volume.GetHeight() / static_cast<float>(source->GetLevelWidth(0)) *
+                        static_cast<float>(source->GetLevelHeight(0)));
       }
 
       LOG(WARNING) << "Compression of the individual source tiles: " << OrthancWSI::EnumerationToString(sourceCompression);
