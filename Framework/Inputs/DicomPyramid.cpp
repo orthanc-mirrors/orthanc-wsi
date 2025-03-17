@@ -24,6 +24,7 @@
 #include "../PrecompiledHeadersWSI.h"
 #include "DicomPyramid.h"
 
+#include "../ImageToolbox.h"
 #include "../DicomToolbox.h"
 
 #include <Compatibility.h>
@@ -290,8 +291,8 @@ namespace OrthancWSI
           width = instances_[i]->GetImagedVolumeWidth();
           height = instances_[i]->GetImagedVolumeHeight();
         }
-        else if (std::abs(width - instances_[i]->GetImagedVolumeWidth()) > 100.0 * std::numeric_limits<double>::epsilon() ||
-                 std::abs(height - instances_[i]->GetImagedVolumeHeight()) > 100.0 * std::numeric_limits<double>::epsilon())
+        else if (!ImageToolbox::IsNear(width, instances_[i]->GetImagedVolumeWidth()) ||
+                 !ImageToolbox::IsNear(height, instances_[i]->GetImagedVolumeHeight()))
         {
           LOG(WARNING) << "Inconsistency of imaged volume width/height in series: " << seriesId_;
           return false;

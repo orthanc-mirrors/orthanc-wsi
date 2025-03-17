@@ -24,8 +24,12 @@
 #include "../PrecompiledHeadersWSI.h"
 #include "HierarchicalTiff.h"
 
+#include "../ImageToolbox.h"
+
 #include <Logging.h>
 #include <OrthancException.h>
+#include <SerializationToolbox.h>
+#include <Toolbox.h>
 
 #include <iostream>
 #include <algorithm>
@@ -68,6 +72,17 @@ namespace OrthancWSI
       {
         headers_.assign(reinterpret_cast<const char*>(tables), size);
       }
+    }
+
+    // Read the image description, if any
+    const char* description = NULL;
+    if (TIFFGetField(tiff, TIFFTAG_IMAGEDESCRIPTION, &description))
+    {
+      description_.assign(description);
+    }
+    else
+    {
+      description_.clear();
     }
   }
 
@@ -260,5 +275,59 @@ namespace OrthancWSI
     }
     
     return true;
+  }
+
+
+  bool HierarchicalTiff::LookupImagedVolumeSize(double& width,
+                                                double& height) const
+  {
+    static const char* const APERIO_DESCRIPTION = "Aperio ";
+    static const char* const MPP = "MPP";
+
+    bool found = false;
+
+    for (size_t i = 0; i < levels_.size(); i++)
+    {
+      if (Orthanc::Toolbox::StartsWith(levels_[i].description_, APERIO_DESCRIPTION))
+      {
+        std::vector<std::string> tokens;
+        Orthanc::Toolbox::TokenizeString(tokens, levels_[i].description_, '|');
+
+        for (size_t j = 0; j < tokens.size(); j++)
+        {
+          std::vector<std::string> assignment;
+          Orthanc::Toolbox::TokenizeString(assignment, tokens[j], '=');
+          if (assignment.size() == 2)
+          {
+            const std::string key = Orthanc::Toolbox::StripSpaces(assignment[0]);
+            const std::string value = Orthanc::Toolbox::StripSpaces(assignment[1]);
+
+            double mpp;
+            if (key == MPP &&
+                Orthanc::SerializationToolbox::ParseDouble(mpp, value))
+            {
+              // In the lines below, remember to switch X/Y when going from physical to pixel coordinates!
+              double thisHeight = static_cast<double>(levels_[i].width_) * mpp / 1000.0;
+              double thisWidth = static_cast<double>(levels_[i].height_) * mpp / 1000.0;
+
+              if (!found)
+              {
+                found = true;
+                width = thisWidth;
+                height = thisHeight;
+              }
+              else if (!ImageToolbox::IsNear(thisWidth, width) ||
+                       !ImageToolbox::IsNear(thisHeight, height))
+              {
+                LOG(WARNING) << "Inconsistency in the Aperio metadata regarding the size of the imaged volume";
+                return false;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return found;
   }
 }

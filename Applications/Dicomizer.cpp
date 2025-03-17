@@ -1130,6 +1130,24 @@ OrthancWSI::ITiledPyramid* OpenInputPyramid(OrthancWSI::ImageCompression& source
       {
         std::unique_ptr<OrthancWSI::HierarchicalTiff> tiff(new OrthancWSI::HierarchicalTiff(path));
         sourceCompression = tiff->GetImageCompression();
+
+        // New in WSI 3.1
+        double width, height;
+        if (tiff->LookupImagedVolumeSize(width, height))
+        {
+          if (!volume.HasWidth())
+          {
+            volume.SetWidth(width);
+            LOG(WARNING) << "Width of the imaged volume according to TIFF metadata: " << width << "mm";
+          }
+
+          if (!volume.HasHeight())
+          {
+            volume.SetHeight(height);
+            LOG(WARNING) << "Height of the imaged volume according to TIFF metadata: " << height << "mm";
+          }
+        }
+
         return tiff.release();
       }
       catch (Orthanc::OrthancException&)
@@ -1237,7 +1255,7 @@ int main(int argc, char* argv[])
       {
         float pixelSpacingX = volume.GetWidth() / static_cast<float>(source->GetLevelHeight(0));
         float pixelSpacingY = volume.GetHeight() / static_cast<float>(source->GetLevelWidth(0));
-        if (std::abs(pixelSpacingX - pixelSpacingY) >= 100.0f * std::numeric_limits<float>::epsilon())
+        if (!OrthancWSI::ImageToolbox::IsNear(pixelSpacingX, pixelSpacingY))
         {
           LOG(WARNING) << "Your pixel spacing is different along the X and Y axes, make sure that "
                        << "you have not inversed the --" << OPTION_IMAGED_WIDTH << " and the --"

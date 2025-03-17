@@ -33,6 +33,9 @@ namespace OrthancWSI
 {
   namespace ImageToolbox
   {
+    bool IsNear(double a,
+                double b);
+
     Orthanc::ImageAccessor* Allocate(Orthanc::PixelFormat format,
                                      unsigned int width,
                                      unsigned int height);

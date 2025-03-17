@@ -416,12 +416,6 @@ void ServeFile(OrthancPluginRestOutput* output,
 }
 
 
-static bool IsNear(float a, float b)
-{
-  return std::abs(a - b) < 100.0f * std::numeric_limits<float>::epsilon();
-}
-
-
 extern "C"
 {
   ORTHANC_PLUGINS_API int32_t OrthancPluginInitialize(OrthancPluginContext* context)
@@ -478,17 +472,17 @@ extern "C"
 
       OrthancWSI::LABColor lab;
       if (!OrthancWSI::LABColor::DecodeDicomRecommendedAbsentPixelCIELab(lab, "65535\\0\\0") ||
-          !IsNear(lab.GetL(), 100.0f) ||
-          !IsNear(lab.GetA(), -128.0f) ||
-          !IsNear(lab.GetB(), -128.0f))
+          !OrthancWSI::ImageToolbox::IsNear(lab.GetL(), 100.0f) ||
+          !OrthancWSI::ImageToolbox::IsNear(lab.GetA(), -128.0f) ||
+          !OrthancWSI::ImageToolbox::IsNear(lab.GetB(), -128.0f))
       {
         throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
       }
 
       if (!OrthancWSI::LABColor::DecodeDicomRecommendedAbsentPixelCIELab(lab, "0\\32896\\65535") ||
-          !IsNear(lab.GetL(), 0.0f) ||
-          !IsNear(lab.GetA(), 0.0f) ||
-          !IsNear(lab.GetB(), 127.0f))
+          !OrthancWSI::ImageToolbox::IsNear(lab.GetL(), 0.0f) ||
+          !OrthancWSI::ImageToolbox::IsNear(lab.GetA(), 0.0f) ||
+          !OrthancWSI::ImageToolbox::IsNear(lab.GetB(), 127.0f))
       {
         throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
       }

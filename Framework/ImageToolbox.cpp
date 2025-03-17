@@ -36,6 +36,7 @@
 #include <Images/JpegWriter.h>
 #include <Logging.h>
 
+#include <limits>
 #include <string.h>
 #include <memory>
 
@@ -44,6 +45,13 @@ namespace OrthancWSI
 {
   namespace ImageToolbox
   {
+    bool IsNear(double a,
+                double b)
+    {
+      return std::abs(a - b) < 10.0 * std::numeric_limits<float>::epsilon();
+    }
+
+
     Orthanc::ImageAccessor* Allocate(Orthanc::PixelFormat format,
                                      unsigned int width,
                                      unsigned int height)

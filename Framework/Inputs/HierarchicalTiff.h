@@ -40,6 +40,7 @@ namespace OrthancWSI
       unsigned int  width_;
       unsigned int  height_;
       std::string  headers_;
+      std::string  description_;
 
       Level(TIFF* tiff,
             tdir_t    directory,
@@ -102,5 +103,8 @@ namespace OrthancWSI
     {
       return compression_;
     }
+
+    bool LookupImagedVolumeSize(double& width,
+                                double& height) const;
   };
 }
