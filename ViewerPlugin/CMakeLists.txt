@@ -145,13 +145,13 @@ endif()
 
 if (STATIC_BUILD OR NOT USE_SYSTEM_OPENLAYERS)
   DownloadPackage(
-    "77e57aad873c2d4deea8bb1446e9b87a"
-    "https://orthanc.uclouvain.be/downloads/third-party-downloads/openlayers-3.19.0-dist.zip"
-    "v3.19.0-dist")
+    "e15da1e1f803e69a8ca1e0ed11f0cf24"
+    "https://orthanc.uclouvain.be/downloads/third-party-downloads/WSI/openlayers-10.4.0-package.tar.gz"
+    "openlayers-10.4.0-package")
   
   set(OPENLAYERS_RESOURCES
-    OPENLAYERS_CSS  ${CMAKE_CURRENT_BINARY_DIR}/v3.19.0-dist/ol.css
-    OPENLAYERS_JS   ${CMAKE_CURRENT_BINARY_DIR}/v3.19.0-dist/ol.js
+    OPENLAYERS_CSS  ${CMAKE_CURRENT_BINARY_DIR}/openlayers-10.4.0-package/ol.css
+    OPENLAYERS_JS   ${CMAKE_CURRENT_BINARY_DIR}/openlayers-10.4.0-package/dist/ol.js
     )
 
 else()

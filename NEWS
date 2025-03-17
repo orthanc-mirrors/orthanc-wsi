@@ -1,7 +1,11 @@
 Pending changes in the mainline
 ===============================
 
+* Upgraded to OpenLayers 10.4.0 (was previously 3.19.0)
 * Fix handling of "Image Type" in the viewer for compatibility with other vendors
+
+Compatibility notes about the viewer
+------------------------------------
 
 * Compatibility tested against sample DICOM images shipped by OpenSlide:
   3DHISTECH-1.zip, CMU-1-JP2K-33005.zip, JP2K-33003-1.zip, and Leica-4.zip:

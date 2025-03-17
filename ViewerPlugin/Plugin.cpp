@@ -374,10 +374,12 @@ void ServeFile(OrthancPluginRestOutput* output,
     resource = Orthanc::EmbeddedResources::VIEWER_JS;
     mime = "application/javascript";
   }
-  else if (f == "ol.js")
+  else if (f == "dist/ol.js")
   {
     resource = Orthanc::EmbeddedResources::OPENLAYERS_JS;
-    mime = "application/javascript";
+
+    // Adding "charset" is mandatory with OpenLayers 10.4.0, check out "zoomOutLabel" in the source code
+    mime = "application/javascript; charset=utf-8";
   }
   else if (f == "ol.css")
   {
@@ -516,7 +518,7 @@ extern "C"
     OrthancPluginRegisterOnChangeCallback(OrthancPlugins::GetGlobalContext(), OnChangeCallback);
 
     OrthancPlugins::RegisterRestCallback<ServeFile>("/wsi/app/(ol.css)", true);
-    OrthancPlugins::RegisterRestCallback<ServeFile>("/wsi/app/(ol.js)", true);
+    OrthancPlugins::RegisterRestCallback<ServeFile>("/wsi/app/(dist/ol.js)", true);
     OrthancPlugins::RegisterRestCallback<ServeFile>("/wsi/app/(viewer.html)", true);
     OrthancPlugins::RegisterRestCallback<ServeFile>("/wsi/app/(viewer.js)", true);
     OrthancPlugins::RegisterRestCallback<ServePyramid>("/wsi/pyramids/([0-9a-f-]+)", true);

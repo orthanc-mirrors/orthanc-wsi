@@ -69,20 +69,32 @@ function InitializePyramid(pyramid, tilesBaseUrl)
 
   // Disable the rotation of the map, and inertia while panning
   // http://stackoverflow.com/a/25682186
-  var interactions = ol.interaction.defaults({
-    altShiftDragRotate : false,
-    pinchRotate : false,
-    dragPan: false
+  var interactions = ol.interaction.defaults.defaults({
+    //pinchRotate : false,
+    dragPan: false  // disable kinetics
+    //shiftDragZoom: false  // disable zoom box
   }).extend([
-    new ol.interaction.DragPan({kinetic: false})
+    new ol.interaction.DragPan(),
+    new ol.interaction.DragRotate({
+      //condition: ol.events.condition.shiftKeyOnly  // Rotate only when Shift key is pressed
+    })
   ]);
+
+  var controls = ol.control.defaults.defaults({
+    attribution: false
+  }).extend([
+    new ol.control.ScaleLine({
+      minWidth: 100
+    })
+  ]);
+
 
   var layer = new ol.layer.Tile({
     extent: extent,
     source: new ol.source.TileImage({
       projection: proj,
       tileUrlFunction: function(tileCoord, pixelRatio, projection) {
-        return (tilesBaseUrl + (countLevels - 1 - tileCoord[0]) + '/' + tileCoord[1] + '/' + (-tileCoord[2] - 1));
+        return (tilesBaseUrl + (countLevels - 1 - tileCoord[0]) + '/' + tileCoord[1] + '/' + tileCoord[2]);
       },
       tileGrid: new ol.tilegrid.TileGrid({
         extent: extent,
@@ -102,9 +114,10 @@ function InitializePyramid(pyramid, tilesBaseUrl)
       projection: proj,
       center: [width / 2, -height / 2],
       zoom: 0,
-      minResolution: 1   // Do not interpelate over pixels
+      minResolution: 0.1   // "1" means "do not interpelate over pixels"
     }),
-    interactions: interactions
+    interactions: interactions,
+    controls: controls
   });
 
   map.getView().fit(extent, map.getSize());
