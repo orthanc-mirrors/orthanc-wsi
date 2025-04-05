@@ -164,6 +164,11 @@ namespace OrthancWSI
         targetFormat = Orthanc::PixelFormat_Grayscale8;
         break;
 
+      case OrthancPluginPixelFormat_SignedGrayscale16:
+        sourceFormat = Orthanc::PixelFormat_SignedGrayscale16;
+        targetFormat = Orthanc::PixelFormat_Grayscale8;
+        break;
+
       default:
         throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
     }
