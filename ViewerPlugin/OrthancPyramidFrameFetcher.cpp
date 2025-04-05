@@ -168,6 +168,7 @@ namespace OrthancWSI
         throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
     }
 
+
     std::unique_ptr<Orthanc::ImageAccessor> rendered(new Orthanc::Image(targetFormat, paddedWidth, paddedHeight, false));
 
     if (paddedWidth != frame->GetWidth() ||
@@ -176,29 +177,15 @@ namespace OrthancWSI
       Orthanc::ImageProcessing::Set(*rendered, backgroundRed, backgroundGreen, backgroundBlue, 255 /* alpha */);
     }
 
-    Orthanc::ImageAccessor target;
-    rendered->GetRegion(target, 0, 0, frame->GetWidth(), frame->GetHeight());
 
-
-    Orthanc::ImageAccessor source;
-    source.AssignReadOnly(sourceFormat, frame->GetWidth(), frame->GetHeight(), frame->GetPitch(), frame->GetBuffer());
-
-    switch (targetFormat)
     {
-      case Orthanc::PixelFormat_RGB24:
-        Orthanc::ImageProcessing::Copy(target, source);
-        break;
+      Orthanc::ImageAccessor target;
+      rendered->GetRegion(target, 0, 0, frame->GetWidth(), frame->GetHeight());
 
-      case Orthanc::PixelFormat_Grayscale8:
-      {
-        double offset, scaling;
-        info.ComputeRenderingTransform(offset, scaling);  // Use the default windowing
-        Orthanc::ImageProcessing::ShiftScale2(target, source, static_cast<float>(offset), static_cast<float>(scaling), false);
-        break;
-      }
+      Orthanc::ImageAccessor source;
+      source.AssignReadOnly(sourceFormat, frame->GetWidth(), frame->GetHeight(), frame->GetPitch(), frame->GetBuffer());
 
-      default:
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+      Orthanc::ImageProcessing::RenderDefaultWindow(target, info, source);
     }
 
 
