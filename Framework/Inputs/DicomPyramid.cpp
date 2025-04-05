@@ -24,7 +24,6 @@
 #include "../PrecompiledHeadersWSI.h"
 #include "DicomPyramid.h"
 
-#include "../ImageToolbox.h"
 #include "../DicomToolbox.h"
 
 #include <Compatibility.h>
@@ -277,29 +276,7 @@ namespace OrthancWSI
   bool DicomPyramid::LookupImagedVolumeSize(double& width,
                                             double& height) const
   {
-    bool found = false;
-
-    for (size_t i = 0; i < instances_.size(); i++)
-    {
-      assert(instances_[i] != NULL);
-
-      if (instances_[i]->HasImagedVolumeSize())
-      {
-        if (!found)
-        {
-          found = true;
-          width = instances_[i]->GetImagedVolumeWidth();
-          height = instances_[i]->GetImagedVolumeHeight();
-        }
-        else if (!ImageToolbox::IsNear(width, instances_[i]->GetImagedVolumeWidth()) ||
-                 !ImageToolbox::IsNear(height, instances_[i]->GetImagedVolumeHeight()))
-        {
-          LOG(WARNING) << "Inconsistency of imaged volume width/height in series: " << seriesId_;
-          return false;
-        }
-      }
-    }
-
-    return found;
+    CheckLevel(0);
+    return levels_[0]->LookupImagedVolumeSize(width, height, seriesId_);
   }
 }
