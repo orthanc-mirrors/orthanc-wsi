@@ -26,6 +26,8 @@
 
 #include "../Framework/Inputs/OnTheFlyPyramid.h"
 
+#include <DicomFormat/DicomImageInformation.h>
+#include <DicomFormat/DicomMap.h>
 #include <Images/Image.h>
 #include <Images/ImageProcessing.h>
 
@@ -34,32 +36,6 @@
 
 namespace OrthancWSI
 {
-  void OrthancPyramidFrameFetcher::RenderGrayscale(Orthanc::ImageAccessor& target,
-                                                   const Orthanc::ImageAccessor& source)
-  {
-    Orthanc::Image converted(Orthanc::PixelFormat_Float32, source.GetWidth(), source.GetHeight(), false);
-    Orthanc::ImageProcessing::Convert(converted, source);
-
-    float minValue, maxValue;
-    Orthanc::ImageProcessing::GetMinMaxFloatValue(minValue, maxValue, converted);
-
-    assert(minValue <= maxValue);
-    if (std::abs(maxValue - minValue) < 0.0001)
-    {
-      Orthanc::ImageProcessing::Set(target, 0);
-    }
-    else
-    {
-      const float scaling = 255.0f / (maxValue - minValue);
-      const float offset = -minValue;
-
-      Orthanc::Image rescaled(Orthanc::PixelFormat_Grayscale8, source.GetWidth(), source.GetHeight(), false);
-      Orthanc::ImageProcessing::ShiftScale(rescaled, converted, static_cast<float>(offset), static_cast<float>(scaling), false);
-      Orthanc::ImageProcessing::Convert(target, rescaled);
-    }
-  }
-
-
   OrthancPyramidFrameFetcher::OrthancPyramidFrameFetcher(OrthancStone::IOrthancConnection* orthanc,
                                                          bool smooth) :
     orthanc_(orthanc),
@@ -123,105 +99,108 @@ namespace OrthancWSI
 
     OrthancPlugins::DicomInstance dicom(buffer.GetData(), buffer.GetSize());
 
-    uint8_t backgroundRed = defaultBackgroundRed_;
-    uint8_t backgroundGreen = defaultBackgroundGreen_;
-    uint8_t backgroundBlue = defaultBackgroundBlue_;
-
     Json::Value tags;
-    dicom.GetSimplifiedJson(tags);
+    dicom.GetJson(tags);
 
-    static const char* const PHOTOMETRIC_INTERPRETATION = "PhotometricInterpretation";
+    Orthanc::DicomMap m;
+    m.FromDicomAsJson(tags);
 
-    if (tags.isMember(PHOTOMETRIC_INTERPRETATION) &&
-        tags[PHOTOMETRIC_INTERPRETATION].type() == Json::stringValue)
+    Orthanc::DicomImageInformation info(m);
+
+    uint8_t backgroundRed, backgroundGreen, backgroundBlue;
+
+    if (info.GetPhotometricInterpretation() == Orthanc::PhotometricInterpretation_Monochrome1 ||
+        info.GetPhotometricInterpretation() == Orthanc::PhotometricInterpretation_Monochrome2)
     {
-      std::string p = tags[PHOTOMETRIC_INTERPRETATION].asString();
-      if (p == "MONOCHROME1")
-      {
-        backgroundRed = 255;
-        backgroundGreen = 255;
-        backgroundBlue = 255;
-      }
-      else if (p == "MONOCHROME2")
-      {
-        backgroundRed = 0;
-        backgroundGreen = 0;
-        backgroundBlue = 0;
-      }
+      backgroundRed = 0;
+      backgroundGreen = 0;
+      backgroundBlue = 0;
+    }
+    else
+    {
+      backgroundRed = defaultBackgroundRed_;
+      backgroundGreen = defaultBackgroundGreen_;
+      backgroundBlue = defaultBackgroundBlue_;
     }
 
     std::unique_ptr<OrthancPlugins::OrthancImage> frame(dicom.GetDecodedFrame(frameNumber));
-
-    Orthanc::PixelFormat format;
-    switch (frame->GetPixelFormat())
-    {
-    case OrthancPluginPixelFormat_RGB24:
-      format = Orthanc::PixelFormat_RGB24;
-      break;
-
-    case OrthancPluginPixelFormat_Grayscale8:
-      format = Orthanc::PixelFormat_Grayscale8;
-      break;
-
-    case OrthancPluginPixelFormat_Grayscale16:
-      format = Orthanc::PixelFormat_Grayscale16;
-      break;
-
-    default:
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
-    }
-
-    Orthanc::ImageAccessor source;
-    source.AssignReadOnly(format, frame->GetWidth(), frame->GetHeight(), frame->GetPitch(), frame->GetBuffer());
 
     unsigned int paddedWidth, paddedHeight;
 
     if (paddingX_ >= 2)
     {
-      paddedWidth = OrthancWSI::CeilingDivision(source.GetWidth(), paddingX_) * paddingX_;
+      paddedWidth = OrthancWSI::CeilingDivision(frame->GetWidth(), paddingX_) * paddingX_;
     }
     else
     {
-      paddedWidth = source.GetWidth();
+      paddedWidth = frame->GetWidth();
     }
 
     if (paddingY_ >= 2)
     {
-      paddedHeight = OrthancWSI::CeilingDivision(source.GetHeight(), paddingY_) * paddingY_;
+      paddedHeight = OrthancWSI::CeilingDivision(frame->GetHeight(), paddingY_) * paddingY_;
     }
     else
     {
-      paddedHeight = source.GetHeight();
+      paddedHeight = frame->GetHeight();
     }
 
-    std::unique_ptr<Orthanc::ImageAccessor> rendered(new Orthanc::Image(Orthanc::PixelFormat_RGB24, paddedWidth, paddedHeight, false));
 
-    if (paddedWidth != source.GetWidth() ||
-        paddedHeight != source.GetHeight())
+    Orthanc::PixelFormat sourceFormat, targetFormat;
+    switch (frame->GetPixelFormat())
+    {
+      case OrthancPluginPixelFormat_RGB24:
+        sourceFormat = Orthanc::PixelFormat_RGB24;
+        targetFormat = Orthanc::PixelFormat_RGB24;
+        break;
+
+      case OrthancPluginPixelFormat_Grayscale8:
+        sourceFormat = Orthanc::PixelFormat_Grayscale8;
+        targetFormat = Orthanc::PixelFormat_Grayscale8;
+        break;
+
+      case OrthancPluginPixelFormat_Grayscale16:
+        sourceFormat = Orthanc::PixelFormat_Grayscale16;
+        targetFormat = Orthanc::PixelFormat_Grayscale8;
+        break;
+
+      default:
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
+    }
+
+    std::unique_ptr<Orthanc::ImageAccessor> rendered(new Orthanc::Image(targetFormat, paddedWidth, paddedHeight, false));
+
+    if (paddedWidth != frame->GetWidth() ||
+        paddedHeight != frame->GetHeight())
     {
       Orthanc::ImageProcessing::Set(*rendered, backgroundRed, backgroundGreen, backgroundBlue, 255 /* alpha */);
     }
 
-    Orthanc::ImageAccessor region;
-    rendered->GetRegion(region, 0, 0, source.GetWidth(), source.GetHeight());
+    Orthanc::ImageAccessor target;
+    rendered->GetRegion(target, 0, 0, frame->GetWidth(), frame->GetHeight());
 
-    switch (format)
+
+    Orthanc::ImageAccessor source;
+    source.AssignReadOnly(sourceFormat, frame->GetWidth(), frame->GetHeight(), frame->GetPitch(), frame->GetBuffer());
+
+    switch (targetFormat)
     {
-    case Orthanc::PixelFormat_RGB24:
-      Orthanc::ImageProcessing::Copy(region, source);
-      break;
+      case Orthanc::PixelFormat_RGB24:
+        Orthanc::ImageProcessing::Copy(target, source);
+        break;
 
-    case Orthanc::PixelFormat_Grayscale8:
-      Orthanc::ImageProcessing::Convert(region, source);
-      break;
+      case Orthanc::PixelFormat_Grayscale8:
+      {
+        double offset, scaling;
+        info.ComputeRenderingTransform(offset, scaling);  // Use the default windowing
+        Orthanc::ImageProcessing::ShiftScale2(target, source, static_cast<float>(offset), static_cast<float>(scaling), false);
+        break;
+      }
 
-    case Orthanc::PixelFormat_Grayscale16:
-      RenderGrayscale(region, source);
-      break;
-
-    default:
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
+      default:
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
     }
+
 
     std::unique_ptr<DecodedTiledPyramid> result(new OnTheFlyPyramid(rendered.release(), tileWidth_, tileHeight_, smooth_));
     result->SetBackgroundColor(backgroundRed, backgroundGreen, backgroundBlue);

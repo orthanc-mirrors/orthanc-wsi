@@ -42,9 +42,6 @@ namespace OrthancWSI
     uint8_t                                            defaultBackgroundGreen_;
     uint8_t                                            defaultBackgroundBlue_;
 
-    static void RenderGrayscale(Orthanc::ImageAccessor& target,
-                                const Orthanc::ImageAccessor& source);
-
   public:
     OrthancPyramidFrameFetcher(OrthancStone::IOrthancConnection* orthanc,
                                bool smooth);
