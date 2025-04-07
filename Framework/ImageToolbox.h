@@ -77,5 +77,9 @@ namespace OrthancWSI
     void ConvertJpegYCbCrToRgb(Orthanc::ImageAccessor& image /* inplace */);
 
     ImageCompression Convert(Orthanc::MimeType type);
+
+    bool HasPngSignature(const std::string& buffer);
+
+    bool HasJpegSignature(const std::string& buffer);
   }
 }

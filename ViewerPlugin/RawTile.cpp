@@ -31,6 +31,7 @@
 #include <Compatibility.h>  // For std::unique_ptr
 #include <Images/ImageProcessing.h>
 #include <Images/JpegReader.h>
+#include <Images/PngReader.h>
 #include <Images/PngWriter.h>
 #include <MultiThreading/Semaphore.h>
 #include <OrthancException.h>
@@ -75,6 +76,19 @@ namespace OrthancWSI
         std::unique_ptr<Orthanc::ImageAccessor> decoded(new Orthanc::ImageAccessor);
         decoded->AssignReadOnly(format_, tileWidth_, tileHeight_, bpp * tileWidth_, tile_.c_str());
 
+        return decoded.release();
+      }
+
+      case ImageCompression_Png:
+      {
+        /**
+         * This is used if the DICOM instance has a transfer syntax
+         * that is not natively supported by the WSI viewer plugin, in
+         * which case the tile comes from the "/preview" route of the
+         * REST API of Orthanc.
+         **/
+        std::unique_ptr<Orthanc::PngReader> decoded(new Orthanc::PngReader);
+        decoded->ReadFromMemory(tile_);
         return decoded.release();
       }
 
