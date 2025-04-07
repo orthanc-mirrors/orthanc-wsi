@@ -54,6 +54,8 @@ namespace OrthancWSI
     bool                                hasImagedVolumeSize_;
     double                              imagedVolumeWidth_;
     double                              imagedVolumeHeight_;
+    bool                                hasLevel_;
+    unsigned int                        level_;
 
     void Load(OrthancStone::IOrthancConnection&  orthanc,
               const std::string& instanceId);
@@ -137,5 +139,9 @@ namespace OrthancWSI
     double GetImagedVolumeWidth() const;
 
     double GetImagedVolumeHeight() const;
+
+    void SetLevel(unsigned int level);
+
+    bool IsLevel(unsigned int level) const;
   };
 }

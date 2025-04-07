@@ -93,9 +93,5 @@ namespace OrthancWSI
                          OrthancStone::IOrthancConnection& orthanc,
                          unsigned int tileX,
                          unsigned int tileY) const;
-
-    bool LookupImagedVolumeSize(double& width,
-                                double& height,
-                                const std::string& seriesId) const;
   };
 }

@@ -24,8 +24,6 @@
 #include "../PrecompiledHeadersWSI.h"
 #include "DicomPyramidLevel.h"
 
-#include "../ImageToolbox.h"
-
 #include <Logging.h>
 #include <OrthancException.h>
 
@@ -148,36 +146,5 @@ namespace OrthancWSI
     {
       return false;
     }
-  }
-
-
-  bool DicomPyramidLevel::LookupImagedVolumeSize(double& width,
-                                                 double& height,
-                                                 const std::string& seriesId) const
-  {
-    bool found = false;
-
-    for (size_t i = 0; i < tiles_.size(); i++)
-    {
-      assert(tiles_[i].instance_ != NULL);
-
-      if (tiles_[i].instance_->HasImagedVolumeSize())
-      {
-        if (!found)
-        {
-          found = true;
-          width = tiles_[i].instance_->GetImagedVolumeWidth();
-          height = tiles_[i].instance_->GetImagedVolumeHeight();
-        }
-        else if (!ImageToolbox::IsNear(width, tiles_[i].instance_->GetImagedVolumeWidth()) ||
-                 !ImageToolbox::IsNear(height, tiles_[i].instance_->GetImagedVolumeHeight()))
-        {
-          LOG(WARNING) << "Inconsistency of imaged volume width/height in series: " << seriesId;
-          return false;
-        }
-      }
-    }
-
-    return found;
   }
 }

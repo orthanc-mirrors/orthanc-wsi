@@ -305,7 +305,9 @@ namespace OrthancWSI
     backgroundBlue_(0),
     hasImagedVolumeSize_(false),
     imagedVolumeWidth_(0),
-    imagedVolumeHeight_(0)
+    imagedVolumeHeight_(0),
+    hasLevel_(false),
+    level_(0)
   {
     if (useCache)
     {
@@ -569,5 +571,26 @@ namespace OrthancWSI
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
     }
+  }
+
+
+  void DicomPyramidInstance::SetLevel(unsigned int level)
+  {
+    if (hasLevel_)
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
+    }
+    else
+    {
+      level_ = level;
+      hasLevel_ = true;
+    }
+  }
+
+
+  bool DicomPyramidInstance::IsLevel(unsigned int level) const
+  {
+    return (hasLevel_ &&
+            level_ == level);
   }
 }

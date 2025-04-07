@@ -24,6 +24,7 @@
 #include "../PrecompiledHeadersWSI.h"
 #include "DicomPyramid.h"
 
+#include "../ImageToolbox.h"
 #include "../DicomToolbox.h"
 
 #include <Compatibility.h>
@@ -191,6 +192,8 @@ namespace OrthancWSI
 
     for (size_t i = 0; i < instances_.size(); i++)
     {
+      assert(instances_[i] != NULL);
+
       if (i == 0 ||
           instances_[i - 1]->GetTotalWidth() != instances_[i]->GetTotalWidth())
       {
@@ -201,6 +204,8 @@ namespace OrthancWSI
         assert(levels_.back() != NULL);
         levels_.back()->AddInstance(*instances_[i]);
       }
+
+      instances_[i]->SetLevel(levels_.size() - 1);
     }
   }
 
@@ -276,7 +281,30 @@ namespace OrthancWSI
   bool DicomPyramid::LookupImagedVolumeSize(double& width,
                                             double& height) const
   {
-    CheckLevel(0);
-    return levels_[0]->LookupImagedVolumeSize(width, height, seriesId_);
+    bool found = false;
+
+    for (size_t i = 0; i < instances_.size(); i++)
+    {
+      assert(instances_[i] != NULL);
+
+      if (instances_[i]->IsLevel(0) == 0 &&  // Only consider the finest level
+          instances_[i]->HasImagedVolumeSize())
+      {
+        if (!found)
+        {
+          found = true;
+          width = instances_[i]->GetImagedVolumeWidth();
+          height = instances_[i]->GetImagedVolumeHeight();
+        }
+        else if (!ImageToolbox::IsNear(width, instances_[i]->GetImagedVolumeWidth()) ||
+                 !ImageToolbox::IsNear(height, instances_[i]->GetImagedVolumeHeight()))
+        {
+          LOG(WARNING) << "Inconsistency of imaged volume width/height in series: " << seriesId_;
+          return false;
+        }
+      }
+    }
+
+    return found;
   }
 }
