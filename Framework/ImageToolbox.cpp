@@ -356,5 +356,54 @@ namespace OrthancWSI
           throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
       }
     }
+
+
+    bool HasPngSignature(const std::string& buffer)
+    {
+      if (buffer.size() < 8)
+      {
+        return false;
+      }
+      else
+      {
+        // https://en.wikipedia.org/wiki/PNG#File_header
+        // https://en.wikipedia.org/wiki/List_of_file_signatures
+        const uint8_t* p = reinterpret_cast<const uint8_t*>(buffer.data());
+        return (p[0] == 0x89 &&
+                p[1] == 0x50 &&
+                p[2] == 0x4e &&
+                p[3] == 0x47 &&
+                p[4] == 0x0d &&
+                p[5] == 0x0a &&
+                p[6] == 0x1a &&
+                p[7] == 0x0a);
+      }
+    }
+
+
+    bool HasJpegSignature(const std::string& buffer)
+    {
+      if (buffer.size() < 18)
+      {
+        return false;
+      }
+      else
+      {
+        // https://en.wikipedia.org/wiki/List_of_file_signatures
+        const uint8_t* p = reinterpret_cast<const uint8_t*>(buffer.data());
+        if (p[0] != 0xff ||
+            p[1] != 0xd8 ||
+            p[2] != 0xff)
+        {
+          return false;
+        }
+
+        // This is only a rough guess!
+        return (p[3] == 0xdb ||
+                p[3] == 0xe0 ||
+                p[3] == 0xee ||
+                p[3] == 0xe1);
+      }
+    }
   }
 }

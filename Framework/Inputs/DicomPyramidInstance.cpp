@@ -82,6 +82,10 @@ namespace OrthancWSI
     {
       return ImageCompression_Jpeg2000;
     }
+    else if (s == "1.2.840.10008.1.2.4.80")
+    {
+      return ImageCompression_UseOrthancPreview;
+    }
     else
     {
       LOG(ERROR) << "Unsupported transfer syntax: " << s;
