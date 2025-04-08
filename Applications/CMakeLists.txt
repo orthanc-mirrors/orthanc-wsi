@@ -51,7 +51,13 @@ include(${CMAKE_SOURCE_DIR}/../Resources/Orthanc/CMake/DownloadOrthancFramework.
 
 if (ORTHANC_FRAMEWORK_SOURCE STREQUAL "system")
   if (ORTHANC_FRAMEWORK_USE_SHARED)    
-    include(FindBoost)
+    # https://cmake.org/cmake/help/latest/policy/CMP0167.html
+    if (CMAKE_VERSION VERSION_GREATER "3.30")
+      find_package(Boost CONFIG)
+    else()
+      include(FindBoost)
+    endif()
+
     find_package(Boost COMPONENTS filesystem program_options regex system thread date_time)
     
     if (NOT Boost_FOUND)
