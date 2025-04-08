@@ -287,7 +287,7 @@ namespace OrthancWSI
     {
       assert(instances_[i] != NULL);
 
-      if (instances_[i]->IsLevel(0) == 0 &&  // Only consider the finest level
+      if (instances_[i]->IsLevel(0) &&  // Only consider the finest level
           instances_[i]->HasImagedVolumeSize())
       {
         if (!found)
