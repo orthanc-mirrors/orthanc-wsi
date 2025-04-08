@@ -78,6 +78,12 @@ if (STATIC_BUILD OR NOT USE_SYSTEM_LIBTIFF)
     add_definitions(-DHAVE_SNPRINTF=1)
   endif()
 
+  # This is needed since WSI 3.2 on physical Win64 BuilBbot
+  check_symbol_exists(lfind "search.h" HAVE_SEARCH_H)
+  if (HAVE_SEARCH_H)
+    add_definitions(-DHAVE_SEARCH_H=1)
+  endif()
+
   if (MSVC)
     # The "%" must be escaped if using Visual Studio
     add_definitions(
