@@ -25,6 +25,7 @@
 #include "DicomPyramidWriter.h"
 
 #include "../DicomToolbox.h"
+#include "../ImageToolbox.h"
 
 #include <Compatibility.h>  // For std::unique_ptr
 #include <Logging.h>
@@ -194,6 +195,21 @@ namespace OrthancWSI
       FlushInternal(*writer, false);
 
       countTiles_ ++;
+    }
+  }
+
+
+  void DicomPyramidWriter::EncodeTileInternal(std::string& encoded,
+                                              const Orthanc::ImageAccessor& tile)
+  {
+    if (GetImageCompression() == ImageCompression_JpegLS)
+    {
+      // For JPEG-LS, images are first store uncompressed, then transcoded in "MultiframeDicomWriter"
+      ImageToolbox::EncodeUncompressedTile(encoded, tile);
+    }
+    else
+    {
+      ImageToolbox::EncodeTile(encoded, tile, GetImageCompression(), GetJpegQuality());
     }
   }
 

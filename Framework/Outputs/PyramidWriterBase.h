@@ -51,6 +51,9 @@ namespace OrthancWSI
     // This function is invoked before any call to WriteRawTileInternal()
     virtual void AddLevelInternal(const Level& level) = 0;
 
+    virtual void EncodeTileInternal(std::string& encoded,
+                                    const Orthanc::ImageAccessor& tile) = 0;
+
   private:
     boost::mutex          mutex_;   // This mutex protects access to the levels
     Orthanc::PixelFormat  pixelFormat_;

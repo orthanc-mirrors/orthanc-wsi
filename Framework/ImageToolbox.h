@@ -58,6 +58,9 @@ namespace OrthancWSI
                                           unsigned int width,
                                           unsigned int height);
     
+    void EncodeUncompressedTile(std::string& target,
+                                const Orthanc::ImageAccessor& source);
+
     void EncodeTile(std::string& target,
                     const Orthanc::ImageAccessor& source,
                     ImageCompression compression,
@@ -81,11 +84,5 @@ namespace OrthancWSI
     bool HasPngSignature(const std::string& buffer);
 
     bool HasJpegSignature(const std::string& buffer);
-
-#if ORTHANC_ENABLE_DCMTK_TRANSCODING == 1
-    void CompressFrameUsingDcmtk(std::string& target,
-                                 const Orthanc::ImageAccessor& frame,
-                                 Orthanc::DicomTransferSyntax syntax);
-#endif
   }
 }

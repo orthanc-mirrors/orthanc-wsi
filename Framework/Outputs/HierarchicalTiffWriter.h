@@ -75,6 +75,8 @@ namespace OrthancWSI
         
     virtual void AddLevelInternal(const Level& level) ORTHANC_OVERRIDE;
 
+    virtual void EncodeTileInternal(std::string& encoded,
+                                    const Orthanc::ImageAccessor& tile) ORTHANC_OVERRIDE;
 
   public:
     HierarchicalTiffWriter(const std::string& path,

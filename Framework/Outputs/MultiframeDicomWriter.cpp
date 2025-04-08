@@ -31,6 +31,10 @@
 #include <Logging.h>
 #include <OrthancException.h>
 
+#if ORTHANC_ENABLE_DCMTK_TRANSCODING == 1
+#  include <DicomParsing/DcmtkTranscoder.h>
+#endif
+
 #include <dcmtk/dcmdata/dcuid.h>
 #include <dcmtk/dcmdata/dcdeftag.h>
 #include <dcmtk/dcmdata/dcostrmb.h>
@@ -255,7 +259,8 @@ namespace OrthancWSI
     // Free the functional group on error
     std::unique_ptr<DcmItem> functionalGroupRaii(functionalGroup);
 
-    if (compression_ == ImageCompression_None)
+    if (compression_ == ImageCompression_None ||
+        compression_ == ImageCompression_JpegLS)
     {
       if (frame.size() != uncompressedFrameSize_)
       {
@@ -317,25 +322,58 @@ namespace OrthancWSI
       DicomToolbox::SetUint16Tag(*dicom->getDataset(), DCM_InConcatenationNumber, countInstances_);
     }
 
-    switch (compression_)
+    if (compression_ == ImageCompression_JpegLS)
     {
-      case ImageCompression_None:
-        InjectUncompressedPixelData(*dicom);
-        break;
+#if (ORTHANC_ENABLE_DCMTK_TRANSCODING == 1) && (ORTHANC_ENABLE_DCMTK_JPEG_LOSSLESS == 1)
+      const Orthanc::DicomTransferSyntax syntax = Orthanc::DicomTransferSyntax_JPEGLSLossless;
 
-      case ImageCompression_Jpeg:
-      case ImageCompression_Jpeg2000:
-      case ImageCompression_JpegLS:
-        offsetTable_->createOffsetTable(*offsetList_);
-        dicom->getDataset()->insert(compressedPixelSequence_.release());
-        break;
+      InjectUncompressedPixelData(*dicom);
 
-      default:
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
+      Orthanc::IDicomTranscoder::DicomImage source;
+      source.AcquireParsed(dicom.release());  // "dicom" is invalid below this point
+
+      std::set<Orthanc::DicomTransferSyntax> s;
+      s.insert(syntax);
+
+      Orthanc::IDicomTranscoder::DicomImage transcoded;
+
+      Orthanc::DcmtkTranscoder transcoder(1);
+      if (transcoder.Transcode(transcoded, source, s, true))
+      {
+        ResetImage();
+        SaveDicomToMemory(target, transcoded.GetParsed(), transferSyntax_);
+        return;  // Success
+      }
+      else
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError, "DCMTK cannot transcode to " +
+                                        std::string(Orthanc::GetTransferSyntaxUid(syntax)));
+      }
+#else
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError, "DCMTK was compiled without support for JPEG-LS");
+#endif
     }
+    else
+    {
+      switch (compression_)
+      {
+        case ImageCompression_None:
+          InjectUncompressedPixelData(*dicom);
+          break;
 
-    ResetImage();
+        case ImageCompression_Jpeg:
+        case ImageCompression_Jpeg2000:
+          offsetTable_->createOffsetTable(*offsetList_);
+          dicom->getDataset()->insert(compressedPixelSequence_.release());
+          break;
 
-    SaveDicomToMemory(target, *dicom, transferSyntax_);
+        default:
+          throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
+      }
+
+      ResetImage();
+
+      SaveDicomToMemory(target, *dicom, transferSyntax_);
+    }
   }
 }

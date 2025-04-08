@@ -65,6 +65,9 @@ namespace OrthancWSI
     {
     }
 
+    virtual void EncodeTileInternal(std::string& encoded,
+                                    const Orthanc::ImageAccessor& tile) ORTHANC_OVERRIDE;
+
   public:
     DicomPyramidWriter(IFileTarget&  target,
                        const DcmDataset& dataset,

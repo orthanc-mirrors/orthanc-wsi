@@ -24,6 +24,8 @@
 #include "../PrecompiledHeadersWSI.h"
 #include "HierarchicalTiffWriter.h"
 
+#include "../ImageToolbox.h"
+
 #include <Logging.h>
 #include <OrthancException.h>
 #include <TemporaryFile.h>
@@ -412,6 +414,13 @@ namespace OrthancWSI
     }
 
     levels_.push_back(level);
+  }
+
+
+  void HierarchicalTiffWriter::EncodeTileInternal(std::string& encoded,
+                                                  const Orthanc::ImageAccessor& tile)
+  {
+    ImageToolbox::EncodeTile(encoded, tile, GetImageCompression(), GetJpegQuality());
   }
 
 

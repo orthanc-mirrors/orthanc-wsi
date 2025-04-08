@@ -148,7 +148,8 @@ namespace OrthancWSI
     const Level level = GetLevel(z);
 
     std::string raw;
-    ImageToolbox::EncodeTile(raw, tile, compression_, jpegQuality_);
+    EncodeTileInternal(raw, tile);
+
     WriteRawTileInternal(raw, level, x, y);
   }
 }

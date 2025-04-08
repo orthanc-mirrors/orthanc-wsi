@@ -27,13 +27,6 @@
 #include "Jpeg2000Reader.h"
 #include "Jpeg2000Writer.h"
 
-#if ORTHANC_ENABLE_DCMTK_TRANSCODING == 1
-#  include <DicomParsing/DcmtkTranscoder.h>
-#  include <DicomParsing/ParsedDicomFile.h>
-#  include <DicomParsing/FromDcmtkBridge.h>
-#  include <dcmtk/dcmdata/dcpxitem.h>
-#endif
-
 #include <Compatibility.h>  // For std::unique_ptr
 #include <OrthancException.h>
 #include <Images/ImageProcessing.h>
@@ -176,6 +169,20 @@ namespace OrthancWSI
     }
 
 
+    void EncodeUncompressedTile(std::string& target,
+                                const Orthanc::ImageAccessor& source)
+    {
+      unsigned int pitch = GetBytesPerPixel(source.GetFormat()) * source.GetWidth();
+      target.resize(pitch * source.GetHeight());
+
+      const unsigned int height = source.GetHeight();
+      for (unsigned int i = 0; i < height; i++)
+      {
+        memcpy(&target[i * pitch], source.GetConstRow(i), pitch);
+      }
+    }
+
+
     void EncodeTile(std::string& target,
                     const Orthanc::ImageAccessor& source,
                     ImageCompression compression,
@@ -183,22 +190,7 @@ namespace OrthancWSI
     {
       if (compression == ImageCompression_None)
       {
-        unsigned int pitch = GetBytesPerPixel(source.GetFormat()) * source.GetWidth();
-        target.resize(pitch * source.GetHeight());
-
-        const unsigned int height = source.GetHeight();
-        for (unsigned int i = 0; i < height; i++)
-        {
-          memcpy(&target[i * pitch], source.GetConstRow(i), pitch);
-        }
-      }
-      else if (compression == ImageCompression_JpegLS)
-      {
-#if (ORTHANC_ENABLE_DCMTK_TRANSCODING == 1) && (ORTHANC_ENABLE_DCMTK_JPEG_LOSSLESS == 1)
-        CompressFrameUsingDcmtk(target, source, Orthanc::DicomTransferSyntax_JPEGLSLossless);
-#else
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError, "DCMTK was compiled without support for JPEG-LS");
-#endif
+        EncodeUncompressedTile(target, source);
       }
       else
       {
@@ -420,59 +412,5 @@ namespace OrthancWSI
                 p[3] == 0xe1);
       }
     }
-
-
-#if ORTHANC_ENABLE_DCMTK_TRANSCODING == 1
-    void CompressFrameUsingDcmtk(std::string& target,
-                                 const Orthanc::ImageAccessor& frame,
-                                 Orthanc::DicomTransferSyntax syntax)
-    {
-      if (frame.GetFormat() != Orthanc::PixelFormat_RGB24)
-      {
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
-      }
-
-      Orthanc::ParsedDicomFile dicom(true);
-      dicom.EmbedImage(frame);
-
-      Orthanc::IDicomTranscoder::DicomImage source;
-      source.AcquireParsed(dicom);   // "dicom" is invalid below this point
-
-      Orthanc::IDicomTranscoder::DicomImage transcoded;
-
-      std::set<Orthanc::DicomTransferSyntax> s;
-      s.insert(syntax);
-
-      Orthanc::DcmtkTranscoder transcoder(1);
-
-      if (transcoder.Transcode(transcoded, source, s, true))
-      {
-        DcmPixelSequence* pixelSequence = Orthanc::FromDcmtkBridge::GetPixelSequence(*transcoded.GetParsed().getDataset());
-
-        DcmPixelItem* compressed = NULL;
-        Uint8* data = NULL;
-        if (pixelSequence != NULL &&
-            pixelSequence->card() == 2 &&
-            pixelSequence->getItem(compressed, 1).good() &&
-            compressed != NULL &&
-            compressed->getUint8Array(data).good() &&
-            data != NULL)
-        {
-          const unsigned int size = compressed->getNumberOfValues();
-
-          target.resize(size);
-          if (size != 0)
-          {
-            memcpy(&target[0], data, size);
-          }
-
-          return;  // Success
-        }
-      }
-
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError, "DCMTK cannot transcode to " +
-                                      std::string(Orthanc::GetTransferSyntaxUid(syntax)));
-    }
-#endif
   }
 }
