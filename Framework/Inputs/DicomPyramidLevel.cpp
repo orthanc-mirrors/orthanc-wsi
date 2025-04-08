@@ -24,6 +24,8 @@
 #include "../PrecompiledHeadersWSI.h"
 #include "DicomPyramidLevel.h"
 
+#include "../ImageToolbox.h"
+
 #include <Logging.h>
 #include <OrthancException.h>
 
