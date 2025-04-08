@@ -1,6 +1,10 @@
 Pending changes in the mainline
 ===============================
 
+
+Version 3.2 (2025-04-08)
+========================
+
 * Support windowing when rendering grayscale images using on-the-fly deep zoom
 * Added tolerance to imaged volume width/height by looking only at the finest level
 * Added support for more transfer syntaxes in the Web viewer plugin, including JPEG-LS
