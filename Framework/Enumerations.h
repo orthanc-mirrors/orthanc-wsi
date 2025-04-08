@@ -43,7 +43,8 @@ namespace OrthancWSI
     ImageCompression_Jpeg = 5,
     ImageCompression_Jpeg2000 = 6,
     ImageCompression_Tiff = 7,
-    ImageCompression_UseOrthancPreview = 8
+    ImageCompression_UseOrthancPreview = 8,
+    ImageCompression_JpegLS = 9
   };
 
   enum OpticalPath

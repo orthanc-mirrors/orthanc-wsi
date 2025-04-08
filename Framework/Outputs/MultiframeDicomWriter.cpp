@@ -182,6 +182,10 @@ namespace OrthancWSI
         transferSyntax_ = EXS_JPEG2000LosslessOnly;
         break;
 
+      case ImageCompression_JpegLS:
+        transferSyntax_ = EXS_JPEGLSLossless;
+        break;
+
       default:
         throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
     }
@@ -321,6 +325,7 @@ namespace OrthancWSI
 
       case ImageCompression_Jpeg:
       case ImageCompression_Jpeg2000:
+      case ImageCompression_JpegLS:
         offsetTable_->createOffsetTable(*offsetList_);
         dicom->getDataset()->insert(compressedPixelSequence_.release());
         break;

@@ -260,6 +260,10 @@ static void Recompress(OrthancWSI::IFileTarget& output,
           targetPhotometric = Orthanc::PhotometricInterpretation_RGB;
           break;
 
+        case OrthancWSI::ImageCompression_JpegLS:
+          targetPhotometric = Orthanc::PhotometricInterpretation_RGB;
+          break;
+
         default:
           throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
       }
@@ -674,7 +678,7 @@ static bool ParseParameters(int& exitStatus,
     (OPTION_TILE_HEIGHT, boost::program_options::value<int>(),
      "Height of the tiles in the target image")
     (OPTION_COMPRESSION, boost::program_options::value<std::string>(), 
-     "Compression of the target image (\"none\", \"jpeg\" or \"jpeg2000\")")
+     "Compression of the target image (\"none\", \"jpeg\", \"jpeg2000\", or \"jpeg-ls\")")
     (OPTION_JPEG_QUALITY, boost::program_options::value<int>(),
      "Set quality level for JPEG (0..100)")
     (OPTION_MAX_SIZE, boost::program_options::value<int>()->default_value(10),
@@ -959,6 +963,10 @@ static bool ParseParameters(int& exitStatus,
     else if (s == "jpeg2000")
     {
       parameters.SetTargetCompression(OrthancWSI::ImageCompression_Jpeg2000);
+    }
+    else if (s == "jpeg-ls")
+    {
+      parameters.SetTargetCompression(OrthancWSI::ImageCompression_JpegLS);
     }
     else
     {
@@ -1297,7 +1305,7 @@ int main(int argc, char* argv[])
   }
   catch (Orthanc::OrthancException& e)
   {
-    LOG(ERROR) << "Terminating on exception: " << e.What();
+    LOG(ERROR) << "Terminating on exception: " << e.What() << ": " << e.GetDetails();
     exitStatus = -1;
   }
 

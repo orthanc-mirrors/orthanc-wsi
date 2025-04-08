@@ -333,7 +333,7 @@ int main(int argc, char* argv[])
   }
   catch (Orthanc::OrthancException& e)
   {
-    LOG(ERROR) << "Terminating on exception: " << e.What();
+    LOG(ERROR) << "Terminating on exception: " << e.What() << ": " << e.GetDetails();;
 
     if (options.count(OPTION_REENCODE) == 0)
     {

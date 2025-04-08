@@ -63,6 +63,9 @@ namespace OrthancWSI
       case ImageCompression_Dicom:
         return "DICOM";
 
+      case ImageCompression_JpegLS:
+        return "JPEG-LS";
+
       default:
         throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
     }

@@ -71,11 +71,19 @@ namespace OrthancWSI
       Orthanc::HttpClient::GlobalInitialize();
       Orthanc::FromDcmtkBridge::InitializeDictionary(false /* don't load private dictionary */);
       assert(DisplayPerformanceWarning());
+
+#if ORTHANC_ENABLE_DCMTK_TRANSCODING == 1
+      Orthanc::FromDcmtkBridge::InitializeCodecs();
+#endif
     }
 
 
     void GlobalFinalize()
     {
+#if ORTHANC_ENABLE_DCMTK_TRANSCODING == 1
+      Orthanc::FromDcmtkBridge::FinalizeCodecs();
+#endif
+
       OrthancWSI::OpenSlideLibrary::Finalize();
       Orthanc::HttpClient::GlobalFinalize();
       Orthanc::Toolbox::FinalizeOpenSsl();

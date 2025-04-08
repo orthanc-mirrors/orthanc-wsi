@@ -75,7 +75,8 @@ else()
   SET(ENABLE_CRYPTO_OPTIONS ON)
   SET(ENABLE_DCMTK ON)
   SET(ENABLE_DCMTK_JPEG OFF)          # Disable DCMTK's support for JPEG, that clashes with libtiff
-  SET(ENABLE_DCMTK_JPEG_LOSSLESS OFF) # Disable DCMTK's support for JPEG-LS
+  SET(ENABLE_DCMTK_JPEG_LOSSLESS ON)  # Enable DCMTK's support for JPEG-LS (was disabled in WSI <= 3.1)
+  SET(ENABLE_DCMTK_TRANSCODING ON)    # Enable DCMTK's support for transcoding (was disabled in WSI <= 3.1)
   SET(ENABLE_DCMTK_NETWORKING OFF)    # Disable DCMTK's support for DICOM networking
   SET(ENABLE_JPEG ON)
   SET(ENABLE_LOCALE ON)               # Enable support for locales (notably in Boost)
@@ -89,7 +90,17 @@ else()
   include(${ORTHANC_FRAMEWORK_ROOT}/../Resources/CMake/OrthancFrameworkConfiguration.cmake)
 
   include(${ORTHANC_WSI_DIR}/Resources/CMake/BoostExtendedConfiguration.cmake)
+
+  if (STATIC_BUILD OR NOT USE_SYSTEM_DCMTK)
+    # This is a backport of changeset: https://orthanc.uclouvain.be/hg/orthanc/rev/97d69fb5958e
+    # TODO - Remove after next upgrade to Orthanc framework > 1.12.7
+    include_directories(
+      ${DCMTK_SOURCES_DIR}/dcmimgle/include
+      )
+  endif()
 endif()
+
+
 
 
 # Include components specific to WSI

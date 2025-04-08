@@ -81,5 +81,11 @@ namespace OrthancWSI
     bool HasPngSignature(const std::string& buffer);
 
     bool HasJpegSignature(const std::string& buffer);
+
+#if ORTHANC_ENABLE_DCMTK_TRANSCODING == 1
+    void CompressFrameUsingDcmtk(std::string& target,
+                                 const Orthanc::ImageAccessor& frame,
+                                 Orthanc::DicomTransferSyntax syntax);
+#endif
   }
 }
