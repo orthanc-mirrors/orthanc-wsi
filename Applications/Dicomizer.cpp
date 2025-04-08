@@ -248,8 +248,12 @@ static void Recompress(OrthancWSI::IFileTarget& output,
       switch (parameters.GetTargetCompression())
       {
         case OrthancWSI::ImageCompression_Jpeg:
-        case OrthancWSI::ImageCompression_Jpeg2000:
           targetPhotometric = Orthanc::PhotometricInterpretation_YBRFull422;
+          break;
+
+        case OrthancWSI::ImageCompression_Jpeg2000:
+          // Was set to Orthanc::PhotometricInterpretation_YBRFull422 in WSI <= 3.1
+          targetPhotometric = Orthanc::PhotometricInterpretation_RGB;
           break;
 
         case OrthancWSI::ImageCompression_None:

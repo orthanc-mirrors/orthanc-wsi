@@ -57,7 +57,12 @@ namespace OrthancWSI
         std::unique_ptr<Jpeg2000Reader> decoded(new Jpeg2000Reader);
         decoded->ReadFromMemory(tile_);
 
-        if (photometric_ == Orthanc::PhotometricInterpretation_YBR_ICT)
+        if (photometric_ == Orthanc::PhotometricInterpretation_YBRFull ||
+            photometric_ == Orthanc::PhotometricInterpretation_YBRFull422 ||
+            photometric_ == Orthanc::PhotometricInterpretation_YBRPartial420 ||
+            photometric_ == Orthanc::PhotometricInterpretation_YBRPartial422 ||
+            photometric_ == Orthanc::PhotometricInterpretation_YBR_ICT ||
+            photometric_ == Orthanc::PhotometricInterpretation_YBR_RCT)
         {
           ImageToolbox::ConvertJpegYCbCrToRgb(*decoded);
         }
