@@ -48,7 +48,7 @@ namespace OrthancWSI
     bool IsNear(double a,
                 double b)
     {
-      return std::abs(a - b) < 10.0 * std::numeric_limits<float>::epsilon();
+      return std::abs(a - b) < 100.0 * std::numeric_limits<double>::epsilon();
     }
 
 
