@@ -36,6 +36,10 @@ namespace OrthancWSI
     bool IsNear(double a,
                 double b);
 
+    bool IsNear(double a,
+                double b,
+                double threshold);
+
     Orthanc::ImageAccessor* Allocate(Orthanc::PixelFormat format,
                                      unsigned int width,
                                      unsigned int height);

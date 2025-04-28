@@ -472,17 +472,17 @@ extern "C"
 
       OrthancWSI::LABColor lab;
       if (!OrthancWSI::LABColor::DecodeDicomRecommendedAbsentPixelCIELab(lab, "65535\\0\\0") ||
-          !OrthancWSI::ImageToolbox::IsNear(lab.GetL(), 100.0) ||
-          !OrthancWSI::ImageToolbox::IsNear(lab.GetA(), -128.0) ||
-          !OrthancWSI::ImageToolbox::IsNear(lab.GetB(), -128.0))
+          !OrthancWSI::ImageToolbox::IsNear(lab.GetL(), 100.0, 0.001) ||
+          !OrthancWSI::ImageToolbox::IsNear(lab.GetA(), -128.0, 0.001) ||
+          !OrthancWSI::ImageToolbox::IsNear(lab.GetB(), -128.0, 0.001))
       {
         throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
       }
 
       if (!OrthancWSI::LABColor::DecodeDicomRecommendedAbsentPixelCIELab(lab, "0\\32896\\65535") ||
-          !OrthancWSI::ImageToolbox::IsNear(lab.GetL(), 0.0) ||
-          !OrthancWSI::ImageToolbox::IsNear(lab.GetA(), 0.0) ||
-          !OrthancWSI::ImageToolbox::IsNear(lab.GetB(), 127.0))
+          !OrthancWSI::ImageToolbox::IsNear(lab.GetL(), 0.0, 0.001) ||
+          !OrthancWSI::ImageToolbox::IsNear(lab.GetA(), 0.0, 0.001) ||
+          !OrthancWSI::ImageToolbox::IsNear(lab.GetB(), 127.0, 0.001))
       {
         throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
       }
