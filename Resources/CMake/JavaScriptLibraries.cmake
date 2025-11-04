@@ -26,11 +26,14 @@ DownloadPackage(
   "${BASE_URL}/WSI/openlayers-10.6.1-package.tar.gz"
   "openlayers-10.6.1-package")
 
+
 set(JAVASCRIPT_LIBS_DIR  ${CMAKE_CURRENT_BINARY_DIR}/javascript-libs)
 file(MAKE_DIRECTORY ${JAVASCRIPT_LIBS_DIR})
 
+
 file(COPY
   ${CMAKE_CURRENT_BINARY_DIR}/openlayers-10.6.1-package/dist/ol.js
+  ${CMAKE_CURRENT_BINARY_DIR}/openlayers-10.6.1-package/dist/ol.js.map
   DESTINATION
   ${JAVASCRIPT_LIBS_DIR}/js
   )

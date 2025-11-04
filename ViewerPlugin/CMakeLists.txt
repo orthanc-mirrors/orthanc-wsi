@@ -32,6 +32,7 @@ include(${CMAKE_SOURCE_DIR}/../Resources/CMake/Version.cmake)
 # Generic parameters
 SET(STATIC_BUILD OFF CACHE BOOL "Static build of the third-party libraries (necessary for Windows)")
 SET(ALLOW_DOWNLOADS OFF CACHE BOOL "Allow CMake to download packages")
+SET(STANDALONE_BUILD ON CACHE BOOL "Standalone build (all the resources are embedded, necessary for releases)")
 
 # Advanced parameters to fine-tune linking against system libraries
 SET(USE_SYSTEM_OPENJPEG ON CACHE BOOL "Use the system version of OpenJpeg")
@@ -146,11 +147,23 @@ endif()
 
 include(${CMAKE_SOURCE_DIR}/../Resources/CMake/JavaScriptLibraries.cmake)
 
+if (STANDALONE_BUILD)
+  add_definitions(-DORTHANC_STANDALONE=1)
+  set(VIEWER_RESOURCES
+    VIEWER_HTML          ${CMAKE_SOURCE_DIR}/viewer.html
+    VIEWER_JS            ${CMAKE_SOURCE_DIR}/viewer.js
+    )
+else()
+  add_definitions(
+    -DORTHANC_STANDALONE=0
+    -DPLUGIN_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
+    )
+endif()
+
 EmbedResources(
+  ${VIEWER_RESOURCES}
   JAVASCRIPT_LIBS      ${JAVASCRIPT_LIBS_DIR}
   ORTHANC_EXPLORER     ${CMAKE_SOURCE_DIR}/OrthancExplorer.js
-  VIEWER_HTML          ${CMAKE_SOURCE_DIR}/viewer.html
-  VIEWER_JS            ${CMAKE_SOURCE_DIR}/viewer.js
   MIRADOR_HTML         ${CMAKE_SOURCE_DIR}/mirador.html
   OPEN_SEADRAGON_HTML  ${CMAKE_SOURCE_DIR}/openseadragon.html
   )

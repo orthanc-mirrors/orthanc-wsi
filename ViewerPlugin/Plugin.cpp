@@ -392,9 +392,9 @@ void ServeJavaScriptLibraries(OrthancPluginRestOutput* output,
 }
 
 
-void ServeFile(OrthancPluginRestOutput* output,
-               const char* url,
-               const OrthancPluginHttpRequest* request)
+void ServeEmbeddedFile(OrthancPluginRestOutput* output,
+                       const char* url,
+                       const OrthancPluginHttpRequest* request)
 {
   Orthanc::EmbeddedResources::FileResourceId resource;
 
@@ -403,12 +403,22 @@ void ServeFile(OrthancPluginRestOutput* output,
 
   if (f == "viewer.html")
   {
+#if ORTHANC_STANDALONE == 0
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+#else
     resource = Orthanc::EmbeddedResources::VIEWER_HTML;
+#endif
+
     mime = "text/html";
   }
   else if (f == "viewer.js")
   {
+#if ORTHANC_STANDALONE == 0
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+#else
     resource = Orthanc::EmbeddedResources::VIEWER_JS;
+#endif
+
     mime = "application/javascript";
   }
   else if (f == "mirador.html")
@@ -431,6 +441,33 @@ void ServeFile(OrthancPluginRestOutput* output,
 
   OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, content.c_str(), content.size(), mime.c_str());
 }
+
+
+#if ORTHANC_STANDALONE == 0
+void ServeSourceFile(OrthancPluginRestOutput* output,
+                     const char* url,
+                     const OrthancPluginHttpRequest* request)
+{
+  // This method should only be used during the development to speed up compilation
+
+  std::string filename(request->groups[0]);
+
+  if (filename != "viewer.html" &&
+      filename != "viewer.js")
+  {
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
+  }
+
+  const boost::filesystem::path path = Orthanc::SystemToolbox::InterpretRelativePath(
+    Orthanc::SystemToolbox::PathFromUtf8(PLUGIN_SOURCE_DIR), filename);
+  const char* mime = Orthanc::EnumerationToString(Orthanc::SystemToolbox::AutodetectMimeType(filename));
+
+  std::string content;
+  Orthanc::SystemToolbox::ReadFile(content, path);
+
+  OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, content.c_str(), content.size(), mime);
+}
+#endif
 
 
 extern "C"
@@ -538,8 +575,15 @@ extern "C"
     OrthancPluginRegisterOnChangeCallback(OrthancPlugins::GetGlobalContext(), OnChangeCallback);
 
     OrthancPlugins::RegisterRestCallback<ServeJavaScriptLibraries>("/wsi/libs/(.*)", true);
-    OrthancPlugins::RegisterRestCallback<ServeFile>("/wsi/app/(viewer.html)", true);
-    OrthancPlugins::RegisterRestCallback<ServeFile>("/wsi/app/(viewer.js)", true);
+
+#if ORTHANC_STANDALONE == 1
+    OrthancPlugins::RegisterRestCallback<ServeEmbeddedFile>("/wsi/app/(viewer.html)", true);
+    OrthancPlugins::RegisterRestCallback<ServeEmbeddedFile>("/wsi/app/(viewer.js)", true);
+#else
+    OrthancPlugins::RegisterRestCallback<ServeSourceFile>("/wsi/app/(viewer.html)", true);
+    OrthancPlugins::RegisterRestCallback<ServeSourceFile>("/wsi/app/(viewer.js)", true);
+#endif
+
     OrthancPlugins::RegisterRestCallback<ServePyramid>("/wsi/pyramids/([0-9a-f-]+)", true);
     OrthancPlugins::RegisterRestCallback<ServeTile>("/wsi/tiles/([0-9a-f-]+)/([0-9-]+)/([0-9-]+)/([0-9-]+)", true);
     OrthancPlugins::RegisterRestCallback<ServeFramePyramid>("/wsi/frames-pyramids/([0-9a-f-]+)/([0-9-]+)", true);
@@ -598,12 +642,12 @@ extern "C"
 
     if (serveMirador)
     {
-      OrthancPlugins::RegisterRestCallback<ServeFile>("/wsi/app/(mirador.html)", true);
+      OrthancPlugins::RegisterRestCallback<ServeEmbeddedFile>("/wsi/app/(mirador.html)", true);
     }
 
     if (serveOpenSeadragon)
     {
-      OrthancPlugins::RegisterRestCallback<ServeFile>("/wsi/app/(openseadragon.html)", true);
+      OrthancPlugins::RegisterRestCallback<ServeEmbeddedFile>("/wsi/app/(openseadragon.html)", true);
     }
 
     {
