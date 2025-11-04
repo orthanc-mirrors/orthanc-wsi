@@ -21,33 +21,6 @@
  **/
 
 
-// For IE compatibility
-if (!window.console) window.console = {};
-if (!window.console.log) window.console.log = function () { };
-
-
-// http://stackoverflow.com/a/21903119/881731
-function GetUrlParameter(sParam) 
-{
-  var sPageURL = decodeURIComponent(window.location.search.substring(1));
-  var sURLVariables = sPageURL.split('&');
-  var sParameterName;
-  var i;
-
-  for (i = 0; i < sURLVariables.length; i++) 
-  {
-    sParameterName = sURLVariables[i].split('=');
-
-    if (sParameterName[0] === sParam) 
-    {
-      return sParameterName[1] === undefined ? '' : sParameterName[1];
-    }
-  }
-
-  return '';
-};
-
-
 function InitializePyramid(pyramid, tilesBaseUrl)
 {
   $('#map').css('background', pyramid['BackgroundColor']);  // New in WSI 2.1
@@ -112,6 +85,16 @@ function InitializePyramid(pyramid, tilesBaseUrl)
     })
   ]);
 
+  const params = new URLSearchParams(document.location.search);
+  if (params.has('description')) {
+    controls.extend([
+      new ol.control.Attribution({
+        attributions: params.get('description'),
+        collapsible: false
+      })
+    ]);
+  }
+
 
   var layer = new ol.layer.Tile({
     extent: extent,
@@ -174,11 +157,10 @@ function InitializePyramid(pyramid, tilesBaseUrl)
 
 
 $(document).ready(function() {
-  var seriesId = GetUrlParameter('series');
-  var instanceId = GetUrlParameter('instance');
+  const params = new URLSearchParams(document.location.search);
 
-  if (seriesId.length != 0)
-  {
+  if (params.has('series')) {
+    var seriesId = params.get('series');
     $.ajax({
       url : '../pyramids/' + seriesId,
       error: function() {
@@ -188,15 +170,13 @@ $(document).ready(function() {
         InitializePyramid(pyramid, '../tiles/' + seriesId + '/');
       }
     });
-  }
-  else if (instanceId.length != 0)
-  {
-    var frameNumber = GetUrlParameter('frame');
-    if (frameNumber.length == 0)
-    {
-      frameNumber = 0;
+  } else if (params.has('instance')) {
+    var frameNumber = 0;
+    if (params.has('frame')) {
+      frameNumber = params.get('frame');
     }
 
+    var instanceId = params.get('instance');
     $.ajax({
       url : '../frames-pyramids/' + instanceId + '/' + frameNumber,
       error: function() {
@@ -206,9 +186,7 @@ $(document).ready(function() {
         InitializePyramid(pyramid, '../frames-tiles/' + instanceId + '/' + frameNumber + '/');
       }
     });
-  }
-  else
-  {
+  } else {
     alert('Error - No series ID and no instance ID specified!');
   }
 });
