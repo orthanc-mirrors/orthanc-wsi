@@ -37,11 +37,6 @@ SET(ALLOW_DOWNLOADS OFF CACHE BOOL "Allow CMake to download packages")
 SET(USE_SYSTEM_OPENJPEG ON CACHE BOOL "Use the system version of OpenJpeg")
 SET(USE_SYSTEM_ORTHANC_SDK ON CACHE BOOL "Use the system version of the Orthanc plugin SDK")
 
-# Parameters related to OpenLayers
-SET(USE_SYSTEM_OPENLAYERS OFF CACHE BOOL "Use the system version of OpenLayers")
-SET(OPENLAYERS_CSS "" CACHE FILEPATH "Path to the system version of OpenLayers CSS")
-SET(OPENLAYERS_JS "" CACHE FILEPATH "Path to the system version of OpenLayers JavaScript")
-
 
 #####################################################################
 ## Configure mandatory third-party components
@@ -146,37 +141,13 @@ endif()
 
 
 #####################################################################
-## Prepare OpenLayers
+## Prepare JavaScript libraries
 #####################################################################
 
-if (STATIC_BUILD OR NOT USE_SYSTEM_OPENLAYERS)
-  DownloadPackage(
-    "b7de8bba890ccc3858920bd66dd79d2d"
-    "https://orthanc.uclouvain.be/downloads/third-party-downloads/WSI/openlayers-10.6.1-package.tar.gz"
-    "openlayers-10.6.1-package")
-  
-  set(OPENLAYERS_RESOURCES
-    OPENLAYERS_CSS  ${CMAKE_CURRENT_BINARY_DIR}/openlayers-10.6.1-package/ol.css
-    OPENLAYERS_JS   ${CMAKE_CURRENT_BINARY_DIR}/openlayers-10.6.1-package/dist/ol.js
-    )
-
-else()
-  if (OPENLAYERS_CSS STREQUAL "")
-    message(FATAL_ERROR "The option OPENLAYERS_CSS is not set")
-  endif()
-
-  if (OPENLAYERS_JS STREQUAL "")
-    message(FATAL_ERROR "The option OPENLAYERS_JS is not set")
-  endif()
-
-  set(OPENLAYERS_RESOURCES
-    OPENLAYERS_CSS  ${OPENLAYERS_CSS}
-    OPENLAYERS_JS   ${OPENLAYERS_JS}
-    )  
-endif()
+include(${CMAKE_SOURCE_DIR}/../Resources/CMake/JavaScriptLibraries.cmake)
 
 EmbedResources(
-  ${OPENLAYERS_RESOURCES}
+  JAVASCRIPT_LIBS      ${JAVASCRIPT_LIBS_DIR}
   ORTHANC_EXPLORER     ${CMAKE_SOURCE_DIR}/OrthancExplorer.js
   VIEWER_HTML          ${CMAKE_SOURCE_DIR}/viewer.html
   VIEWER_JS            ${CMAKE_SOURCE_DIR}/viewer.js

@@ -362,6 +362,35 @@ OrthancPluginErrorCode OnChangeCallback(OrthancPluginChangeType changeType,
 }
 
 
+void ServeJavaScriptLibraries(OrthancPluginRestOutput* output,
+                              const char* url,
+                              const OrthancPluginHttpRequest* request)
+{
+  OrthancPluginContext* context = OrthancPlugins::GetGlobalContext();
+
+  if (request->method != OrthancPluginHttpMethod_Get)
+  {
+    OrthancPluginSendMethodNotAllowed(context, output, "GET");
+  }
+  else
+  {
+    const std::string path = "/" + std::string(request->groups[0]);
+    const char* mime = Orthanc::EnumerationToString(Orthanc::SystemToolbox::AutodetectMimeType(path));
+
+    if (path == "/js/ol.js")
+    {
+      // Adding "charset" is mandatory with OpenLayers 10.4.0, check out "zoomOutLabel" in the source code
+      mime = "application/javascript; charset=utf-8";
+    }
+
+    std::string s;
+    Orthanc::EmbeddedResources::GetDirectoryResource(s, Orthanc::EmbeddedResources::JAVASCRIPT_LIBS, path.c_str());
+
+    const char* resource = s.size() ? s.c_str() : NULL;
+    OrthancPluginAnswerBuffer(context, output, resource, s.size(), mime);
+  }
+}
+
 
 void ServeFile(OrthancPluginRestOutput* output,
                const char* url,
@@ -381,18 +410,6 @@ void ServeFile(OrthancPluginRestOutput* output,
   {
     resource = Orthanc::EmbeddedResources::VIEWER_JS;
     mime = "application/javascript";
-  }
-  else if (f == "dist/ol.js")
-  {
-    resource = Orthanc::EmbeddedResources::OPENLAYERS_JS;
-
-    // Adding "charset" is mandatory with OpenLayers 10.4.0, check out "zoomOutLabel" in the source code
-    mime = "application/javascript; charset=utf-8";
-  }
-  else if (f == "ol.css")
-  {
-    resource = Orthanc::EmbeddedResources::OPENLAYERS_CSS;
-    mime = "text/css";
   }
   else if (f == "mirador.html")
   {
@@ -520,8 +537,7 @@ extern "C"
 
     OrthancPluginRegisterOnChangeCallback(OrthancPlugins::GetGlobalContext(), OnChangeCallback);
 
-    OrthancPlugins::RegisterRestCallback<ServeFile>("/wsi/app/(ol.css)", true);
-    OrthancPlugins::RegisterRestCallback<ServeFile>("/wsi/app/(dist/ol.js)", true);
+    OrthancPlugins::RegisterRestCallback<ServeJavaScriptLibraries>("/wsi/libs/(.*)", true);
     OrthancPlugins::RegisterRestCallback<ServeFile>("/wsi/app/(viewer.html)", true);
     OrthancPlugins::RegisterRestCallback<ServeFile>("/wsi/app/(viewer.js)", true);
     OrthancPlugins::RegisterRestCallback<ServePyramid>("/wsi/pyramids/([0-9a-f-]+)", true);
