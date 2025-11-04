@@ -26,19 +26,33 @@ DownloadPackage(
   "${BASE_URL}/WSI/openlayers-10.6.1-package.tar.gz"
   "openlayers-10.6.1-package")
 
+DownloadPackage(
+  "102a4386a022f26a3b604e3852fffba8"
+  "${BASE_URL}/bootstrap-5.3.3.zip"
+  "${CMAKE_CURRENT_BINARY_DIR}/bootstrap-5.3.3")
+
+# curl -L https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js | gzip > /tmp/popper-2.11.8.min.js.gz
+
+DownloadCompressedFile(
+  "309f660accb8025e06ca99feae3c1d7c"
+  "${BASE_URL}/WSI/popper-2.11.8.min.js.gz"
+  "${CMAKE_CURRENT_BINARY_DIR}/popper.min.js")
+
 
 set(JAVASCRIPT_LIBS_DIR  ${CMAKE_CURRENT_BINARY_DIR}/javascript-libs)
 file(MAKE_DIRECTORY ${JAVASCRIPT_LIBS_DIR})
 
 
 file(COPY
+  ${CMAKE_CURRENT_BINARY_DIR}/bootstrap-5.3.3/dist/js/bootstrap.min.js
   ${CMAKE_CURRENT_BINARY_DIR}/openlayers-10.6.1-package/dist/ol.js
-  ${CMAKE_CURRENT_BINARY_DIR}/openlayers-10.6.1-package/dist/ol.js.map
+  ${CMAKE_CURRENT_BINARY_DIR}/popper.min.js
   DESTINATION
   ${JAVASCRIPT_LIBS_DIR}/js
   )
 
 file(COPY
+  ${CMAKE_CURRENT_BINARY_DIR}/bootstrap-5.3.3/dist/css/bootstrap.min.css
   ${CMAKE_CURRENT_BINARY_DIR}/openlayers-10.6.1-package/ol.css
   DESTINATION
   ${JAVASCRIPT_LIBS_DIR}/css

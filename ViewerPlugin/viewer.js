@@ -77,6 +77,19 @@ function InitializePyramid(pyramid, tilesBaseUrl)
 
   var extent = [0, -height, width, 0];
 
+  var rotateControl = new ol.control.Rotate({
+    autoHide: false,  // Show the button even if rotation is 0
+    resetNorth: function() {  // Disable the default action
+    }
+  });
+
+  new bootstrap.Popover(rotateControl.element, {
+    placement: 'right',
+    container: 'body',
+    html: true,
+    content: $('#popover-content')
+  });
+
   // Disable the rotation of the map, and inertia while panning
   // http://stackoverflow.com/a/25682186
   var interactions = ol.interaction.defaults.defaults({
@@ -93,6 +106,7 @@ function InitializePyramid(pyramid, tilesBaseUrl)
   var controls = ol.control.defaults.defaults({
     attribution: false
   }).extend([
+    rotateControl,
     new ol.control.ScaleLine({
       minWidth: 100
     })
@@ -131,6 +145,31 @@ function InitializePyramid(pyramid, tilesBaseUrl)
   });
 
   map.getView().fit(extent, map.getSize());
+
+
+  $('#rotation-slider').on('input change', function() {
+    map.getView().setRotation(this.value / 180 * Math.PI);
+  });
+
+  $('#rotation-reset').click(function() {
+    $('#rotation-slider').val(0).change();
+  });
+
+  $('#rotation-minus90').click(function() {
+    var angle = parseInt($('#rotation-slider').val()) - 90;
+    if (angle < -180) {
+      angle += 360;
+    }
+    $('#rotation-slider').val(angle).change();
+  });
+
+  $('#rotation-plus90').click(function() {
+    var angle = parseInt($('#rotation-slider').val()) + 90;
+    if (angle > 180) {
+      angle -= 360;
+    }
+    $('#rotation-slider').val(angle).change();
+  });
 }
 
 

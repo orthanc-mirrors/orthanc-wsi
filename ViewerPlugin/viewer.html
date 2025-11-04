@@ -6,30 +6,57 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Orthanc for Whole-Slide Imaging</title>
 
+    <link rel="stylesheet" href="../libs/css/bootstrap.min.css" type="text/css">
     <link rel="stylesheet" href="../libs/css/ol.css" type="text/css">
 
     <style>
       html,
       body {
-        margin: 0;
-        height: 100%;
+          margin: 0;
+          height: 100%;
       }
 
       #map {
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        width: 100%;
+          position: absolute;
+          top: 0;
+          bottom: 0;
+          width: 100%;
+      }
+
+      .ol-rotate {
+          top: 4em;
+          left: .5em;
+          right: initial;
       }
     </style>
 
   </head>
   <body>
-    <div id="map"></div>
+    <div id="map">
+    </div>
+
+    <div style="display:none">
+      <div id="popover-content">
+        <div class="container">
+          <div class="row mb-2">
+            <div class="btn-group btn-group-sm" role="group">
+              <button type="button" class="btn btn-outline-dark" id="rotation-reset">Reset</button>
+              <button type="button" class="btn btn-outline-dark" id="rotation-plus90">+90&deg;</button>
+              <button type="button" class="btn btn-outline-dark" id="rotation-minus90">-90&deg;</button>
+            </div>
+          </div>
+          <div class="row">
+            <input type="range" class="form-range" min="-180" max="180" id="rotation-slider">
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- This is the version of jQuery that is used by Orthanc Explorer -->
     <script src="../../app/libs/jquery.min.js"></script>
 
+    <script src="../libs/js/popper.min.js"></script>
+    <script src="../libs/js/bootstrap.min.js"></script>
     <script src="../libs/js/ol.js"></script>
     <script src="viewer.js"></script>
   </body>
