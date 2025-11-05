@@ -185,11 +185,11 @@ namespace OrthancWSI
       }
 
       std::unique_ptr<DcmItem> functionalGroup(CreateFunctionalGroup(writer->GetFramesCount() + 1,
-                                                                   x * GetTileWidth(), 
-                                                                   y * GetTileHeight(), 
-                                                                   writer->GetTotalWidth(),
-                                                                   writer->GetTotalHeight(),
-                                                                   0.0f /* TODO Z-plane */));
+                                                                     x * GetTileWidth(),
+                                                                     y * GetTileHeight(),
+                                                                     writer->GetTotalWidth(),
+                                                                     writer->GetTotalHeight(),
+                                                                     0.0f /* TODO Z-plane */));
 
       writer->AddFrame(tile, functionalGroup.release());
       FlushInternal(*writer, false);

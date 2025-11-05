@@ -50,7 +50,7 @@ namespace OrthancWSI
     }
     else
     {
-      return 15;  // Typical width of a specimen
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
     }
   }
 
@@ -63,7 +63,7 @@ namespace OrthancWSI
     }
     else
     {
-      return 15;  // Typical height of a specimen
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
     }
   }
 

@@ -1339,6 +1339,15 @@ int main(int argc, char* argv[])
         throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
       }
 
+      if (!volume.HasWidth() &&
+          !volume.HasHeight())
+      {
+        LOG(WARNING) << "Unknown imaged volume size, use the --" << OPTION_IMAGED_WIDTH << " and the --"
+                     << OPTION_IMAGED_HEIGHT << " options to fill the (0048,0001) and (0048,0002) DICOM tags, "
+                     << "assuming an imaged width of 15mm";
+        volume.SetWidth(15);
+      }
+
       // In the lines below, remember to switch X/Y when going from physical to pixel coordinates!
       if (volume.HasWidth() &&
           volume.HasHeight())
@@ -1347,16 +1356,10 @@ int main(int argc, char* argv[])
         float pixelSpacingY = volume.GetHeight() / static_cast<float>(source->GetLevelWidth(0));
         if (!OrthancWSI::ImageToolbox::IsNear(pixelSpacingX, pixelSpacingY))
         {
-          LOG(WARNING) << "Your pixel spacing is different along the X and Y axes, make sure that "
-                       << "you have not inversed the --" << OPTION_IMAGED_WIDTH << " and the --"
-                       << OPTION_IMAGED_HEIGHT << " options: " << pixelSpacingX << " vs. " << pixelSpacingY;
+          LOG(WARNING) << "Your pixel spacing is different along the X and Y axes ("
+                       << pixelSpacingX << " vs. " << pixelSpacingY << "), check the arguments "
+                       << "--" << OPTION_IMAGED_WIDTH << " and --" << OPTION_IMAGED_HEIGHT;
         }
-      }
-      else if (!volume.HasWidth() &&
-               !volume.HasHeight())
-      {
-        LOG(WARNING) << "Unknown imaged volume size, use the --" << OPTION_IMAGED_WIDTH << " and the --"
-                     << OPTION_IMAGED_HEIGHT << " options to fill the (0048,0001) and (0048,0002) DICOM tags";
       }
       else if (volume.HasWidth())
       {
@@ -1364,13 +1367,19 @@ int main(int argc, char* argv[])
         volume.SetHeight(volume.GetWidth() / static_cast<float>(source->GetLevelHeight(0)) *
                          static_cast<float>(source->GetLevelWidth(0)));
       }
-      else
+      else if (volume.HasHeight())
       {
         assert(!volume.HasWidth());
         volume.SetWidth(volume.GetHeight() / static_cast<float>(source->GetLevelWidth(0)) *
                         static_cast<float>(source->GetLevelHeight(0)));
       }
+      else
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+      }
 
+      LOG(WARNING) << "Imaged volume width: " << volume.GetWidth() << "mm";
+      LOG(WARNING) << "Imaged volume height: " << volume.GetHeight() << "mm";
       LOG(WARNING) << "Compression of the individual source tiles: " << OrthancWSI::EnumerationToString(sourceCompression);
       
       // Create the shared DICOM tags
