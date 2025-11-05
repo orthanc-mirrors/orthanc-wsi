@@ -21,6 +21,12 @@
  **/
 
 
+function IsNear(a, b)
+{
+  return Math.abs(a - b) <= 0.000000001;
+}
+
+
 function InitializePyramid(pyramid, tilesBaseUrl)
 {
   $('#map').css('background', pyramid['BackgroundColor']);  // New in WSI 2.1
@@ -36,10 +42,17 @@ function InitializePyramid(pyramid, tilesBaseUrl)
       imagedVolumeHeight !== undefined) {
     var metersPerUnitX = parseFloat(imagedVolumeWidth) / (1000.0 * parseFloat(width));
     var metersPerUnitY = parseFloat(imagedVolumeHeight) / (1000.0 * parseFloat(height));
-    if (Math.abs(metersPerUnitX - metersPerUnitY) <= 0.000000001) {
+    if (IsNear(metersPerUnitX, metersPerUnitY)) {
       metersPerUnit = metersPerUnitX;
     } else {
-      console.error('Inconsistency in the imaged volume size, not showing the scale');
+      // Backward compatibility with OrthancWSIDicomizer <= 3.2, where X/Y were swapped
+      metersPerUnitX = parseFloat(imagedVolumeWidth) / (1000.0 * parseFloat(height));
+      metersPerUnitY = parseFloat(imagedVolumeHeight) / (1000.0 * parseFloat(width));
+      if (IsNear(metersPerUnitX, metersPerUnitY)) {
+        metersPerUnit = metersPerUnitX;
+      } else {
+        console.error('Inconsistency in the imaged volume size, not showing the scale');
+      }
     }
   }
 

@@ -301,11 +301,6 @@ namespace OrthancWSI
     hasImagedVolumeSize_ = (
       reader.GetDoubleValue(imagedVolumeWidth_, Orthanc::DicomPath(DICOM_TAG_IMAGED_VOLUME_WIDTH)) &&
       reader.GetDoubleValue(imagedVolumeHeight_, Orthanc::DicomPath(DICOM_TAG_IMAGED_VOLUME_HEIGHT)));
-
-    if (hasImagedVolumeSize_)
-    {
-      // TODO - SWAP WIDTH/HEIGHT FOR OLD VERSIONS OF ORTHANC
-    }
   }
 
 
