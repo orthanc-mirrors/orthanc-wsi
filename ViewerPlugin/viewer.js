@@ -34,8 +34,13 @@ function InitializePyramid(pyramid, tilesBaseUrl)
   var imagedVolumeHeight = pyramid['ImagedVolumeHeight'];
   if (imagedVolumeWidth !== undefined &&
       imagedVolumeHeight !== undefined) {
-    metersPerUnit = parseFloat(imagedVolumeWidth) / (1000.0 * parseFloat(height));
-    //metersPerUnit = parseFloat(imagedVolumeHeight) / (1000.0 * parseFloat(width));
+    var metersPerUnitX = parseFloat(imagedVolumeWidth) / (1000.0 * parseFloat(width));
+    var metersPerUnitY = parseFloat(imagedVolumeHeight) / (1000.0 * parseFloat(height));
+    if (Math.abs(metersPerUnitX - metersPerUnitY) <= 0.000000001) {
+      metersPerUnit = metersPerUnitX;
+    } else {
+      console.error('Inconsistency in the imaged volume size, not showing the scale');
+    }
   }
 
   // Maps always need a projection, but Zoomify layers are not geo-referenced, and

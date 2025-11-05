@@ -126,8 +126,11 @@ namespace OrthancWSI
       throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
     }
 
-    // WARNING: The physical X/Y axes are switched wrt. the image X/Y
-    physicalX = offsetX_ - GetHeight() * static_cast<float>(imageX) / static_cast<float>(totalWidth);
-    physicalY = offsetY_ - GetWidth() * static_cast<float>(imageY) / static_cast<float>(totalHeight);
+    /**
+     * WARNING: The physical X/Y axes are switched wrt. the image X/Y
+     * (cf. GetImageOrientationSlide()).
+     **/
+    physicalX = offsetX_ - GetHeight() * static_cast<float>(imageY) / static_cast<float>(totalHeight);
+    physicalY = offsetY_ - GetWidth() * static_cast<float>(imageX) / static_cast<float>(totalWidth);
   }
 }

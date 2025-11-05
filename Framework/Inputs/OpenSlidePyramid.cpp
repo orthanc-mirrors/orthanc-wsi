@@ -150,9 +150,8 @@ namespace OrthancWSI
         image_.LookupProperty(s, "openslide.mpp-y") &&
         Orthanc::SerializationToolbox::ParseDouble(mppy, s))
     {
-      // In the 2 lines below, remember to switch X/Y when going from physical to pixel coordinates!
-      width = mppy / 1000.0 * static_cast<double>(image_.GetLevelHeight(0));
-      height = mppx / 1000.0 * static_cast<double>(image_.GetLevelWidth(0));
+      width = mppx / 1000.0 * static_cast<double>(image_.GetLevelWidth(0));
+      height = mppy / 1000.0 * static_cast<double>(image_.GetLevelHeight(0));
       return true;
     }
     else

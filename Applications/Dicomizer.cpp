@@ -1359,12 +1359,11 @@ int main(int argc, char* argv[])
         volume.SetWidth(15);
       }
 
-      // In the lines below, remember to switch X/Y when going from physical to pixel coordinates!
       if (volume.HasWidth() &&
           volume.HasHeight())
       {
-        float pixelSpacingX = volume.GetWidth() / static_cast<float>(source->GetLevelHeight(0));
-        float pixelSpacingY = volume.GetHeight() / static_cast<float>(source->GetLevelWidth(0));
+        const float pixelSpacingX = volume.GetWidth() / static_cast<float>(source->GetLevelWidth(0));
+        const float pixelSpacingY = volume.GetHeight() / static_cast<float>(source->GetLevelHeight(0));
         if (!OrthancWSI::ImageToolbox::IsNear(pixelSpacingX, pixelSpacingY))
         {
           LOG(WARNING) << "Your pixel spacing is different along the X and Y axes ("
@@ -1375,14 +1374,14 @@ int main(int argc, char* argv[])
       else if (volume.HasWidth())
       {
         assert(!volume.HasHeight());
-        volume.SetHeight(volume.GetWidth() / static_cast<float>(source->GetLevelHeight(0)) *
-                         static_cast<float>(source->GetLevelWidth(0)));
+        volume.SetHeight(volume.GetWidth() / static_cast<float>(source->GetLevelWidth(0)) *
+                         static_cast<float>(source->GetLevelHeight(0)));
       }
       else if (volume.HasHeight())
       {
         assert(!volume.HasWidth());
-        volume.SetWidth(volume.GetHeight() / static_cast<float>(source->GetLevelWidth(0)) *
-                        static_cast<float>(source->GetLevelHeight(0)));
+        volume.SetWidth(volume.GetHeight() / static_cast<float>(source->GetLevelHeight(0)) *
+                        static_cast<float>(source->GetLevelWidth(0)));
       }
       else
       {

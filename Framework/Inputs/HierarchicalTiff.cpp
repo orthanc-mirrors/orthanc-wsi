@@ -306,9 +306,8 @@ namespace OrthancWSI
             if (key == MPP &&
                 Orthanc::SerializationToolbox::ParseDouble(mpp, value))
             {
-              // In the lines below, remember to switch X/Y when going from physical to pixel coordinates!
-              double thisHeight = static_cast<double>(levels_[i].width_) * mpp / 1000.0;
-              double thisWidth = static_cast<double>(levels_[i].height_) * mpp / 1000.0;
+              double thisWidth = static_cast<double>(levels_[i].width_) * mpp / 1000.0;
+              double thisHeight = static_cast<double>(levels_[i].height_) * mpp / 1000.0;
 
               if (!found)
               {

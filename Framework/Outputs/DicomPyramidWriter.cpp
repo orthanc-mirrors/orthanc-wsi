@@ -151,9 +151,8 @@ namespace OrthancWSI
           // Fix issue 139: The PixelSpacing information changes at each level
           // https://bitbucket.org/sjodogne/orthanc/issues/139/orthancwsidicomizer-pixelspacing
 
-          // In the 2 lines below, remember to switch X/Y when going from physical to pixel coordinates!
-          float spacingX = volume_.GetWidth() / static_cast<float>(level.height_);
-          float spacingY = volume_.GetHeight() / static_cast<float>(level.width_);
+          float spacingX = volume_.GetWidth() / static_cast<float>(level.width_);
+          float spacingY = volume_.GetHeight() / static_cast<float>(level.height_);
 
           std::string spacing = (boost::lexical_cast<std::string>(spacingX) + '\\' +
                                  boost::lexical_cast<std::string>(spacingY));

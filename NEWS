@@ -4,6 +4,9 @@ Pending changes in the mainline
 * OrthancWSIDicomizer:
   - Placeholder tags are now automatically inserted when the "--dataset" option
     provides incomplete data, ensuring the generated DICOM instances remain valid
+  - The version of the DICOM-izer is available in DICOM tag "SoftwareVersions"
+  - ImagedVolumeWidth and ImagedVolumeHeight are swapped with respect to releases <= 3.2:
+    https://discourse.orthanc-server.org/t/5912
 * Viewer plugin:
   - Added rotation button in the viewer
   - The viewer displays a label if the "description" GET parameter is provided
