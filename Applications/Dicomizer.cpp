@@ -542,8 +542,7 @@ static void SetupDimension(DcmDataset& dataset,
       }
     }
 #else
-    LOG(WARNING) << "Your version of DCMTK is too old to support the \""
-                 << OrthancWSI::DicomToolbox::GetTagName(DCM_WholeSlideMicroscopyImageFrameTypeSequence) << "\" DICOM tag";
+    LOG(WARNING) << "Your version of DCMTK is too old to support the \"WholeSlideMicroscopyImageFrameTypeSequence\" DICOM tag";
 #endif
 
     if (!sequence2->insert(item2.release(), false, false).good() ||
