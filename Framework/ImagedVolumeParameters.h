@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include <string>
+
 namespace OrthancWSI
 {
   class ImagedVolumeParameters
@@ -83,6 +85,8 @@ namespace OrthancWSI
     {
       offsetY_ = offset;
     }
+
+    std::string GetImageOrientationSlide() const;
 
     void GetLocation(float& physicalX,
                      float& physicalY,

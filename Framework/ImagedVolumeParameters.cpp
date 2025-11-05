@@ -105,6 +105,12 @@ namespace OrthancWSI
 
     depth_ = depth;
   }
+
+
+  std::string ImagedVolumeParameters::GetImageOrientationSlide() const
+  {
+    return "0\\-1\\0\\-1\\0\\0";
+  }
     
 
   void ImagedVolumeParameters::GetLocation(float& physicalX,

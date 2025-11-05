@@ -371,7 +371,6 @@ static DcmDataset* ParseDataset(const std::string& path)
 
   // Some basic coordinate information
   OrthancWSI::DicomToolbox::SetStringTag(*dataset, DCM_VolumetricProperties, "VOLUME");
-  OrthancWSI::DicomToolbox::SetStringTag(*dataset, DCM_ImageOrientationSlide, "0\\-1\\0\\-1\\0\\0");
 
   std::string date, time;
   Orthanc::SystemToolbox::GetNowDicom(date, time, true /* use UTC time (not local time) */);
@@ -518,6 +517,8 @@ static void SetupDimension(DcmDataset& dataset,
     }
   }
 
+
+  OrthancWSI::DicomToolbox::SetStringTag(dataset, DCM_ImageOrientationSlide, volume.GetImageOrientationSlide());
 
   {
     // Construct tag "Shared Functional Groups Sequence" (5200,9229)
