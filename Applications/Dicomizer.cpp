@@ -1352,9 +1352,9 @@ int main(int argc, char* argv[])
       if (!volume.HasWidth() &&
           !volume.HasHeight())
       {
-        LOG(WARNING) << "Unknown imaged volume size, use the --" << OPTION_IMAGED_WIDTH << " and the --"
-                     << OPTION_IMAGED_HEIGHT << " options to fill the (0048,0001) and (0048,0002) DICOM tags, "
-                     << "assuming an imaged width of 15mm";
+        LOG(WARNING) << "Unknown imaged volume size, assuming an imaged width of 15mm: Use the --"
+                     << OPTION_IMAGED_WIDTH << " and the --" << OPTION_IMAGED_HEIGHT
+                     << " options to properly fill the (0048,0001) and (0048,0002) DICOM tags";
         volume.SetWidth(15);
       }
 
