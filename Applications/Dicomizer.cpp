@@ -353,7 +353,7 @@ static DcmDataset* ParseDataset(const std::string& path)
   }
 
   std::unique_ptr<DcmDataset> dataset(Orthanc::FromDcmtkBridge::FromJson(json, true, true, Orthanc::Encoding_Latin1,
-                                                                       "" /* no private tag, thus no private creator */));
+                                                                         "" /* no private tag, thus no private creator */));
   if (dataset.get() == NULL)
   {
     LOG(ERROR) << "Cannot convert to JSON file to a DICOM dataset: " << path;
@@ -383,6 +383,76 @@ static DcmDataset* ParseDataset(const std::string& path)
   OrthancWSI::DicomToolbox::SetStringTag(*dataset, DCM_ContentTime, time);
   OrthancWSI::DicomToolbox::SetStringTag(*dataset, DCM_AcquisitionDateTime, date + time);
 
+  // Write version information
+  OrthancWSI::DicomToolbox::SetStringTag(*dataset, DCM_Manufacturer, "Orthanc");
+  OrthancWSI::DicomToolbox::SetStringTag(*dataset, DCM_ManufacturerModelName, "OrthancWSIDicomizer");
+
+  {
+    const std::string version = "OrthancWSIDicomizer-" + std::string(ORTHANC_WSI_VERSION);
+    OrthancWSI::DicomToolbox::SetStringTag(*dataset, DCM_DeviceSerialNumber, version);
+    OrthancWSI::DicomToolbox::SetStringTag(*dataset, DCM_SoftwareVersions, version);
+  }
+
+  // Write the tags that are needed for a valid DICOM instance
+  OrthancWSI::DicomToolbox::SetStringTag(*dataset, DCM_ImageType, "DERIVED\\PRIMARY\\VOLUME\\NONE");
+
+  OrthancWSI::DicomToolbox::SetStringTagWithWarning(*dataset, DCM_BurnedInAnnotation, "NO");
+  OrthancWSI::DicomToolbox::SetStringTagWithWarning(*dataset, DCM_ExtendedDepthOfField, "NO");
+  OrthancWSI::DicomToolbox::SetStringTagWithWarning(*dataset, DCM_FocusMethod, "AUTO");
+  OrthancWSI::DicomToolbox::SetStringTagWithWarning(*dataset, DCM_SpecimenLabelInImage, "NO");
+  OrthancWSI::DicomToolbox::SetStringTagWithWarning(*dataset, DCM_ContainerIdentifier, "MY_CONTAINER");
+
+  {
+    std::set<DcmTagKey> tagsStringType2;
+    tagsStringType2.insert(DCM_AccessionNumber);
+    tagsStringType2.insert(DCM_PatientBirthDate);
+    tagsStringType2.insert(DCM_PatientName);
+    tagsStringType2.insert(DCM_PatientSex);
+    tagsStringType2.insert(DCM_ReferringPhysicianName);
+    tagsStringType2.insert(DCM_SeriesNumber);
+    tagsStringType2.insert(DCM_StudyID);
+
+    for (std::set<DcmTagKey>::const_iterator it = tagsStringType2.begin(); it != tagsStringType2.end(); ++it)
+    {
+      OrthancWSI::DicomToolbox::SetStringTag(*dataset, *it, "");
+    }
+  }
+
+  {
+    std::set<DcmTagKey> tagsSequenceType2;
+    tagsSequenceType2.insert(DCM_AcquisitionContextSequence);
+    tagsSequenceType2.insert(DCM_ContainerTypeCodeSequence);
+    tagsSequenceType2.insert(DCM_IssuerOfTheContainerIdentifierSequence);
+
+    for (std::set<DcmTagKey>::const_iterator it = tagsSequenceType2.begin(); it != tagsSequenceType2.end(); ++it)
+    {
+      std::unique_ptr<DcmElement> empty(new DcmSequenceOfItems(*it));
+
+      if (!dataset->tagExists(*it) &&
+          !dataset->insert(empty.release(), true /* replace */, false).good())
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+      }
+    }
+  }
+
+  if (!dataset->tagExists(DCM_SpecimenDescriptionSequence))
+  {
+    std::unique_ptr<DcmItem> item(new DcmItem);
+    OrthancWSI::DicomToolbox::SetStringTagWithWarning(*item, DCM_SpecimenIdentifier, "MY_SPECIMEN");
+    OrthancWSI::DicomToolbox::SetStringTagWithWarning(*item, DCM_SpecimenUID, Orthanc::FromDcmtkBridge::GenerateUniqueIdentifier(Orthanc::ResourceType_Instance));
+
+    std::unique_ptr<DcmSequenceOfItems> specimen(new DcmSequenceOfItems(DCM_SpecimenDescriptionSequence));
+
+    if (!item->insert(new DcmSequenceOfItems(DCM_IssuerOfTheSpecimenIdentifierSequence), false, false).good() ||
+        !item->insert(new DcmSequenceOfItems(DCM_SpecimenPreparationSequence), false, false).good() ||
+        !specimen->insert(item.release(), false, false).good() ||
+        !dataset->insert(specimen.release(), true /* replace */, false).good())
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+    }
+  }
+
   return dataset.release();
 }
 
@@ -406,6 +476,8 @@ static void SetupDimension(DcmDataset& dataset,
   {
     // No Dimension Organization provided: Generate an unique identifier
     organization = Orthanc::FromDcmtkBridge::GenerateUniqueIdentifier(Orthanc::ResourceType_Instance);
+    LOG(WARNING) << "Generating an unique identifier for the tags \""
+                 << OrthancWSI::DicomToolbox::GetTagName(DCM_DimensionOrganizationUID) << "\": \"" << organization << "\"";
   }
 
 
@@ -451,13 +523,19 @@ static void SetupDimension(DcmDataset& dataset,
     // Construct tag "Shared Functional Groups Sequence" (5200,9229)
     std::unique_ptr<DcmItem> item(new DcmItem);
 
+    std::unique_ptr<DcmItem> item2(new DcmItem);
+    OrthancWSI::DicomToolbox::SetStringTag(*item2, DCM_OpticalPathIdentifier, opticalPathId);
+
     std::unique_ptr<DcmItem> item3(new DcmItem);
-    OrthancWSI::DicomToolbox::SetStringTag(*item3, DCM_OpticalPathIdentifier, opticalPathId);
+    OrthancWSI::DicomToolbox::SetStringTag(*item3, DCM_FrameType, "DERIVED\\PRIMARY\\VOLUME\\NONE");
 
     std::unique_ptr<DcmSequenceOfItems> sequence(new DcmSequenceOfItems(DCM_SharedFunctionalGroupsSequence));
-    std::unique_ptr<DcmSequenceOfItems> sequence3(new DcmSequenceOfItems(DCM_OpticalPathIdentificationSequence));
+    std::unique_ptr<DcmSequenceOfItems> sequence2(new DcmSequenceOfItems(DCM_OpticalPathIdentificationSequence));
+    std::unique_ptr<DcmSequenceOfItems> sequence3(new DcmSequenceOfItems(DCM_WholeSlideMicroscopyImageFrameTypeSequence));
 
-    if (!sequence3->insert(item3.release(), false, false).good() ||
+    if (!sequence2->insert(item2.release(), false, false).good() ||
+        !sequence3->insert(item3.release(), false, false).good() ||
+        !item->insert(sequence2.release(), false, false).good() ||
         !item->insert(sequence3.release(), false, false).good() ||
         !sequence->insert(item.release(), false, false).good() ||
         !dataset.insert(sequence.release(), true /* replace */, false).good())

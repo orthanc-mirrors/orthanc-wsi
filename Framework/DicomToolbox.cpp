@@ -41,6 +41,12 @@ namespace OrthancWSI
   namespace DicomToolbox
   {
 #if ORTHANC_ENABLE_DCMTK == 1
+    std::string GetTagName(const DcmTagKey& key)
+    {
+      DcmTag tmp(key);
+      return tmp.getTagName();
+    }
+
     void SetStringTag(DcmItem& dataset,
                       const DcmTagKey& key,
                       const std::string& value)
@@ -49,6 +55,21 @@ namespace OrthancWSI
           !dataset.putAndInsertString(key, value.c_str()).good())
       {
         throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+      }
+    }
+
+    void SetStringTagWithWarning(DcmItem& dataset,
+                                 const DcmTagKey& key,
+                                 const std::string& value)
+    {
+      if (!dataset.tagExists(key))
+      {
+        LOG(WARNING) << "Setting value of tag \"" << GetTagName(key) << "\" to placeholder value: \"" << value << "\"";
+
+        if (!dataset.putAndInsertString(key, value.c_str()).good())
+        {
+          throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+        }
       }
     }
 

@@ -7,12 +7,7 @@
   "SeriesNumber" : "1",
   "ReferringPhysicianName" : "SOME^PHYSICIAN",
   "AccessionNumber" : "123456789",
-  "Manufacturer" : "MyManufacturer",
-  "ManufacturerModelName" : "MyModel",
-  "DeviceSerialNumber" : "MySerialNumber",
-  "SoftwareVersions" : "MyVersion",
 
-  "ImageType" : "DERIVED\\PRIMARY\\VOLUME\\NONE",
   "FocusMethod" : "AUTO",
   "ExtendedDepthOfField" : "NO",
 
@@ -38,6 +33,12 @@
       ]
     }
   ],
+  "DimensionOrganizationSequence": [
+    {
+      "DimensionOrganizationUID" : "1.2.276.0.7230010.3.1.4.1757367822.227496.1762338018.13870"
+    }
+  ],
+
   "SpecimenLabelInImage" : "NO",
   "BurnedInAnnotation" : "NO"
 }

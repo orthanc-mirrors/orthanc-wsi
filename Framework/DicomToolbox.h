@@ -38,9 +38,15 @@ namespace OrthancWSI
   namespace DicomToolbox
   {
 #if ORTHANC_ENABLE_DCMTK == 1
+    std::string GetTagName(const DcmTagKey& key);
+
     void SetStringTag(DcmItem& dataset,
                       const DcmTagKey& key,
                       const std::string& value);
+
+    void SetStringTagWithWarning(DcmItem& dataset,
+                                 const DcmTagKey& key,
+                                 const std::string& value);
 
     void SetUint16Tag(DcmItem& dataset,
                       const DcmTagKey& key,

@@ -1,9 +1,13 @@
 Pending changes in the mainline
 ===============================
 
-* Added rotation button in the viewer
-* The viewer displays a label if the "description" GET parameter is provided
-* Upgraded to OpenLayers 10.6.1
+* OrthancWSIDicomizer:
+  - Placeholder tags are now automatically inserted when the "--dataset" option
+    provides incomplete data, ensuring the generated DICOM instances remain valid
+* Viewer plugin:
+  - Added rotation button in the viewer
+  - The viewer displays a label if the "description" GET parameter is provided
+  - Upgraded to OpenLayers 10.6.1
 
 
 Version 3.2 (2025-04-08)
