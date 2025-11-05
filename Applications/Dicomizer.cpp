@@ -526,17 +526,28 @@ static void SetupDimension(DcmDataset& dataset,
     std::unique_ptr<DcmItem> item2(new DcmItem);
     OrthancWSI::DicomToolbox::SetStringTag(*item2, DCM_OpticalPathIdentifier, opticalPathId);
 
-    std::unique_ptr<DcmItem> item3(new DcmItem);
-    OrthancWSI::DicomToolbox::SetStringTag(*item3, DCM_FrameType, "DERIVED\\PRIMARY\\VOLUME\\NONE");
-
     std::unique_ptr<DcmSequenceOfItems> sequence(new DcmSequenceOfItems(DCM_SharedFunctionalGroupsSequence));
     std::unique_ptr<DcmSequenceOfItems> sequence2(new DcmSequenceOfItems(DCM_OpticalPathIdentificationSequence));
-    std::unique_ptr<DcmSequenceOfItems> sequence3(new DcmSequenceOfItems(DCM_WholeSlideMicroscopyImageFrameTypeSequence));
+
+#if DCMTK_VERSION_NUMBER >= 364
+    {
+      std::unique_ptr<DcmItem> item3(new DcmItem);
+      OrthancWSI::DicomToolbox::SetStringTag(*item3, DCM_FrameType, "DERIVED\\PRIMARY\\VOLUME\\NONE");
+
+      std::unique_ptr<DcmSequenceOfItems> sequence3(new DcmSequenceOfItems(DCM_WholeSlideMicroscopyImageFrameTypeSequence));
+      if (!sequence3->insert(item3.release(), false, false).good() ||
+          !item->insert(sequence3.release(), false, false).good())
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+      }
+    }
+#else
+    LOG(WARNING) << "Your version of DCMTK is too old to support the \""
+                 << OrthancWSI::DicomToolbox::GetTagName(DCM_WholeSlideMicroscopyImageFrameTypeSequence) << "\" DICOM tag";
+#endif
 
     if (!sequence2->insert(item2.release(), false, false).good() ||
-        !sequence3->insert(item3.release(), false, false).good() ||
         !item->insert(sequence2.release(), false, false).good() ||
-        !item->insert(sequence3.release(), false, false).good() ||
         !sequence->insert(item.release(), false, false).good() ||
         !dataset.insert(sequence.release(), true /* replace */, false).good())
     {
