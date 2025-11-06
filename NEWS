@@ -1,6 +1,10 @@
 Pending changes in the mainline
 ===============================
 
+
+Version 3.3 (2025-11-06)
+========================
+
 * OrthancWSIDicomizer:
   - New option "--encoding" to specify the specific character set of DICOM instances
   - Placeholder tags are now automatically inserted when the "--dataset" option
