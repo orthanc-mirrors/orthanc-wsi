@@ -67,7 +67,8 @@ if (ORTHANC_FRAMEWORK_SOURCE STREQUAL "system")
     include(FindDCMTK)
     link_libraries(${Boost_LIBRARIES} ${DCMTK_LIBRARIES} jsoncpp crypto)
   endif()
-  
+
+  add_definitions(-DORTHANC_ENABLE_DCMTK=1)
   link_libraries(${ORTHANC_FRAMEWORK_LIBRARIES})
   
 else()
