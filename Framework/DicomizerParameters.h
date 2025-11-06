@@ -72,6 +72,9 @@ namespace OrthancWSI
     bool          forceOpenSlide_;
     unsigned int  padding_;
 
+    // New in release 3.3
+    Orthanc::Encoding  encoding_;
+
   public:
     DicomizerParameters();
 
@@ -299,6 +302,16 @@ namespace OrthancWSI
     bool IsForceOpenSlide() const
     {
       return forceOpenSlide_;
+    }
+
+    Orthanc::Encoding GetEncoding() const
+    {
+      return encoding_;
+    }
+
+    void SetEncoding(Orthanc::Encoding encoding)
+    {
+      encoding_ = encoding;
     }
   };
 }

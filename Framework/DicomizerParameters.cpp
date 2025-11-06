@@ -76,7 +76,8 @@ namespace OrthancWSI
     cytomineImageInstanceId_(-1),
     cytomineCompression_(ImageCompression_Png),
     forceOpenSlide_(false),
-    padding_(1)
+    padding_(1),
+    encoding_(Orthanc::Encoding_Latin1)
   {
     backgroundColor_[0] = 255;
     backgroundColor_[1] = 255;

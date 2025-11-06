@@ -100,6 +100,9 @@ static const char* OPTION_CYTOMINE_COMPRESSION = "cytomine-compression";
 static const char* OPTION_FORCE_OPENSLIDE = "force-openslide";
 static const char* OPTION_PADDING = "padding";
 
+// New in release 3.3
+static const char* OPTION_ENCODING = "encoding";
+
 
 #if ORTHANC_FRAMEWORK_VERSION_IS_ABOVE(1, 9, 0)
 
@@ -332,7 +335,8 @@ static void Recompress(OrthancWSI::IFileTarget& output,
 
 
 
-static DcmDataset* ParseDataset(const std::string& path)
+static DcmDataset* ParseDataset(const std::string& path,
+                                Orthanc::Encoding encoding)
 {
   Json::Value json;
 
@@ -352,7 +356,7 @@ static DcmDataset* ParseDataset(const std::string& path)
     }
   }
 
-  std::unique_ptr<DcmDataset> dataset(Orthanc::FromDcmtkBridge::FromJson(json, true, true, Orthanc::Encoding_Latin1,
+  std::unique_ptr<DcmDataset> dataset(Orthanc::FromDcmtkBridge::FromJson(json, true, true, encoding,
                                                                          "" /* no private tag, thus no private creator */));
   if (dataset.get() == NULL)
   {
@@ -777,6 +781,12 @@ static bool ParseParameters(int& exitStatus,
     (OPTION_FOLDER_PATTERN,
      boost::program_options::value<std::string>()->default_value("wsi-%06d.dcm"),
      "Pattern for the files in the output folder")
+    (OPTION_ENCODING, boost::program_options::value<std::string>()->default_value("Latin1"),
+     "The specific character set that will be used in the generated DICOM instances. "
+     "The allowed values are: \"Ascii\", \"Utf8\", \"Latin1\", \"Latin2\", \"Latin3\", \"Latin4\", "
+     "\"Latin5\", \"Cyrillic\", \"Windows1251\", \"Arabic\", \"Greek\", \"Hebrew\", "
+     "\"Thai\", \"Japanese\", \"Chinese\", \"Korean\", \"JapaneseKanji\", and \"SimplifiedChinese\"."
+      )
     ("orthanc", boost::program_options::value<std::string>()->default_value("http://localhost:8042/"),
      "URL to the REST API of the target Orthanc server")
     ;
@@ -1040,7 +1050,7 @@ static bool ParseParameters(int& exitStatus,
 
   if (options.count(OPTION_COMPRESSION))
   {
-    std::string s = options[OPTION_COMPRESSION].as<std::string>();
+    const std::string s = options[OPTION_COMPRESSION].as<std::string>();
     if (s == "none")
     {
       parameters.SetTargetCompression(OrthancWSI::ImageCompression_None);
@@ -1133,7 +1143,7 @@ static bool ParseParameters(int& exitStatus,
 
   if (options.count(OPTION_OPTICAL_PATH))
   {
-    std::string s = options[OPTION_OPTICAL_PATH].as<std::string>();
+    const std::string s = options[OPTION_OPTICAL_PATH].as<std::string>();
     if (s == "none")
     {
       parameters.SetOpticalPath(OrthancWSI::OpticalPath_None);
@@ -1166,6 +1176,12 @@ static bool ParseParameters(int& exitStatus,
     {
       parameters.SetPadding(static_cast<unsigned int>(value));
     }
+  }
+
+  if (options.count(OPTION_ENCODING))
+  {
+    const std::string s = options[OPTION_ENCODING].as<std::string>();
+    parameters.SetEncoding(Orthanc::StringToEncoding(s.c_str()));
   }
 
   return true;
@@ -1393,7 +1409,7 @@ int main(int argc, char* argv[])
       LOG(WARNING) << "Compression of the individual source tiles: " << OrthancWSI::EnumerationToString(sourceCompression);
       
       // Create the shared DICOM tags
-      std::unique_ptr<DcmDataset> dataset(ParseDataset(parameters.GetDatasetPath()));
+      std::unique_ptr<DcmDataset> dataset(ParseDataset(parameters.GetDatasetPath(), parameters.GetEncoding()));
       EnrichDataset(*dataset, *source, sourceCompression, parameters, volume);
 
       std::unique_ptr<OrthancWSI::IFileTarget> output(parameters.CreateTarget());

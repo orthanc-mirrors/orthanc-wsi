@@ -2,6 +2,7 @@ Pending changes in the mainline
 ===============================
 
 * OrthancWSIDicomizer:
+  - New option "--encoding" to specify the specific character set of DICOM instances
   - Placeholder tags are now automatically inserted when the "--dataset" option
     provides incomplete data, ensuring the generated DICOM instances remain valid
   - The version of the DICOM-izer is available in DICOM tag "SoftwareVersions"
