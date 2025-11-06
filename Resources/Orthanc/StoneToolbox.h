@@ -23,6 +23,14 @@
 
 #pragma once
 
+#if !defined(ORTHANC_ENABLE_DCMTK)
+#  error The macro ORTHANC_ENABLE_DCMTK must be defined
+#endif
+
+#if ORTHANC_ENABLE_DCMTK == 1
+#  include <DicomParsing/ParsedDicomFile.h>
+#endif
+
 #include <string>
 
 namespace OrthancStone
@@ -31,5 +39,16 @@ namespace OrthancStone
   {
     std::string JoinUrl(const std::string& base,
                         const std::string& path);
+
+#if ORTHANC_ENABLE_DCMTK == 1
+    void CopyDicomTag(Orthanc::DicomMap& target,
+                      const Orthanc::ParsedDicomFile& source,
+                      const Orthanc::DicomTag& tag);
+#endif
+
+#if ORTHANC_ENABLE_DCMTK == 1
+    void ExtractMainDicomTags(Orthanc::DicomMap& target,
+                              const Orthanc::ParsedDicomFile& source);
+#endif
   }
 }

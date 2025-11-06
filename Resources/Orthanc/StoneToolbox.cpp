@@ -46,5 +46,36 @@ namespace OrthancStone
 
       return base.substr(0, end) + "/" + path.substr(start);
     }
+
+
+#if ORTHANC_ENABLE_DCMTK == 1
+    void CopyDicomTag(Orthanc::DicomMap& target,
+                      const Orthanc::ParsedDicomFile& source,
+                      const Orthanc::DicomTag& tag)
+    {
+      std::string s;
+      if (source.GetTagValue(s, tag))
+      {
+        target.SetValue(tag, s, false);
+      }
+    }
+#endif
+
+
+#if ORTHANC_ENABLE_DCMTK == 1
+    void ExtractMainDicomTags(Orthanc::DicomMap& target,
+                              const Orthanc::ParsedDicomFile& source)
+    {
+      target.Clear();
+
+      std::set<Orthanc::DicomTag> tags;
+      Orthanc::DicomMap::GetAllMainDicomTags(tags);
+
+      for (std::set<Orthanc::DicomTag>::const_iterator it = tags.begin(); it != tags.end(); ++it)
+      {
+        CopyDicomTag(target, source, *it);
+      }
+    }
+#endif
   }
 }
