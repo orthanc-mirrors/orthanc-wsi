@@ -23,7 +23,7 @@
 
 function IsNear(a, b)
 {
-  return Math.abs(a - b) <= 0.000000001;
+  return Math.abs(a - b) <= 0.01;
 }
 
 
@@ -42,16 +42,17 @@ function InitializePyramid(pyramid, tilesBaseUrl)
       imagedVolumeHeight !== undefined) {
     var metersPerUnitX = parseFloat(imagedVolumeWidth) / (1000.0 * parseFloat(width));
     var metersPerUnitY = parseFloat(imagedVolumeHeight) / (1000.0 * parseFloat(height));
-    if (IsNear(metersPerUnitX, metersPerUnitY)) {
+    if (IsNear(metersPerUnitX / metersPerUnitY, 1)) {
       metersPerUnit = metersPerUnitX;
     } else {
       // Backward compatibility with OrthancWSIDicomizer <= 3.2, where X/Y were swapped
       metersPerUnitX = parseFloat(imagedVolumeWidth) / (1000.0 * parseFloat(height));
       metersPerUnitY = parseFloat(imagedVolumeHeight) / (1000.0 * parseFloat(width));
-      if (IsNear(metersPerUnitX, metersPerUnitY)) {
+      if (IsNear(metersPerUnitX / metersPerUnitY, 1)) {
         metersPerUnit = metersPerUnitX;
       } else {
-        console.error('Inconsistency in the imaged volume size, not showing the scale');
+        console.error('Anisotropic pixel spacing (may result from an inconsistency ' +
+                      'in the imaged volume size), not showing the scale');
       }
     }
   }
