@@ -796,7 +796,7 @@ static bool ParseParameters(int& exitStatus,
     (OPTION_IMAGED_WIDTH, boost::program_options::value<float>(),
      "Width of the specimen (in mm), in the coordinate system of the glass slide, defaults to 15mm if missing")
     (OPTION_IMAGED_HEIGHT, boost::program_options::value<float>(),
-     "Height of the specimen (in mm), in the coordinate system of the glass slide, defaults to 15mm if missing")
+     "Height of the specimen (in mm), in the coordinate system of the glass slide")
     (OPTION_IMAGED_DEPTH, boost::program_options::value<float>()->default_value(1),
      "Depth of the specimen (in mm)")
     (OPTION_OFFSET_X, boost::program_options::value<float>()->default_value(20), 
@@ -1369,10 +1369,11 @@ int main(int argc, char* argv[])
       if (!volume.HasWidth() &&
           !volume.HasHeight())
       {
-        LOG(WARNING) << "Unknown imaged volume size, assuming an imaged width of 15mm: Use the --"
+        volume.SetWidth(15);
+        LOG(WARNING) << "Unknown imaged volume size, assuming an imaged width of "
+                     << volume.GetWidth() << "mm: Use the --"
                      << OPTION_IMAGED_WIDTH << " and the --" << OPTION_IMAGED_HEIGHT
                      << " options to properly fill the (0048,0001) and (0048,0002) DICOM tags";
-        volume.SetWidth(15);
       }
 
       if (volume.HasWidth() &&
