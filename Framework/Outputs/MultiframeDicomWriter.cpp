@@ -337,8 +337,14 @@ namespace OrthancWSI
 
       Orthanc::IDicomTranscoder::DicomImage transcoded;
 
+#if ORTHANC_FRAMEWORK_VERSION_IS_ABOVE(1, 12, 10)
+      const Orthanc::TranscodingSopInstanceUidMode allowNewSopInstanceUid = Orthanc::TranscodingSopInstanceUidMode_AllowNew;
+#else
+      const bool allowNewSopInstanceUid = true;
+#endif
+
       Orthanc::DcmtkTranscoder transcoder(1);
-      if (transcoder.Transcode(transcoded, source, s, true))
+      if (transcoder.Transcode(transcoded, source, s, allowNewSopInstanceUid))
       {
         ResetImage();
         SaveDicomToMemory(target, transcoded.GetParsed(), transferSyntax_);
