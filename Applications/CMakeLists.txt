@@ -58,7 +58,7 @@ if (ORTHANC_FRAMEWORK_SOURCE STREQUAL "system")
       include(FindBoost)
     endif()
 
-    find_package(Boost COMPONENTS filesystem program_options regex system thread date_time)
+    find_package(Boost COMPONENTS filesystem program_options regex thread date_time)
     
     if (NOT Boost_FOUND)
       message(FATAL_ERROR "Unable to locate Boost on this system")
