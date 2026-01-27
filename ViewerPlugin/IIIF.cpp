@@ -24,18 +24,16 @@
 #include "../Framework/PrecompiledHeadersWSI.h"
 #include "IIIF.h"
 
+#include "../Framework/Inputs/DecodedPyramidCache.h"
+#include "../Resources/Orthanc/Plugins/OrthancPluginCppWrapper.h"
 #include "DicomPyramidCache.h"
 #include "RawTile.h"
-#include "../Resources/Orthanc/Plugins/OrthancPluginCppWrapper.h"
 
+#include <CompatibilityMath.h>
 #include <Images/Image.h>
 #include <Images/ImageProcessing.h>
 #include <Logging.h>
 #include <SerializationToolbox.h>
-
-#include <boost/math/special_functions/round.hpp>
-
-#include "../Framework/Inputs/DecodedPyramidCache.h"
 
 
 static const char* const ROWS = "0028,0010";
@@ -321,17 +319,17 @@ namespace
     static unsigned int GetPhysicalTileWidth(const OrthancWSI::ITiledPyramid& pyramid,
                                              unsigned int level)
     {
-      return static_cast<unsigned int>(boost::math::iround(static_cast<float>(pyramid.GetTileWidth(level)) *
-                                                           static_cast<float>(pyramid.GetLevelWidth(0)) /
-                                                           static_cast<float>(pyramid.GetLevelWidth(level))));
+      return static_cast<unsigned int>(Orthanc::Math::iround(static_cast<float>(pyramid.GetTileWidth(level)) *
+                                                             static_cast<float>(pyramid.GetLevelWidth(0)) /
+                                                             static_cast<float>(pyramid.GetLevelWidth(level))));
     }
 
     static unsigned int GetPhysicalTileHeight(const OrthancWSI::ITiledPyramid& pyramid,
                                               unsigned int level)
     {
-      return static_cast<unsigned int>(boost::math::iround(static_cast<float>(pyramid.GetTileHeight(level)) *
-                                                           static_cast<float>(pyramid.GetLevelHeight(0)) /
-                                                           static_cast<float>(pyramid.GetLevelHeight(level))));
+      return static_cast<unsigned int>(Orthanc::Math::iround(static_cast<float>(pyramid.GetTileHeight(level)) *
+                                                             static_cast<float>(pyramid.GetLevelHeight(0)) /
+                                                             static_cast<float>(pyramid.GetLevelHeight(level))));
     }
 
   public:

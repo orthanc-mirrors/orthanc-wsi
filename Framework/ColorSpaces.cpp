@@ -23,10 +23,9 @@
 
 #include "ColorSpaces.h"
 
+#include <CompatibilityMath.h>
 #include <SerializationToolbox.h>
 #include <Toolbox.h>
-
-#include <boost/math/special_functions/round.hpp>
 
 
 namespace OrthancWSI
@@ -43,7 +42,7 @@ namespace OrthancWSI
     }
     else
     {
-      r_ = boost::math::iround(srgb.GetR() * 255.0f);
+      r_ = Orthanc::Math::iround(srgb.GetR() * 255.0f);
     }
 
     if (srgb.GetG() < 0)
@@ -56,7 +55,7 @@ namespace OrthancWSI
     }
     else
     {
-      g_ = boost::math::iround(srgb.GetG() * 255.0f);
+      g_ = Orthanc::Math::iround(srgb.GetG() * 255.0f);
     }
 
     if (srgb.GetB() < 0)
@@ -69,7 +68,7 @@ namespace OrthancWSI
     }
     else
     {
-      b_ = boost::math::iround(srgb.GetB() * 255.0f);
+      b_ = Orthanc::Math::iround(srgb.GetB() * 255.0f);
     }
   }
 
@@ -213,7 +212,7 @@ namespace OrthancWSI
     {
       float lambda = (value - minValue) / (maxValue - minValue);
       assert(lambda >= 0 && lambda <= 1);
-      return static_cast<uint16_t>(boost::math::iround(lambda * static_cast<float>(0xffff)));
+      return static_cast<uint16_t>(Orthanc::Math::iround(lambda * static_cast<float>(0xffff)));
     }
   }
 

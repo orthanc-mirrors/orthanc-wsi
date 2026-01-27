@@ -55,8 +55,6 @@
 #include <dcmtk/dcmdata/dcvrobow.h>
 #include <dcmtk/dcmdata/dcvrat.h>
 
-#include <boost/math/special_functions/round.hpp>
-
 
 static const char* OPTION_COLOR = "color";
 static const char* OPTION_COMPRESSION = "compression";

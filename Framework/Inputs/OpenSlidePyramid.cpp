@@ -30,7 +30,6 @@
 #include <SerializationToolbox.h>
 #include <Logging.h>
 
-#include <boost/math/special_functions/round.hpp>
 #include <memory>
 
 namespace OrthancWSI
