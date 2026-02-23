@@ -210,6 +210,7 @@ namespace OrthancWSI
     DicomToolbox::SetUint16Tag(sharedTags_, DCM_HighBit, 7);
     DicomToolbox::SetUint16Tag(sharedTags_, DCM_PixelRepresentation, 0);   // Unsigned values
     DicomToolbox::SetStringTag(sharedTags_, DCM_PhotometricInterpretation, Orthanc::EnumerationToString(photometric));
+    DicomToolbox::SetStringTag(sharedTags_, DCM_FrameOfReferenceUID, Orthanc::FromDcmtkBridge::GenerateUniqueIdentifier(Orthanc::ResourceType_Instance));   // this is required for the measure tools to work in OHIF
 
     switch (pixelFormat)
     {
