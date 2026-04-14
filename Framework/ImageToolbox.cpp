@@ -36,9 +36,10 @@
 #include <Images/JpegWriter.h>
 #include <Logging.h>
 
+#include <cmath>
 #include <limits>
-#include <string.h>
 #include <memory>
+#include <string.h>
 
 
 namespace OrthancWSI
