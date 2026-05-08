@@ -12,6 +12,16 @@ General
 * Viewer: Configure how missing tiles are displayed for sparse tiling
 
 
+----
+IIIF
+----
+
+* For the moment, the IIIF support of the WSI plugin only supports
+  level 0 of Image API Compliance. Consider implementing level 1:
+  https://iiif.io/api/image/3.0/compliance/
+  https://discourse.orthanc-server.org/t/found-some-bugs-on-orthanc-wsi/6431
+
+
 -------
 Testing
 -------
