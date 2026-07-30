@@ -37,6 +37,7 @@ SET(STANDALONE_BUILD ON CACHE BOOL "Standalone build (all the resources are embe
 # Advanced parameters to fine-tune linking against system libraries
 SET(USE_SYSTEM_OPENJPEG ON CACHE BOOL "Use the system version of OpenJpeg")
 SET(USE_SYSTEM_ORTHANC_SDK ON CACHE BOOL "Use the system version of the Orthanc plugin SDK")
+set(ORTHANC_SDK_VERSION "1.7.0" CACHE STRING "Version of the Orthanc plugin SDK to use, if not using the system version (can be \"framework\" or \"1.7.0\")")
 
 
 #####################################################################
@@ -96,7 +97,13 @@ include(${ORTHANC_WSI_DIR}/Resources/CMake/OpenJpegConfiguration.cmake)
 #####################################################################
 
 if (STATIC_BUILD OR NOT USE_SYSTEM_ORTHANC_SDK)
-  include_directories(${CMAKE_SOURCE_DIR}/../Resources/Orthanc/Sdk-1.7.0)
+  if (ORTHANC_SDK_VERSION STREQUAL "1.7.0")
+    include_directories(${CMAKE_SOURCE_DIR}/../Resources/Orthanc/Sdk-1.7.0)
+  elseif (ORTHANC_SDK_VERSION STREQUAL "framework")
+    include_directories(${ORTHANC_FRAMEWORK_ROOT}/../../OrthancServer/Plugins/Include/)
+  else()
+    message(FATAL_ERROR "Unsupported version of the Orthanc plugin SDK: ${ORTHANC_SDK_VERSION}")
+  endif()
 else ()
   CHECK_INCLUDE_FILE_CXX(orthanc/OrthancCPlugin.h HAVE_ORTHANC_H)
   if (NOT HAVE_ORTHANC_H)
