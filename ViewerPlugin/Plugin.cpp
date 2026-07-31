@@ -40,6 +40,7 @@
 #include <OrthancException.h>
 #include <SerializationToolbox.h>
 #include <SystemToolbox.h>
+#include <Compression/GzipCompressor.h>
 
 #include "../Resources/Orthanc/Plugins/OrthancPluginCppWrapper.h"
 
@@ -531,11 +532,16 @@ void LoadAnnotations(OrthancPluginRestOutput* output,
 
     OrthancPlugins::KeyValueStore store(KEY_VALUE_STORE_ANNOTATIONS);
 
-    std::string value;
+    std::string compressed, value;
 
-    if (!store.GetValue(value, key))
+    if (!store.GetValue(compressed, key))
     {
       value = "{}";  // No annotation has been saved yet using this key
+    }
+    else
+    {
+      Orthanc::GzipCompressor compressor;
+      Orthanc::IBufferCompressor::Uncompress(value, compressor, compressed);
     }
 
     OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, value.c_str(), value.size(), "application/json");
@@ -571,8 +577,12 @@ void SaveAnnotations(OrthancPluginRestOutput* output,
     std::string value;
     Orthanc::Toolbox::WriteFastJson(value, body[KEY_ANNOTATIONS]);
 
+    std::string compressed;
+    Orthanc::GzipCompressor compressor;
+    Orthanc::IBufferCompressor::Compress(compressed, compressor, value);
+
     OrthancPlugins::KeyValueStore store(KEY_VALUE_STORE_ANNOTATIONS);
-    store.Store(key, value);
+    store.Store(key, compressed);
 
     Json::Value answer;
 
