@@ -153,6 +153,14 @@ function InitializePyramid(pyramid, tilesBaseUrl)
   viewport.appendChild(document.getElementById('toolbar-left'));
   viewport.appendChild(document.getElementById('toolbar-top'));
 
+  // Prevent toolbar pointer events from reaching OL interactions (e.g. Select)
+  ['toolbar-left', 'toolbar-top'].forEach(function(id) {
+    var el = document.getElementById(id);
+    ['pointerdown', 'pointerup', 'pointermove', 'click'].forEach(function(type) {
+      el.addEventListener(type, function(e) { e.stopPropagation(); });
+    });
+  });
+
   // Position toolbar-left directly below the zoom control, regardless of scaling
   map.once('postrender', function() {
     var zoomEl = viewport.querySelector('.ol-zoom');
@@ -298,6 +306,24 @@ function InitializeDrawing(map)
     type: 'Point'
   });
 
+  function preventDoubleClickZoom() {
+    map.getInteractions().forEach(function(interaction) {
+      if (interaction instanceof ol.interaction.DoubleClickZoom) {
+        interaction.setActive(false);
+        setTimeout(function() { interaction.setActive(true); }, 50);
+      }
+    });
+  }
+
+  drawLine.on('drawend', function(e) {
+    preventDoubleClickZoom();
+    // Select the new line so it appears blue and shows its length
+    selectAnnotation.getFeatures().clear();
+    selectAnnotation.getFeatures().push(e.feature);
+    selectAnnotation.dispatchEvent({ type: 'select', selected: [e.feature], deselected: [] });
+  });
+  drawPoint.on('drawend', function(e) { preventDoubleClickZoom(); });
+
   // Select interaction (inactive until toggled)
   var selectAnnotation = new ol.interaction.Select({
     layers: [drawLayer],
@@ -326,6 +352,7 @@ function InitializeDrawing(map)
     deactivateAll();
     if (!wasActive) {
       map.addInteraction(drawLine);
+      map.addInteraction(selectAnnotation);  // kept active to show blue highlight
       $(this).addClass('active');
     }
   });
@@ -335,6 +362,7 @@ function InitializeDrawing(map)
     deactivateAll();
     if (!wasActive) {
       map.addInteraction(drawPoint);
+      map.addInteraction(selectAnnotation);  // kept active to show blue highlight
       $(this).addClass('active');
     }
   });
@@ -381,6 +409,27 @@ function InitializeDrawing(map)
       $(this).addClass('active');
       map.getViewport().style.cursor = 'pointer';
     }
+  });
+
+  var deleteModal = new bootstrap.Modal(document.getElementById('modal-delete-annotation'));
+
+  $('#btn-delete-annotation').on('click', function(e) {
+    e.stopPropagation();
+    var selected = selectAnnotation.getFeatures();
+    if (selected.getLength() > 0) {
+      deleteModal.show();
+    }
+  });
+
+  $('#btn-delete-annotation-confirm').on('click', function() {
+    var selected = selectAnnotation.getFeatures();
+    selected.forEach(function(feature) {
+      drawSource.removeFeature(feature);
+    });
+    selected.clear();
+    tooltipGeometry = null;
+    annotationTooltip.style.display = 'none';
+    deleteModal.hide();
   });
 }
 

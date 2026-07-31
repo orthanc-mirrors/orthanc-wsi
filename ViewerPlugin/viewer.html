@@ -80,6 +80,7 @@
       i.icon-line::before           { content: '\2014'; } /* dash */
       i.icon-point::before          { content: '\25CF'; } /* black circle */
       i.icon-select::before         { content: '\2196\FE0E'; } /* north-west arrow (text variant, not emoji) */
+      i.icon-delete::before         { content: '\2715'; }       /* MULTIPLICATION X */
     </style>
 
   </head>
@@ -99,8 +100,8 @@
             <i class="icon-point"></i>
           </button>
 
-          <button type="button" class="btn btn-outline-secondary icon-btn">
-            d
+          <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-delete-annotation">
+            <i class="icon-delete"></i>
           </button>
         </div>
       </div>
@@ -144,6 +145,21 @@
 
     <div id="annotation-tooltip" class="badge bg-dark text-white"
          style="position: fixed; display: none; pointer-events: none;"></div>
+
+    <!-- Confirmation modal for annotation deletion -->
+    <div class="modal fade" id="modal-delete-annotation" tabindex="-1">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <div class="modal-body">
+            Delete this annotation?
+          </div>
+          <div class="modal-footer py-1">
+            <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-sm btn-danger" id="btn-delete-annotation-confirm">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <div style="display:none">
       <div id="popover-content">
