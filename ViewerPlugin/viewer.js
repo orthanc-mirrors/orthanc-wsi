@@ -220,22 +220,22 @@ function InitializePanelAnimation()
   var panel = document.getElementById('right-panel');
   var toggle = document.getElementById('right-panel-toggle');
   var icon = document.getElementById('right-panel-toggle-icon');
-  var resizing = false;
+  var isResizing = false;
 
   function resizingLoop() {
     toggle.style.right = (window.innerWidth - panel.getBoundingClientRect().left) + 'px';
-    if (resizing) {
+    if (isResizing) {
       requestAnimationFrame(resizingLoop);
     }
   }
 
   function startResizing() {
-    resizing = true;
+    isResizing = true;
     requestAnimationFrame(resizingLoop);
   }
 
   function stopResizing() {
-    resizing = false;
+    isResizing = false;
     resizingLoop();
   }
 
@@ -282,6 +282,11 @@ function InitializeDrawing(map)
 {
   // Vector layer to hold drawn features
   var drawSource = new ol.source.Vector();
+
+  drawSource.on(/*'change'*/ 'addfeature', function (e) {
+    SaveAnnotations(e.target);
+  });
+
   var drawLayer = new ol.layer.Vector({
     source: drawSource,
     style: new ol.style.Style({
@@ -470,3 +475,104 @@ $(document).ready(function() {
     alert('Error - No series ID and no instance ID specified!');
   }
 });
+
+
+
+
+
+function SerializeAnnotations(source)
+{
+  var serialized = {};
+
+  const params = new URLSearchParams(document.location.search);
+  if (params.has('project')) {
+    serialized['project'] = params.get('project');
+  }
+
+  if (params.has('series')) {
+    serialized['type'] = 'series';
+    serialized['resource'] = params.get('series');
+  } else if (params.has('instance')) {
+    serialized['type'] = 'instance';
+    serialized['resource'] = params.get('instance');
+  }
+
+  const features = source.getFeatures();
+
+  var annotations = [];
+
+  features.forEach((feature, index) => {
+    var type = feature.getGeometry().getType();
+
+    if (type === 'LineString') {
+      annotations.push({
+        'type' : 'polyline',
+        'coordinates' : feature.getGeometry().getFlatCoordinates()
+      });
+    } else if (type === 'Point') {
+      annotations.push({
+        'type' : 'point',
+        'coordinates' : feature.getGeometry().getFlatCoordinates()
+      });
+    }
+  });
+
+  serialized['annotations'] = annotations;
+
+  return serialized;
+}
+
+
+var pendingSourceToSave = null;
+var isSaving = false;
+
+function SaveAnnotations(source)
+{
+  function BeforeUnloadHandler(event)
+  {
+    event.preventDefault();
+
+    // Included for legacy support, e.g. Chrome/Edge < 119
+    event.returnValue = true;
+  };
+
+  function Execute()
+  {
+    console.assert(pendingSourceToSave !== null);
+
+    var serialized = SerializeAnnotations(pendingSourceToSave);
+    pendingSourceToSave = null;
+
+    isSaving = true;
+    window.addEventListener('beforeunload', BeforeUnloadHandler);
+
+    $.ajax({
+      type : 'POST',
+      url : '../api/save-annotations',
+      data : JSON.stringify(serialized),
+      contentType: 'application/json',
+      dataType: 'json',
+      success: function() {
+      },
+      error: function() {
+        alert('Cannot save the annotations');
+      },
+      complete : function() {
+        console.assert(isSaving === true);
+
+        if (pendingSourceToSave === null) {
+          isSaving = false;
+          window.removeEventListener('beforeunload', BeforeUnloadHandler);
+        } else {
+          Execute();
+        }
+      }
+    });
+  }
+
+  pendingSourceToSave = source;
+
+  if (!isSaving) {
+    Execute();
+  }
+}

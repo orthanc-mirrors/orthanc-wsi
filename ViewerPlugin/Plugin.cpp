@@ -470,6 +470,38 @@ void ServeSourceFile(OrthancPluginRestOutput* output,
 #endif
 
 
+void SaveAnnotations(OrthancPluginRestOutput* output,
+                     const char* url,
+                     const OrthancPluginHttpRequest* request)
+{
+  if (request->method != OrthancPluginHttpMethod_Post)
+  {
+    OrthancPluginSendMethodNotAllowed(OrthancPlugins::GetGlobalContext(), output, "POST");
+  }
+  else
+  {
+    /*Json::Value user;
+    if (!Orthanc::Toolbox::ReadJson(user, request->authenticationPayload, request->authenticationPayloadSize))
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+      }*/
+
+    Json::Value body;
+    if (!Orthanc::Toolbox::ReadJson(body, request->body, request->bodySize))
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_NetworkProtocol);
+    }
+
+    std::cout << body.toStyledString();
+
+    Json::Value answer;
+
+    std::string s = answer.toStyledString();
+    OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, s.c_str(), s.size(), "application/json");
+  }
+}
+
+
 extern "C"
 {
   ORTHANC_PLUGINS_API int32_t OrthancPluginInitialize(OrthancPluginContext* context)
@@ -588,6 +620,8 @@ extern "C"
     OrthancPlugins::RegisterRestCallback<ServeTile>("/wsi/tiles/([0-9a-f-]+)/([0-9-]+)/([0-9-]+)/([0-9-]+)", true);
     OrthancPlugins::RegisterRestCallback<ServeFramePyramid>("/wsi/frames-pyramids/([0-9a-f-]+)/([0-9-]+)", true);
     OrthancPlugins::RegisterRestCallback<ServeFrameTile>("/wsi/frames-tiles/([0-9a-f-]+)/([0-9-]+)/([0-9-]+)/([0-9-]+)/([0-9-]+)", true);
+
+    OrthancPlugins::RegisterRestCallback<SaveAnnotations>("/wsi/api/save-annotations", true);
 
     OrthancPlugins::OrthancConfiguration mainConfiguration;
 
