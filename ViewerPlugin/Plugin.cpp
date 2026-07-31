@@ -519,6 +519,8 @@ void LoadAnnotations(OrthancPluginRestOutput* output,
   {
     const std::string userId = GetAuthenticatedUserId(request);
 
+    // TODO - If the education plugin is installed, check that the user is indeed part of the learners/instructors of the project, otherwise return an empty array
+
     Json::Value body;
     if (!Orthanc::Toolbox::ReadJson(body, request->body, request->bodySize))
     {
@@ -560,6 +562,8 @@ void SaveAnnotations(OrthancPluginRestOutput* output,
   else
   {
     const std::string userId = GetAuthenticatedUserId(request);
+
+    // TODO - If the education plugin is installed, check that the user is indeed part of the learners/instructors of the project, otherwise send Forbidden
 
     Json::Value body;
     if (!Orthanc::Toolbox::ReadJson(body, request->body, request->bodySize) ||
