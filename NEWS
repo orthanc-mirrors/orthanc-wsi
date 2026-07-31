@@ -4,6 +4,8 @@ Pending changes in the mainline
 * OrthancWSIDicomizer:
   - Now adding a FrameOfReferenceUID DICOM tag.  This is required, amongst others, 
     by the measurement tools in the OHIF microscopy viewer.
+* Viewer plugin:
+  - Added CMake option "ORTHANC_SDK_VERSION"
 
 
 Version 3.3 (2025-11-06)
