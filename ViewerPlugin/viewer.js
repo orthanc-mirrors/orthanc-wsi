@@ -204,7 +204,52 @@ function InitializePyramid(pyramid, tilesBaseUrl)
 }
 
 
+function InitializePanelAnimation()
+{
+  // This make the toggle vertical bar follow the resizing of the right panel
+  var panel = document.getElementById('right-panel');
+  var toggle = document.getElementById('right-panel-toggle');
+  var icon = document.getElementById('right-panel-toggle-icon');
+  var resizing = false;
+
+  function resizingLoop() {
+    toggle.style.right = (window.innerWidth - panel.getBoundingClientRect().left) + 'px';
+    if (resizing) {
+      requestAnimationFrame(resizingLoop);
+    }
+  }
+
+  function startResizing() {
+    resizing = true;
+    requestAnimationFrame(resizingLoop);
+  }
+
+  function stopResizing() {
+    resizing = false;
+    resizingLoop();
+  }
+
+  resizingLoop();
+
+  // Showing the panel
+  panel.addEventListener('hide.bs.offcanvas', function() {
+    icon.className = 'bi bi-chevron-left';
+    startResizing();
+  });
+  panel.addEventListener('hidden.bs.offcanvas', stopResizing);
+
+  // Hiding the panel
+  panel.addEventListener('show.bs.offcanvas', function() {
+    icon.className = 'bi bi-chevron-right';
+    startResizing();
+  });
+  panel.addEventListener('shown.bs.offcanvas', stopResizing);
+}
+
+
 $(document).ready(function() {
+  InitializePanelAnimation();
+
   const params = new URLSearchParams(document.location.search);
 
   if (params.has('series')) {

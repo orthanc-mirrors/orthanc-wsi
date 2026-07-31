@@ -14,6 +14,7 @@
       body {
           margin: 0;
           height: 100%;
+          overflow: hidden;
       }
 
       #map {
@@ -44,6 +45,23 @@
           align-items: center;
           justify-content: center;
           padding: 0;
+      }
+
+      #right-panel {
+          --bs-offcanvas-width: 300px;
+          --bs-offcanvas-border-width: 0;
+          /*transition: 0.1s ease-in-out;*/   /* this gives a fast animation */
+          /*transition: none;*/   /* this removes the animation */
+      }
+
+      #right-panel-toggle {
+          position: fixed;
+          top: 0;
+          bottom: 0;
+          z-index: 20;
+          border-radius: 4px 0 0 4px;
+          border-right: none;
+          opacity: 0.75;
       }
     </style>
 
@@ -90,6 +108,22 @@
         </div>
       </div>
     </div>
+
+    <div class="offcanvas offcanvas-end" data-bs-backdrop="false" data-bs-scroll="true"
+         tabindex="-1" id="right-panel">
+      <div class="offcanvas-header">
+        <h5 class="offcanvas-title">Panel</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+      </div>
+      <div class="offcanvas-body">
+        <!-- Panel content here -->
+      </div>
+    </div>
+
+    <button id="right-panel-toggle" type="button" class="btn btn-secondary"
+            data-bs-toggle="offcanvas" data-bs-target="#right-panel">
+      <i class="bi bi-chevron-left" id="right-panel-toggle-icon"></i>
+    </button>
 
     <div style="display:none">
       <div id="popover-content">
