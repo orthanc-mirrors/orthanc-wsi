@@ -23,16 +23,72 @@
           width: 100%;
       }
 
-      .ol-rotate {
-          top: 4em;
-          left: .5em;
-          right: initial;
+      #toolbar-left { /* the top/left coordinates are adjusted in JavaScript */
+          padding-top: 1em;
+          position: absolute;
+          z-index: 20;
+      }
+
+      #toolbar-left .ol-rotate {
+          right: auto;
+      }
+
+      #toolbar-top { /* the top/left coordinates are adjusted in JavaScript */
+          padding-left: 1em;
+          position: absolute;
+          z-index: 20;
+      }
+
+      .icon-btn { /* the width and height are adjusted in JavaScript */
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0;
       }
     </style>
 
   </head>
   <body>
     <div id="map">
+      <div id="toolbar-top">
+        <div class="btn-group" role="group">
+          <button type="button" class="btn btn-primary icon-btn">
+            a
+          </button>
+
+          <button type="button" class="btn btn-success icon-btn">
+            b
+          </button>
+
+          <button type="button" class="btn btn-info icon-btn">
+            c
+          </button>
+
+          <button type="button" class="btn btn-danger icon-btn">
+            d
+          </button>
+        </div>
+      </div>
+
+      <div id="toolbar-left">
+        <div class="btn-group-vertical" role="group" id="toolbar-left-buttons" style="padding-bottom: 1em">
+          <button type="button" class="btn btn-primary icon-btn">
+            a
+          </button>
+
+          <button type="button" class="btn btn-success icon-btn">
+            b
+          </button>
+
+          <button type="button" class="btn btn-info icon-btn">
+            c
+          </button>
+
+          <button type="button" class="btn btn-danger icon-btn">
+            d
+          </button>
+        </div>
+      </div>
     </div>
 
     <div style="display:none">

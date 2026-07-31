@@ -70,6 +70,7 @@ function InitializePyramid(pyramid, tilesBaseUrl)
   var extent = [0, -height, width, 0];
 
   var rotateControl = new ol.control.Rotate({
+    target: 'toolbar-left',
     autoHide: false,  // Show the button even if rotation is 0
     resetNorth: function() {  // Disable the default action
     }
@@ -96,7 +97,8 @@ function InitializePyramid(pyramid, tilesBaseUrl)
   ]);
 
   var controls = ol.control.defaults.defaults({
-    attribution: false
+    attribution: false,
+    rotate: false        // remove the default rotate
   }).extend([
     rotateControl,
     new ol.control.ScaleLine({
@@ -145,6 +147,33 @@ function InitializePyramid(pyramid, tilesBaseUrl)
     interactions: interactions,
     controls: controls
   });
+
+  // Re-append toolbars inside the map viewport so they inherit OL's scaling
+  var viewport = map.getViewport();
+  viewport.appendChild(document.getElementById('toolbar-left'));
+  viewport.appendChild(document.getElementById('toolbar-top'));
+
+  // Position toolbar-left directly below the zoom control, regardless of scaling
+  map.once('postrender', function() {
+    var zoomEl = viewport.querySelector('.ol-zoom');
+    document.getElementById('toolbar-left').style.left = zoomEl.offsetLeft + 'px';
+    document.getElementById('toolbar-left').style.top = (zoomEl.offsetTop + zoomEl.offsetHeight) + 'px';
+    document.getElementById('toolbar-top').style.left = (zoomEl.offsetLeft + zoomEl.offsetWidth) + 'px';
+    document.getElementById('toolbar-top').style.top = zoomEl.offsetTop + 'px';
+
+    // Match Bootstrap button size to OL button size
+    var olBtnSize = viewport.querySelector('.ol-zoom button').offsetWidth + 'px';
+    document.querySelectorAll('.icon-btn').forEach(function(btn) {
+      btn.style.width = olBtnSize;
+      btn.style.height = olBtnSize;
+    });
+
+    // Move the ol-rotate button so it appears at the bottom of the btn-group-vertical
+    var toolbarLeftButtons = document.getElementById('toolbar-left-buttons');
+    var rotate = viewport.querySelector('.ol-rotate');
+    rotate.style.top = (toolbarLeftButtons.offsetTop + toolbarLeftButtons.offsetHeight) + 'px';
+  });
+
 
   map.getView().fit(extent, map.getSize());
 
