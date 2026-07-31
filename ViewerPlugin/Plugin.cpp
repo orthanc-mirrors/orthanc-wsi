@@ -478,6 +478,8 @@ static std::string GetAuthenticatedUserId(const OrthancPluginHttpRequest* reques
 
   const char* payload = reinterpret_cast<const char*>(request->authenticationPayload);
 
+  // We use "Json::Reader" as "Orthanc::ReadJson()" would write an
+  // error log if the authentication payload is not a JSON string
   Json::Reader reader;
 
   if (reader.parse(payload, payload + request->authenticationPayloadSize, authentication, false) &&
@@ -487,6 +489,57 @@ static std::string GetAuthenticatedUserId(const OrthancPluginHttpRequest* reques
   }
 
   return "";
+}
+
+
+static std::string GetAnnotationKey(const std::string& userId,
+                                    const std::string& projectId,
+                                    const std::string& level,
+                                    const std::string& resourceId)
+{
+  std::string s;
+  Orthanc::Toolbox::EncodeBase64(s, userId);  // The pipe character "|" is not part of Base64
+  return (s + "|" + projectId + "|" + level + "|" + resourceId);
+}
+
+
+static const char* const KEY_ANNOTATIONS = "annotations";
+static const char* const KEY_VALUE_STORE_ANNOTATIONS = "wsi-annotations";
+
+void LoadAnnotations(OrthancPluginRestOutput* output,
+                     const char* url,
+                     const OrthancPluginHttpRequest* request)
+{
+  if (request->method != OrthancPluginHttpMethod_Post)
+  {
+    OrthancPluginSendMethodNotAllowed(OrthancPlugins::GetGlobalContext(), output, "POST");
+  }
+  else
+  {
+    const std::string userId = GetAuthenticatedUserId(request);
+
+    Json::Value body;
+    if (!Orthanc::Toolbox::ReadJson(body, request->body, request->bodySize))
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_NetworkProtocol);
+    }
+
+    const std::string key = GetAnnotationKey(userId,
+                                             Orthanc::SerializationToolbox::ReadString(body, "project", ""),
+                                             Orthanc::SerializationToolbox::ReadString(body, "level"),
+                                             Orthanc::SerializationToolbox::ReadString(body, "resource"));
+
+    OrthancPlugins::KeyValueStore store(KEY_VALUE_STORE_ANNOTATIONS);
+
+    std::string value;
+
+    if (!store.GetValue(value, key))
+    {
+      value = "{}";  // No annotation has been saved yet using this key
+    }
+
+    OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, value.c_str(), value.size(), "application/json");
+  }
 }
 
 
@@ -500,15 +553,26 @@ void SaveAnnotations(OrthancPluginRestOutput* output,
   }
   else
   {
-    const std::string user = GetAuthenticatedUserId(request);
+    const std::string userId = GetAuthenticatedUserId(request);
 
     Json::Value body;
-    if (!Orthanc::Toolbox::ReadJson(body, request->body, request->bodySize))
+    if (!Orthanc::Toolbox::ReadJson(body, request->body, request->bodySize) ||
+        !body.isObject() ||
+        !body.isMember(KEY_ANNOTATIONS))
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_NetworkProtocol);
     }
 
-    std::cout << body.toStyledString();
+    const std::string key = GetAnnotationKey(userId,
+                                             Orthanc::SerializationToolbox::ReadString(body, "project", ""),
+                                             Orthanc::SerializationToolbox::ReadString(body, "level"),
+                                             Orthanc::SerializationToolbox::ReadString(body, "resource"));
+
+    std::string value;
+    Orthanc::Toolbox::WriteFastJson(value, body[KEY_ANNOTATIONS]);
+
+    OrthancPlugins::KeyValueStore store(KEY_VALUE_STORE_ANNOTATIONS);
+    store.Store(key, value);
 
     Json::Value answer;
 
@@ -637,6 +701,7 @@ extern "C"
     OrthancPlugins::RegisterRestCallback<ServeFramePyramid>("/wsi/frames-pyramids/([0-9a-f-]+)/([0-9-]+)", true);
     OrthancPlugins::RegisterRestCallback<ServeFrameTile>("/wsi/frames-tiles/([0-9a-f-]+)/([0-9-]+)/([0-9-]+)/([0-9-]+)/([0-9-]+)", true);
 
+    OrthancPlugins::RegisterRestCallback<LoadAnnotations>("/wsi/api/load-annotations", true);
     OrthancPlugins::RegisterRestCallback<SaveAnnotations>("/wsi/api/save-annotations", true);
 
     OrthancPlugins::OrthancConfiguration mainConfiguration;

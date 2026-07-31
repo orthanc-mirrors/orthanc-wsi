@@ -282,10 +282,8 @@ function InitializeDrawing(map)
 {
   // Vector layer to hold drawn features
   var drawSource = new ol.source.Vector();
+  LoadAnnotations(drawSource);
 
-  drawSource.on(/*'change'*/ 'addfeature', function (e) {
-    SaveAnnotations(e.target);
-  });
 
   var drawLayer = new ol.layer.Vector({
     source: drawSource,
@@ -478,9 +476,7 @@ $(document).ready(function() {
 
 
 
-
-
-function SerializeAnnotations(source)
+function CreateSerializationObject()
 {
   var serialized = {};
 
@@ -490,13 +486,19 @@ function SerializeAnnotations(source)
   }
 
   if (params.has('series')) {
-    serialized['type'] = 'series';
+    serialized['level'] = 'series';
     serialized['resource'] = params.get('series');
   } else if (params.has('instance')) {
-    serialized['type'] = 'instance';
+    serialized['level'] = 'instance';
     serialized['resource'] = params.get('instance');
   }
 
+  return serialized;
+}
+
+
+function SerializeAnnotations(source)
+{
   const features = source.getFeatures();
 
   var annotations = [];
@@ -507,18 +509,18 @@ function SerializeAnnotations(source)
     if (type === 'LineString') {
       annotations.push({
         'type' : 'polyline',
-        'coordinates' : feature.getGeometry().getFlatCoordinates()
+        'coordinates' : feature.getGeometry().getCoordinates()
       });
     } else if (type === 'Point') {
       annotations.push({
         'type' : 'point',
-        'coordinates' : feature.getGeometry().getFlatCoordinates()
+        'coordinates' : feature.getGeometry().getCoordinates()
       });
     }
   });
 
+  var serialized = CreateSerializationObject();
   serialized['annotations'] = annotations;
-
   return serialized;
 }
 
@@ -551,7 +553,6 @@ function SaveAnnotations(source)
       url : '../api/save-annotations',
       data : JSON.stringify(serialized),
       contentType: 'application/json',
-      dataType: 'json',
       success: function() {
       },
       error: function() {
@@ -575,4 +576,42 @@ function SaveAnnotations(source)
   if (!isSaving) {
     Execute();
   }
+}
+
+
+function LoadAnnotations(source)
+{
+  $.ajax({
+    type : 'POST',
+    url : '../api/load-annotations',
+    data : JSON.stringify(CreateSerializationObject()),
+    contentType: 'application/json',
+    success: function(annotations) {
+      for (i = 0; i < annotations.length; i++) {
+        var geometry = null;
+
+        if (annotations[i].type === 'polyline') {
+          geometry = new ol.geom.LineString(annotations[i]['coordinates']);
+        } else if (annotations[i].type === 'point') {
+          geometry = new ol.geom.Point(annotations[i]['coordinates']);
+        }
+
+        if (geometry !== null) {
+          source.addFeature(new ol.Feature(geometry));
+        }
+      }
+    },
+    error: function() {
+      alert('Cannot load the saved annotations');
+    },
+    complete: function() {
+      // Now that the features are loaded, we can install the save callback
+      source.on('addfeature', function (e) {
+        SaveAnnotations(e.target);
+      });
+      source.on('removefeature', function (e) {
+        SaveAnnotations(e.target);
+      });
+    }
+  });
 }
