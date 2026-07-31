@@ -47,6 +47,10 @@
           padding: 0;
       }
 
+      .btn-outline-secondary {
+          background-color: white;  /* make the toolbar buttons opaque */
+      }
+
       #right-panel {
           --bs-offcanvas-width: 300px;
           --bs-offcanvas-border-width: 0;
@@ -137,6 +141,9 @@
             data-bs-toggle="offcanvas" data-bs-target="#right-panel">
       <i class="icon-chevron-left" id="right-panel-toggle-icon"></i>
     </button>
+
+    <div id="annotation-tooltip" class="badge bg-dark text-white"
+         style="position: fixed; display: none; pointer-events: none;"></div>
 
     <div style="display:none">
       <div id="popover-content">

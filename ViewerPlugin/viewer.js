@@ -249,6 +249,27 @@ function InitializePanelAnimation()
 }
 
 
+function FormatLength(geometry, projection)
+{
+  var lengthPx = geometry.getLength();
+  var metersPerUnit = projection.getMetersPerUnit();
+  if (metersPerUnit) {
+    var meters = lengthPx * metersPerUnit;
+    if (meters < 1e-3) {
+      return (meters * 1e6).toFixed(1) + ' μm';
+    } else if (meters < 1) {
+      return (meters * 1e3).toFixed(1) + ' mm';
+    } else if (meters < 1000) {
+      return meters.toFixed(2) + ' m';
+    } else {
+      return (meters / 1000).toFixed(3) + ' km';
+    }
+  } else {
+    return lengthPx.toFixed(0) + ' px';
+  }
+}
+
+
 function InitializeDrawing(map)
 {
   // Vector layer to hold drawn features
@@ -296,6 +317,8 @@ function InitializeDrawing(map)
     map.removeInteraction(selectAnnotation);
     $('#btn-draw-line, #btn-draw-point, #btn-select-annotation').removeClass('active');
     map.getViewport().style.cursor = '';
+    tooltipGeometry = null;
+    annotationTooltip.style.display = 'none';
   }
 
   $('#btn-draw-line').on('click', function() {
@@ -313,6 +336,40 @@ function InitializeDrawing(map)
     if (!wasActive) {
       map.addInteraction(drawPoint);
       $(this).addClass('active');
+    }
+  });
+
+  var annotationTooltip = document.getElementById('annotation-tooltip');
+  var tooltipGeometry = null;  /* geometry of the currently shown tooltip */
+
+  function updateTooltipPosition() {
+    if (tooltipGeometry) {
+      var extent = tooltipGeometry.getExtent();
+      var centerCoord = ol.extent.getCenter(extent);
+      var pixel = map.getPixelFromCoordinate(centerCoord);
+      var rect = map.getViewport().getBoundingClientRect();
+      annotationTooltip.style.left = (rect.left + pixel[0] - annotationTooltip.offsetWidth  / 2) + 'px';
+      annotationTooltip.style.top  = (rect.top  + pixel[1] - annotationTooltip.offsetHeight / 2) + 'px';
+    }
+  }
+
+  map.on('postrender', updateTooltipPosition);
+
+  selectAnnotation.on('select', function(e) {
+    if (e.selected.length === 1) {
+      var geometry = e.selected[0].getGeometry();
+      if (geometry.getType() === 'LineString') {
+        tooltipGeometry = geometry;
+        annotationTooltip.textContent = FormatLength(geometry, map.getView().getProjection());
+        annotationTooltip.style.display = 'block';
+        updateTooltipPosition();
+      } else {
+        tooltipGeometry = null;
+        annotationTooltip.style.display = 'none';
+      }
+    } else {
+      tooltipGeometry = null;
+      annotationTooltip.style.display = 'none';
     }
   });
 
