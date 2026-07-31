@@ -3,7 +3,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Orthanc for Whole-Slide Imaging</title>
 
     <link rel="stylesheet" href="../libs/css/bootstrap.min.css" type="text/css">
@@ -62,6 +62,11 @@
           border-radius: 4px 0 0 4px;
           border-right: none;
           opacity: 0.75;
+          padding: 6px;
+      }
+
+      .ol-attribution {
+          right: 20px !important;  /* keep the description out of the vertical toggle button */
       }
 
       /* Define some icons using Unicode, instead of adding a dependency on a third-party library such as FontAwesome */
