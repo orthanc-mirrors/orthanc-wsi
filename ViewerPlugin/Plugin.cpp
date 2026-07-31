@@ -38,6 +38,7 @@
 #include <Images/ImageProcessing.h>
 #include <Logging.h>
 #include <OrthancException.h>
+#include <SerializationToolbox.h>
 #include <SystemToolbox.h>
 
 #include "../Resources/Orthanc/Plugins/OrthancPluginCppWrapper.h"
@@ -45,7 +46,8 @@
 #include <EmbeddedResources.h>
 
 #include <cassert>
-#include <Images/PngReader.h>
+#include <json/reader.h>
+
 
 #include "OrthancPluginConnection.h"
 
@@ -470,6 +472,24 @@ void ServeSourceFile(OrthancPluginRestOutput* output,
 #endif
 
 
+static std::string GetAuthenticatedUserId(const OrthancPluginHttpRequest* request)
+{
+  Json::Value authentication;
+
+  const char* payload = reinterpret_cast<const char*>(request->authenticationPayload);
+
+  Json::Reader reader;
+
+  if (reader.parse(payload, payload + request->authenticationPayloadSize, authentication, false) &&
+      Orthanc::SerializationToolbox::ReadString(authentication, "source", "") == "orthanc-education")
+  {
+    return Orthanc::SerializationToolbox::ReadString(authentication, "id", "");
+  }
+
+  return "";
+}
+
+
 void SaveAnnotations(OrthancPluginRestOutput* output,
                      const char* url,
                      const OrthancPluginHttpRequest* request)
@@ -480,11 +500,7 @@ void SaveAnnotations(OrthancPluginRestOutput* output,
   }
   else
   {
-    /*Json::Value user;
-    if (!Orthanc::Toolbox::ReadJson(user, request->authenticationPayload, request->authenticationPayloadSize))
-    {
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
-      }*/
+    const std::string user = GetAuthenticatedUserId(request);
 
     Json::Value body;
     if (!Orthanc::Toolbox::ReadJson(body, request->body, request->bodySize))

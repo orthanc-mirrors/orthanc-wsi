@@ -1,6 +1,13 @@
 Pending changes in the mainline
 ===============================
 
+=> Minimum SDK version: 1.12.9 <=
+
+* Support for annotations
+
+Maintenance
+-----------
+
 * OrthancWSIDicomizer:
   - Now adding a FrameOfReferenceUID DICOM tag.  This is required, amongst others, 
     by the measurement tools in the OHIF microscopy viewer.

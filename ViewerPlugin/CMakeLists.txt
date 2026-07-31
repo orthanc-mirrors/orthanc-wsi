@@ -37,7 +37,7 @@ SET(STANDALONE_BUILD ON CACHE BOOL "Standalone build (all the resources are embe
 # Advanced parameters to fine-tune linking against system libraries
 SET(USE_SYSTEM_OPENJPEG ON CACHE BOOL "Use the system version of OpenJpeg")
 SET(USE_SYSTEM_ORTHANC_SDK ON CACHE BOOL "Use the system version of the Orthanc plugin SDK")
-set(ORTHANC_SDK_VERSION "1.7.0" CACHE STRING "Version of the Orthanc plugin SDK to use, if not using the system version (can be \"framework\" or \"1.7.0\")")
+set(ORTHANC_SDK_VERSION "1.12.9" CACHE STRING "Version of the Orthanc plugin SDK to use, if not using the system version (can be \"framework\" or \"1.12.9\")")
 
 
 #####################################################################
