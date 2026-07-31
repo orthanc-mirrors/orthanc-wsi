@@ -70,8 +70,10 @@
       }
 
       /* Define some icons using Unicode, instead of adding a dependency on a third-party library such as FontAwesome */
-      i.icon-chevron-left::before   { font-style: normal; content: '\2039'; }
-      i.icon-chevron-right::before  { font-style: normal; content: '\203A'; }
+      i[class^="icon-"] { font-style: normal; }
+      i.icon-chevron-left::before   { content: '\2039'; } /* < */
+      i.icon-chevron-right::before  { content: '\203A'; } /* > */
+      i.icon-line::before           { content: '\2014'; } /* EM DASH */
     </style>
 
   </head>
@@ -79,19 +81,19 @@
     <div id="map">
       <div id="toolbar-top">
         <div class="btn-group" role="group">
-          <button type="button" class="btn btn-primary icon-btn">
+          <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-select-annotation">
             a
           </button>
 
-          <button type="button" class="btn btn-success icon-btn">
-            b
+          <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-draw-line">
+            <i class="icon-line"></i>
           </button>
 
-          <button type="button" class="btn btn-info icon-btn">
+          <button type="button" class="btn btn-outline-secondary icon-btn">
             c
           </button>
 
-          <button type="button" class="btn btn-danger icon-btn">
+          <button type="button" class="btn btn-outline-secondary icon-btn">
             d
           </button>
         </div>
@@ -99,19 +101,19 @@
 
       <div id="toolbar-left">
         <div class="btn-group-vertical" role="group" id="toolbar-left-buttons" style="padding-bottom: 1em">
-          <button type="button" class="btn btn-primary icon-btn">
+          <button type="button" class="btn btn-outline-secondary icon-btn">
             a
           </button>
 
-          <button type="button" class="btn btn-success icon-btn">
+          <button type="button" class="btn btn-outline-secondary icon-btn">
             b
           </button>
 
-          <button type="button" class="btn btn-info icon-btn">
+          <button type="button" class="btn btn-outline-secondary icon-btn">
             c
           </button>
 
-          <button type="button" class="btn btn-danger icon-btn">
+          <button type="button" class="btn btn-outline-secondary icon-btn">
             d
           </button>
         </div>

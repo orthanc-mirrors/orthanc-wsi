@@ -201,6 +201,8 @@ function InitializePyramid(pyramid, tilesBaseUrl)
     }
     $('#rotation-slider').val(angle).change();
   });
+
+  InitializeDrawing(map);
 }
 
 
@@ -244,6 +246,38 @@ function InitializePanelAnimation()
     startResizing();
   });
   panel.addEventListener('shown.bs.offcanvas', stopResizing);
+}
+
+
+function InitializeDrawing(map)
+{
+  // Vector layer to hold drawn features
+  var drawSource = new ol.source.Vector();
+  var drawLayer = new ol.layer.Vector({
+    source: drawSource,
+    style: new ol.style.Style({
+      stroke: new ol.style.Stroke({ color: 'red', width: 2 })
+    })
+  });
+  map.addLayer(drawLayer);
+
+  // Draw interaction (inactive until toggled)
+  var drawLine = new ol.interaction.Draw({
+    source: drawSource,
+    type: 'LineString'
+  });
+
+  var drawLineActive = false;
+  $('#btn-draw-line').on('click', function() {
+    drawLineActive = !drawLineActive;
+    if (drawLineActive) {
+      map.addInteraction(drawLine);
+      $(this).addClass('active');
+    } else {
+      map.removeInteraction(drawLine);
+      $(this).removeClass('active');
+    }
+  });
 }
 
 
