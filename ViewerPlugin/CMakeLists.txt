@@ -97,8 +97,8 @@ include(${ORTHANC_WSI_DIR}/Resources/CMake/OpenJpegConfiguration.cmake)
 #####################################################################
 
 if (STATIC_BUILD OR NOT USE_SYSTEM_ORTHANC_SDK)
-  if (ORTHANC_SDK_VERSION STREQUAL "1.7.0")
-    include_directories(${CMAKE_SOURCE_DIR}/../Resources/Orthanc/Sdk-1.7.0)
+  if (ORTHANC_SDK_VERSION STREQUAL "1.12.9")
+    include_directories(${CMAKE_SOURCE_DIR}/../Resources/Orthanc/Sdk-1.12.9)
   elseif (ORTHANC_SDK_VERSION STREQUAL "framework")
     include_directories(${ORTHANC_FRAMEWORK_ROOT}/../../OrthancServer/Plugins/Include/)
   else()

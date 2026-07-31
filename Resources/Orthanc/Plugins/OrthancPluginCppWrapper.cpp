@@ -28,7 +28,7 @@
 #include <boost/move/unique_ptr.hpp>
 #include <boost/thread.hpp>
 #include <boost/algorithm/string/join.hpp>
-
+#include <limits>
 
 #include <json/reader.h>
 #include <json/version.h>
@@ -227,7 +227,7 @@ namespace OrthancPlugins
     {
       Clear();
     }
-    catch (ORTHANC_PLUGINS_EXCEPTION_CLASS&)
+    catch (ORTHANC_PLUGINS_EXCEPTION_CLASS&) // NOLINT(bugprone-empty-catch)
     {
       // Don't throw exceptions in destructors
     }
@@ -264,7 +264,7 @@ namespace OrthancPlugins
     }
     else
     {
-      if (size > 0)
+      if (buffer != NULL && size > 0)
       {
         memcpy(buffer_.data, buffer, size);
       }
@@ -675,7 +675,7 @@ namespace OrthancPlugins
     {
       Clear();
     }
-    catch (ORTHANC_PLUGINS_EXCEPTION_CLASS&)
+    catch (ORTHANC_PLUGINS_EXCEPTION_CLASS&) // NOLINT(bugprone-empty-catch)
     {
       // Don't throw exceptions in destructors
     }
@@ -977,7 +977,15 @@ namespace OrthancPlugins
         return true;
 
       case Json::uintValue:
-        target = configuration_[key].asUInt();
+        if (configuration_[key].asUInt() > static_cast<unsigned int>(std::numeric_limits<int>::max()))
+        {
+          ORTHANC_PLUGINS_LOG_ERROR("The configuration option \"" + GetPath(key) +
+                                    "\" is too large to fit in an integer");
+
+          ORTHANC_PLUGINS_THROW_EXCEPTION(BadFileFormat);          
+        }
+
+        target = static_cast<int>(configuration_[key].asUInt());
         return true;
 
       default:
@@ -1338,7 +1346,7 @@ namespace OrthancPlugins
     {
       Clear();
     }
-    catch (ORTHANC_PLUGINS_EXCEPTION_CLASS&)
+    catch (ORTHANC_PLUGINS_EXCEPTION_CLASS&) // NOLINT(bugprone-empty-catch)
     {
       // Don't throw exceptions in destructors
     }
@@ -1544,11 +1552,25 @@ namespace OrthancPlugins
 
 #endif /* HAS_ORTHANC_PLUGIN_FIND_MATCHER == 1 */
 
+  static void CheckAnswerSizeIsLessThan4GB(const std::string& answer)
+  {
+    if (answer.size() > static_cast<size_t>(std::numeric_limits<uint32_t>::max()))
+    {
+  #if HAS_ORTHANC_EXCEPTION == 1
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange, "Cannot send HTTP response larger than 4GB");
+  #else
+      ORTHANC_PLUGINS_LOG_ERROR("Cannot send HTTP response larger than 4GB");
+      ORTHANC_PLUGINS_THROW_PLUGIN_ERROR_CODE(OrthancPluginErrorCode_ParameterOutOfRange);          
+  #endif
+    }
+  }
+
   void AnswerJson(const Json::Value& value,
                   OrthancPluginRestOutput* output)
   {
     std::string bodyString;
-    WriteStyledJson(bodyString, value);    
+    WriteStyledJson(bodyString, value);
+    CheckAnswerSizeIsLessThan4GB(bodyString);    
     OrthancPluginAnswerBuffer(GetGlobalContext(), output, bodyString.c_str(), bodyString.size(), "application/json");
   }
 
@@ -1556,6 +1578,7 @@ namespace OrthancPlugins
                     const char* mimeType,
                     OrthancPluginRestOutput* output)
   {
+    CheckAnswerSizeIsLessThan4GB(answer);
     OrthancPluginAnswerBuffer(GetGlobalContext(), output, answer.c_str(), answer.size(), mimeType);
   }
 
@@ -1563,6 +1586,26 @@ namespace OrthancPlugins
   {
     OrthancPluginSendHttpStatusCode(GetGlobalContext(), output, httpError);
   }
+
+  void AnswerHttpError(uint16_t httpError,
+                       OrthancPluginRestOutput* output,
+                       const std::string& answer,
+                       const char* mimeType)
+  {
+    CheckAnswerSizeIsLessThan4GB(answer);
+
+    OrthancPluginSetHttpHeader(GetGlobalContext(),
+                               output,
+                               "content-type",
+                               mimeType);
+                               
+    OrthancPluginSendHttpStatus(GetGlobalContext(),
+                                output,
+                                httpError,
+                                answer.c_str(),
+                                static_cast<uint32_t>(answer.size()));
+  }
+
 
   void AnswerMethodNotAllowed(OrthancPluginRestOutput *output, const char* allowedMethods)
   {
