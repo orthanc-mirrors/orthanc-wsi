@@ -256,7 +256,11 @@ function InitializeDrawing(map)
   var drawLayer = new ol.layer.Vector({
     source: drawSource,
     style: new ol.style.Style({
-      stroke: new ol.style.Stroke({ color: 'red', width: 2 })
+      stroke: new ol.style.Stroke({ color: 'red', width: 2 }),
+      image: new ol.style.Circle({
+        radius: 5,
+        fill: new ol.style.Fill({ color: 'red' })
+      })
     })
   });
   map.addLayer(drawLayer);
@@ -267,15 +271,58 @@ function InitializeDrawing(map)
     type: 'LineString'
   });
 
-  var drawLineActive = false;
+  // Draw point interaction (inactive until toggled)
+  var drawPoint = new ol.interaction.Draw({
+    source: drawSource,
+    type: 'Point'
+  });
+
+  // Select interaction (inactive until toggled)
+  var selectAnnotation = new ol.interaction.Select({
+    layers: [drawLayer],
+    hitTolerance: 5,  /* pixels around the feature that count as a hit */
+    style: new ol.style.Style({
+      stroke: new ol.style.Stroke({ color: 'blue', width: 3 }),
+      image: new ol.style.Circle({
+        radius: 5,
+        fill: new ol.style.Fill({ color: 'blue' })
+      })
+    })
+  });
+
+  function deactivateAll() {
+    map.removeInteraction(drawLine);
+    map.removeInteraction(drawPoint);
+    map.removeInteraction(selectAnnotation);
+    $('#btn-draw-line, #btn-draw-point, #btn-select-annotation').removeClass('active');
+    map.getViewport().style.cursor = '';
+  }
+
   $('#btn-draw-line').on('click', function() {
-    drawLineActive = !drawLineActive;
-    if (drawLineActive) {
+    var wasActive = $(this).hasClass('active');
+    deactivateAll();
+    if (!wasActive) {
       map.addInteraction(drawLine);
       $(this).addClass('active');
-    } else {
-      map.removeInteraction(drawLine);
-      $(this).removeClass('active');
+    }
+  });
+
+  $('#btn-draw-point').on('click', function() {
+    var wasActive = $(this).hasClass('active');
+    deactivateAll();
+    if (!wasActive) {
+      map.addInteraction(drawPoint);
+      $(this).addClass('active');
+    }
+  });
+
+  $('#btn-select-annotation').on('click', function() {
+    var wasActive = $(this).hasClass('active');
+    deactivateAll();
+    if (!wasActive) {
+      map.addInteraction(selectAnnotation);
+      $(this).addClass('active');
+      map.getViewport().style.cursor = 'pointer';
     }
   });
 }

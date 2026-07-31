@@ -73,7 +73,9 @@
       i[class^="icon-"] { font-style: normal; }
       i.icon-chevron-left::before   { content: '\2039'; } /* < */
       i.icon-chevron-right::before  { content: '\203A'; } /* > */
-      i.icon-line::before           { content: '\2014'; } /* EM DASH */
+      i.icon-line::before           { content: '\2014'; } /* dash */
+      i.icon-point::before          { content: '\25CF'; } /* black circle */
+      i.icon-select::before         { content: '\2196\FE0E'; } /* north-west arrow (text variant, not emoji) */
     </style>
 
   </head>
@@ -82,15 +84,15 @@
       <div id="toolbar-top">
         <div class="btn-group" role="group">
           <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-select-annotation">
-            a
+            <i class="icon-select"></i>
           </button>
 
           <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-draw-line">
             <i class="icon-line"></i>
           </button>
 
-          <button type="button" class="btn btn-outline-secondary icon-btn">
-            c
+          <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-draw-point">
+            <i class="icon-point"></i>
           </button>
 
           <button type="button" class="btn btn-outline-secondary icon-btn">
