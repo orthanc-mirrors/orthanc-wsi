@@ -63,6 +63,10 @@
           border-right: none;
           opacity: 0.75;
       }
+
+      /* Define some icons using Unicode, instead of adding a dependency on a third-party library such as FontAwesome */
+      i.icon-chevron-left::before   { font-style: normal; content: '\2039'; }
+      i.icon-chevron-right::before  { font-style: normal; content: '\203A'; }
     </style>
 
   </head>
@@ -122,7 +126,7 @@
 
     <button id="right-panel-toggle" type="button" class="btn btn-secondary"
             data-bs-toggle="offcanvas" data-bs-target="#right-panel">
-      <i class="bi bi-chevron-left" id="right-panel-toggle-icon"></i>
+      <i class="icon-chevron-left" id="right-panel-toggle-icon"></i>
     </button>
 
     <div style="display:none">

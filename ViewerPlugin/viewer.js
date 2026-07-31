@@ -233,14 +233,14 @@ function InitializePanelAnimation()
 
   // Showing the panel
   panel.addEventListener('hide.bs.offcanvas', function() {
-    icon.className = 'bi bi-chevron-left';
+    icon.className = 'icon-chevron-left';
     startResizing();
   });
   panel.addEventListener('hidden.bs.offcanvas', stopResizing);
 
   // Hiding the panel
   panel.addEventListener('show.bs.offcanvas', function() {
-    icon.className = 'bi bi-chevron-right';
+    icon.className = 'icon-chevron-right';
     startResizing();
   });
   panel.addEventListener('shown.bs.offcanvas', stopResizing);
