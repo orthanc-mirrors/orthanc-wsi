@@ -160,6 +160,7 @@ include(${CMAKE_SOURCE_DIR}/../Resources/CMake/JavaScriptLibraries.cmake)
 if (STANDALONE_BUILD)
   add_definitions(-DORTHANC_STANDALONE=1)
   set(VIEWER_RESOURCES
+    ANNOTATIONS_JS       ${CMAKE_SOURCE_DIR}/WebApplication/annotations.js
     VIEWER_HTML          ${CMAKE_SOURCE_DIR}/WebApplication/viewer.html
     VIEWER_JS            ${CMAKE_SOURCE_DIR}/WebApplication/viewer.js
     )

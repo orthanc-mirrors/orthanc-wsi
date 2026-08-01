@@ -435,6 +435,16 @@ void ServeEmbeddedFile(OrthancPluginRestOutput* output,
     resource = Orthanc::EmbeddedResources::OPEN_SEADRAGON_HTML;
     mime = "text/html";
   }
+  else if (f == "annotations.js")
+  {
+#if ORTHANC_STANDALONE == 0
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+#else
+    resource = Orthanc::EmbeddedResources::ANNOTATIONS_JS;
+#endif
+
+    mime = "application/javascript";
+  }
   else
   {
     throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
@@ -456,7 +466,8 @@ void ServeSourceFile(OrthancPluginRestOutput* output,
 
   std::string filename(request->groups[0]);
 
-  if (filename != "viewer.html" &&
+  if (filename != "annotations.js" &&
+      filename != "viewer.html" &&
       filename != "viewer.js")
   {
     throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
@@ -676,9 +687,11 @@ extern "C"
     OrthancPlugins::RegisterRestCallback<ServeJavaScriptLibraries>("/wsi/libs/(.*)", true);
 
 #if ORTHANC_STANDALONE == 1
+    OrthancPlugins::RegisterRestCallback<ServeEmbeddedFile>("/wsi/app/(annotations.js)", true);
     OrthancPlugins::RegisterRestCallback<ServeEmbeddedFile>("/wsi/app/(viewer.html)", true);
     OrthancPlugins::RegisterRestCallback<ServeEmbeddedFile>("/wsi/app/(viewer.js)", true);
 #else
+    OrthancPlugins::RegisterRestCallback<ServeSourceFile>("/wsi/app/(annotations.js)", true);
     OrthancPlugins::RegisterRestCallback<ServeSourceFile>("/wsi/app/(viewer.html)", true);
     OrthancPlugins::RegisterRestCallback<ServeSourceFile>("/wsi/app/(viewer.js)", true);
 #endif
