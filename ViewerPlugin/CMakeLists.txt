@@ -184,6 +184,7 @@ EmbedResources(
 
 set(ORTHANC_WSI_SOURCES
   DicomPyramidCache.cpp
+  IAuthenticatedUser.cpp
   IIIF.cpp
   OrthancPluginConnection.cpp
   OrthancPyramidFrameFetcher.cpp

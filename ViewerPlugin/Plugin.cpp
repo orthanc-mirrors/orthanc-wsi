@@ -23,31 +23,32 @@
 
 #include "../Framework/PrecompiledHeadersWSI.h"
 
-#include "OrthancPyramidFrameFetcher.h"
 #include "DicomPyramidCache.h"
+#include "IAuthenticatedUser.h"
 #include "IIIF.h"
+#include "OrthancPyramidFrameFetcher.h"
 #include "RawTile.h"
+
 #include "../Framework/ColorSpaces.h"
+#include "../Framework/ImageToolbox.h"
+#include "../Framework/Inputs/DecodedPyramidCache.h"
 #include "../Framework/Inputs/DecodedTiledPyramid.h"
 #include "../Framework/Inputs/OnTheFlyPyramid.h"
-#include "../Framework/Inputs/DecodedPyramidCache.h"
-#include "../Framework/ImageToolbox.h"
 
 #include <Compatibility.h>  // For std::unique_ptr
+#include <Compression/GzipCompressor.h>
 #include <Images/Image.h>
 #include <Images/ImageProcessing.h>
 #include <Logging.h>
 #include <OrthancException.h>
 #include <SerializationToolbox.h>
 #include <SystemToolbox.h>
-#include <Compression/GzipCompressor.h>
 
 #include "../Resources/Orthanc/Plugins/OrthancPluginCppWrapper.h"
 
 #include <EmbeddedResources.h>
 
 #include <cassert>
-#include <json/reader.h>
 
 
 #include "OrthancPluginConnection.h"
@@ -473,37 +474,6 @@ void ServeSourceFile(OrthancPluginRestOutput* output,
 #endif
 
 
-static std::string GetAuthenticatedUserId(const OrthancPluginHttpRequest* request)
-{
-  Json::Value authentication;
-
-  const char* payload = reinterpret_cast<const char*>(request->authenticationPayload);
-
-  // We use "Json::Reader" as "Orthanc::ReadJson()" would write an
-  // error log if the authentication payload is not a JSON string
-  Json::Reader reader;
-
-  if (reader.parse(payload, payload + request->authenticationPayloadSize, authentication, false) &&
-      Orthanc::SerializationToolbox::ReadString(authentication, "source", "") == "orthanc-education")
-  {
-    return Orthanc::SerializationToolbox::ReadString(authentication, "id", "");
-  }
-
-  return "";
-}
-
-
-static std::string GetAnnotationKey(const std::string& userId,
-                                    const std::string& projectId,
-                                    const std::string& level,
-                                    const std::string& resourceId)
-{
-  std::string s;
-  Orthanc::Toolbox::EncodeBase64(s, userId);  // The pipe character "|" is not part of Base64
-  return (s + "|" + projectId + "|" + level + "|" + resourceId);
-}
-
-
 static const char* const KEY_ANNOTATIONS = "annotations";
 static const char* const KEY_VALUE_STORE_ANNOTATIONS = "wsi-annotations";
 
@@ -517,7 +487,7 @@ void LoadAnnotations(OrthancPluginRestOutput* output,
   }
   else
   {
-    const std::string userId = GetAuthenticatedUserId(request);
+    std::unique_ptr<IAuthenticatedUser> user(IAuthenticatedUser::FromHttpRequest(request));
 
     // TODO - If the education plugin is installed, check that the user is indeed part of the learners/instructors of the project, otherwise return an empty array
 
@@ -527,10 +497,9 @@ void LoadAnnotations(OrthancPluginRestOutput* output,
       throw Orthanc::OrthancException(Orthanc::ErrorCode_NetworkProtocol);
     }
 
-    const std::string key = GetAnnotationKey(userId,
-                                             Orthanc::SerializationToolbox::ReadString(body, "project", ""),
-                                             Orthanc::SerializationToolbox::ReadString(body, "level"),
-                                             Orthanc::SerializationToolbox::ReadString(body, "resource"));
+    const std::string key = user->GetAnnotationKey(Orthanc::SerializationToolbox::ReadString(body, "project", ""),
+                                                   Orthanc::SerializationToolbox::ReadString(body, "level"),
+                                                   Orthanc::SerializationToolbox::ReadString(body, "resource"));
 
     OrthancPlugins::KeyValueStore store(KEY_VALUE_STORE_ANNOTATIONS);
 
@@ -561,7 +530,7 @@ void SaveAnnotations(OrthancPluginRestOutput* output,
   }
   else
   {
-    const std::string userId = GetAuthenticatedUserId(request);
+    std::unique_ptr<IAuthenticatedUser> user(IAuthenticatedUser::FromHttpRequest(request));
 
     // TODO - If the education plugin is installed, check that the user is indeed part of the learners/instructors of the project, otherwise send Forbidden
 
@@ -573,10 +542,9 @@ void SaveAnnotations(OrthancPluginRestOutput* output,
       throw Orthanc::OrthancException(Orthanc::ErrorCode_NetworkProtocol);
     }
 
-    const std::string key = GetAnnotationKey(userId,
-                                             Orthanc::SerializationToolbox::ReadString(body, "project", ""),
-                                             Orthanc::SerializationToolbox::ReadString(body, "level"),
-                                             Orthanc::SerializationToolbox::ReadString(body, "resource"));
+    const std::string key = user->GetAnnotationKey(Orthanc::SerializationToolbox::ReadString(body, "project", ""),
+                                                   Orthanc::SerializationToolbox::ReadString(body, "level"),
+                                                   Orthanc::SerializationToolbox::ReadString(body, "resource"));
 
     std::string value;
     Orthanc::Toolbox::WriteFastJson(value, body[KEY_ANNOTATIONS]);
