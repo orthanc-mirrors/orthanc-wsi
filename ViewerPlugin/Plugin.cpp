@@ -459,7 +459,7 @@ void ServeSourceFile(OrthancPluginRestOutput* output,
   }
 
   const boost::filesystem::path path = Orthanc::SystemToolbox::InterpretRelativePath(
-    Orthanc::SystemToolbox::PathFromUtf8(PLUGIN_SOURCE_DIR), filename);
+    Orthanc::SystemToolbox::PathFromUtf8(PLUGIN_SOURCE_DIR) / "WebApplication", filename);
   const char* mime = Orthanc::EnumerationToString(Orthanc::SystemToolbox::AutodetectMimeType(filename));
 
   std::string content;

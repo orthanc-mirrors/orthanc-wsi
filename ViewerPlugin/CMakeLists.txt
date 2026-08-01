@@ -158,8 +158,8 @@ include(${CMAKE_SOURCE_DIR}/../Resources/CMake/JavaScriptLibraries.cmake)
 if (STANDALONE_BUILD)
   add_definitions(-DORTHANC_STANDALONE=1)
   set(VIEWER_RESOURCES
-    VIEWER_HTML          ${CMAKE_SOURCE_DIR}/viewer.html
-    VIEWER_JS            ${CMAKE_SOURCE_DIR}/viewer.js
+    VIEWER_HTML          ${CMAKE_SOURCE_DIR}/WebApplication/viewer.html
+    VIEWER_JS            ${CMAKE_SOURCE_DIR}/WebApplication/viewer.js
     )
 else()
   add_definitions(
@@ -172,8 +172,8 @@ EmbedResources(
   ${VIEWER_RESOURCES}
   JAVASCRIPT_LIBS      ${JAVASCRIPT_LIBS_DIR}
   ORTHANC_EXPLORER     ${CMAKE_SOURCE_DIR}/OrthancExplorer.js
-  MIRADOR_HTML         ${CMAKE_SOURCE_DIR}/mirador.html
-  OPEN_SEADRAGON_HTML  ${CMAKE_SOURCE_DIR}/openseadragon.html
+  MIRADOR_HTML         ${CMAKE_SOURCE_DIR}/WebApplication/mirador.html
+  OPEN_SEADRAGON_HTML  ${CMAKE_SOURCE_DIR}/WebApplication/openseadragon.html
   )
 
 
