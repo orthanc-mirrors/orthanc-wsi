@@ -31,6 +31,11 @@ DownloadPackage(
   "${BASE_URL}/bootstrap-5.3.3.zip"
   "${CMAKE_CURRENT_BINARY_DIR}/bootstrap-5.3.3")
 
+DownloadPackage(
+  "6e819ef7fcd49bb13cf809fd8c5fb20b"
+  "${BASE_URL}/bootstrap-icons-1.13.1.zip"
+  "${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1")
+
 # curl -L https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js | gzip > /tmp/popper-2.11.8.min.js.gz
 
 DownloadCompressedFile(
@@ -56,4 +61,15 @@ file(COPY
   ${CMAKE_CURRENT_BINARY_DIR}/openlayers-10.6.1-package/ol.css
   DESTINATION
   ${JAVASCRIPT_LIBS_DIR}/css
+  )
+
+file(COPY
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/arrows.svg
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/chevron-compact-left.svg
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/chevron-compact-right.svg
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/hand-index.svg
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/pen.svg
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/trash.svg
+  DESTINATION
+  ${JAVASCRIPT_LIBS_DIR}/svg
   )

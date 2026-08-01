@@ -73,14 +73,25 @@
           right: 20px !important;  /* keep the description out of the vertical toggle button */
       }
 
-      /* Define some icons using Unicode, instead of adding a dependency on a third-party library such as FontAwesome */
-      i[class^="icon-"] { font-style: normal; }
-      i.icon-chevron-left::before   { content: '\2039'; } /* < */
-      i.icon-chevron-right::before  { content: '\203A'; } /* > */
-      i.icon-line::before           { content: '\2014'; } /* dash */
-      i.icon-point::before          { content: '\25CF'; } /* black circle */
-      i.icon-select::before         { content: '\2196\FE0E'; } /* north-west arrow (text variant, not emoji) */
-      i.icon-delete::before         { content: '\2715'; }       /* MULTIPLICATION X */
+      /* Bootstrap Icons */
+      .bi {
+          display: inline-block;
+          width: 1em;
+          height: 1em;
+          background-color: currentColor;
+          -webkit-mask-size: 100% 100%;
+          mask-size: 100% 100%;
+          -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+      }
+
+      /* The used icons must be added to ../Resources/CMake/JavaScriptLibraries.cmake */
+      .bi-arrows                { -webkit-mask-image: url("../libs/svg/arrows.svg"); mask-image: url("../libs/svg/arrows.svg"); }
+      .bi-chevron-compact-left  { -webkit-mask-image: url("../libs/svg/chevron-compact-left.svg"); mask-image: url("../libs/svg/chevron-compact-left.svg"); }
+      .bi-chevron-compact-right { -webkit-mask-image: url("../libs/svg/chevron-compact-right.svg"); mask-image: url("../libs/svg/chevron-compact-right.svg"); }
+      .bi-hand-index            { -webkit-mask-image: url("../libs/svg/hand-index.svg"); mask-image: url("../libs/svg/hand-index.svg"); }
+      .bi-pen                   { -webkit-mask-image: url("../libs/svg/pen.svg"); mask-image: url("../libs/svg/pen.svg"); }
+      .bi-trash                 { -webkit-mask-image: url("../libs/svg/trash.svg"); mask-image: url("../libs/svg/trash.svg"); }
     </style>
 
   </head>
@@ -89,19 +100,19 @@
       <div id="toolbar-top">
         <div class="btn-group" role="group">
           <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-select-annotation">
-            <i class="icon-select"></i>
+            <i class="bi bi-hand-index"></i>
           </button>
 
           <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-draw-line">
-            <i class="icon-line"></i>
+            <i class="bi bi-arrows"></i>
           </button>
 
           <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-draw-point">
-            <i class="icon-point"></i>
+            <i class="bi bi-pen"></i>
           </button>
 
           <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-delete-annotation">
-            <i class="icon-delete"></i>
+            <i class="bi bi-trash"></i>
           </button>
         </div>
       </div>
@@ -140,7 +151,7 @@
 
     <button id="right-panel-toggle" type="button" class="btn btn-secondary"
             data-bs-toggle="offcanvas" data-bs-target="#right-panel">
-      <i class="icon-chevron-left" id="right-panel-toggle-icon"></i>
+      <i class="bi bi-chevron-compact-left" id="right-panel-toggle-icon"></i>
     </button>
 
     <div id="annotation-tooltip" class="badge bg-dark text-white"
