@@ -148,11 +148,6 @@ function InitializePyramid(pyramid, tilesBaseUrl)
     controls: controls
   });
 
-  // Re-append toolbars inside the map viewport so they inherit OL's scaling
-  var viewport = map.getViewport();
-  viewport.appendChild(document.getElementById('toolbar-left'));
-  viewport.appendChild(document.getElementById('toolbar-top'));
-
   // Prevent toolbar pointer events from reaching OL interactions (e.g. Select)
   ['toolbar-left', 'toolbar-top'].forEach(function(id) {
     var el = document.getElementById(id);
@@ -161,14 +156,12 @@ function InitializePyramid(pyramid, tilesBaseUrl)
     });
   });
 
-  // Position toolbar-left directly below the zoom control, regardless of scaling
-  map.once('postrender', function() {
-    var zoomEl = viewport.querySelector('.ol-zoom');
-    document.getElementById('toolbar-left').style.left = zoomEl.offsetLeft + 'px';
-    document.getElementById('toolbar-left').style.top = (zoomEl.offsetTop + zoomEl.offsetHeight) + 'px';
-    document.getElementById('toolbar-top').style.left = (zoomEl.offsetLeft + zoomEl.offsetWidth) + 'px';
-    document.getElementById('toolbar-top').style.top = zoomEl.offsetTop + 'px';
+  // Re-append toolbars inside the map viewport so they inherit OL's scaling
+  var viewport = map.getViewport();
+  viewport.appendChild(document.getElementById('toolbar-left'));
+  viewport.appendChild(document.getElementById('toolbar-top'));
 
+  map.once('postrender', function() {
     // Match Bootstrap button size to OL button size
     var olBtnSize = viewport.querySelector('.ol-zoom button').offsetWidth + 'px';
     document.querySelectorAll('.icon-btn').forEach(function(btn) {
@@ -176,10 +169,18 @@ function InitializePyramid(pyramid, tilesBaseUrl)
       btn.style.height = olBtnSize;
     });
 
-    // Move the ol-rotate button so it appears at the bottom of the btn-group-vertical
-    var toolbarLeftButtons = document.getElementById('toolbar-left-buttons');
-    var rotate = viewport.querySelector('.ol-rotate');
-    rotate.style.top = (toolbarLeftButtons.offsetTop + toolbarLeftButtons.offsetHeight) + 'px';
+    // Move the top toolbar directly right to the zoom control, regardless of scaling
+    var zoomEl = viewport.querySelector('.ol-zoom');
+    document.getElementById('toolbar-top').style.left = (zoomEl.offsetLeft + zoomEl.offsetWidth) + 'px';
+    document.getElementById('toolbar-top').style.top = zoomEl.offsetTop + 'px';
+
+    // Move the left toolbar directly below the zoom control, regardless of scaling
+    document.getElementById('toolbar-left').style.left = zoomEl.offsetLeft + 'px';
+    document.getElementById('toolbar-left').style.top = (zoomEl.offsetTop + zoomEl.offsetHeight) + 'px';
+
+    // Move the vertical buttons below the rotate control, regardless of scaling
+    var rotateEl = viewport.querySelector('.ol-rotate');
+    document.getElementById('toolbar-left-buttons').style.top = (rotateEl.offsetTop + rotateEl.offsetHeight) + 'px';
   });
 
 
@@ -216,7 +217,7 @@ function InitializePyramid(pyramid, tilesBaseUrl)
 
 function InitializePanelAnimation()
 {
-  // This make the toggle vertical bar follow the resizing of the right panel
+  // This makes the toggle vertical bar follow the resizing of the right panel
   var panel = document.getElementById('right-panel');
   var toggle = document.getElementById('right-panel-toggle');
   var icon = document.getElementById('right-panel-toggle-icon');
