@@ -598,6 +598,11 @@ extern "C"
     Orthanc::Logging::Initialize(context);
 #endif
 
+#if !ORTHANC_PLUGINS_VERSION_IS_ABOVE(1, 12, 9)
+    LOG(WARNING) << "The whole-slide imaging viewer was compiled against an old "
+                 << "version of the Orthanc SDK, annotations will not be persistent";
+#endif
+
     try
     {
       /**
