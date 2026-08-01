@@ -1,9 +1,10 @@
 Pending changes in the mainline
 ===============================
 
-=> Minimum SDK version: 1.12.9 <=
+=> Recommended SDK version: 1.12.9 <=
+=> Minimum SDK version: 1.7.0 <=
 
-* Support for annotations
+* Support for annotations (SDK 1.12.9 is required)
 
 Maintenance
 -----------
