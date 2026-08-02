@@ -414,7 +414,8 @@ function InitializeDrawing(map)
   selectAnnotation.on('select', function(e) {
     $('#annotation-info').empty();
     if (e.selected.length === 1) {
-      var geometry = e.selected[0].getGeometry();
+      var feature = e.selected[0];
+      var geometry = feature.getGeometry();
       if (geometry.getType() === 'LineString') {
         AddReadOnlyProperty('Length', FormatLength(geometry, map.getView().getProjection()));
       } else {
@@ -422,18 +423,18 @@ function InitializeDrawing(map)
         AddReadOnlyProperty('Length', '1.23 mm');
         AddReadOnlyProperty('Bounding box', '100 x 200 px');
         AddReadOnlyProperty('Surface', '0.05 mm²');
-        AddEditableProperty('Taxonomy', 'Value', function(v) {
-          console.log('Taxonomy changed to: ' + v);
+        AddEditableProperty('Label', feature.get('label') || '', function(v) {
+          feature.set('label', v);
         });
-        AddDropdownProperty('Tissue type', [
-          { value: 'tumor',  label: 'Tumor' },
-          { value: 'stroma', label: 'Stroma' },
+        AddDropdownProperty('Category', [
+          { value: 'tumor',    label: 'Tumor' },
+          { value: 'stroma',   label: 'Stroma' },
           { value: 'necrosis', label: 'Necrosis' }
-        ], 'tumor', function(v) {
-          console.log('Tissue type changed to: ' + v);
+        ], feature.get('category') || '', function(v) {
+          feature.set('category', v);
         });
+        bootstrap.Offcanvas.getOrCreateInstance($('#right-panel')[0]).show();
       }
-      bootstrap.Offcanvas.getOrCreateInstance($('#right-panel')[0]).show();
     }
   });
 
