@@ -150,7 +150,7 @@ function InitializePyramid(pyramid, tilesBaseUrl)
 
   // Prevent toolbar pointer events from reaching OL interactions (e.g. Select)
   ['toolbar-left', 'toolbar-top'].forEach(function(id) {
-    var el = document.getElementById(id);
+    var el = $('#' + id)[0];
     ['pointerdown', 'pointerup', 'pointermove', 'click'].forEach(function(type) {
       el.addEventListener(type, function(e) { e.stopPropagation(); });
     });
@@ -158,29 +158,29 @@ function InitializePyramid(pyramid, tilesBaseUrl)
 
   // Re-append toolbars inside the map viewport so they inherit OL's scaling
   var viewport = map.getViewport();
-  viewport.appendChild(document.getElementById('toolbar-left'));
-  viewport.appendChild(document.getElementById('toolbar-top'));
+  viewport.appendChild($('#toolbar-left')[0]);
+  viewport.appendChild($('#toolbar-top')[0]);
 
   map.once('postrender', function() {
     // Match Bootstrap button size to OL button size
-    var olBtnSize = viewport.querySelector('.ol-zoom button').offsetWidth + 'px';
-    document.querySelectorAll('.icon-btn').forEach(function(btn) {
-      btn.style.width = olBtnSize;
-      btn.style.height = olBtnSize;
+    var olBtnSize = $('.ol-zoom button')[0].offsetWidth + 'px';
+    $('.icon-btn').each(function() {
+      this.style.width = olBtnSize;
+      this.style.height = olBtnSize;
     });
 
     // Move the top toolbar directly right to the zoom control, regardless of scaling
-    var zoomEl = viewport.querySelector('.ol-zoom');
-    document.getElementById('toolbar-top').style.left = (zoomEl.offsetLeft + zoomEl.offsetWidth) + 'px';
-    document.getElementById('toolbar-top').style.top = zoomEl.offsetTop + 'px';
+    var zoomEl = $('.ol-zoom')[0];
+    $('#toolbar-top')[0].style.left = (zoomEl.offsetLeft + zoomEl.offsetWidth) + 'px';
+    $('#toolbar-top')[0].style.top = zoomEl.offsetTop + 'px';
 
     // Move the left toolbar directly below the zoom control, regardless of scaling
-    document.getElementById('toolbar-left').style.left = zoomEl.offsetLeft + 'px';
-    document.getElementById('toolbar-left').style.top = (zoomEl.offsetTop + zoomEl.offsetHeight) + 'px';
+    $('#toolbar-left')[0].style.left = zoomEl.offsetLeft + 'px';
+    $('#toolbar-left')[0].style.top = (zoomEl.offsetTop + zoomEl.offsetHeight) + 'px';
 
     // Move the vertical buttons below the rotate control, regardless of scaling
-    var rotateEl = viewport.querySelector('.ol-rotate');
-    document.getElementById('toolbar-left-buttons').style.top = (rotateEl.offsetTop + rotateEl.offsetHeight) + 'px';
+    var rotateEl = $('.ol-rotate')[0];
+    $('#toolbar-left-buttons')[0].style.top = (rotateEl.offsetTop + rotateEl.offsetHeight) + 'px';
   });
 
 
@@ -218,9 +218,9 @@ function InitializePyramid(pyramid, tilesBaseUrl)
 function InitializePanelAnimation()
 {
   // This makes the toggle vertical bar follow the resizing of the right panel
-  var panel = document.getElementById('right-panel');
-  var toggle = document.getElementById('right-panel-toggle');
-  var icon = document.getElementById('right-panel-toggle-icon');
+  var panel = $('#right-panel')[0];
+  var toggle = $('#right-panel-toggle')[0];
+  var icon = $('#right-panel-toggle-icon')[0];
   var isResizing = false;
 
   function resizingLoop() {
@@ -371,7 +371,7 @@ function InitializeDrawing(map)
     }
   });
 
-  var annotationTooltip = document.getElementById('annotation-tooltip');
+  var annotationTooltip = $('#annotation-tooltip')[0];
   var tooltipGeometry = null;  /* geometry of the currently shown tooltip */
 
   function updateTooltipPosition() {
@@ -415,7 +415,7 @@ function InitializeDrawing(map)
     }
   });
 
-  var deleteModal = new bootstrap.Modal(document.getElementById('modal-delete-annotation'));
+  var deleteModal = new bootstrap.Modal($('#modal-delete-annotation')[0]);
 
   $('#btn-delete-annotation').on('click', function(e) {
     e.stopPropagation();
