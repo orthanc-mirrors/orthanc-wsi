@@ -192,6 +192,27 @@
       </div>
     </div>
 
+    <template id="tpl-readonly-property">
+      <div class="d-flex align-items-baseline border-bottom py-1 gap-2">
+        <span class="text-muted small flex-shrink-0 prop-label" style="width:8em"></span>
+        <span class="text-break prop-value"></span>
+      </div>
+    </template>
+
+    <template id="tpl-editable-property">
+      <div class="d-flex align-items-center border-bottom py-1 gap-2">
+        <label class="text-muted small flex-shrink-0 mb-0" style="width:8em"></label>
+        <input type="text" class="form-control form-control-sm flex-grow-1">
+      </div>
+    </template>
+
+    <template id="tpl-dropdown-property">
+      <div class="d-flex align-items-center border-bottom py-1 gap-2">
+        <label class="text-muted small flex-shrink-0 mb-0" style="width:8em"></label>
+        <select class="form-select form-select-sm flex-grow-1"></select>
+      </div>
+    </template>
+
     <!-- This is the version of jQuery that is used by Orthanc Explorer -->
     <script src="../../app/libs/jquery.min.js"></script>
 

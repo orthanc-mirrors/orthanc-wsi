@@ -283,49 +283,40 @@ function FormatLength(geometry, projection)
 
 function AddReadOnlyProperty(label, value)
 {
-  $('#annotation-info').append(
-    $('<div>').addClass('d-flex align-items-baseline border-bottom py-1 gap-2').append(
-      $('<span>').addClass('text-muted small flex-shrink-0').css('width', '8em').text(label),
-      $('<span>').addClass('text-break').text(value)
-    )
-  );
+  var row = $(($('#tpl-readonly-property')[0].content.cloneNode(true)).firstElementChild);
+  row.find('.prop-label').text(label);
+  row.find('.prop-value').text(value);
+  $('#annotation-info').append(row);
 }
 
 
 function AddEditableProperty(label, value, onChange)
 {
-  var input = $('<input>').attr('type', 'text').addClass('form-control form-control-sm flex-grow-1').val(value);
+  var row = $(($('#tpl-editable-property')[0].content.cloneNode(true)).firstElementChild);
+  row.find('label').text(label);
+  var input = row.find('input');
+  input.val(value);
   if (onChange) {
     input.on('change', function() { onChange($(this).val()); });
   }
-  $('#annotation-info').append(
-    $('<div>').addClass('d-flex align-items-center border-bottom py-1 gap-2').append(
-      $('<label>').addClass('text-muted small flex-shrink-0 mb-0').css('width', '8em').text(label),
-      input
-    )
-  );
+  $('#annotation-info').append(row);
 }
 
 
 function AddDropdownProperty(label, options, selectedValue, onChange)
 {
-  var select = $('<select>').addClass('form-select form-select-sm flex-grow-1');
+  var row = $(($('#tpl-dropdown-property')[0].content.cloneNode(true)).firstElementChild);
+  row.find('label').text(label);
+  var select = row.find('select');
   options.forEach(function(opt) {
-    var option = $('<option>').val(opt.value).text(opt.label);
-    if (opt.value === selectedValue) {
-      option.prop('selected', true);
-    }
-    select.append(option);
+    $('<option>').val(opt.value).text(opt.label)
+                .prop('selected', opt.value === selectedValue)
+                .appendTo(select);
   });
   if (onChange) {
     select.on('change', function() { onChange($(this).val()); });
   }
-  $('#annotation-info').append(
-    $('<div>').addClass('d-flex align-items-center border-bottom py-1 gap-2').append(
-      $('<label>').addClass('text-muted small flex-shrink-0 mb-0').css('width', '8em').text(label),
-      select
-    )
-  );
+  $('#annotation-info').append(row);
 }
 
 
