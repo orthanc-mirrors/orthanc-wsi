@@ -349,8 +349,7 @@ function InitializeDrawing(map)
     map.removeInteraction(selectAnnotation);
     $('#btn-draw-line, #btn-draw-point, #btn-select-annotation').removeClass('active');
     map.getViewport().style.cursor = '';
-    tooltipGeometry = null;
-    annotationTooltip.style.display = 'none';
+    $('#annotation-info').empty();
   }
 
   $('#btn-draw-line').on('click', function() {
@@ -373,37 +372,17 @@ function InitializeDrawing(map)
     }
   });
 
-  var annotationTooltip = $('#annotation-tooltip')[0];
-  var tooltipGeometry = null;  /* geometry of the currently shown tooltip */
-
-  function updateTooltipPosition() {
-    if (tooltipGeometry) {
-      var extent = tooltipGeometry.getExtent();
-      var centerCoord = ol.extent.getCenter(extent);
-      var pixel = map.getPixelFromCoordinate(centerCoord);
-      var rect = map.getViewport().getBoundingClientRect();
-      annotationTooltip.style.left = (rect.left + pixel[0] - annotationTooltip.offsetWidth  / 2) + 'px';
-      annotationTooltip.style.top  = (rect.top  + pixel[1] - annotationTooltip.offsetHeight / 2) + 'px';
-    }
-  }
-
-  map.on('postrender', updateTooltipPosition);
-
   selectAnnotation.on('select', function(e) {
     if (e.selected.length === 1) {
       var geometry = e.selected[0].getGeometry();
       if (geometry.getType() === 'LineString') {
-        tooltipGeometry = geometry;
-        annotationTooltip.textContent = FormatLength(geometry, map.getView().getProjection());
-        annotationTooltip.style.display = 'block';
-        updateTooltipPosition();
+        $('#annotation-info').text('Length: ' + FormatLength(geometry, map.getView().getProjection()));
       } else {
-        tooltipGeometry = null;
-        annotationTooltip.style.display = 'none';
+        $('#annotation-info').empty();
       }
+      bootstrap.Offcanvas.getOrCreateInstance($('#right-panel')[0]).show();
     } else {
-      tooltipGeometry = null;
-      annotationTooltip.style.display = 'none';
+      $('#annotation-info').empty();
     }
   });
 
@@ -433,8 +412,7 @@ function InitializeDrawing(map)
       drawSource.removeFeature(feature);
     });
     selected.clear();
-    tooltipGeometry = null;
-    annotationTooltip.style.display = 'none';
+    $('#annotation-info').empty();
     deleteModal.hide();
   });
 }
