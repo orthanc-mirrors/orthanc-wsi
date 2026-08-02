@@ -91,6 +91,7 @@ function SaveAnnotations(source)
     pendingSourceToSave = null;
 
     isSaving = true;
+    $('#toolbar-spinner').show();
     window.addEventListener('beforeunload', BeforeUnloadHandler);
 
     $.ajax({
@@ -108,6 +109,7 @@ function SaveAnnotations(source)
 
         if (pendingSourceToSave === null) {
           isSaving = false;
+          $('#toolbar-spinner').hide();
           window.removeEventListener('beforeunload', BeforeUnloadHandler);
         } else {
           Execute();
@@ -126,6 +128,8 @@ function SaveAnnotations(source)
 
 function LoadAnnotations(source)
 {
+  $('#toolbar-spinner').show();
+
   $.ajax({
     type : 'POST',
     url : '../api/load-annotations',
@@ -150,6 +154,8 @@ function LoadAnnotations(source)
       alert('Cannot load the saved annotations');
     },
     complete: function() {
+      $('#toolbar-spinner').hide();
+
       // Now that the features are loaded, we can install the save callback
       source.on('addfeature', function (e) {
         SaveAnnotations(e.target);

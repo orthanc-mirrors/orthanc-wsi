@@ -117,22 +117,29 @@
       </div>
 
       <div id="toolbar-left" style="visibility:hidden">
-        <div class="btn-group-vertical" role="group" id="toolbar-left-buttons" style="padding-top: 1em">
-          <button type="button" class="btn btn-outline-secondary icon-btn">
-            a
-          </button>
+        <div id="toolbar-left-content" style="position:absolute; display:flex; flex-direction:column; align-items:center;">
+          <div class="btn-group-vertical" role="group" style="padding-top: 1em">
+            <button type="button" class="btn btn-outline-secondary icon-btn">
+              a
+            </button>
 
-          <button type="button" class="btn btn-outline-secondary icon-btn">
-            b
-          </button>
+            <button type="button" class="btn btn-outline-secondary icon-btn">
+              b
+            </button>
 
-          <button type="button" class="btn btn-outline-secondary icon-btn">
-            c
-          </button>
+            <button type="button" class="btn btn-outline-secondary icon-btn">
+              c
+            </button>
 
-          <button type="button" class="btn btn-outline-secondary icon-btn">
-            d
-          </button>
+            <button type="button" class="btn btn-outline-secondary icon-btn">
+              d
+            </button>
+          </div>
+          <div id="toolbar-spinner" style="display:none; padding-top:1em;">
+            <div class="spinner-border spinner-border-sm text-secondary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
