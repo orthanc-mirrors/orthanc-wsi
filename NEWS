@@ -4,7 +4,9 @@ Pending changes in the mainline
 => Recommended SDK version: 1.12.9 <=
 => Minimum SDK version: 1.7.0 <=
 
-* Support for annotations (SDK 1.12.9 is required)
+* Support for annotations
+* Persistence of annotations in the Orthanc database (SDK 1.12.8 is required)
+* Per-user annotations if the "orthanc-education" plugin is installed
 
 Maintenance
 -----------
