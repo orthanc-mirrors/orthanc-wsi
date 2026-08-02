@@ -472,6 +472,10 @@ function InitializeDrawing(map)
 $(document).ready(function() {
   InitializePanelAnimation();
 
+  $('[data-bs-toggle="tooltip"]').each(function() {
+    new bootstrap.Tooltip(this);
+  });
+
   const params = new URLSearchParams(document.location.search);
 
   if (params.has('series')) {

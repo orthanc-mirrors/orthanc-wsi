@@ -98,19 +98,23 @@
     <div id="map">
       <div id="toolbar-top" style="visibility:hidden">
         <div class="btn-group" role="group">
-          <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-select-annotation">
+          <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-select-annotation"
+                  data-bs-toggle="tooltip" data-bs-placement="bottom" title="Select annotation">
             <i class="bi bi-hand-index"></i>
           </button>
 
-          <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-draw-line">
+          <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-draw-line"
+                  data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draw line">
             <i class="bi bi-arrows"></i>
           </button>
 
-          <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-draw-point">
+          <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-draw-point"
+                  data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draw point">
             <i class="bi bi-pen"></i>
           </button>
 
-          <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-delete-annotation">
+          <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-delete-annotation"
+                  data-bs-toggle="tooltip" data-bs-placement="bottom" title="Delete annotation">
             <i class="bi bi-trash"></i>
           </button>
         </div>
@@ -119,25 +123,29 @@
       <div id="toolbar-left" style="visibility:hidden">
         <div id="toolbar-left-content" style="position:absolute; display:flex; flex-direction:column; align-items:center;">
           <div class="btn-group-vertical" role="group" style="padding-top: 1em">
-            <button type="button" class="btn btn-outline-secondary icon-btn">
+            <button type="button" class="btn btn-outline-secondary icon-btn"
+                    data-bs-toggle="tooltip" data-bs-placement="right" title="Action A">
               a
             </button>
 
-            <button type="button" class="btn btn-outline-secondary icon-btn">
+            <button type="button" class="btn btn-outline-secondary icon-btn"
+                    data-bs-toggle="tooltip" data-bs-placement="right" title="Action B">
               b
             </button>
 
-            <button type="button" class="btn btn-outline-secondary icon-btn">
+            <button type="button" class="btn btn-outline-secondary icon-btn"
+                    data-bs-toggle="tooltip" data-bs-placement="right" title="Action C">
               c
             </button>
 
-            <button type="button" class="btn btn-outline-secondary icon-btn">
+            <button type="button" class="btn btn-outline-secondary icon-btn"
+                    data-bs-toggle="tooltip" data-bs-placement="right" title="Action D">
               d
             </button>
           </div>
           <div id="toolbar-spinner" style="display:none; padding-top:1em;">
             <div class="spinner-border spinner-border-sm text-secondary" role="status">
-              <span class="visually-hidden">Loading...</span>
+              <span class="visually-hidden">Saving...</span>
             </div>
           </div>
         </div>
@@ -147,7 +155,7 @@
     <div class="offcanvas offcanvas-end" data-bs-backdrop="false" data-bs-scroll="true"
          tabindex="-1" id="right-panel">
       <div class="offcanvas-header">
-        <h5 class="offcanvas-title">Panel</h5>
+        <h5 class="offcanvas-title">Annotations</h5>
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
       </div>
       <div class="offcanvas-body">
