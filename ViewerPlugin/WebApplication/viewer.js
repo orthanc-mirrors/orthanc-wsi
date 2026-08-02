@@ -181,6 +181,8 @@ function InitializePyramid(pyramid, tilesBaseUrl)
     // Move the vertical buttons below the rotate control, regardless of scaling
     var rotateEl = $('.ol-rotate')[0];
     $('#toolbar-left-buttons')[0].style.top = (rotateEl.offsetTop + rotateEl.offsetHeight) + 'px';
+
+    $('#toolbar-top, #toolbar-left, #right-panel-toggle').css('visibility', '');
   });
 
 

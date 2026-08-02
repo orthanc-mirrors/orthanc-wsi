@@ -96,7 +96,7 @@
   </head>
   <body>
     <div id="map">
-      <div id="toolbar-top">
+      <div id="toolbar-top" style="visibility:hidden">
         <div class="btn-group" role="group">
           <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-select-annotation">
             <i class="bi bi-hand-index"></i>
@@ -116,7 +116,7 @@
         </div>
       </div>
 
-      <div id="toolbar-left">
+      <div id="toolbar-left" style="visibility:hidden">
         <div class="btn-group-vertical" role="group" id="toolbar-left-buttons" style="padding-top: 1em">
           <button type="button" class="btn btn-outline-secondary icon-btn">
             a
@@ -148,7 +148,7 @@
       </div>
     </div>
 
-    <button id="right-panel-toggle" type="button" class="btn btn-secondary"
+    <button id="right-panel-toggle" type="button" class="btn btn-secondary" style="visibility:hidden"
             data-bs-toggle="offcanvas" data-bs-target="#right-panel">
       <i class="bi bi-chevron-compact-left" id="right-panel-toggle-icon"></i>
     </button>
