@@ -281,6 +281,54 @@ function FormatLength(geometry, projection)
 }
 
 
+function AddReadOnlyProperty(label, value)
+{
+  $('#annotation-info').append(
+    $('<div>').addClass('d-flex align-items-baseline border-bottom py-1 gap-2').append(
+      $('<span>').addClass('text-muted small flex-shrink-0').css('width', '8em').text(label),
+      $('<span>').addClass('text-break').text(value)
+    )
+  );
+}
+
+
+function AddEditableProperty(label, value, onChange)
+{
+  var input = $('<input>').attr('type', 'text').addClass('form-control form-control-sm flex-grow-1').val(value);
+  if (onChange) {
+    input.on('change', function() { onChange($(this).val()); });
+  }
+  $('#annotation-info').append(
+    $('<div>').addClass('d-flex align-items-center border-bottom py-1 gap-2').append(
+      $('<label>').addClass('text-muted small flex-shrink-0 mb-0').css('width', '8em').text(label),
+      input
+    )
+  );
+}
+
+
+function AddDropdownProperty(label, options, selectedValue, onChange)
+{
+  var select = $('<select>').addClass('form-select form-select-sm flex-grow-1');
+  options.forEach(function(opt) {
+    var option = $('<option>').val(opt.value).text(opt.label);
+    if (opt.value === selectedValue) {
+      option.prop('selected', true);
+    }
+    select.append(option);
+  });
+  if (onChange) {
+    select.on('change', function() { onChange($(this).val()); });
+  }
+  $('#annotation-info').append(
+    $('<div>').addClass('d-flex align-items-center border-bottom py-1 gap-2').append(
+      $('<label>').addClass('text-muted small flex-shrink-0 mb-0').css('width', '8em').text(label),
+      select
+    )
+  );
+}
+
+
 function InitializeDrawing(map)
 {
   // Vector layer to hold drawn features
@@ -373,16 +421,28 @@ function InitializeDrawing(map)
   });
 
   selectAnnotation.on('select', function(e) {
+    $('#annotation-info').empty();
     if (e.selected.length === 1) {
       var geometry = e.selected[0].getGeometry();
       if (geometry.getType() === 'LineString') {
-        $('#annotation-info').text('Length: ' + FormatLength(geometry, map.getView().getProjection()));
+        AddReadOnlyProperty('Length', FormatLength(geometry, map.getView().getProjection()));
       } else {
-        $('#annotation-info').empty();
+        // TODO
+        AddReadOnlyProperty('Length', '1.23 mm');
+        AddReadOnlyProperty('Bounding box', '100 x 200 px');
+        AddReadOnlyProperty('Surface', '0.05 mm²');
+        AddEditableProperty('Taxonomy', 'Value', function(v) {
+          console.log('Taxonomy changed to: ' + v);
+        });
+        AddDropdownProperty('Tissue type', [
+          { value: 'tumor',  label: 'Tumor' },
+          { value: 'stroma', label: 'Stroma' },
+          { value: 'necrosis', label: 'Necrosis' }
+        ], 'tumor', function(v) {
+          console.log('Tissue type changed to: ' + v);
+        });
       }
       bootstrap.Offcanvas.getOrCreateInstance($('#right-panel')[0]).show();
-    } else {
-      $('#annotation-info').empty();
     }
   });
 
