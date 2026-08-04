@@ -88,8 +88,10 @@
       .bi-arrows                { -webkit-mask-image: url("../libs/svg/arrows.svg"); mask-image: url("../libs/svg/arrows.svg"); }
       .bi-chevron-compact-left  { -webkit-mask-image: url("../libs/svg/chevron-compact-left.svg"); mask-image: url("../libs/svg/chevron-compact-left.svg"); }
       .bi-chevron-compact-right { -webkit-mask-image: url("../libs/svg/chevron-compact-right.svg"); mask-image: url("../libs/svg/chevron-compact-right.svg"); }
+      .bi-circle                { -webkit-mask-image: url("../libs/svg/circle.svg"); mask-image: url("../libs/svg/circle.svg"); }
       .bi-hand-index            { -webkit-mask-image: url("../libs/svg/hand-index.svg"); mask-image: url("../libs/svg/hand-index.svg"); }
       .bi-pen                   { -webkit-mask-image: url("../libs/svg/pen.svg"); mask-image: url("../libs/svg/pen.svg"); }
+      .bi-square                { -webkit-mask-image: url("../libs/svg/square.svg"); mask-image: url("../libs/svg/square.svg"); }
       .bi-trash                 { -webkit-mask-image: url("../libs/svg/trash.svg"); mask-image: url("../libs/svg/trash.svg"); }
     </style>
 
@@ -113,8 +115,18 @@
             <i class="bi bi-pen"></i>
           </button>
 
+          <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-draw-circle"
+                  data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draw circle">
+            <i class="bi bi-circle"></i>
+          </button>
+
+          <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-draw-rectangle"
+                  data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draw rectangle">
+            <i class="bi bi-square"></i>
+          </button>
+
           <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-delete-annotation"
-                  data-bs-toggle="tooltip" data-bs-placement="bottom" title="Delete annotation">
+                  data-bs-toggle="tooltip" data-bs-placement="bottom" title="Delete selected annotation">
             <i class="bi bi-trash"></i>
           </button>
         </div>

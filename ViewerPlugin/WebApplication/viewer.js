@@ -351,6 +351,19 @@ function InitializeDrawing(map)
     type: 'Point'
   });
 
+  // Draw circle interaction (inactive until toggled)
+  var drawCircle = new ol.interaction.Draw({
+    source: drawSource,
+    type: 'Circle'
+  });
+
+  // Draw rectangle interaction (inactive until toggled)
+  var drawRectangle = new ol.interaction.Draw({
+    source: drawSource,
+    type: 'Circle',
+    geometryFunction: ol.interaction.Draw.createBox()
+  });
+
   function preventDoubleClickZoom() {
     map.getInteractions().forEach(function(interaction) {
       if (interaction instanceof ol.interaction.DoubleClickZoom) {
@@ -367,7 +380,24 @@ function InitializeDrawing(map)
     selectAnnotation.getFeatures().push(e.feature);
     selectAnnotation.dispatchEvent({ type: 'select', selected: [e.feature], deselected: [] });
   });
-  drawPoint.on('drawend', function(e) { preventDoubleClickZoom(); });
+  drawPoint.on('drawend', function(e) {
+    preventDoubleClickZoom();
+    selectAnnotation.getFeatures().clear();
+    selectAnnotation.getFeatures().push(e.feature);
+    selectAnnotation.dispatchEvent({ type: 'select', selected: [e.feature], deselected: [] });
+  });
+  drawCircle.on('drawend', function(e) {
+    preventDoubleClickZoom();
+    selectAnnotation.getFeatures().clear();
+    selectAnnotation.getFeatures().push(e.feature);
+    selectAnnotation.dispatchEvent({ type: 'select', selected: [e.feature], deselected: [] });
+  });
+  drawRectangle.on('drawend', function(e) {
+    preventDoubleClickZoom();
+    selectAnnotation.getFeatures().clear();
+    selectAnnotation.getFeatures().push(e.feature);
+    selectAnnotation.dispatchEvent({ type: 'select', selected: [e.feature], deselected: [] });
+  });
 
   // Select interaction (inactive until toggled)
   var selectAnnotation = new ol.interaction.Select({
@@ -385,8 +415,10 @@ function InitializeDrawing(map)
   function deactivateAll() {
     map.removeInteraction(drawLine);
     map.removeInteraction(drawPoint);
+    map.removeInteraction(drawCircle);
+    map.removeInteraction(drawRectangle);
     map.removeInteraction(selectAnnotation);
-    $('#btn-draw-line, #btn-draw-point, #btn-select-annotation').removeClass('active');
+    $('#btn-draw-line, #btn-draw-point, #btn-draw-circle, #btn-draw-rectangle, #btn-select-annotation').removeClass('active');
     map.getViewport().style.cursor = '';
     $('#annotation-info').empty();
   }
@@ -406,6 +438,26 @@ function InitializeDrawing(map)
     deactivateAll();
     if (!wasActive) {
       map.addInteraction(drawPoint);
+      map.addInteraction(selectAnnotation);  // kept active to show blue highlight
+      $(this).addClass('active');
+    }
+  });
+
+  $('#btn-draw-circle').on('click', function() {
+    var wasActive = $(this).hasClass('active');
+    deactivateAll();
+    if (!wasActive) {
+      map.addInteraction(drawCircle);
+      map.addInteraction(selectAnnotation);  // kept active to show blue highlight
+      $(this).addClass('active');
+    }
+  });
+
+  $('#btn-draw-rectangle').on('click', function() {
+    var wasActive = $(this).hasClass('active');
+    deactivateAll();
+    if (!wasActive) {
+      map.addInteraction(drawRectangle);
       map.addInteraction(selectAnnotation);  // kept active to show blue highlight
       $(this).addClass('active');
     }
@@ -433,8 +485,8 @@ function InitializeDrawing(map)
         ], feature.get('category') || '', function(v) {
           feature.set('category', v);
         });
-        bootstrap.Offcanvas.getOrCreateInstance($('#right-panel')[0]).show();
       }
+      bootstrap.Offcanvas.getOrCreateInstance($('#right-panel')[0]).show();
     }
   });
 
