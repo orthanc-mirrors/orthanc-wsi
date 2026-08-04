@@ -137,7 +137,9 @@
                   data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draw freehand figure">
             <i class="bi bi-pencil"></i>
           </button>
+        </div>
 
+        <div class="btn-group" role="group">
           <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-delete-annotation"
                   data-bs-toggle="tooltip" data-bs-placement="bottom" title="Delete selected annotation">
             <i class="bi bi-trash"></i>
@@ -184,11 +186,13 @@
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
       </div>
       <div class="offcanvas-body">
-        <button class="btn btn-primary w-100 mb-2" id="btn-focus-annotation"
-                style="display:none">
-          <i class="bi bi-arrows-fullscreen me-2 align-middle"></i> Focus on annotation
-        </button>
-        <div id="annotation-info"></div>
+        <div id="annotation-info">
+          <h5>Current selection</h5>
+          <button class="btn btn-primary w-100 mb-2" id="btn-focus-annotation">
+            <i class="bi bi-arrows-fullscreen me-2 align-middle"></i> Focus on annotation
+          </button>
+          <div id="annotation-properties"></div>
+        </div>
       </div>
     </div>
 
@@ -232,21 +236,21 @@
     <template id="tpl-readonly-property">
       <div class="d-flex align-items-baseline border-bottom py-1 gap-2">
         <span class="text-muted small flex-shrink-0 prop-label" style="width:8em"></span>
-        <span class="text-break prop-value"></span>
+        <span class="text-break small prop-value"></span>
       </div>
     </template>
 
     <template id="tpl-editable-property">
       <div class="d-flex align-items-center border-bottom py-1 gap-2">
         <label class="text-muted small flex-shrink-0 mb-0" style="width:8em"></label>
-        <input type="text" class="form-control form-control-sm flex-grow-1">
+        <input type="text" class="form-control form-control-sm small flex-grow-1">
       </div>
     </template>
 
     <template id="tpl-dropdown-property">
       <div class="d-flex align-items-center border-bottom py-1 gap-2">
         <label class="text-muted small flex-shrink-0 mb-0" style="width:8em"></label>
-        <select class="form-select form-select-sm flex-grow-1"></select>
+        <select class="form-select form-select-sm small flex-grow-1"></select>
       </div>
     </template>
 

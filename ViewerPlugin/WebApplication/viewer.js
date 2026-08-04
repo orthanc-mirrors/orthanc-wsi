@@ -286,7 +286,7 @@ function AddReadOnlyProperty(label, value)
   var row = $(($('#tpl-readonly-property')[0].content.cloneNode(true)).firstElementChild);
   row.find('.prop-label').text(label);
   row.find('.prop-value').text(value);
-  $('#annotation-info').append(row);
+  $('#annotation-properties').append(row);
 }
 
 
@@ -299,7 +299,7 @@ function AddEditableProperty(label, value, onChange)
   if (onChange) {
     input.on('change', function() { onChange($(this).val()); });
   }
-  $('#annotation-info').append(row);
+  $('#annotation-properties').append(row);
 }
 
 
@@ -316,7 +316,7 @@ function AddDropdownProperty(label, options, selectedValue, onChange)
   if (onChange) {
     select.on('change', function() { onChange($(this).val()); });
   }
-  $('#annotation-info').append(row);
+  $('#annotation-properties').append(row);
 }
 
 
@@ -425,7 +425,7 @@ function InitializeDrawing(map)
     map.removeInteraction(selectAnnotation);
     $('.icon-btn').removeClass('active');
     map.getViewport().style.cursor = '';
-    $('#annotation-info').empty();
+    $('#annotation-info').hide();
   }
 
   function activateDrawTool(btn, interaction, cursor) {
@@ -449,14 +449,19 @@ function InitializeDrawing(map)
   $('#btn-draw-freehand').on('click', function() { activateDrawTool($(this), drawFreehand, 'crosshair'); });
 
   selectAnnotation.on('select', function(e) {
-    $('#annotation-info').empty();
+    $('#annotation-properties').empty();
+
     if (e.selected.length === 1) {
+      $('#annotation-info').show();
+
       var feature = e.selected[0];
       var geometry = feature.getGeometry();
-      $('#btn-focus-annotation').show().off('click').on('click', function() {
+
+      $('#btn-focus-annotation').off('click').on('click', function() {
         bootstrap.Offcanvas.getOrCreateInstance($('#right-panel')[0]).hide();
         map.getView().fit(geometry.getExtent(), { padding: [40, 40, 40, 40], duration: 300 });
       });
+
       if (geometry.getType() === 'LineString') {
         AddReadOnlyProperty('Length', FormatLength(geometry, map.getView().getProjection()));
       } else {
@@ -477,7 +482,7 @@ function InitializeDrawing(map)
       }
       bootstrap.Offcanvas.getOrCreateInstance($('#right-panel')[0]).show();
     } else {
-      $('#btn-focus-annotation').hide();
+      $('#annotation-info').hide();
     }
   });
 
@@ -507,7 +512,7 @@ function InitializeDrawing(map)
       drawSource.removeFeature(feature);
     });
     selected.clear();
-    $('#annotation-info').empty();
+    $('#annotation-info').hide();
     deleteModal.hide();
   });
 }
