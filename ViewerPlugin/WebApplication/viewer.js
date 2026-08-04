@@ -515,6 +515,10 @@ function InitializeDrawing(map)
     if (e.selected.length === 1) {
       var feature = e.selected[0];
       var geometry = feature.getGeometry();
+      $('#btn-focus-annotation').show().off('click').on('click', function() {
+        bootstrap.Offcanvas.getOrCreateInstance($('#right-panel')[0]).hide();
+        map.getView().fit(geometry.getExtent(), { padding: [40, 40, 40, 40], duration: 300 });
+      });
       if (geometry.getType() === 'LineString') {
         AddReadOnlyProperty('Length', FormatLength(geometry, map.getView().getProjection()));
       } else {
@@ -534,6 +538,8 @@ function InitializeDrawing(map)
         });
       }
       bootstrap.Offcanvas.getOrCreateInstance($('#right-panel')[0]).show();
+    } else {
+      $('#btn-focus-annotation').hide();
     }
   });
 

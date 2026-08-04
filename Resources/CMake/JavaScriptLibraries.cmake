@@ -64,6 +64,7 @@ file(COPY
   )
 
 file(COPY
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/arrows-fullscreen.svg
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/arrows.svg
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/chevron-compact-left.svg
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/chevron-compact-right.svg

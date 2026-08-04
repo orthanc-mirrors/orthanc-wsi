@@ -86,6 +86,7 @@
 
       /* The used icons must be added to ../Resources/CMake/JavaScriptLibraries.cmake */
       .bi-arrows                { -webkit-mask-image: url("../libs/svg/arrows.svg"); mask-image: url("../libs/svg/arrows.svg"); }
+      .bi-arrows-fullscreen     { -webkit-mask-image: url("../libs/svg/arrows-fullscreen.svg"); mask-image: url("../libs/svg/arrows-fullscreen.svg"); }
       .bi-chevron-compact-left  { -webkit-mask-image: url("../libs/svg/chevron-compact-left.svg"); mask-image: url("../libs/svg/chevron-compact-left.svg"); }
       .bi-chevron-compact-right { -webkit-mask-image: url("../libs/svg/chevron-compact-right.svg"); mask-image: url("../libs/svg/chevron-compact-right.svg"); }
       .bi-circle                { -webkit-mask-image: url("../libs/svg/circle.svg"); mask-image: url("../libs/svg/circle.svg"); }
@@ -183,6 +184,10 @@
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
       </div>
       <div class="offcanvas-body">
+        <button class="btn btn-primary w-100 mb-2" id="btn-focus-annotation"
+                style="display:none">
+          <i class="bi bi-arrows-fullscreen me-2 align-middle"></i> Focus on annotation
+        </button>
         <div id="annotation-info"></div>
       </div>
     </div>
