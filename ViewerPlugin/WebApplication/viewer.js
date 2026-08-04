@@ -347,13 +347,23 @@ function RenderLayersTable()
       layer.visible = !layer.visible;
       drawLayer.changed();
       RenderLayersTable();
+      SaveAnnotations();
     });
 
     tr.find('.layer-color').val(layer.color)
-      .on('input', function() { layer.color = $(this).val(); drawLayer.changed(); });
+      .on('input', function() {
+        layer.color = $(this).val();
+        drawLayer.changed();
+      })
+      .on('change', function() {
+        SaveAnnotations();
+      });
 
     tr.find('.layer-name').val(layer.name)
-      .on('change', function() { layer.name = $(this).val(); });
+      .on('change', function() {
+        layer.name = $(this).val();
+        SaveAnnotations();
+      });
 
     var btnDel = tr.find('.layer-del-btn');
     if (layers.length <= 1) {
@@ -391,6 +401,9 @@ function InitializeDrawing(map)
       color: color,
       visible: true
     });
+
+    SaveAnnotations();
+
     return id;
   }
 
@@ -584,6 +597,7 @@ function InitializeDrawing(map)
 
       deleteLayerModal.hide();
       RenderLayersTable();
+      SaveAnnotations();
     }
   });
 

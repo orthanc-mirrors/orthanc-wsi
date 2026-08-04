@@ -36,9 +36,45 @@ function CreateSerializationObject()
   } else if (params.has('instance')) {
     serialized['level'] = 'instance';
     serialized['resource'] = params.get('instance');
+  } else {
+    console.error('No series/instance available');
   }
 
   return serialized;
+}
+
+
+function SerializeFeature(feature)
+{
+  var type = feature.getGeometry().getType();
+
+  if (type === 'LineString') {
+    return {
+      'type' : 'polyline',
+      'coordinates' : feature.getGeometry().getCoordinates()
+    };
+  } else if (type === 'Point') {
+    return {
+      'type' : 'point',
+      'coordinates' : feature.getGeometry().getCoordinates()
+    };
+  } else {
+    console.assert('Not implemented: ' + type);
+    return null;
+  }
+}
+
+
+function UnserializeFeature(json)
+{
+  if (json.type === 'polyline') {
+    return new ol.geom.LineString(json['coordinates']);
+  } else if (json.type === 'point') {
+    return new ol.geom.Point(json['coordinates']);
+  } else {
+    console.assert('Not implemented: ' + json.type);
+    return null;
+  }
 }
 
 
@@ -47,26 +83,16 @@ function SerializeLayers(source)
   var features = [];
 
   source.getFeatures().forEach((feature, index) => {
-    var type = feature.getGeometry().getType();
+    var item = SerializeFeature(feature);
 
-    var item = {
-      'layer-id' : feature.get('layer-id')
-    };
-
-    if (type === 'LineString') {
-      item['type'] = 'polyline';
-      item['coordinates'] = feature.getGeometry().getCoordinates();
-    } else if (type === 'Point') {
-      item['type'] = 'point';
-      item['coordinates'] = feature.getGeometry().getCoordinates();
-    } else {
-      console.assert('Not implemented: ' + type);
+    if (item !== null) {
+      item['layer-id'] = feature.get('layer-id');
+      features.push(item);
     }
-
-    features.push(item);
   });
 
   var serialized = CreateSerializationObject();
+
   serialized['annotations'] = {
     'layers' : layers,
     'features' : features
@@ -76,10 +102,11 @@ function SerializeLayers(source)
 }
 
 
-var pendingSourceToSave = null;
+var sourceToSerialize = null;
+var isPendingChange = false;
 var isSaving = false;
 
-function SaveAnnotations(source)
+function SaveAnnotations()
 {
   function BeforeUnloadHandler(event)
   {
@@ -91,11 +118,11 @@ function SaveAnnotations(source)
 
   function Execute()
   {
-    console.assert(pendingSourceToSave !== null);
+    console.assert(sourceToSerialize !== null);
 
-    var serialized = SerializeLayers(pendingSourceToSave);
-    pendingSourceToSave = null;
+    var serialized = SerializeLayers(sourceToSerialize);
 
+    isPendingChange = false;
     isSaving = true;
     $('#toolbar-spinner').show();
     window.addEventListener('beforeunload', BeforeUnloadHandler);
@@ -113,21 +140,23 @@ function SaveAnnotations(source)
       complete : function() {
         console.assert(isSaving === true);
 
-        if (pendingSourceToSave === null) {
+        if (isPendingChange) {
+          Execute();
+        } else {
           isSaving = false;
           $('#toolbar-spinner').hide();
           window.removeEventListener('beforeunload', BeforeUnloadHandler);
-        } else {
-          Execute();
         }
       }
     });
   }
 
-  pendingSourceToSave = source;
+  if (sourceToSerialize !== null) {
+    isPendingChange = true;
 
-  if (!isSaving) {
-    Execute();
+    if (!isSaving) {
+      Execute();
+    }
   }
 }
 
@@ -156,13 +185,7 @@ function LoadAnnotations(source)
         var layerId = data.features[i]['layer-id'];
 
         if (layerId !== undefined) {
-          var geometry = null;
-
-          if (data.features[i].type === 'polyline') {
-            geometry = new ol.geom.LineString(data.features[i]['coordinates']);
-          } else if (data.features[i].type === 'point') {
-            geometry = new ol.geom.Point(data.features[i]['coordinates']);
-          }
+          var geometry = UnserializeFeature(data.features[i]);
 
           if (geometry !== null) {
             var feature = new ol.Feature(geometry);
@@ -178,14 +201,16 @@ function LoadAnnotations(source)
       alert('Cannot load the saved annotations');
     },
     complete: function() {
+      sourceToSerialize = source;
+
       $('#toolbar-spinner').hide();
 
       // Now that the features are loaded, we can install the save callback
       source.on('addfeature', function (e) {
-        SaveAnnotations(e.target);
+        SaveAnnotations();
       });
       source.on('removefeature', function (e) {
-        SaveAnnotations(e.target);
+        SaveAnnotations();
       });
     }
   });
