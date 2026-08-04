@@ -386,42 +386,21 @@ function InitializeDrawing(map)
     });
   }
 
-  drawLine.on('drawend', function(e) {
-    preventDoubleClickZoom();
-    // Select the new line so it appears blue and shows its length
+  function onDrawEnd(e, callPreventDoubleClickZoom) {
+    if (callPreventDoubleClickZoom) {
+      preventDoubleClickZoom();
+    }
     selectAnnotation.getFeatures().clear();
     selectAnnotation.getFeatures().push(e.feature);
     selectAnnotation.dispatchEvent({ type: 'select', selected: [e.feature], deselected: [] });
-  });
-  drawPoint.on('drawend', function(e) {
-    preventDoubleClickZoom();
-    selectAnnotation.getFeatures().clear();
-    selectAnnotation.getFeatures().push(e.feature);
-    selectAnnotation.dispatchEvent({ type: 'select', selected: [e.feature], deselected: [] });
-  });
-  drawCircle.on('drawend', function(e) {
-    preventDoubleClickZoom();
-    selectAnnotation.getFeatures().clear();
-    selectAnnotation.getFeatures().push(e.feature);
-    selectAnnotation.dispatchEvent({ type: 'select', selected: [e.feature], deselected: [] });
-  });
-  drawRectangle.on('drawend', function(e) {
-    preventDoubleClickZoom();
-    selectAnnotation.getFeatures().clear();
-    selectAnnotation.getFeatures().push(e.feature);
-    selectAnnotation.dispatchEvent({ type: 'select', selected: [e.feature], deselected: [] });
-  });
-  drawClosedPolygon.on('drawend', function(e) {
-    preventDoubleClickZoom();
-    selectAnnotation.getFeatures().clear();
-    selectAnnotation.getFeatures().push(e.feature);
-    selectAnnotation.dispatchEvent({ type: 'select', selected: [e.feature], deselected: [] });
-  });
-  drawFreehand.on('drawend', function(e) {
-    selectAnnotation.getFeatures().clear();
-    selectAnnotation.getFeatures().push(e.feature);
-    selectAnnotation.dispatchEvent({ type: 'select', selected: [e.feature], deselected: [] });
-  });
+  }
+
+  drawLine.on('drawend', function(e) { onDrawEnd(e, true); });
+  drawPoint.on('drawend', function(e) { onDrawEnd(e, true); });
+  drawCircle.on('drawend', function(e) { onDrawEnd(e, true); });
+  drawRectangle.on('drawend', function(e) { onDrawEnd(e, true); });
+  drawClosedPolygon.on('drawend', function(e) { onDrawEnd(e, true); });
+  drawFreehand.on('drawend', function(e) { onDrawEnd(e, false); });
 
   // Select interaction (inactive until toggled)
   var selectAnnotation = new ol.interaction.Select({
@@ -449,66 +428,25 @@ function InitializeDrawing(map)
     $('#annotation-info').empty();
   }
 
-  $('#btn-draw-line').on('click', function() {
-    var wasActive = $(this).hasClass('active');
+  function activateDrawTool(btn, interaction, cursor) {
+    var wasActive = btn.hasClass('active');
     deactivateAll();
     if (!wasActive) {
-      map.addInteraction(drawLine);
+      map.addInteraction(interaction);
       map.addInteraction(selectAnnotation);  // kept active to show blue highlight
-      $(this).addClass('active');
+      btn.addClass('active');
+      if (cursor) {
+        map.getViewport().style.cursor = cursor;
+      }
     }
-  });
+  }
 
-  $('#btn-draw-point').on('click', function() {
-    var wasActive = $(this).hasClass('active');
-    deactivateAll();
-    if (!wasActive) {
-      map.addInteraction(drawPoint);
-      map.addInteraction(selectAnnotation);  // kept active to show blue highlight
-      $(this).addClass('active');
-    }
-  });
-
-  $('#btn-draw-circle').on('click', function() {
-    var wasActive = $(this).hasClass('active');
-    deactivateAll();
-    if (!wasActive) {
-      map.addInteraction(drawCircle);
-      map.addInteraction(selectAnnotation);  // kept active to show blue highlight
-      $(this).addClass('active');
-    }
-  });
-
-  $('#btn-draw-rectangle').on('click', function() {
-    var wasActive = $(this).hasClass('active');
-    deactivateAll();
-    if (!wasActive) {
-      map.addInteraction(drawRectangle);
-      map.addInteraction(selectAnnotation);  // kept active to show blue highlight
-      $(this).addClass('active');
-    }
-  });
-
-  $('#btn-draw-closed-polygon').on('click', function() {
-    var wasActive = $(this).hasClass('active');
-    deactivateAll();
-    if (!wasActive) {
-      map.addInteraction(drawClosedPolygon);
-      map.addInteraction(selectAnnotation);  // kept active to show blue highlight
-      $(this).addClass('active');
-    }
-  });
-
-  $('#btn-draw-freehand').on('click', function() {
-    var wasActive = $(this).hasClass('active');
-    deactivateAll();
-    if (!wasActive) {
-      map.addInteraction(drawFreehand);
-      map.addInteraction(selectAnnotation);  // kept active to show blue highlight
-      $(this).addClass('active');
-      map.getViewport().style.cursor = 'crosshair';
-    }
-  });
+  $('#btn-draw-line').on('click', function() { activateDrawTool($(this), drawLine); });
+  $('#btn-draw-point').on('click', function() { activateDrawTool($(this), drawPoint); });
+  $('#btn-draw-circle').on('click', function() { activateDrawTool($(this), drawCircle); });
+  $('#btn-draw-rectangle').on('click', function() { activateDrawTool($(this), drawRectangle); });
+  $('#btn-draw-closed-polygon').on('click', function() { activateDrawTool($(this), drawClosedPolygon); });
+  $('#btn-draw-freehand').on('click', function() { activateDrawTool($(this), drawFreehand, 'crosshair'); });
 
   selectAnnotation.on('select', function(e) {
     $('#annotation-info').empty();
