@@ -364,6 +364,19 @@ function InitializeDrawing(map)
     geometryFunction: ol.interaction.Draw.createBox()
   });
 
+  // Draw closed polygon interaction (inactive until toggled)
+  var drawClosedPolygon = new ol.interaction.Draw({
+    source: drawSource,
+    type: 'Polygon'
+  });
+
+  // Draw freehand interaction (inactive until toggled)
+  var drawFreehand = new ol.interaction.Draw({
+    source: drawSource,
+    type: 'Polygon',
+    freehand: true
+  });
+
   function preventDoubleClickZoom() {
     map.getInteractions().forEach(function(interaction) {
       if (interaction instanceof ol.interaction.DoubleClickZoom) {
@@ -398,6 +411,17 @@ function InitializeDrawing(map)
     selectAnnotation.getFeatures().push(e.feature);
     selectAnnotation.dispatchEvent({ type: 'select', selected: [e.feature], deselected: [] });
   });
+  drawClosedPolygon.on('drawend', function(e) {
+    preventDoubleClickZoom();
+    selectAnnotation.getFeatures().clear();
+    selectAnnotation.getFeatures().push(e.feature);
+    selectAnnotation.dispatchEvent({ type: 'select', selected: [e.feature], deselected: [] });
+  });
+  drawFreehand.on('drawend', function(e) {
+    selectAnnotation.getFeatures().clear();
+    selectAnnotation.getFeatures().push(e.feature);
+    selectAnnotation.dispatchEvent({ type: 'select', selected: [e.feature], deselected: [] });
+  });
 
   // Select interaction (inactive until toggled)
   var selectAnnotation = new ol.interaction.Select({
@@ -417,8 +441,10 @@ function InitializeDrawing(map)
     map.removeInteraction(drawPoint);
     map.removeInteraction(drawCircle);
     map.removeInteraction(drawRectangle);
+    map.removeInteraction(drawClosedPolygon);
+    map.removeInteraction(drawFreehand);
     map.removeInteraction(selectAnnotation);
-    $('#btn-draw-line, #btn-draw-point, #btn-draw-circle, #btn-draw-rectangle, #btn-select-annotation').removeClass('active');
+    $('.icon-btn').removeClass('active');
     map.getViewport().style.cursor = '';
     $('#annotation-info').empty();
   }
@@ -460,6 +486,27 @@ function InitializeDrawing(map)
       map.addInteraction(drawRectangle);
       map.addInteraction(selectAnnotation);  // kept active to show blue highlight
       $(this).addClass('active');
+    }
+  });
+
+  $('#btn-draw-closed-polygon').on('click', function() {
+    var wasActive = $(this).hasClass('active');
+    deactivateAll();
+    if (!wasActive) {
+      map.addInteraction(drawClosedPolygon);
+      map.addInteraction(selectAnnotation);  // kept active to show blue highlight
+      $(this).addClass('active');
+    }
+  });
+
+  $('#btn-draw-freehand').on('click', function() {
+    var wasActive = $(this).hasClass('active');
+    deactivateAll();
+    if (!wasActive) {
+      map.addInteraction(drawFreehand);
+      map.addInteraction(selectAnnotation);  // kept active to show blue highlight
+      $(this).addClass('active');
+      map.getViewport().style.cursor = 'crosshair';
     }
   });
 
@@ -526,7 +573,7 @@ $(document).ready(function() {
   InitializePanelAnimation();
 
   $('[data-bs-toggle="tooltip"]').each(function() {
-    new bootstrap.Tooltip(this);
+    new bootstrap.Tooltip(this, { trigger: 'hover' });
   });
 
   const params = new URLSearchParams(document.location.search);

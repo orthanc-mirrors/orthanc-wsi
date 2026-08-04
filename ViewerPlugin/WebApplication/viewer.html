@@ -90,9 +90,11 @@
       .bi-chevron-compact-right { -webkit-mask-image: url("../libs/svg/chevron-compact-right.svg"); mask-image: url("../libs/svg/chevron-compact-right.svg"); }
       .bi-circle                { -webkit-mask-image: url("../libs/svg/circle.svg"); mask-image: url("../libs/svg/circle.svg"); }
       .bi-hand-index            { -webkit-mask-image: url("../libs/svg/hand-index.svg"); mask-image: url("../libs/svg/hand-index.svg"); }
-      .bi-pen                   { -webkit-mask-image: url("../libs/svg/pen.svg"); mask-image: url("../libs/svg/pen.svg"); }
+      .bi-pencil                { -webkit-mask-image: url("../libs/svg/pencil.svg"); mask-image: url("../libs/svg/pencil.svg"); }
+      .bi-pentagon              { -webkit-mask-image: url("../libs/svg/pentagon.svg"); mask-image: url("../libs/svg/pentagon.svg"); }
       .bi-square                { -webkit-mask-image: url("../libs/svg/square.svg"); mask-image: url("../libs/svg/square.svg"); }
       .bi-trash                 { -webkit-mask-image: url("../libs/svg/trash.svg"); mask-image: url("../libs/svg/trash.svg"); }
+      .bi-geo-alt               { -webkit-mask-image: url("../libs/svg/geo-alt.svg"); mask-image: url("../libs/svg/geo-alt.svg"); }
     </style>
 
   </head>
@@ -112,7 +114,7 @@
 
           <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-draw-point"
                   data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draw point">
-            <i class="bi bi-pen"></i>
+            <i class="bi bi-geo-alt"></i>
           </button>
 
           <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-draw-circle"
@@ -123,6 +125,16 @@
           <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-draw-rectangle"
                   data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draw rectangle">
             <i class="bi bi-square"></i>
+          </button>
+
+          <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-draw-closed-polygon"
+                  data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draw closed polygon">
+            <i class="bi bi-pentagon"></i>
+          </button>
+
+          <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-draw-freehand"
+                  data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draw freehand figure">
+            <i class="bi bi-pencil"></i>
           </button>
 
           <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-delete-annotation"

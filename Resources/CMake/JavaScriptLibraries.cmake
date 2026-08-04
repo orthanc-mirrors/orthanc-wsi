@@ -68,8 +68,10 @@ file(COPY
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/chevron-compact-left.svg
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/chevron-compact-right.svg
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/circle.svg
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/geo-alt.svg
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/hand-index.svg
-  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/pen.svg
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/pencil.svg
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/pentagon.svg
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/square.svg
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/trash.svg
   DESTINATION
