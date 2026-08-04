@@ -512,6 +512,7 @@ void LoadAnnotations(OrthancPluginRestOutput* output,
                                                    Orthanc::SerializationToolbox::ReadString(body, "level"),
                                                    Orthanc::SerializationToolbox::ReadString(body, "resource"));
 
+#if ORTHANC_PLUGINS_VERSION_IS_ABOVE(1, 12, 8)
     OrthancPlugins::KeyValueStore store(KEY_VALUE_STORE_ANNOTATIONS);
 
     std::string compressed, value;
@@ -527,6 +528,9 @@ void LoadAnnotations(OrthancPluginRestOutput* output,
     }
 
     OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, value.c_str(), value.size(), "application/json");
+#else
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "Your Orthanc SDK is too old to save annotations");
+#endif
   }
 }
 
@@ -564,6 +568,7 @@ void SaveAnnotations(OrthancPluginRestOutput* output,
     Orthanc::GzipCompressor compressor;
     Orthanc::IBufferCompressor::Compress(compressed, compressor, value);
 
+#if ORTHANC_PLUGINS_VERSION_IS_ABOVE(1, 12, 8)
     OrthancPlugins::KeyValueStore store(KEY_VALUE_STORE_ANNOTATIONS);
     store.Store(key, compressed);
 
@@ -571,6 +576,9 @@ void SaveAnnotations(OrthancPluginRestOutput* output,
 
     std::string s = answer.toStyledString();
     OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, s.c_str(), s.size(), "application/json");
+#else
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "Your Orthanc SDK is too old to save annotations");
+#endif
   }
 }
 

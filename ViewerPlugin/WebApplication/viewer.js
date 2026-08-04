@@ -27,6 +27,44 @@ function IsNear(a, b)
 }
 
 
+function GenerateUUID() {
+  // Use the native implementation when available
+  if (typeof(crypto) !== 'undefined' &&
+      typeof(crypto.randomUUID) === 'function') {
+    return crypto.randomUUID();
+  }
+
+  // Use the older Web Crypto API if available
+  if (typeof(crypto) !== 'undefined' &&
+      typeof(crypto.getRandomValues) === 'function') {
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+
+    // Set version to 4
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+
+    // Set variant to RFC 4122
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+
+    const hex = [];
+
+    for (let i = 0; i < bytes.length; i++) {
+      hex.push(bytes[i].toString(16).padStart(2, '0'));
+    }
+
+    return (
+      hex.slice(0, 4).join('') + '-' +
+        hex.slice(4, 6).join('') + '-' +
+        hex.slice(6, 8).join('') + '-' +
+        hex.slice(8, 10).join('') + '-' +
+        hex.slice(10, 16).join('')
+    );
+  }
+
+  throw new Error('Cannot generate UUID on your browser');
+}
+
+
 function InitializePyramid(pyramid, tilesBaseUrl)
 {
   $('#map').css('background', pyramid['BackgroundColor']);  // New in WSI 2.1
@@ -385,7 +423,7 @@ function InitializeDrawing(map)
 {
   // Layers management
   function GetLayerById(id) {
-    for (var i = 0; i < layers.length; i++) {
+    for (let i = 0; i < layers.length; i++) {
       if (layers[i].id == id) {
         return layers[i];
       }
@@ -394,7 +432,7 @@ function InitializeDrawing(map)
   }
 
   function AddLayer(name, color) {
-    var id = crypto.randomUUID();
+    var id = GenerateUUID();
     layers.push({
       id: id,
       name: name,

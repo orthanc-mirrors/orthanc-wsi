@@ -148,6 +148,11 @@
             <i class="bi bi-trash"></i>
           </button>
         </div>
+
+        <div class="alert alert-danger alert-dismissible d-inline-block py-0 d-none" role="alert" id="alert-no-saving">
+          Your annotations will not be saved
+          <button type="button" class="btn-close top-50 translate-middle-y" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
       </div>
 
       <div id="toolbar-left" style="visibility:hidden">
@@ -199,7 +204,7 @@
 
         <div class="d-flex align-items-center mb-1">
           <h5>Layers</h5>
-          <button type="button" class="btn btn-sm btn-primary py-0 px-1 ms-auto"
+          <button type="button" class="btn btn-primary ms-auto"
                   id="btn-add-layer">+</button>
         </div>
         <table class="table table-sm table-borderless mb-0 align-middle">

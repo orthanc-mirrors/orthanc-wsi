@@ -178,6 +178,8 @@ function SaveAnnotations()
 
 function LoadAnnotations(source)
 {
+  console.assert(sourceToSerialize === null);
+
   $('#toolbar-spinner').show();
 
   $.ajax({
@@ -186,47 +188,45 @@ function LoadAnnotations(source)
     data : JSON.stringify(CreateSerializationObject()),
     contentType: 'application/json',
     success: function(data) {
-      if (!'layers' in data ||
-          !'features' in data ||
-          data['layers'].length == 0) {
-        return;
-      }
+      if ('layers' in data &&
+          'features' in data &&
+          data['layers'].length != 0) {
+        layers = data.layers;
+        activeLayerId = data.layers[0].id;
 
-      layers = data.layers;
-      activeLayerId = data.layers[0].id;
+        source.clear();
+        for (let i = 0; i < data.features.length; i++) {
+          var layerId = data.features[i]['layer-id'];
 
-      source.clear();
-      for (i = 0; i < data.features.length; i++) {
-        var layerId = data.features[i]['layer-id'];
+          if (layerId !== undefined) {
+            var geometry = UnserializeFeature(data.features[i]);
 
-        if (layerId !== undefined) {
-          var geometry = UnserializeFeature(data.features[i]);
-
-          if (geometry !== null) {
-            var feature = new ol.Feature(geometry);
-            feature.set('layer-id', layerId);
-            source.addFeature(feature);
+            if (geometry !== null) {
+              var feature = new ol.Feature(geometry);
+              feature.set('layer-id', layerId);
+              source.addFeature(feature);
+            }
           }
         }
-      }
 
-      RenderLayersTable();
+        RenderLayersTable();
+
+        sourceToSerialize = source;
+        // Now that the features are loaded, we can install the save callback
+        source.on('addfeature', function (e) {
+          SaveAnnotations();
+        });
+        source.on('removefeature', function (e) {
+          SaveAnnotations();
+        });
+      }
     },
     error: function() {
-      alert('Cannot load the saved annotations');
+      console.error('Cannot load the saved annotations');
+      $('#alert-no-saving').removeClass('d-none');
     },
     complete: function() {
-      sourceToSerialize = source;
-
       $('#toolbar-spinner').hide();
-
-      // Now that the features are loaded, we can install the save callback
-      source.on('addfeature', function (e) {
-        SaveAnnotations();
-      });
-      source.on('removefeature', function (e) {
-        SaveAnnotations();
-      });
     }
   });
 }
