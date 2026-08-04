@@ -281,9 +281,15 @@ function FormatLength(geometry, projection)
 }
 
 
+function CreateElementFromTemplate(templateId)
+{
+  return $(($(templateId)[0].content.cloneNode(true)).firstElementChild);
+}
+
+
 function AddReadOnlyProperty(label, value)
 {
-  var row = $(($('#tpl-readonly-property')[0].content.cloneNode(true)).firstElementChild);
+  var row = CreateElementFromTemplate('#tpl-readonly-property');
   row.find('.prop-label').text(label);
   row.find('.prop-value').text(value);
   $('#annotation-properties').append(row);
@@ -292,7 +298,7 @@ function AddReadOnlyProperty(label, value)
 
 function AddEditableProperty(label, value, onChange)
 {
-  var row = $(($('#tpl-editable-property')[0].content.cloneNode(true)).firstElementChild);
+  var row = CreateElementFromTemplate('#tpl-editable-property');
   row.find('label').text(label);
   var input = row.find('input');
   input.val(value);
@@ -305,7 +311,7 @@ function AddEditableProperty(label, value, onChange)
 
 function AddDropdownProperty(label, options, selectedValue, onChange)
 {
-  var row = $(($('#tpl-dropdown-property')[0].content.cloneNode(true)).firstElementChild);
+  var row = CreateElementFromTemplate('#tpl-dropdown-property');
   row.find('label').text(label);
   var select = row.find('select');
   options.forEach(function(opt) {
@@ -320,22 +326,127 @@ function AddDropdownProperty(label, options, selectedValue, onChange)
 }
 
 
+var drawLayer = null;
+var layers = [];
+var activeLayerId = null;
+var pendingDeleteLayerId = null;
+var deleteLayerModal = null;
+
+
+function RenderLayersTable()
+{
+  var tbody = $('#layers-tbody').empty();
+  layers.forEach(function(layer) {
+    var tr = CreateElementFromTemplate('#tpl-layer-row');
+
+    tr.find('.layer-radio').prop('checked', layer.id === activeLayerId)
+      .on('change', function() { activeLayerId = layer.id; });
+
+    tr.find('.layer-eye-icon').attr('class', layer.visible ? 'bi bi-eye' : 'bi bi-eye-slash');
+    tr.find('.layer-vis-btn').on('click', function() {
+      layer.visible = !layer.visible;
+      drawLayer.changed();
+      RenderLayersTable();
+    });
+
+    tr.find('.layer-color').val(layer.color)
+      .on('input', function() { layer.color = $(this).val(); drawLayer.changed(); });
+
+    tr.find('.layer-name').val(layer.name)
+      .on('change', function() { layer.name = $(this).val(); });
+
+    var btnDel = tr.find('.layer-del-btn');
+    if (layers.length <= 1) {
+      // Cannot delete the last layer, there must always be at least one
+      btnDel.prop('disabled', true).css('opacity', '0.25');
+    } else {
+      btnDel.on('click', function() {
+        pendingDeleteLayerId = layer.id;
+        deleteLayerModal.show();
+      });
+    }
+
+    tbody.append(tr);
+  });
+}
+
+
 function InitializeDrawing(map)
 {
-  // Vector layer to hold drawn features
+  // Layers management
+  function GetLayerById(id) {
+    for (var i = 0; i < layers.length; i++) {
+      if (layers[i].id == id) {
+        return layers[i];
+      }
+    }
+    return null;
+  }
+
+  function AddLayer(name, color) {
+    var id = crypto.randomUUID();
+    layers.push({
+      id: id,
+      name: name,
+      color: color,
+      visible: true
+    });
+    return id;
+  }
+
+  function GetLayerOfFeature(feature) {
+    var layerId = feature.get('layer-id');
+    console.assert(layerId !== null);
+    var layer = GetLayerById(layerId);
+    console.assert(layer !== null);
+    return layer;
+  }
+
+  var predefinedPalette = ['#e63946', '#2a9d8f', '#e9c46a', '#264653', '#f4a261'];
+  activeLayerId = AddLayer('Default', predefinedPalette[0]);
+
+  function MakeStyle(color) {
+    function HexToRGBA(hex, alpha) {
+      var r = parseInt(hex.slice(1, 3), 16);
+      var g = parseInt(hex.slice(3, 5), 16);
+      var b = parseInt(hex.slice(5, 7), 16);
+      return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+    }
+
+    return new ol.style.Style({
+      stroke: new ol.style.Stroke({ color: color, width: 2 }),
+      fill: new ol.style.Fill({ color: HexToRGBA(color, 0.2) }),
+      // The "image" style is used by point annotations
+      image: new ol.style.Circle({
+        radius: 5,
+        fill: new ol.style.Fill({ color: color })
+      })
+    });
+  }
+
+  $('#btn-add-layer').on('click', function() {
+    var color = predefinedPalette[layers.length % predefinedPalette.length];
+    var newId = AddLayer('Layer ' + (layers.length + 1), color);
+    activeLayerId = newId;
+    RenderLayersTable();
+  });
+
+
+
+  // Single vector source holding all features from all layers
   var drawSource = new ol.source.Vector();
   LoadAnnotations(drawSource);
 
-
-  var drawLayer = new ol.layer.Vector({
+  drawLayer = new ol.layer.Vector({
     source: drawSource,
-    style: new ol.style.Style({
-      stroke: new ol.style.Stroke({ color: 'red', width: 2 }),
-      image: new ol.style.Circle({
-        radius: 5,
-        fill: new ol.style.Fill({ color: 'red' })
-      })
-    })
+    style: function(feature) {
+      var layer = GetLayerOfFeature(feature);
+      if (layer.visible) {
+        return MakeStyle(layer.color);
+      } else {
+        return null;
+      }
+    }
   });
   map.addLayer(drawLayer);
 
@@ -387,6 +498,7 @@ function InitializeDrawing(map)
   }
 
   function onDrawEnd(e, callPreventDoubleClickZoom) {
+    e.feature.set('layer-id', activeLayerId);
     if (callPreventDoubleClickZoom) {
       preventDoubleClickZoom();
     }
@@ -405,6 +517,9 @@ function InitializeDrawing(map)
   // Select interaction (inactive until toggled)
   var selectAnnotation = new ol.interaction.Select({
     layers: [drawLayer],
+    filter: function(feature) {
+      return GetLayerOfFeature(feature).visible;
+    },
     hitTolerance: 5,  /* pixels around the feature that count as a hit */
     style: new ol.style.Style({
       stroke: new ol.style.Stroke({ color: 'blue', width: 3 }),
@@ -447,6 +562,32 @@ function InitializeDrawing(map)
   $('#btn-draw-rectangle').on('click', function() { activateDrawTool($(this), drawRectangle); });
   $('#btn-draw-closed-polygon').on('click', function() { activateDrawTool($(this), drawClosedPolygon); });
   $('#btn-draw-freehand').on('click', function() { activateDrawTool($(this), drawFreehand, 'crosshair'); });
+
+  $('#btn-delete-layer-confirm').on('click', function() {
+    if (pendingDeleteLayerId !== null) {
+      var id = pendingDeleteLayerId;
+      pendingDeleteLayerId = null;
+
+      drawSource.getFeatures().forEach(function(feature) {
+        if (feature.get('layer-id') === id) {
+          drawSource.removeFeature(feature);
+        }
+      });
+
+      layers = layers.filter(function(l) {
+        return l.id !== id;
+      });
+
+      if (activeLayerId === id) {
+        activeLayerId = layers[0].id;
+      }
+
+      deleteLayerModal.hide();
+      RenderLayersTable();
+    }
+  });
+
+  RenderLayersTable();
 
   selectAnnotation.on('select', function(e) {
     $('#annotation-properties').empty();
@@ -520,6 +661,8 @@ function InitializeDrawing(map)
 
 $(document).ready(function() {
   InitializePanelAnimation();
+
+  deleteLayerModal = new bootstrap.Modal($('#modal-delete-layer')[0]);
 
   $('[data-bs-toggle="tooltip"]').each(function() {
     new bootstrap.Tooltip(this, { trigger: 'hover' });

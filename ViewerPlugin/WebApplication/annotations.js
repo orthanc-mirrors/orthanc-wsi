@@ -42,30 +42,36 @@ function CreateSerializationObject()
 }
 
 
-function SerializeAnnotations(source)
+function SerializeLayers(source)
 {
-  const features = source.getFeatures();
+  var features = [];
 
-  var annotations = [];
-
-  features.forEach((feature, index) => {
+  source.getFeatures().forEach((feature, index) => {
     var type = feature.getGeometry().getType();
 
+    var item = {
+      'layer-id' : feature.get('layer-id')
+    };
+
     if (type === 'LineString') {
-      annotations.push({
-        'type' : 'polyline',
-        'coordinates' : feature.getGeometry().getCoordinates()
-      });
+      item['type'] = 'polyline';
+      item['coordinates'] = feature.getGeometry().getCoordinates();
     } else if (type === 'Point') {
-      annotations.push({
-        'type' : 'point',
-        'coordinates' : feature.getGeometry().getCoordinates()
-      });
+      item['type'] = 'point';
+      item['coordinates'] = feature.getGeometry().getCoordinates();
+    } else {
+      console.assert('Not implemented: ' + type);
     }
+
+    features.push(item);
   });
 
   var serialized = CreateSerializationObject();
-  serialized['annotations'] = annotations;
+  serialized['annotations'] = {
+    'layers' : layers,
+    'features' : features
+  };
+
   return serialized;
 }
 
@@ -87,7 +93,7 @@ function SaveAnnotations(source)
   {
     console.assert(pendingSourceToSave !== null);
 
-    var serialized = SerializeAnnotations(pendingSourceToSave);
+    var serialized = SerializeLayers(pendingSourceToSave);
     pendingSourceToSave = null;
 
     isSaving = true;
@@ -135,20 +141,38 @@ function LoadAnnotations(source)
     url : '../api/load-annotations',
     data : JSON.stringify(CreateSerializationObject()),
     contentType: 'application/json',
-    success: function(annotations) {
-      for (i = 0; i < annotations.length; i++) {
-        var geometry = null;
+    success: function(data) {
+      if (!'layers' in data ||
+          !'features' in data ||
+          data['layers'].length == 0) {
+        return;
+      }
 
-        if (annotations[i].type === 'polyline') {
-          geometry = new ol.geom.LineString(annotations[i]['coordinates']);
-        } else if (annotations[i].type === 'point') {
-          geometry = new ol.geom.Point(annotations[i]['coordinates']);
-        }
+      layers = data.layers;
+      activeLayerId = data.layers[0].id;
 
-        if (geometry !== null) {
-          source.addFeature(new ol.Feature(geometry));
+      source.clear();
+      for (i = 0; i < data.features.length; i++) {
+        var layerId = data.features[i]['layer-id'];
+
+        if (layerId !== undefined) {
+          var geometry = null;
+
+          if (data.features[i].type === 'polyline') {
+            geometry = new ol.geom.LineString(data.features[i]['coordinates']);
+          } else if (data.features[i].type === 'point') {
+            geometry = new ol.geom.Point(data.features[i]['coordinates']);
+          }
+
+          if (geometry !== null) {
+            var feature = new ol.Feature(geometry);
+            feature.set('layer-id', layerId);
+            source.addFeature(feature);
+          }
         }
       }
+
+      RenderLayersTable();
     },
     error: function() {
       alert('Cannot load the saved annotations');
