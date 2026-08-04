@@ -58,8 +58,19 @@ function SerializeFeature(feature)
       'type' : 'point',
       'coordinates' : feature.getGeometry().getCoordinates()
     };
+  } else if (type === 'Circle') {
+    return {
+      'type' : 'circle',
+      'center' : feature.getGeometry().getCenter(),
+      'radius' : feature.getGeometry().getRadius()
+    };
+  } else if (type === 'Polygon') {
+    return {
+      'type' : 'polygon',
+      'coordinates' : feature.getGeometry().getCoordinates()
+    };
   } else {
-    console.assert('Not implemented: ' + type);
+    console.error('Not implemented: ' + type);
     return null;
   }
 }
@@ -71,8 +82,12 @@ function UnserializeFeature(json)
     return new ol.geom.LineString(json['coordinates']);
   } else if (json.type === 'point') {
     return new ol.geom.Point(json['coordinates']);
+  } else if (json.type === 'circle') {
+    return new ol.geom.Circle(json['center'], json['radius']);
+  } else if (json.type === 'polygon') {
+    return new ol.geom.Polygon(json['coordinates']);
   } else {
-    console.assert('Not implemented: ' + json.type);
+    console.error('Not implemented: ' + json.type);
     return null;
   }
 }
