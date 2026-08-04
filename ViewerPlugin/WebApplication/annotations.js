@@ -208,18 +208,18 @@ function LoadAnnotations(source)
             }
           }
         }
-
-        RenderLayersTable();
-
-        sourceToSerialize = source;
-        // Now that the features are loaded, we can install the save callback
-        source.on('addfeature', function (e) {
-          SaveAnnotations();
-        });
-        source.on('removefeature', function (e) {
-          SaveAnnotations();
-        });
       }
+
+      RenderLayersTable();
+
+      sourceToSerialize = source;
+      // Now that the features are loaded, we can install the save callback
+      source.on('addfeature', function (e) {
+        SaveAnnotations();
+      });
+      source.on('removefeature', function (e) {
+        SaveAnnotations();
+      });
     },
     error: function() {
       console.error('Cannot load the saved annotations');

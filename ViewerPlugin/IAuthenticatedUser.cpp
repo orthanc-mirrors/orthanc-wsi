@@ -41,7 +41,7 @@ namespace
   public:
     virtual std::string GetId() const ORTHANC_OVERRIDE
     {
-      return "";
+      return "root";
     }
 
     virtual ProjectRole GetRoleInProject(const std::string& projectId) const ORTHANC_OVERRIDE
@@ -58,12 +58,12 @@ namespace
   };
 
 
-  class AnonymousUser : public IAuthenticatedUser
+  class GuestUser : public IAuthenticatedUser
   {
   public:
     virtual std::string GetId() const ORTHANC_OVERRIDE
     {
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
+      return "guest";
     }
 
     virtual ProjectRole GetRoleInProject(const std::string& projectId) const ORTHANC_OVERRIDE
@@ -216,7 +216,7 @@ IAuthenticatedUser* IAuthenticatedUser::FromHttpRequest(const OrthancPluginHttpR
       }
     }
 
-    return new AnonymousUser;
+    return new GuestUser;
   }
 
 #else

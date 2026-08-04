@@ -110,6 +110,15 @@ static void DescribePyramid(Json::Value& result,
 }
 
 
+static void AnswerJson(OrthancPluginRestOutput* output,
+                       const Json::Value& value)
+{
+  std::string s;
+  Orthanc::Toolbox::WriteFastJson(s, value);
+  OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, s.c_str(), s.size(), "application/json");
+}
+
+
 void ServePyramid(OrthancPluginRestOutput* output,
                   const char* url,
                   const OrthancPluginHttpRequest* request)
@@ -143,8 +152,7 @@ void ServePyramid(OrthancPluginRestOutput* output,
     }
   }
 
-  std::string s = answer.toStyledString();
-  OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, s.c_str(), s.size(), "application/json");
+  AnswerJson(output, answer);
 }
 
 
@@ -180,8 +188,7 @@ void ServeFramePyramid(OrthancPluginRestOutput* output,
     }
   }
 
-  std::string s = answer.toStyledString();
-  OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, s.c_str(), s.size(), "application/json");
+  AnswerJson(output, answer);
 }
 
 
@@ -488,6 +495,21 @@ void ServeSourceFile(OrthancPluginRestOutput* output,
 static const char* const KEY_ANNOTATIONS = "annotations";
 static const char* const KEY_VALUE_STORE_ANNOTATIONS = "wsi-annotations";
 
+
+static void CheckAnnotationsAllowedForUser(const IAuthenticatedUser& user,
+                                           const std::string& projectId)
+{
+  IAuthenticatedUser::ProjectRole role = user.GetRoleInProject(projectId);
+
+  if (role != IAuthenticatedUser::ProjectRole_Instructor &&
+      role != IAuthenticatedUser::ProjectRole_Learner)
+  {
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_ForbiddenAccess, "User \"" + user.GetId() +
+                                    "\" is not instructor or learner of project \"" + projectId + "\"");
+  }
+}
+
+
 void LoadAnnotations(OrthancPluginRestOutput* output,
                      const char* url,
                      const OrthancPluginHttpRequest* request)
@@ -500,36 +522,38 @@ void LoadAnnotations(OrthancPluginRestOutput* output,
   {
     std::unique_ptr<IAuthenticatedUser> user(IAuthenticatedUser::FromHttpRequest(request));
 
-    // TODO - If the education plugin is installed, check that the user is indeed part of the learners/instructors of the project, otherwise return an empty array
-
     Json::Value body;
-    if (!Orthanc::Toolbox::ReadJson(body, request->body, request->bodySize))
+    if (!Orthanc::Toolbox::ReadJson(body, request->body, request->bodySize) ||
+        !body.isObject())
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_NetworkProtocol);
     }
 
-    const std::string key = user->GetAnnotationKey(Orthanc::SerializationToolbox::ReadString(body, "project", ""),
+    const std::string projectId = Orthanc::SerializationToolbox::ReadString(body, "project", "");
+    const std::string key = user->GetAnnotationKey(projectId,
                                                    Orthanc::SerializationToolbox::ReadString(body, "level"),
                                                    Orthanc::SerializationToolbox::ReadString(body, "resource"));
+
+    CheckAnnotationsAllowedForUser(*user, projectId);
 
 #if ORTHANC_PLUGINS_VERSION_IS_ABOVE(1, 12, 8)
     OrthancPlugins::KeyValueStore store(KEY_VALUE_STORE_ANNOTATIONS);
 
     std::string compressed, value;
 
-    if (!store.GetValue(compressed, key))
-    {
-      value = "{}";  // No annotation has been saved yet using this key
-    }
-    else
+    if (store.GetValue(compressed, key))
     {
       Orthanc::GzipCompressor compressor;
       Orthanc::IBufferCompressor::Uncompress(value, compressor, compressed);
+      OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, value.c_str(), value.size(), "application/json");
     }
-
-    OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, value.c_str(), value.size(), "application/json");
+    else
+    {
+      const Json::Value empty = Json::objectValue;
+      AnswerJson(output, empty);
+    }
 #else
-    throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "Your Orthanc SDK is too old to save annotations");
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "Your Orthanc SDK is too old to load annotations");
 #endif
   }
 }
@@ -557,9 +581,12 @@ void SaveAnnotations(OrthancPluginRestOutput* output,
       throw Orthanc::OrthancException(Orthanc::ErrorCode_NetworkProtocol);
     }
 
-    const std::string key = user->GetAnnotationKey(Orthanc::SerializationToolbox::ReadString(body, "project", ""),
+    const std::string projectId = Orthanc::SerializationToolbox::ReadString(body, "project", "");
+    const std::string key = user->GetAnnotationKey(projectId,
                                                    Orthanc::SerializationToolbox::ReadString(body, "level"),
                                                    Orthanc::SerializationToolbox::ReadString(body, "resource"));
+
+    CheckAnnotationsAllowedForUser(*user, projectId);
 
     std::string value;
     Orthanc::Toolbox::WriteFastJson(value, body[KEY_ANNOTATIONS]);
@@ -640,7 +667,7 @@ extern "C"
          an a* or b* of -128.0, 0x8080 corresponds to an a* or b* of
          0.0 and 0xFFFF corresponds to an a* or b* of 127.0
 
-       **/
+      **/
 
       OrthancWSI::LABColor lab;
       if (!OrthancWSI::LABColor::DecodeDicomRecommendedAbsentPixelCIELab(lab, "65535\\0\\0") ||
