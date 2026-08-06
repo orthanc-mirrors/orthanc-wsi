@@ -23,31 +23,58 @@
 
 #pragma once
 
-#include "UserId.h"
+#include <json/value.h>
+#include <string>
 
-#include <orthanc/OrthancCPlugin.h>
-
-#include <boost/noncopyable.hpp>
-
-class IAuthenticatedUser : public boost::noncopyable
+class UserId
 {
 public:
-  enum ProjectRole
+  enum Type
   {
-    ProjectRole_Instructor,
-    ProjectRole_Learner,
-    ProjectRole_Guest
+    Type_Administrator,
+    Type_Standard,
+    Type_Invalid
   };
 
-  virtual ~IAuthenticatedUser()
+private:
+  Type         type_;
+  std::string  name_;
+
+  void Setup(Type type,
+             const std::string& name);
+
+public:
+  explicit UserId()
   {
+    Setup(Type_Invalid, "");
   }
 
-  virtual UserId GetAnnotatingId() const = 0;
+  explicit UserId(Type type)
+  {
+    Setup(type, "");
+  }
 
-  virtual std::string Format() const = 0;
+  UserId(Type type,
+         const std::string& name)
+  {
+    Setup(type, name);
+  }
 
-  virtual ProjectRole GetRoleInProject(const std::string& projectId) const = 0;
+  explicit UserId(const Json::Value& serialized);
 
-  static IAuthenticatedUser* FromHttpRequest(const OrthancPluginHttpRequest* request);
+  Type GetType() const
+  {
+    return type_;
+  }
+
+  const std::string& GetName() const
+  {
+    return name_;
+  }
+
+  bool operator<(const UserId& other) const;
+
+  std::string GetKey() const;
+
+  void Serialize(Json::Value& target) const;
 };

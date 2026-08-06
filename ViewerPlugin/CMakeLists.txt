@@ -193,6 +193,7 @@ set(ORTHANC_WSI_SOURCES
   OrthancPyramidFrameFetcher.cpp
   Plugin.cpp
   RawTile.cpp
+  UserId.cpp
 
   ${ORTHANC_WSI_DIR}/Framework/ColorSpaces.cpp
   ${ORTHANC_WSI_DIR}/Framework/DicomToolbox.cpp

@@ -39,21 +39,19 @@ namespace
   class RootUser : public IAuthenticatedUser
   {
   public:
-    virtual std::string GetId() const ORTHANC_OVERRIDE
+    virtual UserId GetAnnotatingId() const ORTHANC_OVERRIDE
     {
-      return "root";
+      return UserId(UserId::Type_Administrator);
+    }
+
+    virtual std::string Format() const ORTHANC_OVERRIDE
+    {
+      return "(root)";
     }
 
     virtual ProjectRole GetRoleInProject(const std::string& projectId) const ORTHANC_OVERRIDE
     {
       return ProjectRole_Instructor;
-    }
-
-    virtual std::string GetAnnotationKey(const std::string& projectId,
-                                         const std::string& level,
-                                         const std::string& resourceId) const ORTHANC_OVERRIDE
-    {
-      return "root|" + projectId + "|" + level + "|" + resourceId;
     }
   };
 
@@ -61,36 +59,35 @@ namespace
   class GuestUser : public IAuthenticatedUser
   {
   public:
-    virtual std::string GetId() const ORTHANC_OVERRIDE
+    virtual UserId GetAnnotatingId() const ORTHANC_OVERRIDE
     {
-      return "guest";
+      // Anonymous users cannot save annotations
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_ForbiddenAccess);
+    }
+
+    virtual std::string Format() const ORTHANC_OVERRIDE
+    {
+      return "(guest)";
     }
 
     virtual ProjectRole GetRoleInProject(const std::string& projectId) const ORTHANC_OVERRIDE
     {
       return ProjectRole_Guest;
     }
-
-    virtual std::string GetAnnotationKey(const std::string& projectId,
-                                         const std::string& level,
-                                         const std::string& resourceId) const ORTHANC_OVERRIDE
-    {
-      // Anonymous users cannot save annotations
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
-    }
   };
 
 
   class EducationPluginAuthenticatedUser : public IAuthenticatedUser
   {
-  private:
+  public:
     enum EducationRole
     {
-      EducationRole_Admin,
+      EducationRole_Administrator,
       EducationRole_Standard,
       EducationRole_Guest
     };
 
+  private:
     std::string            id_;
     EducationRole          role_;
     std::set<std::string>  instructorOfProjects_;
@@ -107,7 +104,7 @@ namespace
 
       if (role == "admin")
       {
-        role_ = EducationRole_Admin;
+        role_ = EducationRole_Administrator;
       }
       else if (role == "standard")
       {
@@ -126,7 +123,26 @@ namespace
       Orthanc::SerializationToolbox::ReadSetOfStrings(learnerOfProjects_, authentication, "learner_of");
     }
 
-    virtual std::string GetId() const ORTHANC_OVERRIDE
+    virtual UserId GetAnnotatingId() const ORTHANC_OVERRIDE
+    {
+      switch (role_)
+      {
+      case EducationRole_Administrator:
+        return UserId(UserId::Type_Administrator);
+
+      case EducationRole_Standard:
+        return UserId(UserId::Type_Standard, id_);
+
+      case EducationRole_Guest:
+        // Anonymous users cannot save annotations
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_ForbiddenAccess);
+
+      default:
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+      }
+    }
+
+    virtual std::string Format() const ORTHANC_OVERRIDE
     {
       return id_;
     }
@@ -135,7 +151,7 @@ namespace
     {
       switch (role_)
       {
-      case EducationRole_Admin:
+      case EducationRole_Administrator:
         return ProjectRole_Instructor;
 
       case EducationRole_Standard:
@@ -154,31 +170,6 @@ namespace
 
       case EducationRole_Guest:
         return ProjectRole_Guest;
-
-      default:
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
-      }
-    }
-
-    virtual std::string GetAnnotationKey(const std::string& projectId,
-                                         const std::string& level,
-                                         const std::string& resourceId) const ORTHANC_OVERRIDE
-    {
-      switch (role_)
-      {
-      case EducationRole_Admin:
-        return RootUser().GetAnnotationKey(projectId, level, resourceId);
-
-      case EducationRole_Standard:
-      {
-        // The pipe character "|" is not part of Base64, so we can safely use it to separate components
-        std::string s;
-        Orthanc::Toolbox::EncodeBase64(s, id_);
-        return ("user_" + s + "|" + projectId + "|" + level + "|" + resourceId);
-      }
-
-      case EducationRole_Guest:
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_ForbiddenAccess);
 
       default:
         throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);

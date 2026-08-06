@@ -85,13 +85,16 @@
       }
 
       /* The used icons must be added to ../Resources/CMake/JavaScriptLibraries.cmake */
+      .bi-arrow-clockwise       { -webkit-mask-image: url("../libs/svg/arrow-clockwise.svg"); mask-image: url("../libs/svg/arrow-clockwise.svg"); }
       .bi-arrows                { -webkit-mask-image: url("../libs/svg/arrows.svg"); mask-image: url("../libs/svg/arrows.svg"); }
       .bi-arrows-fullscreen     { -webkit-mask-image: url("../libs/svg/arrows-fullscreen.svg"); mask-image: url("../libs/svg/arrows-fullscreen.svg"); }
       .bi-chevron-compact-left  { -webkit-mask-image: url("../libs/svg/chevron-compact-left.svg"); mask-image: url("../libs/svg/chevron-compact-left.svg"); }
       .bi-chevron-compact-right { -webkit-mask-image: url("../libs/svg/chevron-compact-right.svg"); mask-image: url("../libs/svg/chevron-compact-right.svg"); }
       .bi-circle                { -webkit-mask-image: url("../libs/svg/circle.svg"); mask-image: url("../libs/svg/circle.svg"); }
+      .bi-cloud-download        { -webkit-mask-image: url("../libs/svg/cloud-download.svg"); mask-image: url("../libs/svg/cloud-download.svg"); }
       .bi-eye                   { -webkit-mask-image: url("../libs/svg/eye.svg"); mask-image: url("../libs/svg/eye.svg"); }
       .bi-eye-slash             { -webkit-mask-image: url("../libs/svg/eye-slash.svg"); mask-image: url("../libs/svg/eye-slash.svg"); }
+      .bi-file-earmark-plus     { -webkit-mask-image: url("../libs/svg/file-earmark-plus.svg"); mask-image: url("../libs/svg/file-earmark-plus.svg"); }
       .bi-geo-alt               { -webkit-mask-image: url("../libs/svg/geo-alt.svg"); mask-image: url("../libs/svg/geo-alt.svg"); }
       .bi-hand-index            { -webkit-mask-image: url("../libs/svg/hand-index.svg"); mask-image: url("../libs/svg/hand-index.svg"); }
       .bi-pencil                { -webkit-mask-image: url("../libs/svg/pencil.svg"); mask-image: url("../libs/svg/pencil.svg"); }
@@ -103,233 +106,360 @@
 
   </head>
   <body>
-    <div id="map">
-      <div id="toolbar-top" style="visibility:hidden">
-        <div class="btn-group" role="group">
-          <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-select-annotation"
-                  data-bs-toggle="tooltip" data-bs-placement="bottom" title="Select annotation">
-            <i class="bi bi-hand-index"></i>
-          </button>
+    <div id="app">
+      <div id="map" :style="{ background: mapBackground }">
+        <div id="toolbar-top" style="display:none" :style="{ display: toolbarsVisible ? 'block' : 'none' }">
+          <div class="btn-group" role="group">
+            <button type="button" class="btn btn-outline-secondary icon-btn"
+                    :class="{ active: activeDrawTool === 'select' }"
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Select annotation"
+                    v-on:click="ToggleSelectTool()">
+              <i class="bi bi-hand-index"></i>
+            </button>
 
-          <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-draw-line"
-                  data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draw line">
-            <i class="bi bi-arrows"></i>
-          </button>
+            <button type="button" class="btn btn-outline-secondary icon-btn"
+                    :class="{ active: activeDrawTool === 'line' }"
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draw line"
+                    v-on:click="ToggleDrawTool('line')">
+              <i class="bi bi-arrows"></i>
+            </button>
 
-          <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-draw-point"
-                  data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draw point">
-            <i class="bi bi-geo-alt"></i>
-          </button>
+            <button type="button" class="btn btn-outline-secondary icon-btn"
+                    :class="{ active: activeDrawTool === 'point' }"
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draw point"
+                    v-on:click="ToggleDrawTool('point')">
+              <i class="bi bi-geo-alt"></i>
+            </button>
 
-          <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-draw-circle"
-                  data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draw circle">
-            <i class="bi bi-circle"></i>
-          </button>
+            <button type="button" class="btn btn-outline-secondary icon-btn"
+                    :class="{ active: activeDrawTool === 'circle' }"
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draw circle"
+                    v-on:click="ToggleDrawTool('circle')">
+              <i class="bi bi-circle"></i>
+            </button>
 
-          <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-draw-rectangle"
-                  data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draw rectangle">
-            <i class="bi bi-square"></i>
-          </button>
+            <button type="button" class="btn btn-outline-secondary icon-btn"
+                    :class="{ active: activeDrawTool === 'rectangle' }"
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draw rectangle"
+                    v-on:click="ToggleDrawTool('rectangle')">
+              <i class="bi bi-square"></i>
+            </button>
 
-          <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-draw-closed-polygon"
-                  data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draw closed polygon">
-            <i class="bi bi-pentagon"></i>
-          </button>
+            <button type="button" class="btn btn-outline-secondary icon-btn"
+                    :class="{ active: activeDrawTool === 'closed-polygon' }"
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draw closed polygon"
+                    v-on:click="ToggleDrawTool('closed-polygon')">
+              <i class="bi bi-pentagon"></i>
+            </button>
 
-          <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-draw-freehand"
-                  data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draw freehand figure">
-            <i class="bi bi-pencil"></i>
-          </button>
+            <button type="button" class="btn btn-outline-secondary icon-btn"
+                    :class="{ active: activeDrawTool === 'freehand' }"
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draw freehand figure"
+                    v-on:click="ToggleDrawTool('freehand')">
+              <i class="bi bi-pencil"></i>
+            </button>
+          </div>
+
+          <div class="btn-group" role="group">
+            <button type="button" class="btn btn-outline-secondary icon-btn"
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Delete selected annotation"
+                    v-on:click="DeleteSelectedAnnotation()">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+
+          <div class="alert alert-danger alert-dismissible d-inline-block py-0" role="alert" v-if="alertNoSaving">
+            Your annotations will not be saved
+            <button type="button" class="btn-close top-50 translate-middle-y" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
         </div>
 
-        <div class="btn-group" role="group">
-          <button type="button" class="btn btn-outline-secondary icon-btn" id="btn-delete-annotation"
-                  data-bs-toggle="tooltip" data-bs-placement="bottom" title="Delete selected annotation">
-            <i class="bi bi-trash"></i>
-          </button>
-        </div>
+        <div id="toolbar-left" style="display:none" :style="{ display: toolbarsVisible ? 'block' : 'none' }">
+          <div id="toolbar-left-content" style="position:absolute; display:flex; flex-direction:column; align-items:center;">
+            <div class="btn-group-vertical" role="group" style="padding-top: 1em">
+              <button type="button" class="btn btn-outline-secondary icon-btn"
+                      data-bs-toggle="tooltip" data-bs-placement="right" title="Action A">
+                a
+              </button>
 
-        <div class="alert alert-danger alert-dismissible d-inline-block py-0 d-none" role="alert" id="alert-no-saving">
-          Your annotations will not be saved
-          <button type="button" class="btn-close top-50 translate-middle-y" data-bs-dismiss="alert" aria-label="Close"></button>
+              <button type="button" class="btn btn-outline-secondary icon-btn"
+                      data-bs-toggle="tooltip" data-bs-placement="right" title="Action B">
+                b
+              </button>
+
+              <button type="button" class="btn btn-outline-secondary icon-btn"
+                      data-bs-toggle="tooltip" data-bs-placement="right" title="Action C">
+                c
+              </button>
+
+              <button type="button" class="btn btn-outline-secondary icon-btn"
+                      data-bs-toggle="tooltip" data-bs-placement="right" title="Action D">
+                d
+              </button>
+            </div>
+            <div id="toolbar-spinner" v-show="showSpinner" style="padding-top:1em;">
+              <div class="spinner-border spinner-border-sm text-secondary" role="status">
+                <span class="visually-hidden">Saving...</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div id="toolbar-left" style="visibility:hidden">
-        <div id="toolbar-left-content" style="position:absolute; display:flex; flex-direction:column; align-items:center;">
-          <div class="btn-group-vertical" role="group" style="padding-top: 1em">
-            <button type="button" class="btn btn-outline-secondary icon-btn"
-                    data-bs-toggle="tooltip" data-bs-placement="right" title="Action A">
-              a
+      <div class="offcanvas offcanvas-end" data-bs-backdrop="false" data-bs-scroll="true"
+           tabindex="-1" id="right-panel">
+        <div class="offcanvas-header">
+          <h5 class="offcanvas-title">Annotations</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body p-2">
+          <div v-show="annotationSelected" class="mb-3">
+            <h5>Current selection</h5>
+            <button class="btn btn-sm btn-primary w-100 mb-2" v-on:click="FocusAnnotation()">
+              <i class="bi bi-arrows-fullscreen me-2 align-middle"></i> Focus on annotation
             </button>
+            <div>
+              <template v-for="prop in annotationProperties">
+                <div v-if="prop.type === 'readonly'" class="d-flex align-items-baseline border-bottom py-1 gap-2">
+                  <span class="text-muted small flex-shrink-0" style="width:8em">{{prop.label}}</span>
+                  <span class="text-break small">{{prop.value}}</span>
+                </div>
+                <div v-else-if="prop.type === 'editable'" class="d-flex align-items-center border-bottom py-1 gap-2">
+                  <label class="text-muted small flex-shrink-0 mb-0" style="width:8em">{{prop.label}}</label>
+                  <input type="text" class="form-control form-control-sm small flex-grow-1"
+                         v-model="prop.value"
+                         v-on:change="UpdateAnnotationProperty(prop)">
+                </div>
+                <div v-else-if="prop.type === 'dropdown'" class="d-flex align-items-center border-bottom py-1 gap-2">
+                  <label class="text-muted small flex-shrink-0 mb-0" style="width:8em">{{prop.label}}</label>
+                  <select class="form-select form-select-sm small flex-grow-1"
+                          v-model="prop.value"
+                          v-on:change="UpdateAnnotationProperty(prop)">
+                    <option v-for="opt in prop.options" :value="opt.value">{{opt.label}}</option>
+                  </select>
+                </div>
+              </template>
+            </div>
+            <hr class="my-4">
+          </div>
 
-            <button type="button" class="btn btn-outline-secondary icon-btn"
-                    data-bs-toggle="tooltip" data-bs-placement="right" title="Action B">
-              b
-            </button>
-
-            <button type="button" class="btn btn-outline-secondary icon-btn"
-                    data-bs-toggle="tooltip" data-bs-placement="right" title="Action C">
-              c
-            </button>
-
-            <button type="button" class="btn btn-outline-secondary icon-btn"
-                    data-bs-toggle="tooltip" data-bs-placement="right" title="Action D">
-              d
+          <div class="d-flex align-items-center mb-1">
+            <h5>User layers</h5>
+            <button type="button" class="btn btn-primary btn-sm ms-auto"
+                    v-on:click="CreateUserLayer()">
+              <i class="bi bi-file-earmark-plus"></i>
+              Add
             </button>
           </div>
-          <div id="toolbar-spinner" style="display:none; padding-top:1em;">
-            <div class="spinner-border spinner-border-sm text-secondary" role="status">
-              <span class="visually-hidden">Saving...</span>
+          <table class="table table-sm table-borderless mb-0 align-middle">
+            <thead class="small text-muted">
+              <tr>
+                <th class="p-0 text-center fw-normal" title="Editing layer">E</th>
+                <th class="p-0 text-center fw-normal" title="Visible">V</th>
+                <th class="p-0 text-center fw-normal" title="Color">C</th>
+                <th class="px-1 py-0 fw-normal">Name</th>
+                <th class="p-0 text-center fw-normal" title="Sharing (coming soon)">S</th>
+                <th class="p-0"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="layer in userLayers">
+                <td class="text-center align-middle p-0">
+                  <input type="radio" class="form-check-input m-0"
+                         v-bind:checked="activeUserLayerId === layer.id"
+                         v-on:change="activeUserLayerId = layer.id">
+                </td>
+                <td class="text-center align-middle p-0">
+                  <button type="button" class="btn btn-link p-1" style="color:inherit">
+                    <i class="bi"
+                       :class="layer.visible ? 'bi-eye' : 'bi-eye-slash'"
+                       v-on:click="layer.visible = !layer.visible; drawLayer.changed(); SaveUserLayer(layer)"
+                       ></i>
+                  </button>
+                </td>
+                <td class="text-center align-middle p-0">
+                  <input type="color" style="width:22px;height:22px;padding:1px;border:none;cursor:pointer;border-radius:3px"
+                         v-model:value="layer.color"
+                         v-on:input="drawLayer.changed()"
+                         v-on:change="SaveUserLayer(layer)">
+                </td>
+                <td class="align-middle px-1 py-0">
+                  <input type="text" class="form-control form-control-sm py-0"
+                         v-model:value="layer.name"
+                         v-on:change="SaveUserLayer(layer)">
+                </td>
+                <td class="text-center align-middle p-0">
+                  <i class="bi bi-share p-1" style="opacity:0.25"></i>
+                </td>
+                <td class="text-center align-middle p-0">
+                  <button type="button" class="btn btn-link p-0"
+                          :class="userLayers.length <= 1 ? 'text-muted' : 'text-danger'"
+                          v-bind:disabled="userLayers.length <= 1"
+                          v-on:click="DeleteUserLayer(layer.id)">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <hr class="my-4">
+
+          <div class="d-flex align-items-center mb-1">
+            <h5>Shared layers</h5>
+            <button type="button" class="btn btn-primary btn-sm ms-auto"
+                    v-on:click="ShowImportSharedLayerModal()">
+              <i class="bi bi-cloud-download"></i>
+              Import
+            </button>
+          </div>
+          <table class="table table-sm table-borderless mb-0 align-middle">
+            <thead class="small text-muted">
+              <tr>
+                <th class="p-0 text-center fw-normal" title="Visible">V</th>
+                <th class="p-0 text-center fw-normal" title="Color">C</th>
+                <th class="px-1 py-0 fw-normal" style="width:100%">Name</th>
+                <th class="p-0"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="layer in sharedLayers">
+                <td class="text-center align-middle p-0">
+                  <button type="button" class="btn btn-link p-1" style="color:inherit">
+                    <i class="bi"
+                       :class="layer.visible ? 'bi-eye' : 'bi-eye-slash'"
+                       v-on:click="layer.visible = !layer.visible; SaveSharedLayer(layer)"
+                       ></i>
+                  </button>
+                </td>
+                <td class="text-center align-middle p-0">
+                  <input type="color" style="width:22px;height:22px;padding:1px;border:none;cursor:pointer;border-radius:3px"
+                         v-model:value="layer.color"
+                         v-on:change="SaveSharedLayer(layer)">
+                </td>
+                <td class="align-middle px-1 py-0">
+                  <span class="small d-block">{{layer.name}}</span>
+                  <span class="text-muted" style="font-size:0.7em">{{layer.author}}</span>
+                </td>
+                <td class="text-center align-middle p-0">
+                  <button type="button" class="btn btn-link p-0"
+                          v-on:click="DeleteSharedLayer(layer.id)">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <button class="btn btn-sm btn-primary w-100 mb-2" v-on:click="ReloadSharedLayers()">
+            <i class="bi bi-arrow-clockwise me-2 align-middle"></i> Reload shared content
+          </button>
+        </div>
+      </div>
+
+      <button id="right-panel-toggle" type="button" class="btn btn-secondary"
+              style="display:none" :style="{ display: toolbarsVisible ? 'block' : 'none' }"
+              data-bs-toggle="offcanvas" data-bs-target="#right-panel">
+        <i class="bi" :class="panelOpen ? 'bi-chevron-compact-right' : 'bi-chevron-compact-left'"></i>
+      </button>
+
+      <!-- Confirmation modal for annotation deletion -->
+      <div class="modal fade" id="modal-delete-annotation" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+          <div class="modal-content">
+            <div class="modal-body">
+              Delete this annotation?
+            </div>
+            <div class="modal-footer py-1">
+              <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-sm btn-danger" v-on:click="ConfirmDeleteAnnotation()">Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Confirmation modal for layer deletion -->
+      <div class="modal fade" id="modal-delete-user-layer" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+          <div class="modal-content">
+            <div class="modal-body">
+              Delete this layer and all its annotations?
+            </div>
+            <div class="modal-footer py-1">
+              <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-sm btn-danger" v-on:click="UserLayerDeleteConfirmed()">Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal to import a shared layer from another user -->
+      <div class="modal fade" id="modal-import-shared-layer" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+          <div class="modal-content">
+            <div class="modal-header py-2">
+              <h5 class="modal-title fs-6">Import shared layer</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-2">
+                <label class="form-label small mb-1">User</label>
+                <select class="form-select form-select-sm"
+                        v-model="importSelectedUser"
+                        v-on:change="ImportUserChanged()">
+                  <option value="" v-if="importUsersLoading">Loading...</option>
+                  <option value="" v-else-if="importUsersFailed">Failed to load users</option>
+                  <option value="" v-else>Select a user...</option>
+                  <option v-for="(layers, userId) in importAvailableSharedLayers" :value="userId">{{userId}}</option>
+                </select>
+              </div>
+              <div v-show="importSelectedUser !== ''">
+                <label class="form-label small mb-1">Layer</label>
+                <select class="form-select form-select-sm" v-model="importSelectedLayer">
+                  <option value="">Select a layer...</option>
+                  <option v-for="layer in importAvailableLayers" :value="layer.id">{{layer.name}}</option>
+                </select>
+              </div>
+            </div>
+            <div class="modal-footer py-1">
+              <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-sm btn-primary"
+                      :disabled="!importSelectedLayer"
+                      v-on:click="ImportSharedLayerConfirmed()">Import</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:none">
+        <div id="popover-content">
+          <div class="container">
+            <div class="row mb-2">
+              <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-outline-dark" v-on:click="ResetRotation()">Reset</button>
+                <button type="button" class="btn btn-outline-dark" v-on:click="RotateBy(90)">+90&deg;</button>
+                <button type="button" class="btn btn-outline-dark" v-on:click="RotateBy(-90)">-90&deg;</button>
+              </div>
+            </div>
+            <div class="row">
+              <input type="range" class="form-range" min="-180" max="180"
+                     v-model.number="rotationDeg"
+                     v-on:input="SetMapRotation()" v-on:change="SetMapRotation()">
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="offcanvas offcanvas-end" data-bs-backdrop="false" data-bs-scroll="true"
-         tabindex="-1" id="right-panel">
-      <div class="offcanvas-header">
-        <h5 class="offcanvas-title">Annotations</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
-      </div>
-      <div class="offcanvas-body p-2">
-        <div id="annotation-info" style="display:none" class="mb-3">
-          <h5>Current selection</h5>
-          <button class="btn btn-sm btn-primary w-100 mb-2" id="btn-focus-annotation">
-            <i class="bi bi-arrows-fullscreen me-2 align-middle"></i> Focus on annotation
-          </button>
-          <div id="annotation-properties"></div>
-        </div>
 
-        <div class="d-flex align-items-center mb-1">
-          <h5>Layers</h5>
-          <button type="button" class="btn btn-primary ms-auto"
-                  id="btn-add-layer">+</button>
-        </div>
-        <table class="table table-sm table-borderless mb-0 align-middle">
-          <thead class="small text-muted">
-            <tr>
-              <th class="p-0 text-center fw-normal" title="Editing layer">E</th>
-              <th class="p-0 text-center fw-normal" title="Visible">V</th>
-              <th class="p-0 text-center fw-normal" title="Color">C</th>
-              <th class="px-1 py-0 fw-normal">Name</th>
-              <th class="p-0 text-center fw-normal" title="Sharing (coming soon)">S</th>
-              <th class="p-0"></th>
-            </tr>
-          </thead>
-          <tbody id="layers-tbody"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <button id="right-panel-toggle" type="button" class="btn btn-secondary" style="visibility:hidden"
-            data-bs-toggle="offcanvas" data-bs-target="#right-panel">
-      <i class="bi bi-chevron-compact-left" id="right-panel-toggle-icon"></i>
-    </button>
-
-    <!-- Confirmation modal for annotation deletion -->
-    <div class="modal fade" id="modal-delete-annotation" tabindex="-1">
-      <div class="modal-dialog modal-sm">
-        <div class="modal-content">
-          <div class="modal-body">
-            Delete this annotation?
-          </div>
-          <div class="modal-footer py-1">
-            <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button type="button" class="btn btn-sm btn-danger" id="btn-delete-annotation-confirm">Delete</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Confirmation modal for layer deletion -->
-    <div class="modal fade" id="modal-delete-layer" tabindex="-1">
-      <div class="modal-dialog modal-sm">
-        <div class="modal-content">
-          <div class="modal-body">
-            Delete this layer and all its annotations?
-          </div>
-          <div class="modal-footer py-1">
-            <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button type="button" class="btn btn-sm btn-danger" id="btn-delete-layer-confirm">Delete</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div style="display:none">
-      <div id="popover-content">
-        <div class="container">
-          <div class="row mb-2">
-            <div class="btn-group btn-group-sm" role="group">
-              <button type="button" class="btn btn-outline-dark" id="rotation-reset">Reset</button>
-              <button type="button" class="btn btn-outline-dark" id="rotation-plus90">+90&deg;</button>
-              <button type="button" class="btn btn-outline-dark" id="rotation-minus90">-90&deg;</button>
-            </div>
-          </div>
-          <div class="row">
-            <input type="range" class="form-range" min="-180" max="180" id="rotation-slider">
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <template id="tpl-readonly-property">
-      <div class="d-flex align-items-baseline border-bottom py-1 gap-2">
-        <span class="text-muted small flex-shrink-0 prop-label" style="width:8em"></span>
-        <span class="text-break small prop-value"></span>
-      </div>
-    </template>
-
-    <template id="tpl-editable-property">
-      <div class="d-flex align-items-center border-bottom py-1 gap-2">
-        <label class="text-muted small flex-shrink-0 mb-0" style="width:8em"></label>
-        <input type="text" class="form-control form-control-sm small flex-grow-1">
-      </div>
-    </template>
-
-    <template id="tpl-dropdown-property">
-      <div class="d-flex align-items-center border-bottom py-1 gap-2">
-        <label class="text-muted small flex-shrink-0 mb-0" style="width:8em"></label>
-        <select class="form-select form-select-sm small flex-grow-1"></select>
-      </div>
-    </template>
-
-    <template id="tpl-layer-row">
-      <tr>
-        <td class="text-center align-middle p-0">
-          <input type="radio" class="form-check-input m-0 layer-radio" name="active-layer">
-        </td>
-        <td class="text-center align-middle p-0">
-          <button type="button" class="btn btn-link p-1 layer-vis-btn" style="color:inherit">
-            <i class="layer-eye-icon align-middle"></i>
-          </button>
-        </td>
-        <td class="text-center align-middle p-0">
-          <input type="color" class="layer-color" style="width:22px;height:22px;padding:1px;border:none;cursor:pointer;border-radius:3px">
-        </td>
-        <td class="align-middle px-1 py-0">
-          <input type="text" class="form-control form-control-sm py-0 layer-name">
-        </td>
-        <td class="text-center align-middle p-0">
-          <i class="bi bi-share p-1" style="opacity:0.25"></i>
-        </td>
-        <td class="text-center align-middle p-0">
-          <button type="button" class="btn btn-link p-0 text-danger layer-del-btn">
-            <i class="bi bi-trash"></i>
-          </button>
-        </td>
-      </tr>
-    </template>
 
     <!-- This is the version of jQuery that is used by Orthanc Explorer -->
     <script src="../../app/libs/jquery.min.js"></script>
 
+    <script src="../libs/js/vue.min.js"></script>
     <script src="../libs/js/popper.min.js"></script>
     <script src="../libs/js/bootstrap.min.js"></script>
     <script src="../libs/js/ol.js"></script>
     <script src="viewer.js"></script>
-    <script src="annotations.js"></script>
   </body>
 </html>

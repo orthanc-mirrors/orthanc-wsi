@@ -119,6 +119,13 @@ static void AnswerJson(OrthancPluginRestOutput* output,
 }
 
 
+static void AnswerEmpty(OrthancPluginRestOutput* output)
+{
+  Json::Value answer = Json::objectValue;
+  AnswerJson(output, answer);
+}
+
+
 void ServePyramid(OrthancPluginRestOutput* output,
                   const char* url,
                   const OrthancPluginHttpRequest* request)
@@ -492,27 +499,1203 @@ void ServeSourceFile(OrthancPluginRestOutput* output,
 #endif
 
 
-static const char* const KEY_ANNOTATIONS = "annotations";
-static const char* const KEY_VALUE_STORE_ANNOTATIONS = "wsi-annotations";
+
+#include <Cache/SharedObjectCache.h>
+#include <MultiThreading/ReaderWriterLock.h>
 
 
-static void CheckAnnotationsAllowedForUser(const IAuthenticatedUser& user,
-                                           const std::string& projectId)
+class AnnotationsId
 {
-  IAuthenticatedUser::ProjectRole role = user.GetRoleInProject(projectId);
+private:
+  std::string   projectId_;
+  std::string   level_;
+  std::string   resourceId_;
 
-  if (role != IAuthenticatedUser::ProjectRole_Instructor &&
-      role != IAuthenticatedUser::ProjectRole_Learner)
+public:
+  AnnotationsId(const std::string& projectId,
+                const std::string& level,
+                const std::string& resourceId) :
+    projectId_(projectId),
+    level_(level),
+    resourceId_(resourceId)
   {
-    throw Orthanc::OrthancException(Orthanc::ErrorCode_ForbiddenAccess, "User \"" + user.GetId() +
-                                    "\" is not instructor or learner of project \"" + projectId + "\"");
+    if (projectId_.find('|') != std::string::npos ||
+        level_.find('|') != std::string::npos ||
+        resourceId_.find('|') != std::string::npos)
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
+    }
+  }
+
+  const std::string& GetProjectId() const
+  {
+    return projectId_;
+  }
+
+  const std::string& GetLevel() const
+  {
+    return level_;
+  }
+
+  const std::string& GetResourceId() const
+  {
+    return resourceId_;
+  }
+
+  std::string GetKey() const
+  {
+    return projectId_ + "|" + level_ + "|" + resourceId_;
+  }
+};
+
+
+static const char* const KEY_AUTHOR = "author";
+static const char* const KEY_COLOR = "color";
+static const char* const KEY_FEATURES = "features";
+static const char* const KEY_ID = "id";
+static const char* const KEY_LAYERS = "layers";
+static const char* const KEY_NAME = "name";
+static const char* const KEY_PUBLIC = "public";
+static const char* const KEY_SHARED_WITH = "shared_with";
+static const char* const KEY_VISIBLE = "visible";
+
+static const char* const KEY_VALUE_STORE = "wsi";
+
+
+/**
+
+   Content of a layer in the DB:
+
+   - visible             (editable)
+   - color               (editable)
+   - author type and ID  (read-only)
+   - layer ID            (read-only)
+   - name of the layer   (editable)
+   - shared_with         (editable, can be disabled for learners by the instructors)
+   - public              (editable, can be disabled for learners by the instructors)
+
+   Content of an imported shared layer in the DB:
+
+   - visible             (editable, set to "true" on import)
+   - color               (editable, can be different from original layer)
+   - author type and ID  (read-only)
+   - layer ID            (read-only)
+   - name of the layer   (read-only)
+
+   Finding shared layers:
+
+   map<UserId, std::list<UserLayer>>
+
+   map<UserId, std::list<std::pair<UserId, const UserLayer*>>>
+
+   API must return: color, author, layer ID, and name (visible is set to true once loaded)
+
+ **/
+
+
+class ISerializable : public boost::noncopyable
+{
+public:
+  virtual ~ISerializable()
+  {
+  }
+
+  virtual void Serialize(Json::Value& target) const = 0;
+
+  static void Serialize(std::string& target,
+                        const ISerializable& obj)
+  {
+    Json::Value value;
+    obj.Serialize(value);
+    Orthanc::Toolbox::WriteFastJson(target, value);
+  }
+};
+
+
+class ILayer : public ISerializable
+{
+public:
+  virtual std::string GetId() const = 0;
+};
+
+
+class LayersCollection : public ISerializable
+{
+private:
+  typedef std::list<ILayer*>                        Content;
+  typedef std::map<std::string, Content::iterator>  Index;
+
+  Content  content_;
+  Index    index_;
+
+public:
+  ~LayersCollection()
+  {
+    for (Content::iterator it = content_.begin(); it != content_.end(); ++it)
+    {
+      assert(*it != NULL);
+      delete *it;
+    }
+  }
+
+  size_t GetSize() const
+  {
+    assert(content_.size() == index_.size());
+    return content_.size();
+  }
+
+  void AddLayer(ILayer* layer /* takes ownership */)
+  {
+    std::unique_ptr<ILayer> protection(layer);
+
+    if (layer == NULL)
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_NullPointer);
+    }
+
+    const std::string id = protection->GetId();
+
+    if (index_.find(id) != index_.end())
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls, "Duplicate layer ID");
+    }
+    else
+    {
+      content_.push_back(protection.release());
+
+      Content::iterator it = content_.end();
+      --it;  // Points to the element we just inserted
+      index_[id] = it;
+    }
+  }
+
+  bool HasLayer(const std::string& id) const
+  {
+    return (index_.find(id) != index_.end());
+  }
+
+  ILayer& GetLayer(const std::string& id) const
+  {
+    Index::const_iterator found = index_.find(id);
+
+    if (found == index_.end())
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
+    }
+    else
+    {
+      assert(*(found->second) != NULL);
+      return **(found->second);
+    }
+  }
+
+  void DeleteLayer(const std::string& id)
+  {
+    Index::iterator found = index_.find(id);
+
+    if (found == index_.end())
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
+    }
+    else
+    {
+      assert(*(found->second) != NULL);
+      delete *(found->second);
+      content_.erase(found->second);
+      index_.erase(found);
+    }
+  }
+
+  virtual void Serialize(Json::Value& target) const ORTHANC_OVERRIDE
+  {
+    target = Json::arrayValue;
+
+    for (Content::const_iterator it = content_.begin(); it != content_.end(); ++it)
+    {
+      assert(*it != NULL);
+
+      Json::Value item;
+      (*it)->Serialize(item);
+      target.append(item);
+    }
+  }
+};
+
+
+static void SetKeyValueStore(const std::string& key,
+                             const std::string& value)
+{
+  OrthancPlugins::KeyValueStore store(KEY_VALUE_STORE);
+  store.Store(key, value);
+}
+
+
+static void SetKeyValueStore(const std::string& key,
+                             const Json::Value& value)
+{
+  std::string s;
+  Orthanc::Toolbox::WriteFastJson(s, value);
+  SetKeyValueStore(key, s);
+}
+
+
+static void SetKeyValueStore(const std::string& key,
+                             const ISerializable& value)
+{
+  std::string s;
+  ISerializable::Serialize(s, value);
+  SetKeyValueStore(key, s);
+}
+
+
+static bool LookupKeyValueStore(std::string& value,
+                                const std::string& key)
+{
+  OrthancPlugins::KeyValueStore store(KEY_VALUE_STORE);
+  return store.GetValue(value, key);
+}
+
+
+static bool LookupKeyValueStore(Json::Value& value,
+                                const std::string& key)
+{
+  std::string s;
+  if (LookupKeyValueStore(s, key))
+  {
+    if (Orthanc::Toolbox::ReadJson(value, s))
+    {
+      return true;
+    }
+    else
+    {
+      LOG(WARNING) << "Discarding incorrect JSON in the key-value store: " << key;
+      return false;
+    }
+  }
+  else
+  {
+    return false;
   }
 }
 
 
-void LoadAnnotations(OrthancPluginRestOutput* output,
+static std::string GetInfoKey(const AnnotationsId& annotations)
+{
+  return annotations.GetKey() + "|info";
+}
+
+
+static std::string GetLayersKey(const AnnotationsId& annotations,
+                                const UserId& user)
+{
+  return annotations.GetKey() + "|layers|" + user.GetKey();
+}
+
+
+static std::string GetFeaturesKey(const AnnotationsId& annotations,
+                                  const UserId& user)
+{
+  return annotations.GetKey() + "|features|" + user.GetKey();
+}
+
+
+
+static const char* const KEY_ACTIVE_USERS = "active-users";
+static const char* const KEY_PROJECT_NAME = "project-name";
+static const char* const KEY_PROJECT_DESCRIPTION = "project-description";
+static const char* const KEY_USER_LAYERS = "user-layers";
+static const char* const KEY_SHARED_LAYERS = "shared-layers";
+
+
+static unsigned int GetHex(char c)
+{
+  if (c >= '0' && c <= '9')
+  {
+    return c - '0';
+  }
+  else if (c >= 'a' && c <= 'f')
+  {
+    return c - 'a' + 10;
+  }
+  else if (c >= 'A' && c <= 'F')
+  {
+    return c - 'A' + 10;
+  }
+  else
+  {
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_NetworkProtocol);
+  }
+}
+
+
+static OrthancWSI::RGBColor ParseColor(const std::string& color)
+{
+  if (color.size() != 7 ||
+      color[0] != '#')
+  {
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_NetworkProtocol);
+  }
+  else
+  {
+    unsigned int r = GetHex(color[1]) * 16 + GetHex(color[2]);
+    unsigned int g = GetHex(color[3]) * 16 + GetHex(color[4]);
+    unsigned int b = GetHex(color[5]) * 16 + GetHex(color[6]);
+    return OrthancWSI::RGBColor(r, g, b);
+  }
+}
+
+
+static std::string SerializeColor(const OrthancWSI::RGBColor& color)
+{
+  char buf[16];
+  sprintf(buf, "#%02x%02x%02x", color.GetR(), color.GetG(), color.GetB());
+  return buf;
+}
+
+
+class UserLayer : public ILayer
+{
+private:
+  bool                   isVisible_;
+  OrthancWSI::RGBColor   color_;
+  std::string            id_;
+  std::string            name_;
+  std::set<UserId>       sharedWith_;
+  bool                   isPublic_;
+
+public:
+  UserLayer(const OrthancWSI::RGBColor& color,
+            const std::string& name) :
+    isVisible_(true),
+    color_(color),
+    id_(Orthanc::Toolbox::GenerateUuid()),
+    name_(name),
+    isPublic_(false)
+  {
+  }
+
+  UserLayer(const Json::Value& source) :
+    color_(ParseColor(Orthanc::SerializationToolbox::ReadString(source, KEY_COLOR)))
+  {
+    isVisible_ = Orthanc::SerializationToolbox::ReadBoolean(source, KEY_VISIBLE);
+    id_ = Orthanc::SerializationToolbox::ReadString(source, KEY_ID);
+    name_ = Orthanc::SerializationToolbox::ReadString(source, KEY_NAME);
+
+    if (source.isMember(KEY_PUBLIC))
+    {
+      isPublic_ = Orthanc::SerializationToolbox::ReadBoolean(source, KEY_PUBLIC);
+    }
+    else
+    {
+      isPublic_ = false;
+    }
+
+    if (source.isMember(KEY_SHARED_WITH))
+    {
+      const Json::Value& sharedWith = source[KEY_SHARED_WITH];
+
+      if (!sharedWith.isArray())
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_NetworkProtocol);
+      }
+
+      for (Json::Value::ArrayIndex i = 0; i < sharedWith.size(); i++)
+      {
+        sharedWith_.insert(UserId(sharedWith[i]));
+      }
+    }
+  }
+
+  virtual std::string GetId() const ORTHANC_OVERRIDE
+  {
+    return id_;
+  }
+
+  bool IsVisible() const
+  {
+    return isVisible_;
+  }
+
+  const OrthancWSI::RGBColor& GetColor() const
+  {
+    return color_;
+  }
+
+  const std::string& GetName() const
+  {
+    return name_;
+  }
+
+  bool IsSharedWith(const UserId& user) const
+  {
+    return (isPublic_ ||
+            sharedWith_.find(user) != sharedWith_.end());
+  }
+
+  void Assign(const UserLayer& other)
+  {
+    isVisible_ = other.isVisible_;
+    color_ = other.color_;
+    name_ = other.name_;
+    sharedWith_ = other.sharedWith_;
+    isPublic_ = other.isPublic_;
+  }
+
+  virtual void Serialize(Json::Value& target) const ORTHANC_OVERRIDE
+  {
+    Json::Value sharedWith = Json::arrayValue;
+    for (std::set<UserId>::const_iterator it = sharedWith_.begin(); it != sharedWith_.end(); ++it)
+    {
+      Json::Value item;
+      it->Serialize(item);
+      sharedWith.append(item);
+    }
+
+    target = Json::objectValue;
+    target[KEY_VISIBLE] = isVisible_;
+    target[KEY_COLOR] = SerializeColor(color_);
+    target[KEY_ID] = id_;
+    target[KEY_NAME] = name_;
+    target[KEY_PUBLIC] = isPublic_;
+    target[KEY_SHARED_WITH] = sharedWith;
+  }
+};
+
+
+class SharedLayer : public ILayer
+{
+private:
+  bool                  isVisible_;
+  OrthancWSI::RGBColor  color_;
+  UserId                author_;
+  std::string           id_;
+  std::string           name_;
+
+public:
+  SharedLayer(const UserId& author,
+              const UserLayer& layer) :
+    isVisible_(true),
+    color_(layer.GetColor()),
+    author_(author),
+    id_(layer.GetId()),
+    name_(layer.GetName())
+  {
+  }
+
+  SharedLayer(const Json::Value& source) :
+    color_(0, 0, 0)
+  {
+    if (!source.isMember(KEY_AUTHOR))
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_NetworkProtocol);
+    }
+
+    isVisible_ = Orthanc::SerializationToolbox::ReadBoolean(source, KEY_VISIBLE);
+    author_ = UserId(source[KEY_AUTHOR]);
+    id_ = Orthanc::SerializationToolbox::ReadString(source, KEY_ID);
+    name_ = Orthanc::SerializationToolbox::ReadString(source, KEY_NAME);
+
+    std::string color = Orthanc::SerializationToolbox::ReadString(source, KEY_COLOR);
+    color_ = ParseColor(color);
+  }
+
+  virtual std::string GetId() const ORTHANC_OVERRIDE
+  {
+    return id_;
+  }
+
+  bool IsVisible() const
+  {
+    return isVisible_;
+  }
+
+  const OrthancWSI::RGBColor& GetColor() const
+  {
+    return color_;
+  }
+
+  const UserId& GetAuthor() const
+  {
+    return author_;
+  }
+
+  const std::string& GetName() const
+  {
+    return name_;
+  }
+
+  virtual void Serialize(Json::Value& target) const ORTHANC_OVERRIDE
+  {
+    target = Json::objectValue;
+    target[KEY_VISIBLE] = isVisible_;
+    target[KEY_COLOR] = SerializeColor(color_);
+    target[KEY_ID] = id_;
+    target[KEY_NAME] = name_;
+
+    author_.Serialize(target[KEY_AUTHOR]);
+  }
+};
+
+
+class UserData : public ISerializable
+{
+private:
+  LayersCollection    userLayers_;
+
+public:
+  UserData()
+  {
+  }
+
+  UserData(const Json::Value& source)
+  {
+    if (!source.isArray())
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
+    }
+    else
+    {
+      for (Json::Value::ArrayIndex i = 0; i < source.size(); i++)
+      {
+        userLayers_.AddLayer(new UserLayer(source[i]));
+      }
+    }
+  }
+
+  std::string AddUserLayer(UserLayer* layer)
+  {
+    std::unique_ptr<UserLayer> protection(layer);
+
+    if (layer == NULL)
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_NullPointer);
+    }
+
+    const std::string id = protection->GetId();
+
+    userLayers_.AddLayer(protection.release());
+
+    return id;
+  }
+
+  UserLayer& GetUserLayer(const std::string& layerId) const
+  {
+    return dynamic_cast<UserLayer&>(userLayers_.GetLayer(layerId));
+  }
+
+  std::string CreateUserLayer()
+  {
+    static const uint8_t PALETTE[] = {
+      0xe6, 0x39, 0x46,  // red: #e63946
+      0x2a, 0x9d, 0x8f,
+      0xe9, 0xc4, 0x6a,
+      0x26, 0x46, 0x53,
+      0xf4, 0xa2, 0x61
+    };
+
+    static const size_t PALETTE_SIZE = sizeof(PALETTE) / (3 * sizeof(uint8_t));
+
+    size_t item = userLayers_.GetSize() % PALETTE_SIZE;
+
+    OrthancWSI::RGBColor color(PALETTE[3 * item],
+                               PALETTE[3 * item + 1],
+                               PALETTE[3 * item + 2]);
+
+    std::string name;
+    if (userLayers_.GetSize() == 0)
+    {
+      name = "Default";
+    }
+    else
+    {
+      name = "Layer " + boost::lexical_cast<std::string>(userLayers_.GetSize() + 1);
+    }
+
+    return AddUserLayer(new UserLayer(color, name));
+  }
+
+  void DeleteUserLayer(const std::string& layerId)
+  {
+    userLayers_.DeleteLayer(layerId);
+  }
+
+  virtual void Serialize(Json::Value& target) const ORTHANC_OVERRIDE
+  {
+    userLayers_.Serialize(target);
+  }
+};
+
+
+class AnnotationsInfo : public ISerializable
+{
+private:
+  std::string        projectName_;
+  std::string        projectDescription_;
+  std::set<UserId>   activeUsers_;
+
+public:
+  AnnotationsInfo()
+  {
+  }
+
+  AnnotationsInfo(const Json::Value& source)
+  {
+    projectName_ = Orthanc::SerializationToolbox::ReadString(source, KEY_PROJECT_NAME);
+    projectDescription_ = Orthanc::SerializationToolbox::ReadString(source, KEY_PROJECT_DESCRIPTION);
+
+    const Json::Value& users = source[KEY_ACTIVE_USERS];
+
+    if (!users.isArray())
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
+    }
+
+    for (Json::Value::ArrayIndex i = 0; i < users.size(); i++)
+    {
+      activeUsers_.insert(UserId(users[i]));
+    }
+  }
+
+  const std::string& GetProjectName() const
+  {
+    return projectName_;
+  }
+
+  void SetProjectName(const std::string& name)
+  {
+    projectName_ = name;
+  }
+
+  const std::string& GetProjectDescription() const
+  {
+    return projectDescription_;
+  }
+
+  void SetProjectDescription(const std::string& description)
+  {
+    projectDescription_ = description;
+  }
+
+  // Return "true" iff. the user was not already tagged as active
+  bool AddActiveUser(const UserId& user)
+  {
+    if (activeUsers_.find(user) == activeUsers_.end())
+    {
+      activeUsers_.insert(user);
+      return true;
+    }
+    else
+    {
+      return false;
+    }
+  }
+
+  const std::set<UserId>& GetActiveUsers() const
+  {
+    return activeUsers_;
+  }
+
+  virtual void Serialize(Json::Value& target) const ORTHANC_OVERRIDE
+  {
+    Json::Value users = Json::arrayValue;
+    for (std::set<UserId>::const_iterator it = activeUsers_.begin(); it != activeUsers_.end(); ++it)
+    {
+      Json::Value user;
+      it->Serialize(user);
+      users.append(user);
+    }
+
+    target = Json::objectValue;
+    target[KEY_PROJECT_NAME] = projectName_;
+    target[KEY_PROJECT_DESCRIPTION] = projectDescription_;
+    target[KEY_ACTIVE_USERS] = users;
+  }
+};
+
+
+class CachedAnnotations : public Orthanc::IDynamicObject
+{
+private:
+  void LoadUserData(const UserId& user)
+  {
+    const std::string key = id_.GetKey() + "|layers|" + user.GetKey();
+
+    Json::Value layers;
+    if (LookupKeyValueStore(layers, key))
+    {
+      std::unique_ptr<UserData> item(new UserData(layers));
+
+      if (content_.find(user) == content_.end())  // Should never be false
+      {
+        content_[user] = item.release();
+      }
+    }
+  }
+
+  typedef std::map<UserId, UserData*>   Content;
+
+  Orthanc::ReaderWriterLock         mutex_;
+  std::unique_ptr<AnnotationsInfo>  info_;
+  AnnotationsId                     id_;
+  Content                           content_;
+
+public:
+  CachedAnnotations(const AnnotationsId& id) :
+    id_(id)
+  {
+    const std::string key = GetInfoKey(id);
+
+    Json::Value info;
+
+    if (LookupKeyValueStore(info, key))
+    {
+      info_.reset(new AnnotationsInfo(info));
+
+      for (std::set<UserId>::const_iterator it = info_->GetActiveUsers().begin();
+           it != info_->GetActiveUsers().end(); ++it)
+      {
+        LoadUserData(*it);
+      }
+    }
+    else
+    {
+      if (!OrthancPlugins::RestApiGet(info, "/education/api-plugins/project-info?id=" + id.GetProjectId(), true))
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
+      }
+
+      info_.reset(new AnnotationsInfo);
+      info_->SetProjectName(Orthanc::SerializationToolbox::ReadString(info, "name"));
+      info_->SetProjectDescription(Orthanc::SerializationToolbox::ReadString(info, "description"));
+
+      info_->Serialize(info);
+      SetKeyValueStore(key, info);
+    }
+  }
+
+  ~CachedAnnotations()
+  {
+    for (Content::iterator it = content_.begin(); it != content_.end(); ++it)
+    {
+      assert(it->second != NULL);
+      delete it->second;
+    }
+  }
+
+  class UserReader : public boost::noncopyable
+  {
+  private:
+    Orthanc::ReaderWriterLock::ReadLock lock_;
+    const AnnotationsInfo&              info_;
+    const UserData*                     userData_;
+
+  public:
+    UserReader(CachedAnnotations& that,
+               const IAuthenticatedUser& user) :
+      lock_(that.mutex_),
+      info_(*that.info_)
+    {
+      Content::const_iterator found = that.content_.find(user.GetAnnotatingId());
+
+      if (found == that.content_.end())
+      {
+        userData_ = NULL;
+      }
+      else
+      {
+        assert(found->second != NULL);
+        userData_ = found->second;
+      }
+    }
+
+    bool IsValid() const
+    {
+      return userData_ != NULL;
+    }
+
+    void ListLayers(Json::Value& target) const
+    {
+      target = Json::objectValue;
+
+      if (IsValid())
+      {
+        userData_->Serialize(target[KEY_USER_LAYERS]);
+        target[KEY_SHARED_LAYERS] = Json::arrayValue;  // TODO
+      }
+      else
+      {
+        target[KEY_USER_LAYERS] = Json::arrayValue;
+        target[KEY_SHARED_LAYERS] = Json::arrayValue;
+      }
+    }
+  };
+
+
+  class UserWriter : public boost::noncopyable
+  {
+  private:
+    Orthanc::ReaderWriterLock::WriteLock  lock_;
+    CachedAnnotations&                    that_;
+    UserId                                userId_;
+    UserData*                             userData_;
+
+    void Commit()
+    {
+      SetKeyValueStore(GetLayersKey(that_.id_, userId_), *userData_);
+    }
+
+  public:
+    UserWriter(CachedAnnotations& that,
+               const IAuthenticatedUser& user) :
+      lock_(that.mutex_),
+      that_(that),
+      userId_(user.GetAnnotatingId())
+    {
+      const UserId id = user.GetAnnotatingId();
+
+      if (that.info_->AddActiveUser(userId_))
+      {
+        // Only update the key-value store if this is the first time we meet this user
+        SetKeyValueStore(GetInfoKey(that.id_), *that.info_);
+      }
+
+      Content::iterator found = that.content_.find(userId_);
+
+      if (found == that.content_.end())
+      {
+        std::unique_ptr<UserData> layers(new UserData);
+        userData_ = layers.get();
+        that.content_[userId_] = layers.release();
+        Commit();
+      }
+      else
+      {
+        assert(found->second != NULL);
+        userData_ = found->second;
+      }
+    }
+
+    void CreateUserLayer(Json::Value& answer)
+    {
+      assert(userData_ != NULL);
+
+      const std::string layerId = userData_->CreateUserLayer();
+      Commit();
+
+      UserLayer& layer = userData_->GetUserLayer(layerId);
+      layer.Serialize(answer);
+    }
+
+    void UpdateUserLayer(const UserLayer& updated)
+    {
+      assert(userData_ != NULL);
+
+      UserLayer& layer = userData_->GetUserLayer(updated.GetId());
+      layer.Assign(updated);
+      Commit();
+    }
+
+    void DeleteUserLayer(const std::string& layerId)
+    {
+      assert(userData_ != NULL);
+      userData_->DeleteUserLayer(layerId);
+      Commit();
+    }
+  };
+
+
+#if 0
+  void GetSharedLayers(Json::Value& layers,
+                       const IAuthenticatedUser& user)
+  {
+    Orthanc::ReaderWriterLock::ReadLock lock(mutex_);
+
+    layers = Json::arrayValue;   // TODO
+  }
+
+  bool HasAccessToLayer(const IAuthenticatedUser& user,
+                        const UserId& author,
+                        const std::string& layerId)
+  {
+    Orthanc::ReaderWriterLock::ReadLock lock(mutex_);
+
+    return false;  // TODO
+  }
+
+  void CreateUserLayer(const IAuthenticatedUser& user)
+  {
+    // TODO
+  }
+
+  void AnswerLayers(OrthancPluginRestOutput* output,
+                    const IAuthenticatedUser& user)
+  {
+
+    AnswerJson(output, answer);
+  }
+#endif
+};
+
+
+class AnnotationsCommandContext : public boost::noncopyable
+{
+private:
+  std::unique_ptr<IAuthenticatedUser>         user_;
+  Json::Value                                 body_;
+  std::unique_ptr<AnnotationsId>              annotationsId_;
+  boost::shared_ptr<Orthanc::IDynamicObject>  cachedAnnotations_;
+
+public:
+  AnnotationsCommandContext(const OrthancPluginHttpRequest* request)
+  {
+    if (request->method != OrthancPluginHttpMethod_Post)
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
+    }
+
+    user_.reset(IAuthenticatedUser::FromHttpRequest(request));
+
+    if (!Orthanc::Toolbox::ReadJson(body_, request->body, request->bodySize) ||
+        !body_.isObject())
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_NetworkProtocol);
+    }
+
+    const std::string projectId = Orthanc::SerializationToolbox::ReadString(body_, "project", "" /* default project */);
+    const std::string level = Orthanc::SerializationToolbox::ReadString(body_, "level");
+    const std::string resourceId = Orthanc::SerializationToolbox::ReadString(body_, "resource");
+
+    annotationsId_.reset(new AnnotationsId(projectId, level, resourceId));
+
+    IAuthenticatedUser::ProjectRole role = user_->GetRoleInProject(annotationsId_->GetProjectId());
+
+    if (role != IAuthenticatedUser::ProjectRole_Instructor &&
+        role != IAuthenticatedUser::ProjectRole_Learner)
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_ForbiddenAccess, "User \"" + user_->Format() +
+                                      "\" is not instructor or learner of project \"" + annotationsId_->GetProjectId() + "\"");
+    }
+
+    const std::string cacheKey = annotationsId_->GetKey();
+
+    static Orthanc::SharedObjectCache annotationsCache_(100);  // TODO - PARAMETER
+
+    cachedAnnotations_ = annotationsCache_.GetCachedValue(cacheKey);
+
+    if (cachedAnnotations_.get() == NULL)
+    {
+      cachedAnnotations_.reset(new CachedAnnotations(*annotationsId_));
+      annotationsCache_.Store(cacheKey, cachedAnnotations_, 1);
+    }
+  }
+
+  const IAuthenticatedUser& GetUser() const
+  {
+    assert(user_.get() != NULL);
+    return *user_;
+  }
+
+  const AnnotationsId& GetAnnotationsId() const
+  {
+    assert(annotationsId_.get() != NULL);
+    return *annotationsId_;
+  }
+
+  std::string GetFeaturesKey() const
+  {
+    return ::GetFeaturesKey(GetAnnotationsId(), GetUser().GetAnnotatingId());
+  }
+
+  std::string GetBodyString(const char* field) const
+  {
+    return Orthanc::SerializationToolbox::ReadString(body_, field);
+  }
+
+  const Json::Value& GetBodyField(const char* field) const
+  {
+    if (!body_.isMember(field))
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_NetworkProtocol);
+    }
+    else
+    {
+      return body_[field];
+    }
+  }
+
+  CachedAnnotations& GetCachedAnnotations()
+  {
+    return dynamic_cast<CachedAnnotations&>(*cachedAnnotations_);
+  }
+};
+
+
+static bool ProtectPostRequest(OrthancPluginRestOutput* output,
+                               const OrthancPluginHttpRequest* request)
+{
+  if (request->method != OrthancPluginHttpMethod_Post)
+  {
+    OrthancPluginSendMethodNotAllowed(OrthancPlugins::GetGlobalContext(), output, "POST");
+    return false;
+  }
+  else
+  {
+    return true;
+  }
+}
+
+
+
+
+void ListLayers(OrthancPluginRestOutput* output,
+                const char* url,
+                const OrthancPluginHttpRequest* request)
+{
+  if (ProtectPostRequest(output, request))
+  {
+    AnnotationsCommandContext context(request);
+
+    CachedAnnotations::UserReader reader(context.GetCachedAnnotations(), context.GetUser());
+
+    Json::Value answer;
+    reader.ListLayers(answer);
+
+    AnswerJson(output, answer);
+  }
+}
+
+
+void CreateUserLayer(OrthancPluginRestOutput* output,
                      const char* url,
                      const OrthancPluginHttpRequest* request)
+{
+  if (ProtectPostRequest(output, request))
+  {
+    AnnotationsCommandContext context(request);
+
+    CachedAnnotations::UserWriter writer(context.GetCachedAnnotations(), context.GetUser());
+
+    Json::Value answer;
+    writer.CreateUserLayer(answer);
+
+    AnswerJson(output, answer);
+  }
+}
+
+
+void SaveUserLayer(OrthancPluginRestOutput* output,
+                   const char* url,
+                   const OrthancPluginHttpRequest* request)
+{
+  if (ProtectPostRequest(output, request))
+  {
+    AnnotationsCommandContext context(request);
+
+    UserLayer updated(context.GetBodyField("layer"));
+
+    {
+      CachedAnnotations::UserWriter writer(context.GetCachedAnnotations(), context.GetUser());
+      writer.UpdateUserLayer(updated);
+    }
+
+    AnswerEmpty(output);
+  }
+}
+
+
+void DeleteUserLayer(OrthancPluginRestOutput* output,
+                     const char* url,
+                     const OrthancPluginHttpRequest* request)
+{
+  if (ProtectPostRequest(output, request))
+  {
+    AnnotationsCommandContext context(request);
+
+    const std::string layerId = context.GetBodyString("layer-id");
+
+    {
+      CachedAnnotations::UserWriter writer(context.GetCachedAnnotations(), context.GetUser());
+      writer.DeleteUserLayer(layerId);
+    }
+
+    AnswerEmpty(output);
+  }
+}
+
+
+void LoadUserFeatures(OrthancPluginRestOutput* output,
+                  const char* url,
+                  const OrthancPluginHttpRequest* request)
+{
+  if (request->method != OrthancPluginHttpMethod_Post)
+  {
+    OrthancPluginSendMethodNotAllowed(OrthancPlugins::GetGlobalContext(), output, "POST");
+  }
+  else
+  {
+    AnnotationsCommandContext context(request);
+
+#if ORTHANC_PLUGINS_VERSION_IS_ABOVE(1, 12, 8)
+    Json::Value answer;
+    answer[KEY_FEATURES] = Json::arrayValue;
+
+    std::string compressed;
+    if (LookupKeyValueStore(compressed, context.GetFeaturesKey()))
+    {
+      std::string uncompressed;
+      Orthanc::GzipCompressor compressor;
+      Orthanc::IBufferCompressor::Uncompress(uncompressed, compressor, compressed);
+
+      if (!Orthanc::Toolbox::ReadJson(answer[KEY_FEATURES], uncompressed))
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+      }
+    }
+
+    AnswerJson(output, answer);
+#else
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "Your Orthanc SDK is too old to load annotations");
+#endif
+  }
+}
+
+
+void SaveUserFeatures(OrthancPluginRestOutput* output,
+                  const char* url,
+                  const OrthancPluginHttpRequest* request)
+{
+  if (request->method != OrthancPluginHttpMethod_Post)
+  {
+    OrthancPluginSendMethodNotAllowed(OrthancPlugins::GetGlobalContext(), output, "POST");
+  }
+  else
+  {
+    AnnotationsCommandContext context(request);
+
+    std::string features;
+    Orthanc::Toolbox::WriteFastJson(features, context.GetBodyField(KEY_FEATURES));
+
+    std::string compressed;
+    Orthanc::GzipCompressor compressor;
+    Orthanc::IBufferCompressor::Compress(compressed, compressor, features);
+
+#if ORTHANC_PLUGINS_VERSION_IS_ABOVE(1, 12, 8)
+    SetKeyValueStore(context.GetFeaturesKey(), compressed);
+
+    Json::Value answer;
+
+    std::string s = answer.toStyledString();
+    OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, s.c_str(), s.size(), "application/json");
+#else
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "Your Orthanc SDK is too old to save annotations");
+#endif
+  }
+}
+
+
+void ListSharedLayers(OrthancPluginRestOutput* output,
+                      const char* url,
+                      const OrthancPluginHttpRequest* request)
 {
   if (request->method != OrthancPluginHttpMethod_Post)
   {
@@ -529,83 +1712,26 @@ void LoadAnnotations(OrthancPluginRestOutput* output,
       throw Orthanc::OrthancException(Orthanc::ErrorCode_NetworkProtocol);
     }
 
-    const std::string projectId = Orthanc::SerializationToolbox::ReadString(body, "project", "");
-    const std::string key = user->GetAnnotationKey(projectId,
-                                                   Orthanc::SerializationToolbox::ReadString(body, "level"),
-                                                   Orthanc::SerializationToolbox::ReadString(body, "resource"));
-
-    CheckAnnotationsAllowedForUser(*user, projectId);
-
-#if ORTHANC_PLUGINS_VERSION_IS_ABOVE(1, 12, 8)
-    OrthancPlugins::KeyValueStore store(KEY_VALUE_STORE_ANNOTATIONS);
-
-    std::string compressed, value;
-
-    if (store.GetValue(compressed, key))
-    {
-      Orthanc::GzipCompressor compressor;
-      Orthanc::IBufferCompressor::Uncompress(value, compressor, compressed);
-      OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, value.c_str(), value.size(), "application/json");
-    }
-    else
-    {
-      const Json::Value empty = Json::objectValue;
-      AnswerJson(output, empty);
-    }
-#else
-    throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "Your Orthanc SDK is too old to load annotations");
-#endif
-  }
-}
-
-
-void SaveAnnotations(OrthancPluginRestOutput* output,
-                     const char* url,
-                     const OrthancPluginHttpRequest* request)
-{
-  if (request->method != OrthancPluginHttpMethod_Post)
-  {
-    OrthancPluginSendMethodNotAllowed(OrthancPlugins::GetGlobalContext(), output, "POST");
-  }
-  else
-  {
-    std::unique_ptr<IAuthenticatedUser> user(IAuthenticatedUser::FromHttpRequest(request));
-
-    // TODO - If the education plugin is installed, check that the user is indeed part of the learners/instructors of the project, otherwise send Forbidden
-
-    Json::Value body;
-    if (!Orthanc::Toolbox::ReadJson(body, request->body, request->bodySize) ||
-        !body.isObject() ||
-        !body.isMember(KEY_ANNOTATIONS))
-    {
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_NetworkProtocol);
-    }
-
-    const std::string projectId = Orthanc::SerializationToolbox::ReadString(body, "project", "");
-    const std::string key = user->GetAnnotationKey(projectId,
-                                                   Orthanc::SerializationToolbox::ReadString(body, "level"),
-                                                   Orthanc::SerializationToolbox::ReadString(body, "resource"));
-
-    CheckAnnotationsAllowedForUser(*user, projectId);
-
-    std::string value;
-    Orthanc::Toolbox::WriteFastJson(value, body[KEY_ANNOTATIONS]);
-
-    std::string compressed;
-    Orthanc::GzipCompressor compressor;
-    Orthanc::IBufferCompressor::Compress(compressed, compressor, value);
-
-#if ORTHANC_PLUGINS_VERSION_IS_ABOVE(1, 12, 8)
-    OrthancPlugins::KeyValueStore store(KEY_VALUE_STORE_ANNOTATIONS);
-    store.Store(key, compressed);
-
     Json::Value answer;
 
-    std::string s = answer.toStyledString();
-    OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, s.c_str(), s.size(), "application/json");
-#else
-    throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "Your Orthanc SDK is too old to save annotations");
-#endif
+    for (size_t i = 0; i < 10; i++)
+    {
+      const std::string userId = "User " + boost::lexical_cast<std::string>(i);
+
+      Json::Value layers = Json::arrayValue;
+      for (size_t j = 0; j < 5; j++) {
+        Json::Value layer;
+        layer["id"] = Orthanc::Toolbox::GenerateUuid();
+        layer["name"] = "Layer " + boost::lexical_cast<std::string>(j);
+        layers.append(layer);
+      }
+
+      Json::Value user;
+      user["layers"] = layers;
+      answer[userId] = user;
+    }
+
+    AnswerJson(output, answer);
   }
 }
 
@@ -736,8 +1862,17 @@ extern "C"
     OrthancPlugins::RegisterRestCallback<ServeFramePyramid>("/wsi/frames-pyramids/([0-9a-f-]+)/([0-9-]+)", true);
     OrthancPlugins::RegisterRestCallback<ServeFrameTile>("/wsi/frames-tiles/([0-9a-f-]+)/([0-9-]+)/([0-9-]+)/([0-9-]+)/([0-9-]+)", true);
 
-    OrthancPlugins::RegisterRestCallback<LoadAnnotations>("/wsi/api/load-annotations", true);
-    OrthancPlugins::RegisterRestCallback<SaveAnnotations>("/wsi/api/save-annotations", true);
+    // NEW
+    OrthancPlugins::RegisterRestCallback<CreateUserLayer>("/wsi/api/create-user-layer", true);
+    OrthancPlugins::RegisterRestCallback<DeleteUserLayer>("/wsi/api/delete-user-layer", true);
+    OrthancPlugins::RegisterRestCallback<ListLayers>("/wsi/api/list-layers", true);
+    OrthancPlugins::RegisterRestCallback<SaveUserLayer>("/wsi/api/save-user-layer", true);
+    OrthancPlugins::RegisterRestCallback<LoadUserFeatures>("/wsi/api/load-user-features", true);
+    OrthancPlugins::RegisterRestCallback<SaveUserFeatures>("/wsi/api/save-user-features", true);
+
+    // TODO
+    OrthancPlugins::RegisterRestCallback<ListSharedLayers>("/wsi/api/shared-layers", true);
+
 
     OrthancPlugins::OrthancConfiguration mainConfiguration;
 

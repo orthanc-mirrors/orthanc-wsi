@@ -36,6 +36,11 @@ DownloadPackage(
   "${BASE_URL}/bootstrap-icons-1.13.1.zip"
   "${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1")
 
+DownloadPackage(
+  "8242afdc5bd44105d9dc9e6535315484"
+  "${BASE_URL}/dicom-web/vuejs-2.6.10.tar.gz"
+  "${CMAKE_CURRENT_BINARY_DIR}/vue-2.6.10")
+
 # curl -L https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js | gzip > /tmp/popper-2.11.8.min.js.gz
 
 DownloadCompressedFile(
@@ -52,6 +57,7 @@ file(COPY
   ${CMAKE_CURRENT_BINARY_DIR}/bootstrap-5.3.3/dist/js/bootstrap.min.js
   ${CMAKE_CURRENT_BINARY_DIR}/openlayers-10.6.1-package/dist/ol.js
   ${CMAKE_CURRENT_BINARY_DIR}/popper.min.js
+  ${CMAKE_CURRENT_BINARY_DIR}/vue-2.6.10/dist/vue.min.js
   DESTINATION
   ${JAVASCRIPT_LIBS_DIR}/js
   )
@@ -64,13 +70,16 @@ file(COPY
   )
 
 file(COPY
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/arrow-clockwise.svg
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/arrows-fullscreen.svg
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/arrows.svg
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/chevron-compact-left.svg
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/chevron-compact-right.svg
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/circle.svg
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/cloud-download.svg
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/eye-slash.svg
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/eye.svg
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/file-earmark-plus.svg
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/geo-alt.svg
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/hand-index.svg
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/pencil.svg
