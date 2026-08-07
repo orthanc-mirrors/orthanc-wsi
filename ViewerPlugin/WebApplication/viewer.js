@@ -143,7 +143,7 @@ var app = new Vue({
     // Persistence of layers and annotations
     // -----------------------------------------------------------------------
 
-    CreateAjaxPayload: function(args) {
+    CreatePostPayload: function(args) {
       args['project'] = this.projectId;
       args['level'] = this.level;
       args['resource'] = this.resourceId;
@@ -153,13 +153,10 @@ var app = new Vue({
 
     LoadUserLayers: function(activeLayerId) {
       var that = this;
-      $.ajax({
-        type : 'POST',
-        url : '../api/list-layers',
-        contentType: 'application/json',
-        data : this.CreateAjaxPayload({}),
-        success: function(data) {
-          that.userLayers = data['user-layers'];
+      axios.post('../api/list-layers',
+                 this.CreatePostPayload({}))
+        .then(function(response) {
+          that.userLayers = response.data['user-layers'];
 
           if (that.userLayers.length == 0) {
             that.CreateUserLayer();
@@ -168,45 +165,36 @@ var app = new Vue({
           } else {
             that.activeUserLayerId = that.userLayers[0].id;
           }
-        },
-        error: function() {
+        })
+        .catch(function() {
           console.error('Cannot load the saved annotations');
           that.alertNoSaving = true;
-        }
-      });
+        });
     },
 
     CreateUserLayer: function() {
       var that = this;
-      $.ajax({
-        type : 'POST',
-        url : '../api/create-user-layer',
-        contentType: 'application/json',
-        data : this.CreateAjaxPayload({}),
-        success: function(data) {
-          that.LoadUserLayers(data.id);
-        },
-        error: function() {
+      axios.post('../api/create-user-layer',
+                 this.CreatePostPayload({}))
+        .then(function(response) {
+          that.LoadUserLayers(response.data.id);
+        })
+        .catch(function() {
           console.error('Cannot create a new layer');
           that.alertNoSaving = true;
-        }
-      });
+        });
     },
 
     SaveUserLayer: function(layer) {
       var that = this;
-      $.ajax({
-        type : 'POST',
-        url : '../api/save-user-layer',
-        contentType: 'application/json',
-        data : this.CreateAjaxPayload({
-          'layer' : layer
-        }),
-        error: function() {
+      axios.post('../api/save-user-layer',
+                 this.CreatePostPayload({
+                   'layer': layer
+                 }))
+        .catch(function() {
           console.error('Cannot save layer');
           that.alertNoSaving = true;
-        }
-      });
+        });
     },
 
     LoadUserFeatures: function() {
@@ -215,12 +203,9 @@ var app = new Vue({
       this.showSpinner = true;
 
       var that = this;
-      $.ajax({
-        type : 'POST',
-        url : '../api/load-user-features',
-        contentType: 'application/json',
-        data : this.CreateAjaxPayload({}),
-        success: function(data) {
+      axios.post('../api/load-user-features',
+                 this.CreatePostPayload({}))
+        .then(function(response) {
           that.showSpinner = false;
           that.drawSource.clear();
 
@@ -230,12 +215,12 @@ var app = new Vue({
             availableLayerIds.push(that.userLayers[i].id);
           }
 
-          for (let i = 0; i < data.features.length; i++) {
-            var layerId = data.features[i]['layer-id'];
+          for (let i = 0; i < response.data.features.length; i++) {
+            var layerId = response.data.features[i]['layer-id'];
 
             if (layerId !== undefined &&
                 availableLayerIds.includes(layerId)) {
-              var geometry = UnserializeFeature(data.features[i]);
+              var geometry = UnserializeFeature(response.data.features[i]);
 
               if (geometry !== null) {
                 var feature = new ol.Feature(geometry);
@@ -252,12 +237,11 @@ var app = new Vue({
           that.drawSource.on('removefeature', function (e) {
             that.SaveUserFeatures();
           });
-        },
-        error: function() {
+        })
+        .catch(function() {
           console.error('Cannot load user features');
           that.alertNoSaving = true;
-        }
-      });
+        });
     },
 
     SaveUserFeatures: function()
@@ -282,20 +266,18 @@ var app = new Vue({
         that.showSpinner = true;
         window.addEventListener('beforeunload', BeforeUnloadHandler);
 
-        $.ajax({
-          type : 'POST',
-          url : '../api/save-user-features',
-          data : that.CreateAjaxPayload({
-            'features' : features
-          }),
-          contentType: 'application/json',
-          success: function() {
-          },
-          error: function() {
-            alert('Cannot save the annotations');
+        axios.post('../api/save-user-features',
+                   that.CreatePostPayload({
+                     'features': features
+                   }))
+          .then(function() {
+            // Success
+          })
+          .catch(function() {
+            console.error('Cannot save the annotations');
             that.alertNoSaving = true;
-          },
-          complete : function() {
+          })
+          .finally(function() {
             console.assert(that.isSaving === true);
 
             if (that.isPendingChange) {
@@ -305,8 +287,7 @@ var app = new Vue({
               that.showSpinner = false;
               window.removeEventListener('beforeunload', BeforeUnloadHandler);
             }
-          }
-        });
+          });
       }
 
       this.isPendingChange = true;
@@ -326,29 +307,25 @@ var app = new Vue({
 
       this.modalDeleteUserLayer.hide();
       var that = this;
-      $.ajax({
-        type : 'POST',
-        url : '../api/delete-user-layer',
-        contentType: 'application/json',
-        data : this.CreateAjaxPayload({
-          'layer-id' : layerId
-        }),
-        success: function(data) {
+      axios.post('../api/delete-user-layer',
+                 this.CreatePostPayload({
+                   'layer-id': layerId
+                 })
+                )
+        .then(function(response) {
           that.LoadUserLayers();
 
           // Remove the features that were part of this layer
           that.drawSource.getFeatures().forEach(function(feature) {
-            console.log('removing ' + feature.get('layer-id') + ' from ' + layerId);
             if (feature.get('layer-id') === layerId) {
               that.drawSource.removeFeature(feature);
             }
           });
-        },
-        error: function() {
+        })
+        .catch(function(error) {
           console.error('Cannot delete the layer');
           that.alertNoSaving = true;
-        }
-      });
+        });
     },
 
     // -----------------------------------------------------------------------
@@ -547,27 +524,23 @@ var app = new Vue({
 
       if (this.level == 'series')
       {
-        $.ajax({
-          url : '../pyramids/' + this.resourceId,
-          error: function() {
+        axios.get('../pyramids/' + this.resourceId)
+          .then(function(response) {
+            that.InitializePyramid(response.data, '../tiles/' + that.resourceId + '/');
+          })
+          .catch(function(error) {
             alert('Error - Cannot get the pyramid structure of series: ' + that.resourceId);
-          },
-          success : function(pyramid) {
-            that.InitializePyramid(pyramid, '../tiles/' + that.resourceId + '/');
-          }
-        });
+          });
       }
       else if (this.level == 'instance')
       {
-        $.ajax({
-          url : '../frames-pyramids/' + this.resourceId + '/' + this.frameNumber,
-          error: function() {
+        axios.get('../frames-pyramids/' + this.resourceId + '/' + this.frameNumber)
+          .then(function(response) {
+            that.InitializePyramid(response.data, '../frames-tiles/' + that.resourceId + '/' + that.frameNumber + '/');
+          })
+          .catch(function(error) {
             alert('Error - Cannot get the pyramid structure of frame ' + that.frameNumber + ' of instance: ' + that.resourceId);
-          },
-          success : function(pyramid) {
-            that.InitializePyramid(pyramid, '../frames-tiles/' + that.resourceId + '/' + that.frameNumber + '/');
-          }
-        });
+          });
       }
     },
 
@@ -880,7 +853,6 @@ var app = new Vue({
     // -----------------------------------------------------------------------
 
     ShowImportSharedLayerModal: function() {
-      var that = this;
       this.importSelectedUser = '';
       this.importSelectedLayer = '';
       this.importAvailableLayers = [];
@@ -888,20 +860,18 @@ var app = new Vue({
       this.importUsersLoading = true;
       this.importUsersFailed = false;
       this.modalImportSharedLayer.show();
-      $.ajax({
-        type: 'POST',
-        url: '../api/shared-layers',
-        contentType: 'application/json',
-        data: this.CreateAjaxPayload({}),
-        success: function(data) {
-          that.importAvailableSharedLayers = data;
+
+      var that = this;
+      axios.post('../api/shared-layers',
+                 this.CreatePostPayload({}))
+        .then(function(response) {
+          that.importAvailableSharedLayers = response.data;
           that.importUsersLoading = false;
-        },
-        error: function() {
+        })
+        .catch(function(error) {
           that.importUsersLoading = false;
           that.importUsersFailed = true;
-        }
-      });
+        });
     },
 
     ImportUserChanged: function() {

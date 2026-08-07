@@ -1259,14 +1259,14 @@ public:
     }
     else
     {
-      if (!OrthancPlugins::RestApiGet(info, "/education/api-plugins/project-info?id=" + id.GetProjectId(), true))
-      {
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
-      }
-
       info_.reset(new AnnotationsInfo);
-      info_->SetProjectName(Orthanc::SerializationToolbox::ReadString(info, "name"));
-      info_->SetProjectDescription(Orthanc::SerializationToolbox::ReadString(info, "description"));
+
+      if (OrthancPlugins::RestApiGet(info, "/education/api-plugins/project-info?id=" + id.GetProjectId(), true))
+      {
+        // The "orthanc-education" plugin is available
+        info_->SetProjectName(Orthanc::SerializationToolbox::ReadString(info, "name"));
+        info_->SetProjectDescription(Orthanc::SerializationToolbox::ReadString(info, "description"));
+      }
 
       info_->Serialize(info);
       SetKeyValueStore(key, info);

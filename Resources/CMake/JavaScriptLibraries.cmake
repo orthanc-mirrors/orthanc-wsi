@@ -41,6 +41,13 @@ DownloadPackage(
   "${BASE_URL}/dicom-web/vuejs-2.6.10.tar.gz"
   "${CMAKE_CURRENT_BINARY_DIR}/vue-2.6.10")
 
+# axios v0.31.0 is the last release before Axios removed the committed dist/ artifacts
+# https://github.com/axios/axios/releases?page=2#release-v0.31.0
+DownloadPackage(
+  "e1fe2cd9270b513874aea946977f2d47"
+  "${BASE_URL}/axios-0.31.0.tar.gz"
+  "${CMAKE_CURRENT_BINARY_DIR}/axios-0.31.0")
+
 # curl -L https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js | gzip > /tmp/popper-2.11.8.min.js.gz
 
 DownloadCompressedFile(
@@ -54,6 +61,8 @@ file(MAKE_DIRECTORY ${JAVASCRIPT_LIBS_DIR})
 
 
 file(COPY
+  ${CMAKE_CURRENT_BINARY_DIR}/axios-0.31.0/dist/axios.min.js
+  ${CMAKE_CURRENT_BINARY_DIR}/axios-0.31.0/dist/axios.min.js.map
   ${CMAKE_CURRENT_BINARY_DIR}/bootstrap-5.3.3/dist/js/bootstrap.min.js
   ${CMAKE_CURRENT_BINARY_DIR}/openlayers-10.6.1-package/dist/ol.js
   ${CMAKE_CURRENT_BINARY_DIR}/popper.min.js
