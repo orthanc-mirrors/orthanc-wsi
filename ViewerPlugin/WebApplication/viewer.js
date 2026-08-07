@@ -74,6 +74,7 @@ var app = new Vue({
       selectAnnotation: null,
 
       // TODO - Shared layers
+      sharedLayersSupported: true,
       sharedSource: null,
       sharedLayer: null,
       modalImportSharedLayer: null,
@@ -101,6 +102,8 @@ var app = new Vue({
     this.modalDeleteUserLayer = new bootstrap.Modal(document.getElementById('modal-delete-user-layer'));
     this.modalDeleteAnnotation = new bootstrap.Modal(document.getElementById('modal-delete-annotation'));
     this.modalImportSharedLayer = new bootstrap.Modal(document.getElementById('modal-import-shared-layer'));  // TODO
+
+    this.sharedLayersSupported = false;  // TODO
 
     document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) {
       new bootstrap.Tooltip(el, { trigger: 'hover' });
@@ -206,7 +209,6 @@ var app = new Vue({
       axios.post('../api/load-user-features',
                  this.CreatePostPayload({}))
         .then(function(response) {
-          that.showSpinner = false;
           that.drawSource.clear();
 
           // We check that the original layer is still available (could have been some write error)
@@ -241,6 +243,9 @@ var app = new Vue({
         .catch(function() {
           console.error('Cannot load user features');
           that.alertNoSaving = true;
+        })
+        .finally(function() {
+          that.showSpinner = false;
         });
     },
 

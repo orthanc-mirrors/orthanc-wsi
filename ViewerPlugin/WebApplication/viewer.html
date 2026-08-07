@@ -213,36 +213,6 @@
           <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
         </div>
         <div class="offcanvas-body p-2">
-          <div v-show="annotationSelected" class="mb-3">
-            <h5>Current selection</h5>
-            <button class="btn btn-sm btn-primary w-100 mb-2" v-on:click="FocusAnnotation()">
-              <i class="bi bi-arrows-fullscreen me-2 align-middle"></i> Focus on annotation
-            </button>
-            <div>
-              <template v-for="prop in annotationProperties">
-                <div v-if="prop.type === 'readonly'" class="d-flex align-items-baseline border-bottom py-1 gap-2">
-                  <span class="text-muted small flex-shrink-0" style="width:8em">{{prop.label}}</span>
-                  <span class="text-break small">{{prop.value}}</span>
-                </div>
-                <div v-else-if="prop.type === 'editable'" class="d-flex align-items-center border-bottom py-1 gap-2">
-                  <label class="text-muted small flex-shrink-0 mb-0" style="width:8em">{{prop.label}}</label>
-                  <input type="text" class="form-control form-control-sm small flex-grow-1"
-                         v-model="prop.value"
-                         v-on:change="UpdateAnnotationProperty(prop)">
-                </div>
-                <div v-else-if="prop.type === 'dropdown'" class="d-flex align-items-center border-bottom py-1 gap-2">
-                  <label class="text-muted small flex-shrink-0 mb-0" style="width:8em">{{prop.label}}</label>
-                  <select class="form-select form-select-sm small flex-grow-1"
-                          v-model="prop.value"
-                          v-on:change="UpdateAnnotationProperty(prop)">
-                    <option v-for="opt in prop.options" :value="opt.value">{{opt.label}}</option>
-                  </select>
-                </div>
-              </template>
-            </div>
-            <hr class="my-4">
-          </div>
-
           <div class="d-flex align-items-center mb-1">
             <h5>User layers</h5>
             <button type="button" class="btn btn-primary btn-sm ms-auto"
@@ -305,7 +275,7 @@
 
           <hr class="my-4">
 
-          <div class="d-flex align-items-center mb-1">
+          <div class="d-flex align-items-center mb-1" v-if="sharedLayersSupported">
             <h5>Shared layers</h5>
             <button type="button" class="btn btn-primary btn-sm ms-auto"
                     v-on:click="ShowImportSharedLayerModal()">
@@ -313,7 +283,7 @@
               Import
             </button>
           </div>
-          <table class="table table-sm table-borderless mb-0 align-middle">
+          <table class="table table-sm table-borderless mb-0 align-middle" v-if="sharedLayersSupported">
             <thead class="small text-muted">
               <tr>
                 <th class="p-0 text-center fw-normal" title="Visible">V</th>
@@ -351,9 +321,39 @@
             </tbody>
           </table>
 
-          <button class="btn btn-sm btn-primary w-100 mb-2" v-on:click="ReloadSharedLayers()">
+          <hr class="my-4" v-if="sharedLayersSupported">
+
+          <button class="btn btn-sm btn-primary w-100 mb-2" v-on:click="ReloadSharedLayers()" v-if="sharedLayersSupported">
             <i class="bi bi-arrow-clockwise me-2 align-middle"></i> Reload shared content
           </button>
+          <div v-show="annotationSelected" class="mb-3">
+            <h5>Current selection</h5>
+            <button class="btn btn-sm btn-primary w-100 mb-2" v-on:click="FocusAnnotation()">
+              <i class="bi bi-arrows-fullscreen me-2 align-middle"></i> Focus on annotation
+            </button>
+            <div>
+              <template v-for="prop in annotationProperties">
+                <div v-if="prop.type === 'readonly'" class="d-flex align-items-baseline border-bottom py-1 gap-2">
+                  <span class="text-muted small flex-shrink-0" style="width:8em">{{prop.label}}</span>
+                  <span class="text-break small">{{prop.value}}</span>
+                </div>
+                <div v-else-if="prop.type === 'editable'" class="d-flex align-items-center border-bottom py-1 gap-2">
+                  <label class="text-muted small flex-shrink-0 mb-0" style="width:8em">{{prop.label}}</label>
+                  <input type="text" class="form-control form-control-sm small flex-grow-1"
+                         v-model="prop.value"
+                         v-on:change="UpdateAnnotationProperty(prop)">
+                </div>
+                <div v-else-if="prop.type === 'dropdown'" class="d-flex align-items-center border-bottom py-1 gap-2">
+                  <label class="text-muted small flex-shrink-0 mb-0" style="width:8em">{{prop.label}}</label>
+                  <select class="form-select form-select-sm small flex-grow-1"
+                          v-model="prop.value"
+                          v-on:change="UpdateAnnotationProperty(prop)">
+                    <option v-for="opt in prop.options" :value="opt.value">{{opt.label}}</option>
+                  </select>
+                </div>
+              </template>
+            </div>
+          </div>
         </div>
       </div>
 

@@ -725,8 +725,10 @@ public:
 static void SetKeyValueStore(const std::string& key,
                              const std::string& value)
 {
+#if ORTHANC_PLUGINS_VERSION_IS_ABOVE(1, 12, 8)
   OrthancPlugins::KeyValueStore store(KEY_VALUE_STORE);
   store.Store(key, value);
+#endif
 }
 
 
@@ -751,8 +753,12 @@ static void SetKeyValueStore(const std::string& key,
 static bool LookupKeyValueStore(std::string& value,
                                 const std::string& key)
 {
+#if ORTHANC_PLUGINS_VERSION_IS_ABOVE(1, 12, 8)
   OrthancPlugins::KeyValueStore store(KEY_VALUE_STORE);
   return store.GetValue(value, key);
+#else
+  return false;
+#endif
 }
 
 
@@ -1624,8 +1630,8 @@ void DeleteUserLayer(OrthancPluginRestOutput* output,
 
 
 void LoadUserFeatures(OrthancPluginRestOutput* output,
-                  const char* url,
-                  const OrthancPluginHttpRequest* request)
+                      const char* url,
+                      const OrthancPluginHttpRequest* request)
 {
   if (request->method != OrthancPluginHttpMethod_Post)
   {
@@ -1635,10 +1641,10 @@ void LoadUserFeatures(OrthancPluginRestOutput* output,
   {
     AnnotationsCommandContext context(request);
 
-#if ORTHANC_PLUGINS_VERSION_IS_ABOVE(1, 12, 8)
     Json::Value answer;
     answer[KEY_FEATURES] = Json::arrayValue;
 
+#if ORTHANC_PLUGINS_VERSION_IS_ABOVE(1, 12, 8)
     std::string compressed;
     if (LookupKeyValueStore(compressed, context.GetFeaturesKey()))
     {
@@ -1651,18 +1657,18 @@ void LoadUserFeatures(OrthancPluginRestOutput* output,
         throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
       }
     }
-
-    AnswerJson(output, answer);
 #else
     throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "Your Orthanc SDK is too old to load annotations");
 #endif
+
+    AnswerJson(output, answer);
   }
 }
 
 
 void SaveUserFeatures(OrthancPluginRestOutput* output,
-                  const char* url,
-                  const OrthancPluginHttpRequest* request)
+                      const char* url,
+                      const OrthancPluginHttpRequest* request)
 {
   if (request->method != OrthancPluginHttpMethod_Post)
   {
@@ -1681,11 +1687,7 @@ void SaveUserFeatures(OrthancPluginRestOutput* output,
 
 #if ORTHANC_PLUGINS_VERSION_IS_ABOVE(1, 12, 8)
     SetKeyValueStore(context.GetFeaturesKey(), compressed);
-
-    Json::Value answer;
-
-    std::string s = answer.toStyledString();
-    OrthancPluginAnswerBuffer(OrthancPlugins::GetGlobalContext(), output, s.c_str(), s.size(), "application/json");
+    AnswerEmpty(output);
 #else
     throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "Your Orthanc SDK is too old to save annotations");
 #endif
@@ -1770,9 +1772,12 @@ extern "C"
     Orthanc::Logging::Initialize(context);
 #endif
 
-#if !ORTHANC_PLUGINS_VERSION_IS_ABOVE(1, 12, 9)
+#if !ORTHANC_PLUGINS_VERSION_IS_ABOVE(1, 12, 8)
     LOG(WARNING) << "The whole-slide imaging viewer was compiled against an old "
                  << "version of the Orthanc SDK, annotations will not be persistent";
+#elif !ORTHANC_PLUGINS_VERSION_IS_ABOVE(1, 12, 9)
+    LOG(WARNING) << "The whole-slide imaging viewer was compiled against an old "
+                 << "version of the Orthanc SDK, per-user annotations are not supported";
 #endif
 
     try
