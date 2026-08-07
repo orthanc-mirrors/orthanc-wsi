@@ -57,7 +57,6 @@ var app = new Vue({
       showSpinner: false,
 
       // Annotation selection panel
-      annotationSelected: false,
       annotationProperties: [],
       selectedFeature: null,
 
@@ -422,9 +421,15 @@ var app = new Vue({
       this.map.removeInteraction(this.moveFeature);
       this.map.removeInteraction(this.modifyFeature);
       this.map.removeInteraction(this.selectAnnotation);
+
       this.activeDrawTool = null;
       this.map.getViewport().style.cursor = '';
-      this.annotationSelected = false;
+
+      if (this.selectAnnotation !== null) {
+        this.selectAnnotation.getFeatures().clear();
+      }
+
+      this.selectedFeature = null;
     },
 
     ToggleSelectTool: function() {
@@ -489,7 +494,8 @@ var app = new Vue({
       });
 
       selected.clear();
-      this.annotationSelected = false;
+
+      this.selectedFeature = null;
       this.modalDeleteAnnotation.hide();
     },
 
@@ -853,7 +859,6 @@ var app = new Vue({
         if (e.selected.length === 1) {
           var feature = e.selected[0];
           that.selectedFeature = feature;
-          that.annotationSelected = true;
 
           var geometry = feature.getGeometry();
 
@@ -874,7 +879,6 @@ var app = new Vue({
           bootstrap.Offcanvas.getOrCreateInstance(document.getElementById('right-panel')).show();
         } else {
           that.selectedFeature = null;
-          that.annotationSelected = false;
         }
       });
 

@@ -187,6 +187,7 @@
 
             <button type="button" class="btn btn-outline-secondary icon-btn"
                     data-bs-toggle="tooltip" data-bs-placement="bottom" title="Delete selected annotation"
+                    v-bind:disabled="selectedFeature === null"
                     v-on:click="DeleteSelectedAnnotation()">
               <i class="bi bi-trash"></i>
             </button>
@@ -350,7 +351,7 @@
           <button class="btn btn-sm btn-primary w-100 mb-2" v-on:click="ReloadSharedLayers()" v-if="sharedLayersSupported">
             <i class="bi bi-arrow-clockwise me-2 align-middle"></i> Reload shared content
           </button>
-          <div v-show="annotationSelected" class="mb-3">
+          <div v-show="selectedFeature !== null" class="mb-3">
             <h5>Current selection</h5>
             <button class="btn btn-sm btn-primary w-100 mb-2" v-on:click="FocusAnnotation()">
               <i class="bi bi-arrows-fullscreen me-2 align-middle"></i> Focus on annotation
