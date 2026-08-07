@@ -81,6 +81,7 @@ file(COPY
 file(COPY
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/arrow-clockwise.svg
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/arrows-fullscreen.svg
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/arrows-move.svg
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/arrows.svg
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/chevron-compact-left.svg
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/chevron-compact-right.svg
@@ -91,11 +92,15 @@ file(COPY
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/file-earmark-plus.svg
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/geo-alt.svg
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/hand-index.svg
-  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/pencil.svg
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/pen.svg
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/pentagon.svg
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/share.svg
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/square.svg
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/trash.svg
+
+  ${CMAKE_CURRENT_LIST_DIR}/../Icons/freehand-area-svgrepo-com.svg
+  ${CMAKE_CURRENT_LIST_DIR}/../Icons/freehand-svgrepo-com.svg
+
   DESTINATION
   ${JAVASCRIPT_LIBS_DIR}/svg
   )

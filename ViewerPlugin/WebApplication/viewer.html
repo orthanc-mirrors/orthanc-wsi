@@ -88,6 +88,7 @@
       .bi-arrow-clockwise       { -webkit-mask-image: url("../libs/svg/arrow-clockwise.svg"); mask-image: url("../libs/svg/arrow-clockwise.svg"); }
       .bi-arrows                { -webkit-mask-image: url("../libs/svg/arrows.svg"); mask-image: url("../libs/svg/arrows.svg"); }
       .bi-arrows-fullscreen     { -webkit-mask-image: url("../libs/svg/arrows-fullscreen.svg"); mask-image: url("../libs/svg/arrows-fullscreen.svg"); }
+      .bi-arrows-move           { -webkit-mask-image: url("../libs/svg/arrows-move.svg"); mask-image: url("../libs/svg/arrows-move.svg"); }
       .bi-chevron-compact-left  { -webkit-mask-image: url("../libs/svg/chevron-compact-left.svg"); mask-image: url("../libs/svg/chevron-compact-left.svg"); }
       .bi-chevron-compact-right { -webkit-mask-image: url("../libs/svg/chevron-compact-right.svg"); mask-image: url("../libs/svg/chevron-compact-right.svg"); }
       .bi-circle                { -webkit-mask-image: url("../libs/svg/circle.svg"); mask-image: url("../libs/svg/circle.svg"); }
@@ -95,9 +96,11 @@
       .bi-eye                   { -webkit-mask-image: url("../libs/svg/eye.svg"); mask-image: url("../libs/svg/eye.svg"); }
       .bi-eye-slash             { -webkit-mask-image: url("../libs/svg/eye-slash.svg"); mask-image: url("../libs/svg/eye-slash.svg"); }
       .bi-file-earmark-plus     { -webkit-mask-image: url("../libs/svg/file-earmark-plus.svg"); mask-image: url("../libs/svg/file-earmark-plus.svg"); }
+      .bi-freehand-closed       { -webkit-mask-image: url("../libs/svg/freehand-area-svgrepo-com.svg"); mask-image: url("../libs/svg/freehand-area-svgrepo-com.svg"); }
+      .bi-freehand-line         { -webkit-mask-image: url("../libs/svg/freehand-svgrepo-com.svg"); mask-image: url("../libs/svg/freehand-svgrepo-com.svg"); }
       .bi-geo-alt               { -webkit-mask-image: url("../libs/svg/geo-alt.svg"); mask-image: url("../libs/svg/geo-alt.svg"); }
       .bi-hand-index            { -webkit-mask-image: url("../libs/svg/hand-index.svg"); mask-image: url("../libs/svg/hand-index.svg"); }
-      .bi-pencil                { -webkit-mask-image: url("../libs/svg/pencil.svg"); mask-image: url("../libs/svg/pencil.svg"); }
+      .bi-pen                   { -webkit-mask-image: url("../libs/svg/pen.svg"); mask-image: url("../libs/svg/pen.svg"); }
       .bi-pentagon              { -webkit-mask-image: url("../libs/svg/pentagon.svg"); mask-image: url("../libs/svg/pentagon.svg"); }
       .bi-share                 { -webkit-mask-image: url("../libs/svg/share.svg"); mask-image: url("../libs/svg/share.svg"); }
       .bi-square                { -webkit-mask-image: url("../libs/svg/square.svg"); mask-image: url("../libs/svg/square.svg"); }
@@ -153,14 +156,35 @@
             </button>
 
             <button type="button" class="btn btn-outline-secondary icon-btn"
+                    :class="{ active: activeDrawTool === 'freehand-line' }"
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draw freehand line"
+                    v-on:click="ToggleDrawTool('freehand-line')">
+              <i class="bi bi-freehand-line"></i>
+            </button>
+
+            <button type="button" class="btn btn-outline-secondary icon-btn"
                     :class="{ active: activeDrawTool === 'freehand' }"
-                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draw freehand figure"
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draw freehand closed polygon"
                     v-on:click="ToggleDrawTool('freehand')">
-              <i class="bi bi-pencil"></i>
+              <i class="bi bi-freehand-closed"></i>
             </button>
           </div>
 
           <div class="btn-group" role="group">
+            <button type="button" class="btn btn-outline-secondary icon-btn"
+                    :class="{ active: activeDrawTool === 'move' }"
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Move annotation"
+                    v-on:click="ToggleDrawTool('move')">
+              <i class="bi bi-arrows-move"></i>
+            </button>
+
+            <button type="button" class="btn btn-outline-secondary icon-btn"
+                    :class="{ active: activeDrawTool === 'modify' }"
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Modify points"
+                    v-on:click="ToggleDrawTool('modify')">
+              <i class="bi bi-pen"></i>
+            </button>
+
             <button type="button" class="btn btn-outline-secondary icon-btn"
                     data-bs-toggle="tooltip" data-bs-placement="bottom" title="Delete selected annotation"
                     v-on:click="DeleteSelectedAnnotation()">

@@ -71,6 +71,9 @@ var app = new Vue({
       drawRectangle: null,
       drawClosedPolygon: null,
       drawFreehand: null,
+      drawFreehandLine: null,
+      moveFeature: null,
+      modifyFeature: null,
       selectAnnotation: null,
 
       // TODO - Shared layers
@@ -415,6 +418,9 @@ var app = new Vue({
       this.map.removeInteraction(this.drawRectangle);
       this.map.removeInteraction(this.drawClosedPolygon);
       this.map.removeInteraction(this.drawFreehand);
+      this.map.removeInteraction(this.drawFreehandLine);
+      this.map.removeInteraction(this.moveFeature);
+      this.map.removeInteraction(this.modifyFeature);
       this.map.removeInteraction(this.selectAnnotation);
       this.activeDrawTool = null;
       this.map.getViewport().style.cursor = '';
@@ -438,18 +444,27 @@ var app = new Vue({
         'circle':         this.drawCircle,
         'rectangle':      this.drawRectangle,
         'closed-polygon': this.drawClosedPolygon,
-        'freehand':       this.drawFreehand
+        'freehand':       this.drawFreehand,
+        'freehand-line':  this.drawFreehandLine,
+        'move':           this.moveFeature,
+        'modify':         this.modifyFeature
       };
 
       var cursors = {
-        'freehand':      'crosshair'
+        'freehand':      'crosshair',
+        'freehand-line': 'crosshair'
       };
+
+      // Draw tools that keep selectAnnotation active to highlight the newly drawn feature
+      var drawTools = ['line', 'point', 'circle', 'rectangle', 'closed-polygon', 'freehand', 'freehand-line'];
 
       var wasActive = this.activeDrawTool === toolName;
       this.DeactivateAll();
       if (!wasActive) {
         this.map.addInteraction(interactions[toolName]);
-        this.map.addInteraction(this.selectAnnotation);  // kept active to show blue highlight
+        if (drawTools.indexOf(toolName) !== -1) {
+          this.map.addInteraction(this.selectAnnotation);  // kept active to show blue highlight
+        }
         this.activeDrawTool = toolName;
         var cursor = cursors[toolName];
         if (cursor) {
@@ -773,12 +788,21 @@ var app = new Vue({
       });
       this.drawClosedPolygon = new ol.interaction.Draw({ source: this.drawSource, type: 'Polygon' });
       this.drawFreehand = new ol.interaction.Draw({ source: this.drawSource, type: 'Polygon', freehand: true });
+      this.drawFreehandLine = new ol.interaction.Draw({ source: this.drawSource, type: 'LineString', freehand: true });
 
-      // Select interaction (inactive until toggled)
+      this.moveFeature = new ol.interaction.Translate({ source: this.drawSource });
+      this.modifyFeature = new ol.interaction.Modify({ source: this.drawSource });
+
+      // Select interaction (inactive until toggled).
+      // The condition restricts user-click selection to the dedicated select tool only,
+      // preventing spurious selection events when starting a draw near an existing feature.
       this.selectAnnotation = new ol.interaction.Select({
         layers: [ this.drawLayer ],
         filter: function(feature) {
           return GetLayerOfFeature(feature).visible;
+        },
+        condition: function(e) {
+          return ol.events.condition.singleClick(e) && app.activeDrawTool === 'select';
         },
         hitTolerance: 5,  /* pixels around the feature that count as a hit */
         style: new ol.style.Style({
@@ -818,6 +842,10 @@ var app = new Vue({
       this.drawRectangle.on('drawend', function(e) { onDrawEnd(e, true); });
       this.drawClosedPolygon.on('drawend', function(e) { onDrawEnd(e, true); });
       this.drawFreehand.on('drawend', function(e) { onDrawEnd(e, false); });
+      this.drawFreehandLine.on('drawend', function(e) { onDrawEnd(e, false); });
+
+      this.moveFeature.on('translateend', function(e) { that.SaveUserFeatures(); });
+      this.modifyFeature.on('modifyend', function(e) { that.SaveUserFeatures(); });
 
       this.selectAnnotation.on('select', function(e) {
         that.annotationProperties = [];
