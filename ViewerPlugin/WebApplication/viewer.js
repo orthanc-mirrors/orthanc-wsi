@@ -45,6 +45,7 @@ var app = new Vue({
       mapBackground: '',
       rotationDeg: 0,
       activeDrawTool: null,
+      showMagnificationButtons: false,
 
       // Bootstrap modals
       modalDeleteUserLayer: null,
@@ -74,6 +75,12 @@ var app = new Vue({
       moveFeature: null,
       modifyFeature: null,
       selectAnnotation: null,
+
+      /**
+       * Magnification at full-resolution image pixels, convention
+       * commonly used for pathology WSI: 40x scan = 0.25 µm/pixel
+       **/
+      referenceMagnification: 40,
 
       // TODO - Shared layers
       sharedLayersSupported: true,
@@ -599,6 +606,10 @@ var app = new Vue({
         }
       }
 
+      if (metersPerUnit) {
+        this.showMagnificationButtons = true;
+      }
+
       // Maps always need a projection, but Zoomify layers are not geo-referenced, and
       // are only measured in pixels.  So, we create a fake projection that the map
       // can use to properly display the layer.
@@ -643,9 +654,15 @@ var app = new Vue({
         rotate: false        // remove the default rotate
       }).extend([
         rotateControl,
-        new ol.control.ScaleLine({
+
+        /*new ol.control.ScaleLine({
           minWidth: 100
+          })*/
+        new MicroscopeScaleLine({
+          minWidth: 100,
+          referenceMagnification: this.referenceMagnification
         })
+
       ]);
 
       if (this.projectDescription !== null) {
@@ -1067,3 +1084,64 @@ function BeforeUnloadHandler(event)
   // Included for legacy support, e.g. Chrome/Edge < 119
   event.returnValue = true;
 };
+
+
+
+
+function SetMagnification(map, referenceMagnification, magnification)
+{
+  var view = map.getView();
+  var projection = view.getProjection();
+
+  if (projection.getMetersPerUnit()) {  // Ensure that "metersPerUnit" is not null
+    var resolution = referenceMagnification / magnification;
+
+    view.animate({
+      resolution: view.getConstrainedResolution(resolution),
+      duration: 250
+    });
+  }
+}
+
+
+function GetMagnification(map, referenceMagnification)
+{
+  var view = map.getView();
+  var projection = view.getProjection();
+
+  if (projection.getMetersPerUnit() !== undefined) {  // Ensure that "metersPerUnit" is not null
+    var resolution = view.getResolution();
+
+    return referenceMagnification / resolution;
+  }
+}
+
+
+/**
+ * A ScaleLine control that also displays the equivalent microscope
+ * objective magnification (4x, 10x, 40x,...) for the current zoom level.
+ */
+class MicroscopeScaleLine extends ol.control.ScaleLine {
+  constructor(options = {}) {
+    super(options);
+
+    this.referenceMagnification_ = options.referenceMagnification;
+    console.assert(this.referenceMagnification_ !== undefined);
+
+    this.magnificationElement_ = document.createElement('div');
+    this.magnificationElement_.className = 'ol-scale-magnification';
+    this.element.appendChild(this.magnificationElement_);
+  }
+
+  updateElement_() {
+    super.updateElement_();
+
+    var map = this.getMap();
+    if (map && this.magnificationElement_) {
+      var magnification = GetMagnification(map, this.referenceMagnification_);
+      if (magnification) {
+        this.magnificationElement_.innerText = magnification.toFixed(1) + 'x';
+      }
+    }
+  }
+}
