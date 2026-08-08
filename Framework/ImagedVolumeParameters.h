@@ -38,6 +38,10 @@ namespace OrthancWSI
     float  offsetX_;
     float  offsetY_;
 
+    // New in WSI 4.0
+    bool   hasObjectiveLensPower_;
+    float  objectiveLensPower_;     // The magnification level reported by the scanner
+
   public:
     ImagedVolumeParameters();
 
@@ -94,5 +98,14 @@ namespace OrthancWSI
                      unsigned int imageY,
                      unsigned int totalWidth,
                      unsigned int totalHeight) const;
+
+    bool HasObjectiveLensPower() const
+    {
+      return hasObjectiveLensPower_;
+    }
+
+    float GetObjectiveLensPower() const;
+
+    void SetObjectiveLensPower(float power);
   };
 }

@@ -171,4 +171,13 @@ namespace OrthancWSI
 
     return countPixels * Orthanc::GetBytesPerPixel(Orthanc::PixelFormat_RGBA32);
   }
+
+
+  bool OpenSlidePyramid::LookupObjectiveLensPower(float& power) const
+  {
+    std::string s;
+
+    return (image_.LookupProperty(s, OPENSLIDE_PROPERTY_NAME_OBJECTIVE_POWER) &&
+            Orthanc::SerializationToolbox::ParseFloat(power, s));
+  }
 }

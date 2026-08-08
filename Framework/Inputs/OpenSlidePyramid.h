@@ -86,5 +86,7 @@ namespace OrthancWSI
                                 float& height) const;
 
     size_t GetMemoryUsage() const ORTHANC_OVERRIDE;
+
+    bool LookupObjectiveLensPower(float& power) const;
   };
 }

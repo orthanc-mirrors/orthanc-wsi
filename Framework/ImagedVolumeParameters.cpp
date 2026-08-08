@@ -37,7 +37,10 @@ namespace OrthancWSI
     // Typical parameters for a specimen, in millimeters
     depth_(1),
     offsetX_(20),
-    offsetY_(40)
+    offsetY_(40),
+
+    hasObjectiveLensPower_(false),
+    objectiveLensPower_(0)
   {
   }
 
@@ -132,5 +135,32 @@ namespace OrthancWSI
      **/
     physicalX = offsetX_ - GetHeight() * static_cast<float>(imageY) / static_cast<float>(totalHeight);
     physicalY = offsetY_ - GetWidth() * static_cast<float>(imageX) / static_cast<float>(totalWidth);
+  }
+
+
+  float ImagedVolumeParameters::GetObjectiveLensPower() const
+  {
+    if (hasObjectiveLensPower_)
+    {
+      return objectiveLensPower_;
+    }
+    else
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
+    }
+  }
+
+
+  void ImagedVolumeParameters::SetObjectiveLensPower(float power)
+  {
+    if (power <= 0)
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
+    }
+    else
+    {
+      objectiveLensPower_ = power;
+      hasObjectiveLensPower_ = true;
+    }
   }
 }

@@ -101,6 +101,9 @@ static const char* OPTION_PADDING = "padding";
 // New in release 3.3
 static const char* OPTION_ENCODING = "encoding";
 
+// New in release 4.0
+static const char* OPTION_MAGNIFICATION = "magnification";
+
 
 #if ORTHANC_FRAMEWORK_VERSION_IS_ABOVE(1, 9, 0)
 
@@ -673,6 +676,13 @@ static void EnrichDataset(DcmDataset& dataset,
     throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);    
   }
 
+  if (!opticalPath->tagExists(DCM_ObjectiveLensPower) &&
+      volume.HasObjectiveLensPower())
+  {
+    OrthancWSI::DicomToolbox::SetStringTag(*opticalPath, DCM_ObjectiveLensPower,
+                                           boost::lexical_cast<std::string>(volume.GetObjectiveLensPower()));
+  }
+
   SetupDimension(dataset, opticalPathId, source, volume);
 
 
@@ -801,6 +811,8 @@ static bool ParseParameters(int& exitStatus,
      "X offset the specimen, wrt. slide coordinates origin (in mm)")
     (OPTION_OFFSET_Y, boost::program_options::value<float>()->default_value(40), 
      "Y offset the specimen, wrt. slide coordinates origin (in mm)")
+    (OPTION_MAGNIFICATION, boost::program_options::value<float>(),
+     "Nominal power of the objective lens (typically 40)")
     ;
 
   boost::program_options::options_description restOptions
@@ -1182,6 +1194,12 @@ static bool ParseParameters(int& exitStatus,
     parameters.SetEncoding(Orthanc::StringToEncoding(s.c_str()));
   }
 
+  // New in WSI 4.0
+  if (options.count(OPTION_MAGNIFICATION))
+  {
+    volume.SetObjectiveLensPower(options[OPTION_MAGNIFICATION].as<float>());
+  }
+
   return true;
 }
 
@@ -1327,6 +1345,17 @@ OrthancWSI::ITiledPyramid* OpenInputPyramid(OrthancWSI::ImageCompression& source
         volume.SetHeight(volumeHeight);
         LOG(WARNING) << "Height of the imaged volume extracted using OpenSlide: " << volumeHeight << "mm";
       }
+    }
+
+    float power;
+    if (!volume.HasObjectiveLensPower() &&
+        openslide->LookupObjectiveLensPower(power))
+    {
+      volume.SetObjectiveLensPower(power);
+
+      char buf[32];
+      sprintf(buf, "%.02f", power);
+      LOG(WARNING) << "Objective power of the scanner (reference magnification): " << buf << "x";
     }
 
     return openslide.release();
