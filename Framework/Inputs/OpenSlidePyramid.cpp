@@ -144,9 +144,9 @@ namespace OrthancWSI
     double mppx;
     double mppy;
 
-    if (image_.LookupProperty(s, "openslide.mpp-x") &&
+    if (image_.LookupProperty(s, OPENSLIDE_PROPERTY_NAME_MPP_X) &&
         Orthanc::SerializationToolbox::ParseDouble(mppx, s) &&
-        image_.LookupProperty(s, "openslide.mpp-y") &&
+        image_.LookupProperty(s, OPENSLIDE_PROPERTY_NAME_MPP_Y) &&
         Orthanc::SerializationToolbox::ParseDouble(mppy, s))
     {
       width = mppx / 1000.0 * static_cast<double>(image_.GetLevelWidth(0));
