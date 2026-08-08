@@ -1140,7 +1140,7 @@ class MicroscopeScaleLine extends ol.control.ScaleLine {
     if (map && this.magnificationElement_) {
       var magnification = GetMagnification(map, this.referenceMagnification_);
       if (magnification) {
-        this.magnificationElement_.innerText = magnification.toFixed(1) + 'x';
+        this.magnificationElement_.innerText = magnification.toFixed(2) + 'x';
       }
     }
   }
