@@ -223,10 +223,18 @@ static void Recompress(OrthancWSI::IFileTarget& output,
 
   if (parameters.IsRepaintBackground())
   {
-    LOG(WARNING) << "Repainting the background with color: (" 
-                 << static_cast<int>(parameters.GetBackgroundColorRed()) << ","
-                 << static_cast<int>(parameters.GetBackgroundColorGreen()) << ","
-                 << static_cast<int>(parameters.GetBackgroundColorBlue()) << ")";
+    if (parameters.GetBackgroundColor().IsPresent())
+    {
+      LOG(WARNING) << "Repainting the background with color: ("
+                   << static_cast<int>(parameters.GetBackgroundColor().GetRed()) << ","
+                   << static_cast<int>(parameters.GetBackgroundColor().GetGreen()) << ","
+                   << static_cast<int>(parameters.GetBackgroundColor().GetBlue()) << ")";
+    }
+    else
+    {
+      // TODO Background color
+      LOG(WARNING) << "Repainting the background with default color (white)";
+    }
   }
   else
   {
@@ -689,9 +697,18 @@ static void EnrichDataset(DcmDataset& dataset,
   // New in release 2.1
   if (!dataset.tagExists(DCM_RecommendedAbsentPixelCIELabValue))
   {
-    OrthancWSI::RGBColor rgb(parameters.GetBackgroundColorRed(),
-                             parameters.GetBackgroundColorGreen(),
-                             parameters.GetBackgroundColorBlue());
+    OrthancWSI::RGBColor rgb;
+
+    if (parameters.GetBackgroundColor().IsPresent())
+    {
+      rgb = OrthancWSI::RGBColor(parameters.GetBackgroundColor());
+    }
+    else
+    {
+      // TODO Background color
+      rgb = OrthancWSI::RGBColor(255, 255, 255);
+    }
+
     OrthancWSI::sRGBColor srgb(rgb);
     OrthancWSI::XYZColor xyz(srgb);
     OrthancWSI::LABColor lab(xyz);
@@ -1309,10 +1326,7 @@ OrthancWSI::ITiledPyramid* OpenInputPyramid(OrthancWSI::ImageCompression& source
   {
     if (parameters.GetPadding() > 1)
     {
-      plainImage->SetPadding(parameters.GetPadding(),
-                             parameters.GetBackgroundColorRed(),
-                             parameters.GetBackgroundColorGreen(),
-                             parameters.GetBackgroundColorBlue());
+      plainImage->SetPadding(parameters.GetPadding(), parameters.GetBackgroundColor());
     }
 
     return plainImage.release();
@@ -1327,9 +1341,17 @@ OrthancWSI::ITiledPyramid* OpenInputPyramid(OrthancWSI::ImageCompression& source
       new OrthancWSI::OpenSlidePyramid(path, parameters.GetTargetTileWidth(512),
                                        parameters.GetTargetTileHeight(512)));
 
-    openslide->SetBackgroundColor(parameters.GetBackgroundColorRed(),
-                                  parameters.GetBackgroundColorGreen(),
-                                  parameters.GetBackgroundColorBlue());
+    if (parameters.GetBackgroundColor().IsPresent())
+    {
+      openslide->SetBackgroundColor(parameters.GetBackgroundColor().GetRed(),
+                                    parameters.GetBackgroundColor().GetGreen(),
+                                    parameters.GetBackgroundColor().GetBlue());
+    }
+    else
+    {
+      // TODO Background color
+      openslide->SetBackgroundColor(255, 255, 255);
+    }
 
     float volumeWidth, volumeHeight;
     if (openslide->LookupImagedVolumeSize(volumeWidth, volumeHeight))

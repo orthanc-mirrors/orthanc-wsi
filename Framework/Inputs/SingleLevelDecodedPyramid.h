@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include "../BackgroundColor.h"
 #include "DecodedTiledPyramid.h"
 
 namespace OrthancWSI
@@ -81,9 +82,7 @@ namespace OrthancWSI
     virtual Orthanc::PhotometricInterpretation GetPhotometricInterpretation() const ORTHANC_OVERRIDE;
 
     void SetPadding(unsigned int padding,
-                    uint8_t backgroundRed,
-                    uint8_t backgroundGreen,
-                    uint8_t backgroundBlue);
+                    const BackgroundColor& backgroundColor);
 
     size_t GetMemoryUsage() const ORTHANC_OVERRIDE
     {

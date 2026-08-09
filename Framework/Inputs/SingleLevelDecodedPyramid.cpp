@@ -130,13 +130,22 @@ namespace OrthancWSI
 
 
   void SingleLevelDecodedPyramid::SetPadding(unsigned int padding,
-                                             uint8_t backgroundRed,
-                                             uint8_t backgroundGreen,
-                                             uint8_t backgroundBlue)
+                                             const BackgroundColor& backgroundColor)
   {
     padding_ = padding;
-    backgroundRed_ = backgroundRed;
-    backgroundGreen_ = backgroundGreen;
-    backgroundBlue_ = backgroundBlue;
+
+    if (backgroundColor.IsPresent())
+    {
+      backgroundRed_ = backgroundColor.GetRed();
+      backgroundGreen_ = backgroundColor.GetGreen();
+      backgroundBlue_ = backgroundColor.GetBlue();
+    }
+    else
+    {
+      // TODO Background color
+      backgroundRed_ = 255;
+      backgroundGreen_ = 255;
+      backgroundBlue_ = 255;
+    }
   }
 }

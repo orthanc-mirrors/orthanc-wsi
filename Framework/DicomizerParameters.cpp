@@ -79,21 +79,7 @@ namespace OrthancWSI
     padding_(1),
     encoding_(Orthanc::Encoding_Latin1)
   {
-    backgroundColor_[0] = 255;
-    backgroundColor_[1] = 255;
-    backgroundColor_[2] = 255;
     threadsCount_ = ChooseNumberOfThreads();
-  }
-
-
-  void DicomizerParameters::SetBackgroundColor(uint8_t red,
-                                               uint8_t green,
-                                               uint8_t blue)
-  {
-    repaintBackground_ = true;
-    backgroundColor_[0] = red;
-    backgroundColor_[1] = green;
-    backgroundColor_[2] = blue;
   }
 
 
@@ -374,6 +360,20 @@ namespace OrthancWSI
     else
     {
       padding_ = padding;
+    }
+  }
+
+
+  void DicomizerParameters::FillBackgroundColor(Orthanc::ImageAccessor& region) const
+  {
+    if (backgroundColor_.IsPresent())
+    {
+      ImageToolbox::Set(region, backgroundColor_.GetRed(), backgroundColor_.GetGreen(), backgroundColor_.GetBlue());
+    }
+    else
+    {
+      // TODO Background color
+      ImageToolbox::Set(region, 255, 255, 255);
     }
   }
 }

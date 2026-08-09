@@ -83,11 +83,8 @@ namespace OrthancWSI
       std::unique_ptr<Orthanc::ImageAccessor> mosaic(ImageToolbox::Allocate(source_.GetPixelFormat(), 
                                                                           2 * target_.GetTileWidth(), 
                                                                           2 * target_.GetTileHeight()));
-      ImageToolbox::Set(*mosaic, 
-                        source_.GetParameters().GetBackgroundColorRed(),
-                        source_.GetParameters().GetBackgroundColorGreen(),
-                        source_.GetParameters().GetBackgroundColorBlue());
 
+      source_.GetParameters().FillBackgroundColor(*mosaic);
       isEmpty = true;
 
       {
