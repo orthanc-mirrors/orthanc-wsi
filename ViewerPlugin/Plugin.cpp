@@ -168,7 +168,19 @@ void ServeFramePyramid(OrthancPluginRestOutput* output,
 
     {
       uint8_t red, green, blue;
-      accessor.GetPyramid().GetBackgroundColor(red, green, blue);
+      if (accessor.GetPyramid().GetBackgroundColor().IsPresent())
+      {
+        red = accessor.GetPyramid().GetBackgroundColor().GetRed();
+        green = accessor.GetPyramid().GetBackgroundColor().GetGreen();
+        blue = accessor.GetPyramid().GetBackgroundColor().GetBlue();
+      }
+      else
+      {
+        // TODO Background color
+        red = 255;
+        green = 255;
+        blue = 255;
+      }
 
       char tmp[16];
       sprintf(tmp, "#%02x%02x%02x", red, green, blue);
