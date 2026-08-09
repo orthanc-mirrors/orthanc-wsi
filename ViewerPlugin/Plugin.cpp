@@ -123,11 +123,19 @@ void ServePyramid(OrthancPluginRestOutput* output,
 
     {
       // New in WSI 2.1
-      char tmp[16];
-      sprintf(tmp, "#%02x%02x%02x", locker.GetPyramid().GetBackgroundRed(),
-              locker.GetPyramid().GetBackgroundGreen(),
-              locker.GetPyramid().GetBackgroundBlue());
-      answer["BackgroundColor"] = tmp;
+      if (locker.GetPyramid().GetBackgroundColor().IsPresent())
+      {
+        char tmp[16];
+        sprintf(tmp, "#%02x%02x%02x", locker.GetPyramid().GetBackgroundColor().GetRed(),
+                locker.GetPyramid().GetBackgroundColor().GetGreen(),
+                locker.GetPyramid().GetBackgroundColor().GetBlue());
+        answer["BackgroundColor"] = tmp;
+      }
+      else
+      {
+        // TODO Background color
+        answer["BackgroundColor"] = "#ffffff";
+      }
     }
 
     // New in WSI 3.1
