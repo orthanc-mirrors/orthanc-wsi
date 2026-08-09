@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include "../BackgroundColor.h"
 #include "ITiledPyramid.h"
 
 
@@ -36,7 +37,7 @@ namespace OrthancWSI
   class DecodedTiledPyramid : public ITiledPyramid
   {
   private:
-    uint8_t  backgroundColor_[3];
+    BackgroundColor  backgroundColor_;
 
   protected:
     // Subclasses can assume that the requested region is fully inside
@@ -49,15 +50,17 @@ namespace OrthancWSI
                             unsigned int y) = 0;
 
   public:
-    DecodedTiledPyramid();
-
     void SetBackgroundColor(uint8_t red,
                             uint8_t green,
-                            uint8_t blue);
+                            uint8_t blue)
+    {
+      backgroundColor_.SetValue(red, green, blue);
+    }
 
-    void GetBackgroundColor(uint8_t& red,
-                            uint8_t& green,
-                            uint8_t& blue) const;
+    const BackgroundColor& GetBackgroundColor() const
+    {
+      return backgroundColor_;
+    }
 
     virtual Orthanc::ImageAccessor* DecodeTile(bool& isEmpty,
                                                unsigned int level,

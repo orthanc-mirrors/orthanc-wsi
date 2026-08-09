@@ -93,7 +93,19 @@ namespace OrthancWSI
       // Implements alpha blending: https://en.wikipedia.org/wiki/Alpha_compositing#Alpha_blending
 
       uint8_t backgroundRed, backgroundGreen, backgroundBlue;
-      GetBackgroundColor(backgroundRed, backgroundGreen, backgroundBlue);
+      if (GetBackgroundColor().IsPresent())
+      {
+        backgroundRed = GetBackgroundColor().GetRed();
+        backgroundGreen = GetBackgroundColor().GetGreen();
+        backgroundBlue = GetBackgroundColor().GetBlue();
+      }
+      else
+      {
+        // TODO Background color
+        backgroundRed = 255;
+        backgroundGreen = 255;
+        backgroundBlue = 255;
+      }
 
       for (unsigned int yy = 0; yy < height; yy++)
       {

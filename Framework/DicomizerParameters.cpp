@@ -366,14 +366,7 @@ namespace OrthancWSI
 
   void DicomizerParameters::FillBackgroundColor(Orthanc::ImageAccessor& region) const
   {
-    if (backgroundColor_.IsPresent())
-    {
-      ImageToolbox::Set(region, backgroundColor_.GetRed(), backgroundColor_.GetGreen(), backgroundColor_.GetBlue());
-    }
-    else
-    {
-      // TODO Background color
-      ImageToolbox::Set(region, 255, 255, 255);
-    }
+    // TODO Background color
+    backgroundColor_.Fill(region, 255, 255, 255);
   }
 }

@@ -23,6 +23,8 @@
 
 #include "BackgroundColor.h"
 
+#include "ImageToolbox.h"
+
 #include <OrthancException.h>
 
 
@@ -83,6 +85,22 @@ namespace OrthancWSI
     else
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
+    }
+  }
+
+
+  void BackgroundColor::Fill(Orthanc::ImageAccessor& region,
+                             uint8_t defaultRed,
+                             uint8_t defaultGreen,
+                             uint8_t defaultBlue) const
+  {
+    if (present_)
+    {
+      ImageToolbox::Set(region, red_, green_, blue_);
+    }
+    else
+    {
+      ImageToolbox::Set(region, defaultRed, defaultGreen, defaultBlue);
     }
   }
 }
