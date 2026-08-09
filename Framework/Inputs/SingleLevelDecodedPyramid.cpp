@@ -47,7 +47,8 @@ namespace OrthancWSI
     }
     else
     {
-      Orthanc::ImageProcessing::Set(target, backgroundRed_, backgroundGreen_, backgroundBlue_, 255);
+      // TODO Background color
+      backgroundColor_.Fill(target, 255, 255, 255);
 
       if (x < image_.GetWidth() &&
           y < image_.GetHeight())
@@ -69,10 +70,7 @@ namespace OrthancWSI
                                                        unsigned int tileHeight) :
     tileWidth_(tileWidth),
     tileHeight_(tileHeight),
-    padding_(0),
-    backgroundRed_(255),
-    backgroundGreen_(255),
-    backgroundBlue_(255)
+    padding_(0)
   {
   }
 
@@ -133,19 +131,6 @@ namespace OrthancWSI
                                              const BackgroundColor& backgroundColor)
   {
     padding_ = padding;
-
-    if (backgroundColor.IsPresent())
-    {
-      backgroundRed_ = backgroundColor.GetRed();
-      backgroundGreen_ = backgroundColor.GetGreen();
-      backgroundBlue_ = backgroundColor.GetBlue();
-    }
-    else
-    {
-      // TODO Background color
-      backgroundRed_ = 255;
-      backgroundGreen_ = 255;
-      backgroundBlue_ = 255;
-    }
+    backgroundColor_ = backgroundColor;
   }
 }

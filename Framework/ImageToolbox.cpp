@@ -121,6 +121,11 @@ namespace OrthancWSI
           Orthanc::ImageProcessing::Set(image, r, g, b, 0 /* alpha is ignored */);
           break;
 
+        case Orthanc::PixelFormat_BGRA32:
+        case Orthanc::PixelFormat_RGBA32:
+          Orthanc::ImageProcessing::Set(image, r, g, b, 255);
+          break;
+
         default:
           throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
       }

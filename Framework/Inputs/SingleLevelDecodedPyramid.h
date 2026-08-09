@@ -35,9 +35,7 @@ namespace OrthancWSI
     unsigned int            tileWidth_;
     unsigned int            tileHeight_;
     unsigned int            padding_;
-    uint8_t                 backgroundRed_;
-    uint8_t                 backgroundGreen_;
-    uint8_t                 backgroundBlue_;
+    BackgroundColor         backgroundColor_;
 
   protected:
     void SetImage(const Orthanc::ImageAccessor& image)
