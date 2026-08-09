@@ -23,8 +23,9 @@
 
 #pragma once
 
-#include "../Enumerations.h"
 #include "../../Resources/Orthanc/Stone/IOrthancConnection.h"
+#include "../BackgroundColor.h"
+#include "../Enumerations.h"
 
 #include <boost/noncopyable.hpp>
 #include <vector>
@@ -47,10 +48,7 @@ namespace OrthancWSI
     std::vector<FrameLocation>          frames_;
     Orthanc::PhotometricInterpretation  photometric_;
     std::string                         imageType_;
-    bool                                hasBackgroundColor_;
-    uint8_t                             backgroundRed_;
-    uint8_t                             backgroundGreen_;
-    uint8_t                             backgroundBlue_;
+    BackgroundColor                     backgroundColor_;
     bool                                hasImagedVolumeSize_;
     double                              imagedVolumeWidth_;
     double                              imagedVolumeHeight_;
@@ -120,16 +118,10 @@ namespace OrthancWSI
 
     void Serialize(std::string& result) const;
 
-    bool HasBackgroundColor() const
+    const BackgroundColor& GetBackgroundColor() const
     {
-      return hasBackgroundColor_;
+      return backgroundColor_;
     }
-
-    uint8_t GetBackgroundRed() const;
-
-    uint8_t GetBackgroundGreen() const;
-
-    uint8_t GetBackgroundBlue() const;
 
     bool HasImagedVolumeSize() const
     {

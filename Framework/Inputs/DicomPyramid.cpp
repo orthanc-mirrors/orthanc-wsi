@@ -109,11 +109,11 @@ namespace OrthancWSI
             tokens[2] == "VOLUME" ||
             tokens[2] == "THUMBNAIL" /* "may be the apex (lowest resolution) layer of a Multi-Resolution Pyramid" */)
         {
-          if (instance->HasBackgroundColor())
+          if (instance->GetBackgroundColor().IsPresent())
           {
-            backgroundRed_ = instance->GetBackgroundRed();
-            backgroundGreen_ = instance->GetBackgroundGreen();
-            backgroundBlue_ = instance->GetBackgroundBlue();
+            backgroundRed_ = instance->GetBackgroundColor().GetRed();
+            backgroundGreen_ = instance->GetBackgroundColor().GetGreen();
+            backgroundBlue_ = instance->GetBackgroundColor().GetBlue();
           }
 
           instances_.push_back(instance.release());
