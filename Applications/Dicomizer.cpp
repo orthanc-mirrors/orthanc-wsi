@@ -56,53 +56,53 @@
 #include <dcmtk/dcmdata/dcvrat.h>
 
 
-static const char* OPTION_COLOR = "color";
-static const char* OPTION_COMPRESSION = "compression";
-static const char* OPTION_DATASET = "dataset";
-static const char* OPTION_FOLDER = "folder";
-static const char* OPTION_FOLDER_PATTERN = "folder-pattern";
-static const char* OPTION_HELP = "help";
-static const char* OPTION_ICC_PROFILE = "icc-profile";
-static const char* OPTION_IMAGED_DEPTH = "imaged-depth";
-static const char* OPTION_IMAGED_HEIGHT = "imaged-height";
-static const char* OPTION_IMAGED_WIDTH = "imaged-width";
-static const char* OPTION_INPUT = "input";
-static const char* OPTION_JPEG_QUALITY = "jpeg-quality";
-static const char* OPTION_LEVELS = "levels";
-static const char* OPTION_LOWER_LEVELS = "lower-levels";
-static const char* OPTION_MAX_SIZE = "max-size";
-static const char* OPTION_OFFSET_X = "offset-x";
-static const char* OPTION_OFFSET_Y = "offset-y";
-static const char* OPTION_OPENSLIDE = "openslide";
-static const char* OPTION_OPTICAL_PATH = "optical-path";
-static const char* OPTION_PYRAMID = "pyramid";
-static const char* OPTION_REENCODE = "reencode";
-static const char* OPTION_REPAINT = "repaint";
-static const char* OPTION_SAFETY = "safety";
-static const char* OPTION_SAMPLE_DATASET = "sample-dataset";
-static const char* OPTION_SMOOTH = "smooth";
-static const char* OPTION_THREADS = "threads";
-static const char* OPTION_TILE_HEIGHT = "tile-height";
-static const char* OPTION_TILE_WIDTH = "tile-width";
-static const char* OPTION_VERBOSE = "verbose";
-static const char* OPTION_VERSION = "version";
+static const char* const OPTION_COLOR = "color";
+static const char* const OPTION_COMPRESSION = "compression";
+static const char* const OPTION_DATASET = "dataset";
+static const char* const OPTION_FOLDER = "folder";
+static const char* const OPTION_FOLDER_PATTERN = "folder-pattern";
+static const char* const OPTION_HELP = "help";
+static const char* const OPTION_ICC_PROFILE = "icc-profile";
+static const char* const OPTION_IMAGED_DEPTH = "imaged-depth";
+static const char* const OPTION_IMAGED_HEIGHT = "imaged-height";
+static const char* const OPTION_IMAGED_WIDTH = "imaged-width";
+static const char* const OPTION_INPUT = "input";
+static const char* const OPTION_JPEG_QUALITY = "jpeg-quality";
+static const char* const OPTION_LEVELS = "levels";
+static const char* const OPTION_LOWER_LEVELS = "lower-levels";
+static const char* const OPTION_MAX_SIZE = "max-size";
+static const char* const OPTION_OFFSET_X = "offset-x";
+static const char* const OPTION_OFFSET_Y = "offset-y";
+static const char* const OPTION_OPENSLIDE = "openslide";
+static const char* const OPTION_OPTICAL_PATH = "optical-path";
+static const char* const OPTION_PYRAMID = "pyramid";
+static const char* const OPTION_REENCODE = "reencode";
+static const char* const OPTION_REPAINT = "repaint";
+static const char* const OPTION_SAFETY = "safety";
+static const char* const OPTION_SAMPLE_DATASET = "sample-dataset";
+static const char* const OPTION_SMOOTH = "smooth";
+static const char* const OPTION_THREADS = "threads";
+static const char* const OPTION_TILE_HEIGHT = "tile-height";
+static const char* const OPTION_TILE_WIDTH = "tile-width";
+static const char* const OPTION_VERBOSE = "verbose";
+static const char* const OPTION_VERSION = "version";
 
 // New in release 1.1
-static const char* OPTION_CYTOMINE_URL = "cytomine-url";
-static const char* OPTION_CYTOMINE_IMAGE_INSTANCE_ID = "cytomine-image";
-static const char* OPTION_CYTOMINE_PUBLIC_KEY = "cytomine-public-key";
-static const char* OPTION_CYTOMINE_PRIVATE_KEY = "cytomine-private-key";
-static const char* OPTION_CYTOMINE_COMPRESSION = "cytomine-compression";
+static const char* const OPTION_CYTOMINE_URL = "cytomine-url";
+static const char* const OPTION_CYTOMINE_IMAGE_INSTANCE_ID = "cytomine-image";
+static const char* const OPTION_CYTOMINE_PUBLIC_KEY = "cytomine-public-key";
+static const char* const OPTION_CYTOMINE_PRIVATE_KEY = "cytomine-private-key";
+static const char* const OPTION_CYTOMINE_COMPRESSION = "cytomine-compression";
 
 // New in release 2.1
-static const char* OPTION_FORCE_OPENSLIDE = "force-openslide";
-static const char* OPTION_PADDING = "padding";
+static const char* const OPTION_FORCE_OPENSLIDE = "force-openslide";
+static const char* const OPTION_PADDING = "padding";
 
 // New in release 3.3
-static const char* OPTION_ENCODING = "encoding";
+static const char* const OPTION_ENCODING = "encoding";
 
 // New in release 4.0
-static const char* OPTION_MAGNIFICATION = "magnification";
+static const char* const OPTION_MAGNIFICATION = "magnification";
 
 
 #if ORTHANC_FRAMEWORK_VERSION_IS_ABOVE(1, 9, 0)

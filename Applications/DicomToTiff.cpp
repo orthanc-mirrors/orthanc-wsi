@@ -35,14 +35,14 @@
 #include "ApplicationToolbox.h"
 
 
-static const char* OPTION_COLOR = "color";
-static const char* OPTION_HELP = "help";
-static const char* OPTION_INPUT = "input";
-static const char* OPTION_JPEG_QUALITY = "jpeg-quality";
-static const char* OPTION_OUTPUT = "output";
-static const char* OPTION_REENCODE = "reencode";
-static const char* OPTION_VERBOSE = "verbose";
-static const char* OPTION_VERSION = "version";
+static const char* const OPTION_COLOR = "color";
+static const char* const OPTION_HELP = "help";
+static const char* const OPTION_INPUT = "input";
+static const char* const OPTION_JPEG_QUALITY = "jpeg-quality";
+static const char* const OPTION_OUTPUT = "output";
+static const char* const OPTION_REENCODE = "reencode";
+static const char* const OPTION_VERBOSE = "verbose";
+static const char* const OPTION_VERSION = "version";
 
 static bool ParseParameters(int& exitStatus,
                             boost::program_options::variables_map& options,
