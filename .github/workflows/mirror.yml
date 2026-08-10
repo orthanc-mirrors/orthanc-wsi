@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   mirror:
-    if: ${{ github.repository == 'jodogne/mirror-orthanc-wsi' }}
+    if: ${{ github.repository == 'jodogne/mirror-orthanc-wsia' }}
     runs-on: ubuntu-slim
     steps:
       - name: Install Mercurial and fast-export
