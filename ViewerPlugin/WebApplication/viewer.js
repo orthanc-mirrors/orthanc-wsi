@@ -33,6 +33,9 @@ var app = new Vue({
       resourceId: '',
       frameNumber: 0,
       projectDescription: null,
+      brightness: 0, // In the range between [-1,1]
+      contrast: 0,   // In the range between [-1,1]
+      hue: 0,        // Degrees, in the range between [-180,180]
 
       // Main state for annotations
       userLayers: [],
@@ -633,7 +636,14 @@ var app = new Vue({
         placement: 'right',
         container: 'body',
         html: true,
-        content: document.getElementById('popover-content')
+        content: document.getElementById('popover-rotate')
+      });
+
+      new bootstrap.Popover(document.getElementById('button-adjustments'), {
+        placement: 'right',
+        container: 'body',
+        html: true,
+        content: document.getElementById('popover-adjustments')
       });
 
       // Disable the rotation of the map, and inertia while panning
@@ -691,6 +701,29 @@ var app = new Vue({
         projection: proj
       });
 
+      var that = this;
+      tileLayer.on('prerender', (event) => {
+        const context = event.context;
+
+        if (context) {
+          context.save();
+          var brightness = Math.pow(4, that.brightness);  // Ranges between 0.25 and 4
+          var contrast = Math.pow(4, that.contrast);      // Ranges between 0.25 and 4
+          context.filter =
+            'brightness(' + brightness.toFixed(4) + ') ' +
+            'contrast(' + contrast.toFixed(4) + ') ' +
+            'hue-rotate(' + that.hue + 'deg)';
+        }
+      });
+
+      tileLayer.on('postrender', (event) => {
+        const context = event.context;
+
+        if (context) {
+          context.restore();
+        }
+      });
+
       this.map = new ol.Map({
         target: 'map',
         layers: [ tileLayer ],
@@ -745,6 +778,13 @@ var app = new Vue({
 
       this.toolbarsVisible = true;
       this.InitializeAnnotations();
+    },
+
+    ResetAdjustments: function() {
+      this.brightness = 0;
+      this.contrast = 0;
+      this.hue = 0;
+      this.map.render();
     },
 
     // -----------------------------------------------------------------------

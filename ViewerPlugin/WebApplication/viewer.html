@@ -94,6 +94,7 @@
       .bi-arrows                { -webkit-mask-image: url("../libs/svg/arrows.svg"); mask-image: url("../libs/svg/arrows.svg"); }
       .bi-arrows-fullscreen     { -webkit-mask-image: url("../libs/svg/arrows-fullscreen.svg"); mask-image: url("../libs/svg/arrows-fullscreen.svg"); }
       .bi-arrows-move           { -webkit-mask-image: url("../libs/svg/arrows-move.svg"); mask-image: url("../libs/svg/arrows-move.svg"); }
+      .bi-brightness-high       { -webkit-mask-image: url("../libs/svg/brightness-high.svg"); mask-image: url("../libs/svg/brightness-high.svg"); }
       .bi-chevron-compact-left  { -webkit-mask-image: url("../libs/svg/chevron-compact-left.svg"); mask-image: url("../libs/svg/chevron-compact-left.svg"); }
       .bi-chevron-compact-right { -webkit-mask-image: url("../libs/svg/chevron-compact-right.svg"); mask-image: url("../libs/svg/chevron-compact-right.svg"); }
       .bi-circle                { -webkit-mask-image: url("../libs/svg/circle.svg"); mask-image: url("../libs/svg/circle.svg"); }
@@ -215,35 +216,39 @@
 
         <div id="toolbar-left" style="display:none" :style="{ display: toolbarsVisible ? 'block' : 'none' }">
           <div id="toolbar-left-content" style="position:absolute; display:flex; flex-direction:column; align-items:center;">
-            <div class="btn-group-vertical" role="group" style="padding-top: 1em" v-if="showMagnificationButtons">
-              <button type="button" class="btn btn-outline-secondary p-1"
+            <div class="btn-group-vertical" role="group" style="padding-top: 1em">
+              <button type="button" class="btn btn-outline-secondary p-0" v-if="showMagnificationButtons"
                       data-bs-toggle="tooltip" data-bs-placement="right" title="Set magnification level to 1x"
                       v-on:click="SetMagnification(map, referenceMagnification, 1)">
-                1x
+                <small>1x</small>
               </button>
 
-              <button type="button" class="btn btn-outline-secondary p-1"
+              <button type="button" class="btn btn-outline-secondary p-0" v-if="showMagnificationButtons"
                       data-bs-toggle="tooltip" data-bs-placement="right" title="Set magnification level to 4x"
                       v-on:click="SetMagnification(map, referenceMagnification, 4)">
-                4x
+                <small>4x</small>
               </button>
 
-              <button type="button" class="btn btn-outline-secondary p-1"
+              <button type="button" class="btn btn-outline-secondary p-0" v-if="showMagnificationButtons"
                       data-bs-toggle="tooltip" data-bs-placement="right" title="Set magnification level to 10x"
                       v-on:click="SetMagnification(map, referenceMagnification, 10)">
-                10x
+                <small>10x</small>
               </button>
 
-              <button type="button" class="btn btn-outline-secondary p-1"
+              <button type="button" class="btn btn-outline-secondary p-0" v-if="showMagnificationButtons"
                       data-bs-toggle="tooltip" data-bs-placement="right" title="Set magnification level to 20x"
                       v-on:click="SetMagnification(map, referenceMagnification, 20)">
-                20x
+                <small>20x</small>
               </button>
 
-              <button type="button" class="btn btn-outline-secondary p-1"
+              <button type="button" class="btn btn-outline-secondary p-0" v-if="showMagnificationButtons"
                       data-bs-toggle="tooltip" data-bs-placement="right" title="Set magnification level to 40x"
                       v-on:click="SetMagnification(map, referenceMagnification, 40)">
-                40x
+                <small>40x</small>
+              </button>
+
+              <button type="button" class="btn btn-outline-secondary d-inline-flex" id="button-adjustments">
+                <i class="bi bi-brightness-high"></i>
               </button>
             </div>
             <div id="toolbar-spinner" v-show="showSpinner" style="padding-top:1em;">
@@ -481,7 +486,7 @@
       </div>
 
       <div style="display:none">
-        <div id="popover-content">
+        <div id="popover-rotate">
           <div class="container">
             <div class="row mb-2">
               <div class="btn-group btn-group-sm" role="group">
@@ -494,6 +499,33 @@
               <input type="range" class="form-range" min="-180" max="180"
                      v-model.number="rotationDeg"
                      v-on:input="SetMapRotation()" v-on:change="SetMapRotation()">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:none">
+        <div id="popover-adjustments">
+          <div class="container">
+            <div class="mb-1">
+              <label for="range-brightness" class="form-label">Brightness:</label>
+              <input id="range-brightness" type="range" class="form-range" min="-1" max="1" step="0.01"
+                     v-model.number="brightness" v-on:input="map.render()">
+            </div>
+            <div class="mb-1">
+              <label for="range-contrast" class="form-label">Contrast:</label>
+              <input id="range-contrast" type="range" class="form-range" min="-1" max="1" step="0.01"
+                     v-model.number="contrast" v-on:input="map.render()">
+            </div>
+            <div class="mb-1">
+              <label for="range-hue" class="form-label">Hue:</label>
+              <input id="range-hue" type="range" class="form-range" min="-180" max="180" step="1"
+                     v-model.number="hue" v-on:input="map.render()">
+            </div>
+            <div class="d-grid">
+              <button class="btn btn-primary" type="button" v-on:click="ResetAdjustments()">
+                Reset
+              </button>
             </div>
           </div>
         </div>
