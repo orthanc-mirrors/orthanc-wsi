@@ -16,7 +16,6 @@ concurrency:
 
 permissions:
   contents: write  # GITHUB_TOKEN is read-only by default; this grants push access
-  workflows: write # Seems necessary because of the test "if" in "mirror"
 
 jobs:
   mirror:
