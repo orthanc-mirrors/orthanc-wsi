@@ -345,6 +345,37 @@ var app = new Vue({
         });
     },
 
+    TakeScreenshot: function() {
+      modernScreenshot.domToBlob(document.body, {
+        filter: function (element) {
+          if (element.classList === undefined) {
+            return true;
+          } else {
+            return (element.id !== 'toolbar-top' &&
+                    element.id !== 'toolbar-left' &&
+                    !element.classList.contains('tooltip') &&
+                    !element.classList.contains('ol-control'));  // "+", "-", and "rotate" buttons
+          }
+        }
+      })
+        .then(function (blob) {
+          navigator.clipboard.write([
+            new ClipboardItem({
+              'image/png': blob
+            })
+          ])
+            .then(function () {
+              alert('Screenshot copied to clipboard!');
+            })
+            .catch(function (error) {
+              alert('Could not copy screenshot\n\n(' + error + ')');
+            });
+        })
+        .then(function () {
+          console.log('Screenshot copied!');
+        });
+    },
+
     // -----------------------------------------------------------------------
     // Annotation selection panel
     // -----------------------------------------------------------------------

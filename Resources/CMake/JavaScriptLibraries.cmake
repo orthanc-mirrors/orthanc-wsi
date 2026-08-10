@@ -55,6 +55,10 @@ DownloadCompressedFile(
   "${BASE_URL}/WSI/popper-2.11.8.min.js.gz"
   "${CMAKE_CURRENT_BINARY_DIR}/popper.min.js")
 
+DownloadFile(
+  "aa2c54fdbbbeb1bb056793ec480928eb"
+  "${BASE_URL}/WSI/modern-screenshot-4.7.0.js")
+
 
 set(JAVASCRIPT_LIBS_DIR  ${CMAKE_CURRENT_BINARY_DIR}/javascript-libs)
 file(MAKE_DIRECTORY ${JAVASCRIPT_LIBS_DIR})
@@ -67,8 +71,14 @@ file(COPY
   ${CMAKE_CURRENT_BINARY_DIR}/openlayers-10.6.1-package/dist/ol.js
   ${CMAKE_CURRENT_BINARY_DIR}/popper.min.js
   ${CMAKE_CURRENT_BINARY_DIR}/vue-2.6.10/dist/vue.min.js
+  ${CMAKE_SOURCE_DIR}/ThirdPartyDownloads/modern-screenshot-4.7.0.js
   DESTINATION
   ${JAVASCRIPT_LIBS_DIR}/js
+  )
+
+file(RENAME
+  ${JAVASCRIPT_LIBS_DIR}/js/modern-screenshot-4.7.0.js
+  ${JAVASCRIPT_LIBS_DIR}/js/modern-screenshot.js
   )
 
 file(COPY
@@ -84,6 +94,7 @@ file(COPY
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/arrows-move.svg
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/arrows.svg
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/brightness-high.svg
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/camera.svg
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/chevron-compact-left.svg
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/chevron-compact-right.svg
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/circle.svg

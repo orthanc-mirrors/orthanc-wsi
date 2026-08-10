@@ -95,6 +95,7 @@
       .bi-arrows-fullscreen     { -webkit-mask-image: url("../libs/svg/arrows-fullscreen.svg"); mask-image: url("../libs/svg/arrows-fullscreen.svg"); }
       .bi-arrows-move           { -webkit-mask-image: url("../libs/svg/arrows-move.svg"); mask-image: url("../libs/svg/arrows-move.svg"); }
       .bi-brightness-high       { -webkit-mask-image: url("../libs/svg/brightness-high.svg"); mask-image: url("../libs/svg/brightness-high.svg"); }
+      .bi-camera                { -webkit-mask-image: url("../libs/svg/camera.svg"); mask-image: url("../libs/svg/camera.svg"); }
       .bi-chevron-compact-left  { -webkit-mask-image: url("../libs/svg/chevron-compact-left.svg"); mask-image: url("../libs/svg/chevron-compact-left.svg"); }
       .bi-chevron-compact-right { -webkit-mask-image: url("../libs/svg/chevron-compact-right.svg"); mask-image: url("../libs/svg/chevron-compact-right.svg"); }
       .bi-circle                { -webkit-mask-image: url("../libs/svg/circle.svg"); mask-image: url("../libs/svg/circle.svg"); }
@@ -249,6 +250,12 @@
 
               <button type="button" class="btn btn-outline-secondary d-inline-flex" id="button-adjustments">
                 <i class="bi bi-brightness-high"></i>
+              </button>
+
+              <button type="button" class="btn btn-outline-secondary d-inline-flex"
+                      data-bs-toggle="tooltip" data-bs-placement="right" title="Take a screenshot"
+                      v-on:click="TakeScreenshot()">
+                <i class="bi bi-camera"></i>
               </button>
             </div>
             <div id="toolbar-spinner" v-show="showSpinner" style="padding-top:1em;">
@@ -538,6 +545,7 @@
     <script src="../libs/js/popper.min.js"></script>   <!-- Popper is needed by Bootstrap (for popovers) -->
     <script src="../libs/js/bootstrap.min.js"></script>
     <script src="../libs/js/ol.js"></script>
+    <script src="../libs/js/modern-screenshot.js"></script>
 
     <script src="viewer.js"></script>
   </body>
