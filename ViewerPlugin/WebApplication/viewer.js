@@ -32,18 +32,21 @@ var app = new Vue({
       level: '',
       resourceId: '',
       frameNumber: 0,
-      projectDescription: null,
       brightness: 0, // In the range between [-1,1]
       contrast: 0,   // In the range between [-1,1]
       saturation: 0, // In the range between [-1,1]
       // hue: 0,        // Degrees, in the range between [-180,180]
 
       // Main state for annotations
+      projectName: '',
+      projectDescription: '',
+      projectUser: null,
+      imageDescription: '',
       userLayers: [],
       activeUserLayerId: null,
 
       // UI state
-      alertNoSaving: false,
+      alertNotPersistent: false,
       toolbarsVisible: false,
       panelOpen: true,
       mapBackground: '',
@@ -131,7 +134,7 @@ var app = new Vue({
     }
 
     if (params.has('description')) {
-      this.projectDescription = params.get('description');
+      this.imageDescription = params.get('description');
     }
 
     if (params.has('series')) {
@@ -149,6 +152,7 @@ var app = new Vue({
       return;
     }
 
+    this.LoadAnnotationsInfo();
     this.LoadPyramid();
     this.LoadUserLayers();
   },
@@ -184,7 +188,6 @@ var app = new Vue({
         })
         .catch(function() {
           console.error('Cannot load the saved annotations');
-          that.alertNoSaving = true;
         });
     },
 
@@ -197,7 +200,6 @@ var app = new Vue({
         })
         .catch(function() {
           console.error('Cannot create a new layer');
-          that.alertNoSaving = true;
         });
     },
 
@@ -209,7 +211,6 @@ var app = new Vue({
                  }))
         .catch(function() {
           console.error('Cannot save layer');
-          that.alertNoSaving = true;
         });
     },
 
@@ -255,7 +256,6 @@ var app = new Vue({
         })
         .catch(function() {
           console.error('Cannot load user features');
-          that.alertNoSaving = true;
         })
         .finally(function() {
           that.showSpinner = false;
@@ -293,7 +293,6 @@ var app = new Vue({
           })
           .catch(function() {
             console.error('Cannot save the annotations');
-            that.alertNoSaving = true;
           })
           .finally(function() {
             console.assert(that.isSaving === true);
@@ -342,7 +341,6 @@ var app = new Vue({
         })
         .catch(function(error) {
           console.error('Cannot delete the layer');
-          that.alertNoSaving = true;
         });
     },
 
@@ -371,9 +369,18 @@ var app = new Vue({
             .catch(function (error) {
               alert('Could not copy screenshot\n\n(' + error + ')');
             });
-        })
-        .then(function () {
-          console.log('Screenshot copied!');
+        });
+    },
+
+    LoadAnnotationsInfo: function() {
+      var that = this;
+      axios.post('../api/annotations-info',
+                 this.CreatePostPayload({}))
+        .then(function(response) {
+          that.projectName = response.data['project-name'];
+          that.projectDescription = response.data['project-description'];
+          that.projectUser = response.data['user'];
+          that.alertNotPersistent = !response.data['persistent-annotations'];
         });
     },
 
@@ -707,10 +714,10 @@ var app = new Vue({
 
       ]);
 
-      if (this.projectDescription !== null) {
+      if (this.imageDescription !== null) {
         controls.extend([
           new ol.control.Attribution({
-            attributions: this.projectDescription,
+            attributions: this.imageDescription,
             collapsible: false
           })
         ]);

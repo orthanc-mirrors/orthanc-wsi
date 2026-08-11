@@ -209,7 +209,7 @@
             </button>
           </div>
 
-          <div class="alert alert-danger alert-dismissible d-inline-block py-0" role="alert" v-if="alertNoSaving">
+          <div class="alert alert-danger alert-dismissible d-inline-block py-0" role="alert" v-if="alertNotPersistent">
             Your annotations will not be saved
             <button type="button" class="btn-close top-50 translate-middle-y" data-bs-dismiss="alert" aria-label="Close"></button>
           </div>
@@ -274,6 +274,17 @@
           <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
         </div>
         <div class="offcanvas-body p-2">
+          <h5 v-if="projectName !== ''">{{ projectName }}</h5>
+
+          <p v-if="projectDescription !== ''">
+            <small>{{ projectDescription }}</small>
+          </p>
+
+          <p v-if="projectUser !== ''">
+            <small>Logged as:</small>
+            <span class="badge bg-secondary">{{ projectUser }}</span>
+          </p>
+
           <div class="d-flex align-items-center mb-1">
             <h5>User layers</h5>
             <button type="button" class="btn btn-primary btn-sm ms-auto"

@@ -1337,6 +1337,11 @@ public:
       return userData_ != NULL;
     }
 
+    const AnnotationsInfo& GetAnnotationsInfo() const
+    {
+      return info_;
+    }
+
     void ListLayers(Json::Value& target) const
     {
       target = Json::objectValue;
@@ -1570,6 +1575,42 @@ static bool ProtectPostRequest(OrthancPluginRestOutput* output,
 }
 
 
+
+
+void GetAnnotationsInfo(OrthancPluginRestOutput* output,
+                        const char* url,
+                        const OrthancPluginHttpRequest* request)
+{
+  if (ProtectPostRequest(output, request))
+  {
+    AnnotationsCommandContext context(request);
+
+    CachedAnnotations::UserReader reader(context.GetCachedAnnotations(), context.GetUser());
+
+    Json::Value answer;
+    answer["project-name"] = reader.GetAnnotationsInfo().GetProjectName();
+    answer["project-description"] = reader.GetAnnotationsInfo().GetProjectDescription();
+
+    const UserId user = context.GetUser().GetAnnotatingId();
+
+    if (user.GetType() == UserId::Type_Standard)
+    {
+      answer["user"] = user.GetName();
+    }
+    else
+    {
+      answer["user"] = "";
+    }
+
+#if ORTHANC_PLUGINS_VERSION_IS_ABOVE(1, 12, 8)
+    answer["persistent-annotations"] = true;
+#else
+    answer["persistent-annotations"] = false;
+#endif
+
+    AnswerJson(output, answer);
+  }
+}
 
 
 void ListLayers(OrthancPluginRestOutput* output,
@@ -1887,6 +1928,7 @@ extern "C"
     OrthancPlugins::RegisterRestCallback<ServeFrameTile>("/wsi/frames-tiles/([0-9a-f-]+)/([0-9-]+)/([0-9-]+)/([0-9-]+)/([0-9-]+)", true);
 
     // NEW
+    OrthancPlugins::RegisterRestCallback<GetAnnotationsInfo>("/wsi/api/annotations-info", true);
     OrthancPlugins::RegisterRestCallback<CreateUserLayer>("/wsi/api/create-user-layer", true);
     OrthancPlugins::RegisterRestCallback<DeleteUserLayer>("/wsi/api/delete-user-layer", true);
     OrthancPlugins::RegisterRestCallback<ListLayers>("/wsi/api/list-layers", true);
