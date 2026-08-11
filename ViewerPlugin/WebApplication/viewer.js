@@ -35,7 +35,8 @@ var app = new Vue({
       projectDescription: null,
       brightness: 0, // In the range between [-1,1]
       contrast: 0,   // In the range between [-1,1]
-      hue: 0,        // Degrees, in the range between [-180,180]
+      saturation: 0, // In the range between [-1,1]
+      // hue: 0,        // Degrees, in the range between [-180,180]
 
       // Main state for annotations
       userLayers: [],
@@ -740,10 +741,12 @@ var app = new Vue({
           context.save();
           var brightness = Math.pow(4, that.brightness);  // Ranges between 0.25 and 4
           var contrast = Math.pow(4, that.contrast);      // Ranges between 0.25 and 4
+          var saturation = Math.pow(4, that.saturation);  // Ranges between 0.25 and 4
           context.filter =
             'brightness(' + brightness.toFixed(4) + ') ' +
-            'contrast(' + contrast.toFixed(4) + ') ' +
-            'hue-rotate(' + that.hue + 'deg)';
+            'contrast(' + contrast.toFixed(4) + ')' +
+            'saturate(' + saturation.toFixed(4) + ')';
+          // 'hue-rotate(' + that.hue + 'deg)';
         }
       });
 
@@ -814,7 +817,7 @@ var app = new Vue({
     ResetAdjustments: function() {
       this.brightness = 0;
       this.contrast = 0;
-      this.hue = 0;
+      this.saturation = 0;
       this.map.render();
     },
 
