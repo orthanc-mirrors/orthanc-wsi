@@ -507,20 +507,28 @@ void ServeSourceFile(OrthancPluginRestOutput* output,
 class AnnotationsId
 {
 private:
-  std::string   projectId_;
-  std::string   level_;
-  std::string   resourceId_;
+  std::string            projectId_;
+  Orthanc::ResourceType  level_;
+  std::string            resourceId_;
+  unsigned int           frameNumber_;
 
 public:
   AnnotationsId(const std::string& projectId,
-                const std::string& level,
-                const std::string& resourceId) :
+                Orthanc::ResourceType level,
+                const std::string& resourceId,
+                unsigned int frameNumber) :
     projectId_(projectId),
     level_(level),
-    resourceId_(resourceId)
+    resourceId_(resourceId),
+    frameNumber_(frameNumber)
   {
+    if (level_ != Orthanc::ResourceType_Series &&
+        level_ != Orthanc::ResourceType_Instance)
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
+    }
+
     if (projectId_.find('|') != std::string::npos ||
-        level_.find('|') != std::string::npos ||
         resourceId_.find('|') != std::string::npos)
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
@@ -532,7 +540,7 @@ public:
     return projectId_;
   }
 
-  const std::string& GetLevel() const
+  Orthanc::ResourceType GetLevel() const
   {
     return level_;
   }
@@ -544,7 +552,17 @@ public:
 
   std::string GetKey() const
   {
-    return projectId_ + "|" + level_ + "|" + resourceId_;
+    switch (level_)
+    {
+    case Orthanc::ResourceType_Series:
+      return projectId_ + "|series|" + resourceId_;
+
+    case Orthanc::ResourceType_Instance:
+      return projectId_ + "|instance|" + boost::lexical_cast<std::string>(frameNumber_) + "|" + resourceId_;
+
+    default:
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+    }
   }
 };
 
@@ -1470,8 +1488,9 @@ public:
     const std::string projectId = Orthanc::SerializationToolbox::ReadString(body_, "project", "" /* default project */);
     const std::string level = Orthanc::SerializationToolbox::ReadString(body_, "level");
     const std::string resourceId = Orthanc::SerializationToolbox::ReadString(body_, "resource");
+    unsigned int frameNumber = Orthanc::SerializationToolbox::ReadUnsignedInteger(body_, "frame", 0 /* default frame */);
 
-    annotationsId_.reset(new AnnotationsId(projectId, level, resourceId));
+    annotationsId_.reset(new AnnotationsId(projectId, Orthanc::StringToResourceType(level.c_str()), resourceId, frameNumber));
 
     IAuthenticatedUser::ProjectRole role = user_->GetRoleInProject(annotationsId_->GetProjectId());
 
