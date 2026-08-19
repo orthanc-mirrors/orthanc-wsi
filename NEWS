@@ -7,6 +7,7 @@ Pending changes in the mainline
     when the "--magnification" command-line option is provided
   - Now adding a FrameOfReferenceUID DICOM tag. This is required, amongst others,
     by the measurement tools in the OHIF microscopy viewer
+  - Support DICOM-ization of tiled TIFF with no compression
 * Viewer plugin:
   - Added CMake option "ORTHANC_SDK_VERSION"
 

@@ -149,7 +149,17 @@ namespace OrthancWSI
                                         unsigned int tileX,
                                         unsigned int tileY)
   {
-    std::unique_ptr<Orthanc::ImageAccessor> decoded(ImageToolbox::DecodeTile(raw, compression));
+    std::unique_ptr<Orthanc::ImageAccessor> decoded;
+
+    if (compression == ImageCompression_None)
+    {
+      decoded.reset(ImageToolbox::DecodeRawTile(raw, format_, tileWidth_, tileHeight_));
+    }
+    else
+    {
+      decoded.reset(ImageToolbox::DecodeTile(raw, compression));
+    }
+
     EncodeTile(*decoded, level, tileX, tileY);
   }
       

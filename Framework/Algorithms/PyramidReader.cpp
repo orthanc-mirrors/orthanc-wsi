@@ -151,7 +151,8 @@ namespace OrthancWSI
           throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
         }
 
-        decoded_.reset(ImageToolbox::DecodeTile(rawTile_, rawTileCompression_));
+        decoded_.reset(that_.DecodeRawTile(rawTile_, rawTileCompression_));
+
         if (decoded_.get() == NULL)
         {
           throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
@@ -168,6 +169,20 @@ namespace OrthancWSI
       return isEmpty_;
     }
   };
+
+
+  Orthanc::ImageAccessor* PyramidReader::DecodeRawTile(const std::string& tile,
+                                                       ImageCompression compression) const
+  {
+    if (compression == ImageCompression_None)
+    {
+      return ImageToolbox::DecodeRawTile(tile, source_.GetPixelFormat(), sourceTileWidth_, sourceTileHeight_);
+    }
+    else
+    {
+      return ImageToolbox::DecodeTile(tile, compression);
+    }
+  }
 
 
   Orthanc::ImageAccessor& PyramidReader::GetOutsideTile()
@@ -199,7 +214,7 @@ namespace OrthancWSI
   {
     if (parameters_.IsSafetyCheck())
     {
-      std::unique_ptr<Orthanc::ImageAccessor> decoded(ImageToolbox::DecodeTile(tile, compression));
+      std::unique_ptr<Orthanc::ImageAccessor> decoded(DecodeRawTile(tile, compression));
       CheckTileSize(*decoded);
     }
   }
