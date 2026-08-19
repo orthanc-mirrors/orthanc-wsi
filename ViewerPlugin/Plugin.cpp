@@ -1285,7 +1285,7 @@ public:
     {
       info_.reset(new AnnotationsInfo);
 
-      if (OrthancPlugins::RestApiGet(info, "/education/api-plugins/project-info?id=" + id.GetProjectId(), true))
+      if (OrthancPlugins::RestApiGet(info, "/education/api-plugins/project?id=" + id.GetProjectId(), true))
       {
         // The "orthanc-education" plugin is available
         info_->SetProjectName(Orthanc::SerializationToolbox::ReadString(info, "name"));
