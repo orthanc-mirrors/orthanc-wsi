@@ -21,6 +21,7 @@
  **/
 
 
+#include "../../Framework/PrecompiledHeadersWSI.h"
 #include "IAuthenticatedUser.h"
 
 #include <Compatibility.h>
@@ -28,7 +29,7 @@
 #include <SerializationToolbox.h>
 #include <Toolbox.h>
 
-#include "../Resources/Orthanc/Plugins/OrthancPluginCppWrapper.h"
+#include "../../Resources/Orthanc/Plugins/OrthancPluginCppWrapper.h"
 
 #include <cassert>
 #include <json/reader.h>

@@ -21,8 +21,7 @@
  **/
 
 
-#include "../Framework/PrecompiledHeadersWSI.h"
-
+#include "../../Framework/PrecompiledHeadersWSI.h"
 #include "UserId.h"
 
 #include <OrthancException.h>

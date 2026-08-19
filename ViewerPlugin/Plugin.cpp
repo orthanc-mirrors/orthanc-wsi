@@ -23,8 +23,8 @@
 
 #include "../Framework/PrecompiledHeadersWSI.h"
 
+#include "Annotations/IAuthenticatedUser.h"
 #include "DicomPyramidCache.h"
-#include "IAuthenticatedUser.h"
 #include "IIIF.h"
 #include "OrthancPyramidFrameFetcher.h"
 #include "RawTile.h"

@@ -186,14 +186,14 @@ EmbedResources(
 #####################################################################
 
 set(ORTHANC_WSI_SOURCES
+  Annotations/IAuthenticatedUser.cpp
+  Annotations/UserId.cpp
   DicomPyramidCache.cpp
-  IAuthenticatedUser.cpp
   IIIF.cpp
   OrthancPluginConnection.cpp
   OrthancPyramidFrameFetcher.cpp
   Plugin.cpp
   RawTile.cpp
-  UserId.cpp
 
   ${ORTHANC_WSI_DIR}/Framework/ColorSpaces.cpp
   ${ORTHANC_WSI_DIR}/Framework/DicomToolbox.cpp
