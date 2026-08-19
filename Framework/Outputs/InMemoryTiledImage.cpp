@@ -48,13 +48,15 @@ namespace OrthancWSI
                                          unsigned int countTilesY,
                                          unsigned int tileWidth,
                                          unsigned int tileHeight,
-                                         Orthanc::PhotometricInterpretation photometric) :
+                                         Orthanc::PhotometricInterpretation photometric,
+                                         BackgroundColor backgroundColor) :
     format_(format),
     countTilesX_(countTilesX),
     countTilesY_(countTilesY),
     tileWidth_(tileWidth),
     tileHeight_(tileHeight),
-    photometric_(photometric)
+    photometric_(photometric),
+    backgroundColor_(backgroundColor)
   {
   }
 

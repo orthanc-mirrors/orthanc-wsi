@@ -30,14 +30,16 @@ namespace OrthancWSI
 {
   TruncatedPyramidWriter::TruncatedPyramidWriter(IPyramidWriter& lower,
                                                  unsigned int upperLevelIndex,
-                                                 Orthanc::PhotometricInterpretation photometric) :
+                                                 Orthanc::PhotometricInterpretation photometric,
+                                                 const BackgroundColor& backgroundColor) :
     lowerLevels_(lower),
     upperLevel_(lower.GetPixelFormat(),
                 lower.GetCountTilesX(upperLevelIndex),
                 lower.GetCountTilesY(upperLevelIndex),
                 lower.GetTileWidth(),
                 lower.GetTileHeight(),
-                photometric),
+                photometric,
+                backgroundColor),
     upperLevelIndex_(upperLevelIndex)
   {
     if (upperLevelIndex > lower.GetLevelCount())

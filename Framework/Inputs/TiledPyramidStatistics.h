@@ -87,5 +87,10 @@ namespace OrthancWSI
     {
       return source_.GetPhotometricInterpretation();
     }
+
+    virtual BackgroundColor GetBackgroundColor() const ORTHANC_OVERRIDE
+    {
+      return source_.GetBackgroundColor();
+    }
   };
 }

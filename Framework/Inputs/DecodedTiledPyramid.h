@@ -57,7 +57,7 @@ namespace OrthancWSI
       backgroundColor_.SetValue(red, green, blue);
     }
 
-    const BackgroundColor& GetBackgroundColor() const
+    virtual BackgroundColor GetBackgroundColor() const ORTHANC_OVERRIDE
     {
       return backgroundColor_;
     }

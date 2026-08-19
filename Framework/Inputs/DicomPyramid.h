@@ -87,7 +87,7 @@ namespace OrthancWSI
 
     virtual Orthanc::PhotometricInterpretation GetPhotometricInterpretation() const ORTHANC_OVERRIDE;
 
-    const BackgroundColor& GetBackgroundColor() const
+    virtual BackgroundColor GetBackgroundColor() const ORTHANC_OVERRIDE
     {
       return backgroundColor_;
     }
