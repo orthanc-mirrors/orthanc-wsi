@@ -244,7 +244,8 @@ static void Recompress(OrthancWSI::IFileTarget& output,
   Orthanc::PhotometricInterpretation targetPhotometric;
   bool transcoding;
 
-  if (parameters.IsForceReencode() ||
+  if (parameters.IsRepaintBackground() ||
+      parameters.IsForceReencode() ||
       parameters.IsReconstructPyramid() ||
       sourceCompression != parameters.GetTargetCompression())
   {
