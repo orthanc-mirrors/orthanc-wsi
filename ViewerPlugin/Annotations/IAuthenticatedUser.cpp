@@ -177,6 +177,34 @@ namespace
       }
     }
   };
+
+
+  class GenericInstructor : public IAuthenticatedUser
+  {
+  private:
+    std::string  username_;
+
+  public:
+    GenericInstructor(const std::string& username) :
+      username_(username)
+    {
+    }
+
+    virtual UserId GetAnnotatingId() const ORTHANC_OVERRIDE
+    {
+      return UserId(UserId::Type_Standard, username_);
+    }
+
+    virtual std::string Format() const ORTHANC_OVERRIDE
+    {
+      return username_;
+    }
+
+    virtual ProjectRole GetRoleInProject(const std::string& projectId) const ORTHANC_OVERRIDE
+    {
+      return ProjectRole_Instructor;
+    }
+  };
 }
 
 
@@ -206,6 +234,12 @@ IAuthenticatedUser* IAuthenticatedUser::FromHttpRequest(const OrthancPluginHttpR
       {
         return new EducationPluginAuthenticatedUser(authentication);
       }
+#if 0
+      else if (source == "orthanc-python-sample-authentication")
+      {
+        return new GenericInstructor(Orthanc::SerializationToolbox::ReadString(authentication, "username"));
+      }
+#endif
     }
 
     return new GuestUser;
