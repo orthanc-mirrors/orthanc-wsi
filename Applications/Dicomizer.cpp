@@ -219,6 +219,7 @@ static void Recompress(OrthancWSI::IFileTarget& output,
   LOG(WARNING) << "Pixel format: " << Orthanc::EnumerationToString(source.GetPixelFormat());
   LOG(WARNING) << "Source photometric interpretation: " << Orthanc::EnumerationToString(source.GetPhotometricInterpretation());
   LOG(WARNING) << "Source compression: " << EnumerationToString(sourceCompression);
+  LOG(WARNING) << "Source background color: " << source.GetBackgroundColor().Format();
   LOG(WARNING) << "Smoothing is " << (parameters.IsSmoothEnabled() ? "enabled" : "disabled");
 
   if (parameters.IsRepaintBackground())

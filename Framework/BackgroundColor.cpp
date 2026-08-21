@@ -27,6 +27,8 @@
 
 #include <OrthancException.h>
 
+#include <boost/lexical_cast.hpp>
+
 
 namespace OrthancWSI
 {
@@ -85,6 +87,21 @@ namespace OrthancWSI
     else
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
+    }
+  }
+
+
+  std::string BackgroundColor::Format() const
+  {
+    if (present_)
+    {
+      return ("(" + boost::lexical_cast<std::string>(static_cast<unsigned int>(red_)) + "," +
+              boost::lexical_cast<std::string>(static_cast<unsigned int>(green_)) + "," +
+              boost::lexical_cast<std::string>(static_cast<unsigned int>(blue_)) + ")");
+    }
+    else
+    {
+      return "None";
     }
   }
 

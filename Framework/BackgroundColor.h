@@ -24,6 +24,8 @@
 #pragma once
 
 #include <stdint.h>
+#include <string>
+
 
 namespace Orthanc
 {
@@ -69,6 +71,8 @@ namespace OrthancWSI
     uint8_t GetGreen() const;
 
     uint8_t GetBlue() const;
+
+    std::string Format() const;
 
     void Fill(Orthanc::ImageAccessor& region,
               uint8_t defaultRed,
