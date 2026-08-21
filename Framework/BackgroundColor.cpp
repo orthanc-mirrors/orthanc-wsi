@@ -125,6 +125,44 @@ namespace OrthancWSI
   }
 
 
+  static unsigned int GetHexDigit(char c)
+  {
+    if (c >= '0' && c <= '9')
+    {
+      return c - '0';
+    }
+    else if (c >= 'a' && c <= 'f')
+    {
+      return c - 'a' + 10;
+    }
+    else if (c >= 'A' && c <= 'F')
+    {
+      return c - 'A' + 10;
+    }
+    else
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
+    }
+  }
+
+
+  BackgroundColor BackgroundColor::FromHexadecimalString(const std::string& color)
+  {
+    if (color.size() != 7 ||
+        color[0] != '#')
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_NetworkProtocol);
+    }
+    else
+    {
+      unsigned int r = GetHexDigit(color[1]) * 16 + GetHexDigit(color[2]);
+      unsigned int g = GetHexDigit(color[3]) * 16 + GetHexDigit(color[4]);
+      unsigned int b = GetHexDigit(color[5]) * 16 + GetHexDigit(color[6]);
+      return BackgroundColor(r, g, b);
+    }
+  }
+
+
   void BackgroundColor::Fill(Orthanc::ImageAccessor& region,
                              uint8_t defaultRed,
                              uint8_t defaultGreen,

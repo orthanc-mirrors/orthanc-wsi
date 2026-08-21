@@ -78,6 +78,8 @@ namespace OrthancWSI
                                     uint8_t defaultGreen,
                                     uint8_t defaultBlue) const;
 
+    static BackgroundColor FromHexadecimalString(const std::string& color);
+
     void Fill(Orthanc::ImageAccessor& region,
               uint8_t defaultRed,
               uint8_t defaultGreen,
