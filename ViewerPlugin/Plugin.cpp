@@ -103,6 +103,9 @@ static void DescribePyramid(Json::Value& result,
   result["TilesSizes"] = tilesSizes;
   result["TotalHeight"] = totalHeight;
   result["TotalWidth"] = totalWidth;
+
+  // New in WSI 2.1 (Default background is white)
+  result["BackgroundColor"] = pyramid.GetBackgroundColor().ToHexadecimalString(255, 255, 255);
 }
 
 
@@ -120,23 +123,6 @@ void ServePyramid(OrthancPluginRestOutput* output,
   {
     OrthancWSI::DicomPyramidCache::Locker locker(seriesId);
     DescribePyramid(answer, locker.GetPyramid());
-
-    {
-      // New in WSI 2.1
-      if (locker.GetPyramid().GetBackgroundColor().IsPresent())
-      {
-        char tmp[16];
-        sprintf(tmp, "#%02x%02x%02x", locker.GetPyramid().GetBackgroundColor().GetRed(),
-                locker.GetPyramid().GetBackgroundColor().GetGreen(),
-                locker.GetPyramid().GetBackgroundColor().GetBlue());
-        answer["BackgroundColor"] = tmp;
-      }
-      else
-      {
-        // TODO Background color
-        answer["BackgroundColor"] = "#ffffff";
-      }
-    }
 
     // New in WSI 3.1
     double imagedVolumeWidth, imagedVolumeHeight;
@@ -173,27 +159,6 @@ void ServeFramePyramid(OrthancPluginRestOutput* output,
   {
     OrthancWSI::DecodedPyramidCache::Accessor accessor(OrthancWSI::DecodedPyramidCache::GetInstance(), instanceId, frameNumber);
     DescribePyramid(answer, accessor.GetPyramid());
-
-    {
-      uint8_t red, green, blue;
-      if (accessor.GetPyramid().GetBackgroundColor().IsPresent())
-      {
-        red = accessor.GetPyramid().GetBackgroundColor().GetRed();
-        green = accessor.GetPyramid().GetBackgroundColor().GetGreen();
-        blue = accessor.GetPyramid().GetBackgroundColor().GetBlue();
-      }
-      else
-      {
-        // TODO Background color
-        red = 255;
-        green = 255;
-        blue = 255;
-      }
-
-      char tmp[16];
-      sprintf(tmp, "#%02x%02x%02x", red, green, blue);
-      answer["BackgroundColor"] = tmp;
-    }
   }
 
   std::string s = answer.toStyledString();

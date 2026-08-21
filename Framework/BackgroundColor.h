@@ -74,6 +74,10 @@ namespace OrthancWSI
 
     std::string Format() const;
 
+    std::string ToHexadecimalString(uint8_t defaultRed,
+                                    uint8_t defaultGreen,
+                                    uint8_t defaultBlue) const;
+
     void Fill(Orthanc::ImageAccessor& region,
               uint8_t defaultRed,
               uint8_t defaultGreen,
