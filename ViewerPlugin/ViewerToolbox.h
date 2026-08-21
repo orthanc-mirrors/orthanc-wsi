@@ -23,8 +23,6 @@
 
 #pragma once
 
-#include "../Framework/ColorSpaces.h"
-
 #include <json/value.h>
 #include <orthanc/OrthancCPlugin.h>
 
@@ -37,9 +35,5 @@ namespace OrthancWSI
                     const Json::Value& value);
 
     void AnswerEmpty(OrthancPluginRestOutput* output);
-
-    RGBColor ParseColor(const std::string& color);
-
-    std::string SerializeColor(const RGBColor& color);
   }
 }

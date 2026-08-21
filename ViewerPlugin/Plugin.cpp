@@ -23,6 +23,7 @@
 
 #include "../Framework/PrecompiledHeadersWSI.h"
 
+#include "../Framework/ColorSpaces.h"
 #include "../Framework/ImageToolbox.h"
 #include "Annotations/AnnotationsRestApi.h"
 #include "DicomPyramidCache.h"

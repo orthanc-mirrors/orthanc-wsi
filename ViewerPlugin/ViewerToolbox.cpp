@@ -24,31 +24,9 @@
 #include "../Framework/PrecompiledHeadersWSI.h"
 #include "ViewerToolbox.h"
 
-#include <OrthancException.h>
 #include <Toolbox.h>
 
 #include "../Resources/Orthanc/Plugins/OrthancPluginCppWrapper.h"
-
-
-static unsigned int GetHex(char c)
-{
-  if (c >= '0' && c <= '9')
-  {
-    return c - '0';
-  }
-  else if (c >= 'a' && c <= 'f')
-  {
-    return c - 'a' + 10;
-  }
-  else if (c >= 'A' && c <= 'F')
-  {
-    return c - 'A' + 10;
-  }
-  else
-  {
-    throw Orthanc::OrthancException(Orthanc::ErrorCode_NetworkProtocol);
-  }
-}
 
 
 namespace OrthancWSI
@@ -68,31 +46,6 @@ namespace OrthancWSI
     {
       Json::Value answer = Json::objectValue;
       AnswerJson(output, answer);
-    }
-
-
-    RGBColor ParseColor(const std::string& color)
-    {
-      if (color.size() != 7 ||
-          color[0] != '#')
-      {
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_NetworkProtocol);
-      }
-      else
-      {
-        unsigned int r = GetHex(color[1]) * 16 + GetHex(color[2]);
-        unsigned int g = GetHex(color[3]) * 16 + GetHex(color[4]);
-        unsigned int b = GetHex(color[5]) * 16 + GetHex(color[6]);
-        return RGBColor(r, g, b);
-      }
-    }
-
-
-    std::string SerializeColor(const RGBColor& color)
-    {
-      char buf[16];
-      sprintf(buf, "#%02x%02x%02x", color.GetR(), color.GetG(), color.GetB());
-      return buf;
     }
   }
 }

@@ -24,6 +24,7 @@
 #include "../../Framework/PrecompiledHeadersWSI.h"
 #include "AnnotationsRestApi.h"
 
+#include "../../Framework/BackgroundColor.h"
 #include "../ViewerToolbox.h"
 #include "IAuthenticatedUser.h"
 
@@ -369,14 +370,14 @@ namespace OrthancWSI
   {
   private:
     bool              isVisible_;
-    RGBColor          color_;
+    BackgroundColor   color_;
     std::string       id_;
     std::string       name_;
     std::set<UserId>  sharedWith_;
     bool              isPublic_;
 
   public:
-    UserLayer(const RGBColor& color,
+    UserLayer(const BackgroundColor& color,
               const std::string& name) :
       isVisible_(true),
       color_(color),
@@ -386,35 +387,30 @@ namespace OrthancWSI
     {
     }
 
-    UserLayer(const Json::Value& source) :
-      color_(ViewerToolbox::ParseColor(Orthanc::SerializationToolbox::ReadString(source, KEY_COLOR)))
+    UserLayer(const Json::Value& source)
     {
+      if (!source.isObject() ||
+          !source.isMember(KEY_SHARED_WITH))
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
+      }
+
       isVisible_ = Orthanc::SerializationToolbox::ReadBoolean(source, KEY_VISIBLE);
+      color_ = BackgroundColor::FromHexadecimalString(Orthanc::SerializationToolbox::ReadString(source, KEY_COLOR));
       id_ = Orthanc::SerializationToolbox::ReadString(source, KEY_ID);
       name_ = Orthanc::SerializationToolbox::ReadString(source, KEY_NAME);
+      isPublic_ = Orthanc::SerializationToolbox::ReadBoolean(source, KEY_PUBLIC);
 
-      if (source.isMember(KEY_PUBLIC))
+      const Json::Value& sharedWith = source[KEY_SHARED_WITH];
+
+      if (!sharedWith.isArray())
       {
-        isPublic_ = Orthanc::SerializationToolbox::ReadBoolean(source, KEY_PUBLIC);
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_NetworkProtocol);
       }
-      else
+
+      for (Json::Value::ArrayIndex i = 0; i < sharedWith.size(); i++)
       {
-        isPublic_ = false;
-      }
-
-      if (source.isMember(KEY_SHARED_WITH))
-      {
-        const Json::Value& sharedWith = source[KEY_SHARED_WITH];
-
-        if (!sharedWith.isArray())
-        {
-          throw Orthanc::OrthancException(Orthanc::ErrorCode_NetworkProtocol);
-        }
-
-        for (Json::Value::ArrayIndex i = 0; i < sharedWith.size(); i++)
-        {
-          sharedWith_.insert(UserId(sharedWith[i]));
-        }
+        sharedWith_.insert(UserId(sharedWith[i]));
       }
     }
 
@@ -428,7 +424,7 @@ namespace OrthancWSI
       return isVisible_;
     }
 
-    const RGBColor& GetColor() const
+    const BackgroundColor& GetColor() const
     {
       return color_;
     }
@@ -465,7 +461,7 @@ namespace OrthancWSI
 
       target = Json::objectValue;
       target[KEY_VISIBLE] = isVisible_;
-      target[KEY_COLOR] = ViewerToolbox::SerializeColor(color_);
+      target[KEY_COLOR] = color_.ToHexadecimalString();
       target[KEY_ID] = id_;
       target[KEY_NAME] = name_;
       target[KEY_PUBLIC] = isPublic_;
@@ -478,7 +474,7 @@ namespace OrthancWSI
   {
   private:
     bool         isVisible_;
-    RGBColor     color_;
+    BackgroundColor     color_;
     UserId       author_;
     std::string  id_;
     std::string  name_;
@@ -494,21 +490,19 @@ namespace OrthancWSI
     {
     }
 
-    SharedLayer(const Json::Value& source) :
-      color_(0, 0, 0)
+    SharedLayer(const Json::Value& source)
     {
-      if (!source.isMember(KEY_AUTHOR))
+      if (!source.isObject() ||
+          !source.isMember(KEY_AUTHOR))
       {
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_NetworkProtocol);
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
       }
 
       isVisible_ = Orthanc::SerializationToolbox::ReadBoolean(source, KEY_VISIBLE);
       author_ = UserId(source[KEY_AUTHOR]);
       id_ = Orthanc::SerializationToolbox::ReadString(source, KEY_ID);
       name_ = Orthanc::SerializationToolbox::ReadString(source, KEY_NAME);
-
-      std::string color = Orthanc::SerializationToolbox::ReadString(source, KEY_COLOR);
-      color_ = ViewerToolbox::ParseColor(color);
+      color_ = BackgroundColor::FromHexadecimalString(Orthanc::SerializationToolbox::ReadString(source, KEY_COLOR));
     }
 
     virtual std::string GetId() const ORTHANC_OVERRIDE
@@ -521,7 +515,7 @@ namespace OrthancWSI
       return isVisible_;
     }
 
-    const RGBColor& GetColor() const
+    const BackgroundColor& GetColor() const
     {
       return color_;
     }
@@ -540,7 +534,7 @@ namespace OrthancWSI
     {
       target = Json::objectValue;
       target[KEY_VISIBLE] = isVisible_;
-      target[KEY_COLOR] = ViewerToolbox::SerializeColor(color_);
+      target[KEY_COLOR] = color_.ToHexadecimalString();
       target[KEY_ID] = id_;
       target[KEY_NAME] = name_;
 
@@ -609,9 +603,9 @@ namespace OrthancWSI
 
       size_t item = userLayers_.GetSize() % PALETTE_SIZE;
 
-      RGBColor color(PALETTE[3 * item],
-                     PALETTE[3 * item + 1],
-                     PALETTE[3 * item + 2]);
+      BackgroundColor color(PALETTE[3 * item],
+                            PALETTE[3 * item + 1],
+                            PALETTE[3 * item + 2]);
 
       std::string name;
       if (userLayers_.GetSize() == 0)

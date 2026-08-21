@@ -25,6 +25,8 @@
 
 #include "ImageToolbox.h"
 
+#include <iostream>
+
 #include <OrthancException.h>
 
 #include <boost/lexical_cast.hpp>
@@ -102,6 +104,21 @@ namespace OrthancWSI
     else
     {
       return "None";
+    }
+  }
+
+
+  std::string BackgroundColor::ToHexadecimalString() const
+  {
+    if (present_)
+    {
+      char tmp[32];
+      sprintf(tmp, "#%02x%02x%02x", red_, green_, blue_);
+      return tmp;
+    }
+    else
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);  // Should have called "IsPresent()"
     }
   }
 
