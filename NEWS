@@ -12,8 +12,12 @@ Maintenance
 -----------
 
 * OrthancWSIDicomizer:
-  - Now adding a FrameOfReferenceUID DICOM tag.  This is required, amongst others, 
-    by the measurement tools in the OHIF microscopy viewer.
+  - Fill the DICOM tag "Objective Lens Power Attribute" (0048,0112)
+    with the scanner magnification, either when using OpenSlide or
+    when the "--magnification" command-line option is provided
+  - Now adding a FrameOfReferenceUID DICOM tag. This is required, amongst others,
+    by the measurement tools in the OHIF microscopy viewer
+  - Support DICOM-ization of tiled TIFF with no compression
 * Viewer plugin:
   - Added CMake option "ORTHANC_SDK_VERSION"
 

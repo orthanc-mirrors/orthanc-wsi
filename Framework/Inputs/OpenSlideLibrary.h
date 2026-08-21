@@ -29,6 +29,26 @@
 #include <map>
 #include <vector>
 
+
+/**
+ * List of the properties supported by OpenSlide, taken from
+ * "openslide.h". As orthanc-wsi loads the OpenSlide shared library at
+ * runtime, the file "openslide.h" is not available at compile time.
+ **/
+
+#define OPENSLIDE_PROPERTY_NAME_COMMENT          "openslide.comment"
+#define OPENSLIDE_PROPERTY_NAME_VENDOR           "openslide.vendor"
+#define OPENSLIDE_PROPERTY_NAME_QUICKHASH1       "openslide.quickhash-1"
+#define OPENSLIDE_PROPERTY_NAME_BACKGROUND_COLOR "openslide.background-color"  // Since 3.2.3
+#define OPENSLIDE_PROPERTY_NAME_OBJECTIVE_POWER  "openslide.objective-power"   // Since 3.3.0
+#define OPENSLIDE_PROPERTY_NAME_MPP_X            "openslide.mpp-x"             // Since 3.3.0
+#define OPENSLIDE_PROPERTY_NAME_MPP_Y            "openslide.mpp-y"             // Since 3.3.0
+#define OPENSLIDE_PROPERTY_NAME_BOUNDS_X         "openslide.bounds-x"          // Since 3.4.0
+#define OPENSLIDE_PROPERTY_NAME_BOUNDS_Y         "openslide.bounds-y"          // Since 3.4.0
+#define OPENSLIDE_PROPERTY_NAME_BOUNDS_WIDTH     "openslide.bounds-width"      // Since 3.4.0
+#define OPENSLIDE_PROPERTY_NAME_BOUNDS_HEIGHT    "openslide.bounds-height"     // Since 3.4.0
+
+
 namespace OrthancWSI
 {
   class OpenSlideLibrary : public boost::noncopyable

@@ -33,32 +33,6 @@
 
 namespace OrthancWSI
 {
-  DecodedTiledPyramid::DecodedTiledPyramid()
-  {
-    SetBackgroundColor(255, 255, 255);
-  }
-
-
-  void DecodedTiledPyramid::SetBackgroundColor(uint8_t red,
-                                               uint8_t green,
-                                               uint8_t blue)
-  {
-    backgroundColor_[0] = red;
-    backgroundColor_[1] = green;
-    backgroundColor_[2] = blue;
-  }
-
-
-  void DecodedTiledPyramid::GetBackgroundColor(uint8_t& red,
-                                               uint8_t& green,
-                                               uint8_t& blue) const
-  {
-    red = backgroundColor_[0];
-    green = backgroundColor_[1];
-    blue = backgroundColor_[2];
-  }
-
-
   Orthanc::ImageAccessor* DecodedTiledPyramid::DecodeTile(bool& isEmpty,
                                                           unsigned int level,
                                                           unsigned int tileX,
@@ -74,7 +48,7 @@ namespace OrthancWSI
         y >= GetLevelHeight(level))   // (*)
     {
       isEmpty = true;
-      ImageToolbox::Set(*tile, backgroundColor_[0], backgroundColor_[1], backgroundColor_[2]);
+      backgroundColor_.Fill(*tile, 255, 255, 255);   // TODO Background color
       return tile.release();
     }
 
@@ -116,7 +90,7 @@ namespace OrthancWSI
       ReadRegion(*cropped, isEmpty, level, x, y);
 
       // Create a white tile, and fill it with the cropped content
-      ImageToolbox::Set(*tile, backgroundColor_[0], backgroundColor_[1], backgroundColor_[2]);
+      backgroundColor_.Fill(*tile, 255, 255, 255);   // TODO Background color
       ImageToolbox::Embed(*tile, *cropped, 0, 0);
     }
 

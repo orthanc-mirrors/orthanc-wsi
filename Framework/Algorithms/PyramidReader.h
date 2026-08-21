@@ -57,6 +57,9 @@ namespace OrthancWSI
     std::unique_ptr<Orthanc::ImageAccessor>  outside_;
 
 
+    Orthanc::ImageAccessor* DecodeRawTile(const std::string& tile,
+                                          ImageCompression compression) const;
+
     Orthanc::ImageAccessor& GetOutsideTile();
 
     void CheckTileSize(const Orthanc::ImageAccessor& tile) const;

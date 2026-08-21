@@ -93,7 +93,19 @@ namespace OrthancWSI
       // Implements alpha blending: https://en.wikipedia.org/wiki/Alpha_compositing#Alpha_blending
 
       uint8_t backgroundRed, backgroundGreen, backgroundBlue;
-      GetBackgroundColor(backgroundRed, backgroundGreen, backgroundBlue);
+      if (GetBackgroundColor().IsPresent())
+      {
+        backgroundRed = GetBackgroundColor().GetRed();
+        backgroundGreen = GetBackgroundColor().GetGreen();
+        backgroundBlue = GetBackgroundColor().GetBlue();
+      }
+      else
+      {
+        // TODO Background color
+        backgroundRed = 255;
+        backgroundGreen = 255;
+        backgroundBlue = 255;
+      }
 
       for (unsigned int yy = 0; yy < height; yy++)
       {
@@ -144,9 +156,9 @@ namespace OrthancWSI
     double mppx;
     double mppy;
 
-    if (image_.LookupProperty(s, "openslide.mpp-x") &&
+    if (image_.LookupProperty(s, OPENSLIDE_PROPERTY_NAME_MPP_X) &&
         Orthanc::SerializationToolbox::ParseDouble(mppx, s) &&
-        image_.LookupProperty(s, "openslide.mpp-y") &&
+        image_.LookupProperty(s, OPENSLIDE_PROPERTY_NAME_MPP_Y) &&
         Orthanc::SerializationToolbox::ParseDouble(mppy, s))
     {
       width = mppx / 1000.0 * static_cast<double>(image_.GetLevelWidth(0));
@@ -170,5 +182,14 @@ namespace OrthancWSI
     }
 
     return countPixels * Orthanc::GetBytesPerPixel(Orthanc::PixelFormat_RGBA32);
+  }
+
+
+  bool OpenSlidePyramid::LookupObjectiveLensPower(float& power) const
+  {
+    std::string s;
+
+    return (image_.LookupProperty(s, OPENSLIDE_PROPERTY_NAME_OBJECTIVE_POWER) &&
+            Orthanc::SerializationToolbox::ParseFloat(power, s));
   }
 }

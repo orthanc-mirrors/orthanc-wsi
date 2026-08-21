@@ -23,10 +23,12 @@
 
 #pragma once
 
+#include "BackgroundColor.h"
+#include "DicomToolbox.h"
 #include "Inputs/ITiledPyramid.h"
 #include "Outputs/IPyramidWriter.h"
 #include "Targets/IFileTarget.h"
-#include "DicomToolbox.h"
+
 #include <WebServiceParameters.h>
 
 #include <stdint.h>
@@ -38,7 +40,7 @@ namespace OrthancWSI
   private:
     bool              safetyCheck_;
     bool              repaintBackground_;
-    uint8_t           backgroundColor_[3];
+    BackgroundColor   backgroundColor_;
     ImageCompression  targetCompression_;
     bool              hasTargetTileSize_;
     unsigned int      targetTileWidth_;
@@ -100,21 +102,14 @@ namespace OrthancWSI
 
     void SetBackgroundColor(uint8_t red,
                             uint8_t green,
-                            uint8_t blue);
-
-    uint8_t GetBackgroundColorRed() const
+                            uint8_t blue)
     {
-      return backgroundColor_[0];
+      backgroundColor_.SetValue(red, green, blue);
     }
 
-    uint8_t GetBackgroundColorGreen() const
+    const BackgroundColor& GetBackgroundColor() const
     {
-      return backgroundColor_[1];
-    }
-
-    uint8_t GetBackgroundColorBlue() const
-    {
-      return backgroundColor_[2];
+      return backgroundColor_;
     }
 
     void SetTargetCompression(ImageCompression compression)
@@ -313,5 +308,7 @@ namespace OrthancWSI
     {
       encoding_ = encoding;
     }
+
+    void FillBackgroundColor(Orthanc::ImageAccessor& region) const;
   };
 }

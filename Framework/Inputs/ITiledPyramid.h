@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include "../BackgroundColor.h"
 #include "../Enumerations.h"
 
 #include <Compatibility.h>
@@ -69,5 +70,7 @@ namespace OrthancWSI
     virtual Orthanc::PixelFormat GetPixelFormat() const = 0;
 
     virtual Orthanc::PhotometricInterpretation GetPhotometricInterpretation() const = 0;
+
+    virtual BackgroundColor GetBackgroundColor() const = 0;
   };
 }

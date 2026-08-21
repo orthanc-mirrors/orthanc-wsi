@@ -197,6 +197,7 @@ set(ORTHANC_WSI_SOURCES
   RawTile.cpp
   ViewerToolbox.cpp
 
+  ${ORTHANC_WSI_DIR}/Framework/BackgroundColor.cpp
   ${ORTHANC_WSI_DIR}/Framework/ColorSpaces.cpp
   ${ORTHANC_WSI_DIR}/Framework/DicomToolbox.cpp
   ${ORTHANC_WSI_DIR}/Framework/Enumerations.cpp

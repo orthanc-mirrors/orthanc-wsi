@@ -30,6 +30,14 @@
 
 namespace OrthancWSI
 {
+  RGBColor::RGBColor(const BackgroundColor& color) :
+    r_(color.GetRed()),
+    g_(color.GetGreen()),
+    b_(color.GetBlue())
+  {
+  }
+
+
   RGBColor::RGBColor(const sRGBColor& srgb)
   {
     if (srgb.GetR() < 0)

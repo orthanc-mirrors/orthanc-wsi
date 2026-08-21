@@ -23,7 +23,8 @@
 
 #pragma once
 
-#include <stdint.h>
+#include "BackgroundColor.h"
+
 #include <string>
 
 
@@ -42,6 +43,13 @@ namespace OrthancWSI
     uint8_t  b_;
 
   public:
+    RGBColor() :
+      r_(0),
+      g_(0),
+      b_(0)
+    {
+    }
+
     RGBColor(uint8_t r,
              uint8_t g,
              uint8_t b) :
@@ -50,6 +58,8 @@ namespace OrthancWSI
       b_(b)
     {
     }
+
+    explicit RGBColor(const BackgroundColor& color);
 
     explicit RGBColor(const sRGBColor& srgb);
 

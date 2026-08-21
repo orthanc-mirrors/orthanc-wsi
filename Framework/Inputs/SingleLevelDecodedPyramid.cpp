@@ -47,7 +47,8 @@ namespace OrthancWSI
     }
     else
     {
-      Orthanc::ImageProcessing::Set(target, backgroundRed_, backgroundGreen_, backgroundBlue_, 255);
+      // TODO Background color
+      backgroundColor_.Fill(target, 255, 255, 255);
 
       if (x < image_.GetWidth() &&
           y < image_.GetHeight())
@@ -69,10 +70,7 @@ namespace OrthancWSI
                                                        unsigned int tileHeight) :
     tileWidth_(tileWidth),
     tileHeight_(tileHeight),
-    padding_(0),
-    backgroundRed_(255),
-    backgroundGreen_(255),
-    backgroundBlue_(255)
+    padding_(0)
   {
   }
 
@@ -130,13 +128,9 @@ namespace OrthancWSI
 
 
   void SingleLevelDecodedPyramid::SetPadding(unsigned int padding,
-                                             uint8_t backgroundRed,
-                                             uint8_t backgroundGreen,
-                                             uint8_t backgroundBlue)
+                                             const BackgroundColor& backgroundColor)
   {
     padding_ = padding;
-    backgroundRed_ = backgroundRed;
-    backgroundGreen_ = backgroundGreen;
-    backgroundBlue_ = backgroundBlue;
+    backgroundColor_ = backgroundColor;
   }
 }

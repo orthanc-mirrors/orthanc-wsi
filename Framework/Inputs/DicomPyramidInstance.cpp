@@ -290,10 +290,7 @@ namespace OrthancWSI
         XYZColor xyz(lab);
         sRGBColor srgb(xyz);
         RGBColor rgb(srgb);
-        hasBackgroundColor_ = true;
-        backgroundRed_ = rgb.GetR();
-        backgroundGreen_ = rgb.GetG();
-        backgroundBlue_ = rgb.GetB();
+        backgroundColor_.SetValue(rgb.GetR(), rgb.GetG(), rgb.GetB());
       }
     }
 
@@ -310,10 +307,6 @@ namespace OrthancWSI
     instanceId_(instanceId),
     hasCompression_(false),
     compression_(ImageCompression_None),  // Dummy initialization for serialization
-    hasBackgroundColor_(false),
-    backgroundRed_(0),
-    backgroundGreen_(0),
-    backgroundBlue_(0),
     hasImagedVolumeSize_(false),
     imagedVolumeWidth_(0),
     imagedVolumeHeight_(0),
@@ -408,12 +401,12 @@ namespace OrthancWSI
     content[IMAGE_TYPE] = imageType_;
     content[VERSION] = SERIALIZED_VERSION;
 
-    if (hasBackgroundColor_)
+    if (backgroundColor_.IsPresent())
     {
       Json::Value color = Json::arrayValue;
-      color.append(backgroundRed_);
-      color.append(backgroundGreen_);
-      color.append(backgroundBlue_);
+      color.append(backgroundColor_.GetRed());
+      color.append(backgroundColor_.GetGreen());
+      color.append(backgroundColor_.GetBlue());
       content[BACKGROUND_COLOR] = color;
     }
 
@@ -484,7 +477,7 @@ namespace OrthancWSI
       frames_[i].second = f[i][1].asInt();
     }
 
-    hasBackgroundColor_ = false;
+    backgroundColor_.Clear();
     if (content.isMember(BACKGROUND_COLOR))
     {
       const Json::Value& color = content[BACKGROUND_COLOR];
@@ -494,10 +487,7 @@ namespace OrthancWSI
           color[1].isUInt() &&
           color[2].isUInt())
       {
-        hasBackgroundColor_ = true;
-        backgroundRed_ = color[0].asUInt();
-        backgroundGreen_ = color[1].asUInt();
-        backgroundBlue_ = color[2].asUInt();
+        backgroundColor_.SetValue(color[0].asUInt(), color[1].asUInt(), color[2].asUInt());
       }
     }
 
@@ -517,45 +507,6 @@ namespace OrthancWSI
     }
 
     return true;  // Success
-  }
-
-
-  uint8_t DicomPyramidInstance::GetBackgroundRed() const
-  {
-    if (hasBackgroundColor_)
-    {
-      return backgroundRed_;
-    }
-    else
-    {
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
-    }
-  }
-
-
-  uint8_t DicomPyramidInstance::GetBackgroundGreen() const
-  {
-    if (hasBackgroundColor_)
-    {
-      return backgroundGreen_;
-    }
-    else
-    {
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
-    }
-  }
-
-
-  uint8_t DicomPyramidInstance::GetBackgroundBlue() const
-  {
-    if (hasBackgroundColor_)
-    {
-      return backgroundBlue_;
-    }
-    else
-    {
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
-    }
   }
 
 

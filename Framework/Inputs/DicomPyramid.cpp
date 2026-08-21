@@ -109,13 +109,7 @@ namespace OrthancWSI
             tokens[2] == "VOLUME" ||
             tokens[2] == "THUMBNAIL" /* "may be the apex (lowest resolution) layer of a Multi-Resolution Pyramid" */)
         {
-          if (instance->HasBackgroundColor())
-          {
-            backgroundRed_ = instance->GetBackgroundRed();
-            backgroundGreen_ = instance->GetBackgroundGreen();
-            backgroundBlue_ = instance->GetBackgroundBlue();
-          }
-
+          backgroundColor_ = instance->GetBackgroundColor();
           instances_.push_back(instance.release());
         }
       }
@@ -170,10 +164,7 @@ namespace OrthancWSI
                              const std::string& seriesId,
                              bool useCache) :
     orthanc_(orthanc),
-    seriesId_(seriesId),
-    backgroundRed_(255),
-    backgroundGreen_(255),
-    backgroundBlue_(255)
+    seriesId_(seriesId)
   {
     RegisterInstances(seriesId, useCache);
 

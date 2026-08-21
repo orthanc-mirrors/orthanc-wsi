@@ -47,6 +47,7 @@ namespace OrthancWSI
     unsigned int          tileHeight_;
     Tiles                 tiles_;
     Orthanc::PhotometricInterpretation  photometric_;
+    BackgroundColor       backgroundColor_;
 
   public:
     InMemoryTiledImage(Orthanc::PixelFormat format,
@@ -54,7 +55,8 @@ namespace OrthancWSI
                        unsigned int countTilesY,
                        unsigned int tileWidth,
                        unsigned int tileHeight,
-                       Orthanc::PhotometricInterpretation photometric);
+                       Orthanc::PhotometricInterpretation photometric,
+                       BackgroundColor backgroundColor);
 
     virtual ~InMemoryTiledImage();
 
@@ -123,6 +125,11 @@ namespace OrthancWSI
     virtual Orthanc::PhotometricInterpretation GetPhotometricInterpretation() const ORTHANC_OVERRIDE
     {
       return photometric_;
+    }
+
+    virtual BackgroundColor GetBackgroundColor() const ORTHANC_OVERRIDE
+    {
+      return backgroundColor_;
     }
   };
 }

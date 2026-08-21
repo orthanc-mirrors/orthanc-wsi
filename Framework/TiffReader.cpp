@@ -26,6 +26,9 @@
 #include <Logging.h>
 #include <OrthancException.h>
 
+#include <boost/lexical_cast.hpp>
+
+
 namespace OrthancWSI
 {
   TiffReader::TiffReader(const std::string& path)
@@ -45,6 +48,44 @@ namespace OrthancWSI
     {
       TIFFClose(tiff_);
       tiff_ = NULL;
+    }
+  }
+
+
+  static std::string DescribeTiffPlanarConfig(unsigned int value)
+  {
+    switch (value)
+    {
+      case PLANARCONFIG_CONTIG:
+        return "CONTIG";
+
+      case PLANARCONFIG_SEPARATE:
+        return "SEPARATE";
+
+      default:
+        return boost::lexical_cast<std::string>(value);
+    }
+  }
+
+
+  static std::string DescribeTiffPhotometry(unsigned int value)
+  {
+    switch (value)
+    {
+      case PHOTOMETRIC_RGB:
+        return "RGB";
+
+      case PHOTOMETRIC_PALETTE:
+        return "PALETTE";
+
+      case PHOTOMETRIC_YCBCR:
+        return "YCBCR";
+
+      case PHOTOMETRIC_CIELAB:
+        return "CIELAB";
+
+      default:
+        return boost::lexical_cast<std::string>(value);
     }
   }
 
@@ -103,7 +144,7 @@ namespace OrthancWSI
           break;
 
         default:
-          LOG(ERROR) << "Unknown photometric interpretation in TIFF: " << photometricTiff;
+          LOG(WARNING) << "Unsupported photometric interpretation in TIFF: " << DescribeTiffPhotometry(photometricTiff);
           return false;
       }
     }
@@ -124,6 +165,10 @@ namespace OrthancWSI
     }
     else
     {
+      LOG(WARNING) << "Unsupported TIFF layout: " << EnumerationToString(compression) << " with "
+                   << channels << " channels, " << bpp << " bpp, "
+                   << DescribeTiffPlanarConfig(planar) << " planar configuration, and "
+                   << DescribeTiffPhotometry(photometricTiff) << " photometry";
       return false;
     }
 

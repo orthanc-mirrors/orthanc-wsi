@@ -37,7 +37,8 @@ namespace OrthancWSI
   public:
     TruncatedPyramidWriter(IPyramidWriter& lower,
                            unsigned int upperLevelIndex,
-                           Orthanc::PhotometricInterpretation photometric);
+                           Orthanc::PhotometricInterpretation photometric,
+                           const BackgroundColor& backgroundColor);
 
     virtual unsigned int GetLevelCount() const ORTHANC_OVERRIDE
     {

@@ -106,5 +106,10 @@ namespace OrthancWSI
 
     bool LookupImagedVolumeSize(double& width,
                                 double& height) const;
+
+    virtual BackgroundColor GetBackgroundColor() const ORTHANC_OVERRIDE
+    {
+      return BackgroundColor();  // No background color
+    }
   };
 }

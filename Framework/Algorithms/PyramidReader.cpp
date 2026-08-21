@@ -70,11 +70,7 @@ namespace OrthancWSI
         decoded_->GetRegion(a, 0, bottom,
                             that_.sourceTileWidth_, 
                             that_.sourceTileHeight_ - bottom);
-        ImageToolbox::Set(a, 
-                          that_.parameters_.GetBackgroundColorRed(),
-                          that_.parameters_.GetBackgroundColorGreen(),
-                          that_.parameters_.GetBackgroundColorBlue());
-
+        that_.parameters_.FillBackgroundColor(a);
       }
 
       if ((tileX_ + 1) * that_.sourceTileWidth_ > that_.levelWidth_)
@@ -87,10 +83,7 @@ namespace OrthancWSI
         decoded_->GetRegion(a, right, 0, 
                             that_.sourceTileWidth_ - right, 
                             that_.sourceTileHeight_);
-        ImageToolbox::Set(a,
-                          that_.parameters_.GetBackgroundColorRed(),
-                          that_.parameters_.GetBackgroundColorGreen(),
-                          that_.parameters_.GetBackgroundColorBlue());
+        that_.parameters_.FillBackgroundColor(a);
       }
     }
 
@@ -158,7 +151,8 @@ namespace OrthancWSI
           throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
         }
 
-        decoded_.reset(ImageToolbox::DecodeTile(rawTile_, rawTileCompression_));
+        decoded_.reset(that_.DecodeRawTile(rawTile_, rawTileCompression_));
+
         if (decoded_.get() == NULL)
         {
           throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
@@ -177,15 +171,26 @@ namespace OrthancWSI
   };
 
 
+  Orthanc::ImageAccessor* PyramidReader::DecodeRawTile(const std::string& tile,
+                                                       ImageCompression compression) const
+  {
+    if (compression == ImageCompression_None)
+    {
+      return ImageToolbox::DecodeRawTile(tile, source_.GetPixelFormat(), sourceTileWidth_, sourceTileHeight_);
+    }
+    else
+    {
+      return ImageToolbox::DecodeTile(tile, compression);
+    }
+  }
+
+
   Orthanc::ImageAccessor& PyramidReader::GetOutsideTile()
   {
     if (outside_.get() == NULL)
     {
       outside_.reset(ImageToolbox::Allocate(source_.GetPixelFormat(), targetTileWidth_, targetTileHeight_));
-      ImageToolbox::Set(*outside_,
-                        parameters_.GetBackgroundColorRed(),
-                        parameters_.GetBackgroundColorGreen(),
-                        parameters_.GetBackgroundColorBlue());
+      parameters_.FillBackgroundColor(*outside_);
     }
 
     return *outside_;
@@ -209,7 +214,7 @@ namespace OrthancWSI
   {
     if (parameters_.IsSafetyCheck())
     {
-      std::unique_ptr<Orthanc::ImageAccessor> decoded(ImageToolbox::DecodeTile(tile, compression));
+      std::unique_ptr<Orthanc::ImageAccessor> decoded(DecodeRawTile(tile, compression));
       CheckTileSize(*decoded);
     }
   }
