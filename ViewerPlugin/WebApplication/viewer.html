@@ -418,17 +418,17 @@
             <div>
               <template v-for="prop in annotationProperties">
                 <div v-if="prop.type === 'readonly'" class="d-flex align-items-baseline border-bottom py-1 gap-2">
-                  <span class="text-muted small flex-shrink-0" style="width:8em">{{prop.label}}</span>
+                  <span class="text-muted small flex-shrink-0" style="width:5em">{{prop.label}}</span>
                   <span class="text-break small">{{prop.value}}</span>
                 </div>
                 <div v-else-if="prop.type === 'editable'" class="d-flex align-items-center border-bottom py-1 gap-2">
-                  <label class="text-muted small flex-shrink-0 mb-0" style="width:8em">{{prop.label}}</label>
+                  <label class="text-muted small flex-shrink-0 mb-0" style="width:5em">{{prop.label}}</label>
                   <input type="text" class="form-control form-control-sm small flex-grow-1"
                          v-model="prop.value"
                          v-on:change="UpdateAnnotationProperty(prop)">
                 </div>
                 <div v-else-if="prop.type === 'dropdown'" class="d-flex align-items-center border-bottom py-1 gap-2">
-                  <label class="text-muted small flex-shrink-0 mb-0" style="width:8em">{{prop.label}}</label>
+                  <label class="text-muted small flex-shrink-0 mb-0" style="width:5em">{{prop.label}}</label>
                   <select class="form-select form-select-sm small flex-grow-1"
                           v-model="prop.value"
                           v-on:change="UpdateAnnotationProperty(prop)">

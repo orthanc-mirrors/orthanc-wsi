@@ -241,6 +241,12 @@ var app = new Vue({
               if (geometry !== null) {
                 var feature = new ol.Feature(geometry);
                 feature.set('layer-id', layerId);
+
+                var note = response.data.features[i]['note'];
+                if (note !== undefined) {
+                  feature.set('note', note);
+                }
+
                 that.drawSource.addFeature(feature);
               }
             }
@@ -275,6 +281,12 @@ var app = new Vue({
 
           if (item !== null) {
             item['layer-id'] = feature.get('layer-id');
+
+            var note = feature.get('note');
+            if (note !== undefined) {
+              item['note'] = note;
+            }
+
             features.push(item);
           }
         });
@@ -418,6 +430,7 @@ var app = new Vue({
     UpdateAnnotationProperty: function(prop) {
       if (this.selectedFeature && prop.featureProp) {
         this.selectedFeature.set(prop.featureProp, prop.value);
+        this.SaveUserFeatures();
       }
     },
 
@@ -972,6 +985,8 @@ var app = new Vue({
             // Rectangle, closed polygon, freehand polygon
             that.AddReadOnlyProperty('Area', FormatArea(geometry.getArea(), that.map.getView().getProjection()));
           }
+
+          that.AddEditableProperty('Note', feature.get('note') || '', 'note');
 
           /*
           // TODO
