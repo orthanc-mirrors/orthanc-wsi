@@ -538,18 +538,18 @@
         <div id="popover-adjustments">
           <div class="container">
             <div class="mb-1">
-              <label for="range-brightness" class="form-label">Brightness:</label>
-              <input id="range-brightness" type="range" class="form-range" min="-1" max="1" step="0.01"
+              <label for="range-brightness" class="form-label">Brightness: <b class="ps-2">{{brightness}}</b></label>
+              <input id="range-brightness" type="range" class="form-range" min="-100" max="100" step="1"
                      v-model.number="brightness" v-on:input="map.render()">
             </div>
             <div class="mb-1">
-              <label for="range-contrast" class="form-label">Contrast:</label>
-              <input id="range-contrast" type="range" class="form-range" min="-1" max="1" step="0.01"
+              <label for="range-contrast" class="form-label">Contrast: <b class="ps-2">{{contrast}}</b></label>
+              <input id="range-contrast" type="range" class="form-range" min="-100" max="100" step="1"
                      v-model.number="contrast" v-on:input="map.render()">
             </div>
             <div class="mb-1">
-              <label for="range-saturation" class="form-label">Saturation:</label>
-              <input id="range-saturation" type="range" class="form-range" min="-1" max="1" step="0.01"
+              <label for="range-saturation" class="form-label">Saturation: <b class="ps-2">{{saturation}}</b></label>
+              <input id="range-saturation" type="range" class="form-range" min="-100" max="100" step="1"
                      v-model.number="saturation" v-on:input="map.render()">
             </div>
             <div class="d-grid">

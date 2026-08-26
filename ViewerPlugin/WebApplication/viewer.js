@@ -32,9 +32,9 @@ var app = new Vue({
       level: '',
       resourceId: '',
       frameNumber: 0,
-      brightness: 0, // In the range between [-1,1]
-      contrast: 0,   // In the range between [-1,1]
-      saturation: 0, // In the range between [-1,1]
+      brightness: 0, // In the range between [-100,100]
+      contrast: 0,   // In the range between [-100,100]
+      saturation: 0, // In the range between [-100,100]
       // hue: 0,        // Degrees, in the range between [-180,180]
 
       // Main state for annotations
@@ -746,9 +746,9 @@ var app = new Vue({
 
         if (context) {
           context.save();
-          var brightness = Math.pow(4, that.brightness);  // Ranges between 0.25 and 4
-          var contrast = Math.pow(4, that.contrast);      // Ranges between 0.25 and 4
-          var saturation = Math.pow(4, that.saturation);  // Ranges between 0.25 and 4
+          var brightness = Math.pow(4, that.brightness / 100.0);  // Ranges between 0.25 and 4
+          var contrast = Math.pow(4, that.contrast / 100.0);      // Ranges between 0.25 and 4
+          var saturation = Math.pow(4, that.saturation / 100.0);  // Ranges between 0.25 and 4
           context.filter =
             'brightness(' + brightness.toFixed(4) + ') ' +
             'contrast(' + contrast.toFixed(4) + ')' +
