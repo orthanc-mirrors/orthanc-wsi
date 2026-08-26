@@ -961,19 +961,31 @@ var app = new Vue({
           var geometry = feature.getGeometry();
 
           if (geometry.getType() === 'LineString') {
-            that.AddReadOnlyProperty('Length', FormatLength(geometry, that.map.getView().getProjection()));
-          } else {
-            // TODO
-            that.AddReadOnlyProperty('Length', '1.23 mm');
-            that.AddReadOnlyProperty('Bounding box', '100 x 200 px');
-            that.AddReadOnlyProperty('Surface', '0.05 mm²');
-            that.AddEditableProperty('Label', feature.get('label') || '', 'label');
-            that.AddDropdownProperty('Category', [
-              { value: 'tumor',    label: 'Tumor' },
-              { value: 'stroma',   label: 'Stroma' },
-              { value: 'necrosis', label: 'Necrosis' }
-            ], feature.get('category') || '', 'category');
+            // Line, freehand
+            that.AddReadOnlyProperty('Length', FormatLength(geometry.getLength(), that.map.getView().getProjection()));
+          } else if (geometry.getType() === 'Circle') {
+            // geometry.getArea() is not available on circles
+            var radius = geometry.getRadius();
+            var area = Math.PI * radius * radius;
+            that.AddReadOnlyProperty('Area', FormatArea(area, that.map.getView().getProjection()));
+          } else if (geometry.getType() === 'Polygon') {
+            // Rectangle, closed polygon, freehand polygon
+            that.AddReadOnlyProperty('Area', FormatArea(geometry.getArea(), that.map.getView().getProjection()));
           }
+
+          /*
+          // TODO
+          that.AddReadOnlyProperty('Length', '1.23 mm');
+          that.AddReadOnlyProperty('Bounding box', '100 x 200 px');
+          that.AddReadOnlyProperty('Surface', '0.05 mm²');
+          that.AddEditableProperty('Label', feature.get('label') || '', 'label');
+          that.AddDropdownProperty('Category', [
+          { value: 'tumor',    label: 'Tumor' },
+          { value: 'stroma',   label: 'Stroma' },
+          { value: 'necrosis', label: 'Necrosis' }
+          ], feature.get('category') || '', 'category');
+          */
+
           bootstrap.Offcanvas.getOrCreateInstance(document.getElementById('right-panel')).show();
         } else {
           that.selectedFeature = null;
@@ -1066,9 +1078,8 @@ function IsNear(a, b)
 }
 
 
-function FormatLength(geometry, projection)
+function FormatLength(lengthPx, projection)
 {
-  var lengthPx = geometry.getLength();
   var metersPerUnit = projection.getMetersPerUnit();
   if (metersPerUnit) {
     var meters = lengthPx * metersPerUnit;
@@ -1083,6 +1094,35 @@ function FormatLength(geometry, projection)
     }
   } else {
     return lengthPx.toFixed(0) + ' px';
+  }
+}
+
+
+function FormatArea(areaPx, projection)
+{
+  var metersPerUnit = projection.getMetersPerUnit();
+  if (metersPerUnit) {
+    var sqMeters = areaPx * metersPerUnit * metersPerUnit;
+
+    var units = [
+      { label: 'μm²', factor: 1e12 },
+      { label: 'mm²', factor: 1e6 },
+      { label: 'cm²', factor: 1e4 },
+      { label: 'm²',  factor: 1 },
+      { label: 'km²', factor: 1e-6 }
+    ];
+
+    for (var i = 0; i < units.length; i++) {
+      var scaled = sqMeters * units[i].factor;
+      if (scaled < 1000) {
+        return scaled.toFixed(2) + ' ' + units[i].label;
+      }
+    }
+
+    var largest = units[units.length - 1];
+    return (sqMeters * largest.factor).toFixed(2) + ' ' + largest.label;
+  } else {
+    return areaPx.toFixed(0) + ' px²';
   }
 }
 
