@@ -242,9 +242,9 @@ var app = new Vue({
                 var feature = new ol.Feature(geometry);
                 feature.set('layer-id', layerId);
 
-                var note = response.data.features[i]['note'];
-                if (note !== undefined) {
-                  feature.set('note', note);
+                var label = response.data.features[i]['label'];
+                if (label !== undefined) {
+                  feature.set('label', label);
                 }
 
                 that.drawSource.addFeature(feature);
@@ -282,9 +282,9 @@ var app = new Vue({
           if (item !== null) {
             item['layer-id'] = feature.get('layer-id');
 
-            var note = feature.get('note');
-            if (note !== undefined) {
-              item['note'] = note;
+            var label = feature.get('label');
+            if (label !== undefined) {
+              item['label'] = label;
             }
 
             features.push(item);
@@ -986,7 +986,7 @@ var app = new Vue({
             that.AddReadOnlyProperty('Area', FormatArea(geometry.getArea(), that.map.getView().getProjection()));
           }
 
-          that.AddEditableProperty('Note', feature.get('note') || '', 'note');
+          that.AddEditableProperty('Label', feature.get('label') || '', 'label');
 
           /*
           // TODO
