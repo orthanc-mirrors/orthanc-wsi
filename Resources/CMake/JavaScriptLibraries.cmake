@@ -90,6 +90,7 @@ file(COPY
 
 file(COPY
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/arrow-clockwise.svg
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/arrow-up-right.svg
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/arrows-fullscreen.svg
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/arrows-move.svg
   ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/arrows.svg

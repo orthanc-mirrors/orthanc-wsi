@@ -79,6 +79,7 @@ var app = new Vue({
       drawClosedPolygon: null,
       drawFreehand: null,
       drawFreehandLine: null,
+      drawArrow: null,
       moveFeature: null,
       modifyFeature: null,
       selectAnnotation: null,
@@ -236,11 +237,16 @@ var app = new Vue({
 
             if (layerId !== undefined &&
                 availableLayerIds.includes(layerId)) {
-              var geometry = UnserializeFeature(response.data.features[i]);
+              var geometry = UnserializeGeometry(response.data.features[i]);
 
               if (geometry !== null) {
                 var feature = new ol.Feature(geometry);
                 feature.set('layer-id', layerId);
+
+                var type = response.data.features[i]['type'];
+                if (type !== undefined) {
+                  feature.set('type', type);
+                }
 
                 var label = response.data.features[i]['label'];
                 if (label !== undefined) {
@@ -490,6 +496,7 @@ var app = new Vue({
       this.map.removeInteraction(this.drawClosedPolygon);
       this.map.removeInteraction(this.drawFreehand);
       this.map.removeInteraction(this.drawFreehandLine);
+      this.map.removeInteraction(this.drawArrow);
       this.map.removeInteraction(this.moveFeature);
       this.map.removeInteraction(this.modifyFeature);
       this.map.removeInteraction(this.selectAnnotation);
@@ -523,6 +530,7 @@ var app = new Vue({
         'closed-polygon': this.drawClosedPolygon,
         'freehand':       this.drawFreehand,
         'freehand-line':  this.drawFreehandLine,
+        'arrow':          this.drawArrow,
         'move':           this.moveFeature,
         'modify':         this.modifyFeature
       };
@@ -878,10 +886,14 @@ var app = new Vue({
 
       this.drawLayer = new ol.layer.Vector({
         source: this.drawSource,
-        style: function(feature) {
+        style: function(feature, resolution) {
           var layer = GetLayerOfFeature(feature);
           if (layer.visible) {
-            return CreateLayerStyle(layer.color);
+            if (feature.get('type') === 'arrow') {
+              return CreateArrowStyle(feature, resolution, layer.color);
+            } else {
+              return CreateLayerStyle(layer.color);
+            }
           } else {
             return null;
           }
@@ -905,7 +917,11 @@ var app = new Vue({
       this.map.addLayer(this.sharedLayer);
 
       // Draw interactions (inactive until toggled)
-      this.drawLine = new ol.interaction.Draw({ source: this.drawSource, type: 'LineString' });
+      this.drawLine = new ol.interaction.Draw({
+        source: this.drawSource,
+        type: 'LineString',
+        maxPoints: 2
+      });
       this.drawPoint = new ol.interaction.Draw({ source: this.drawSource, type: 'Point' });
       this.drawCircle = new ol.interaction.Draw({ source: this.drawSource, type: 'Circle' });
       this.drawRectangle = new ol.interaction.Draw({
@@ -916,6 +932,11 @@ var app = new Vue({
       this.drawClosedPolygon = new ol.interaction.Draw({ source: this.drawSource, type: 'Polygon' });
       this.drawFreehand = new ol.interaction.Draw({ source: this.drawSource, type: 'Polygon', freehand: true });
       this.drawFreehandLine = new ol.interaction.Draw({ source: this.drawSource, type: 'LineString', freehand: true });
+      this.drawArrow = new ol.interaction.Draw({
+        source: this.drawSource,
+        type: 'LineString',
+        maxPoints: 2
+      });
 
       this.moveFeature = new ol.interaction.Translate({ source: this.drawSource });
       this.modifyFeature = new ol.interaction.Modify({ source: this.drawSource });
@@ -971,6 +992,10 @@ var app = new Vue({
       this.drawClosedPolygon.on('drawend', function(e) { onDrawEnd(e, true); });
       this.drawFreehand.on('drawend', function(e) { onDrawEnd(e, false); });
       this.drawFreehandLine.on('drawend', function(e) { onDrawEnd(e, false); });
+      this.drawArrow.on('drawend', function(e) {
+        e.feature.set('type', 'arrow');
+        onDrawEnd(e, false);
+      });
 
       this.moveFeature.on('translateend', function(e) { that.SaveUserFeatures(); });
       this.modifyFeature.on('modifyend', function(e) { that.SaveUserFeatures(); });
@@ -1182,13 +1207,70 @@ function CreateLayerStyle(color)
 }
 
 
+function CreateArrowStyle(feature, resolution, color)
+{
+  const coordinates = feature.getGeometry().getCoordinates();
+
+  if (coordinates.length == 2) {
+    const start = coordinates[0];
+    const end = coordinates[1];
+
+    const angle = Math.atan2(
+      end[1] - start[1],
+      end[0] - start[0]
+    );
+
+    const headLength = 10 * resolution;
+    const headAngle = Math.PI / 6;
+
+    const p1 = [
+      end[0] - headLength * Math.cos(angle - headAngle),
+      end[1] - headLength * Math.sin(angle - headAngle)
+    ];
+
+    const p2 = [
+      end[0] - headLength * Math.cos(angle + headAngle),
+      end[1] - headLength * Math.sin(angle + headAngle)
+    ];
+
+    return [
+      // shaft
+      new ol.style.Style({
+        stroke: new ol.style.Stroke({
+          color: color,
+          width: 2
+        })
+      }),
+
+      // arrow head
+      new ol.style.Style({
+        geometry: new ol.geom.LineString([
+          p1, end, p2
+        ]),
+        stroke: new ol.style.Stroke({
+          color: color,
+          width: 2
+        })
+      })
+    ];
+  }
+}
+
+
 function SerializeFeature(feature)
 {
   var type = feature.getGeometry().getType();
 
   if (type === 'LineString') {
+    var s;
+    if (feature.get('type') === 'arrow') {
+      s = 'arrow';
+    } else {
+      s = 'polyline';
+    }
+
     return {
-      'type' : 'polyline',
+      'type' : s,
       'coordinates' : feature.getGeometry().getCoordinates()
     };
   } else if (type === 'Point') {
@@ -1214,10 +1296,14 @@ function SerializeFeature(feature)
 }
 
 
-function UnserializeFeature(json)
+function UnserializeGeometry(json)
 {
   if (json.type === 'polyline') {
     return new ol.geom.LineString(json['coordinates']);
+  } else if (json.type === 'arrow') {
+    var feature = new ol.geom.LineString(json['coordinates']);
+    feature.set('type', 'arrow');
+    return feature;
   } else if (json.type === 'point') {
     return new ol.geom.Point(json['coordinates']);
   } else if (json.type === 'circle') {

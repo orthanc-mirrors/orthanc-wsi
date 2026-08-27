@@ -103,6 +103,7 @@
 
       /* The used icons must be added to ../Resources/CMake/JavaScriptLibraries.cmake */
       .bi-arrow-clockwise       { -webkit-mask-image: url("../libs/svg/arrow-clockwise.svg"); mask-image: url("../libs/svg/arrow-clockwise.svg"); }
+      .bi-arrow-up-right        { -webkit-mask-image: url("../libs/svg/arrow-up-right.svg"); mask-image: url("../libs/svg/arrow-up-right.svg"); }
       .bi-arrows                { -webkit-mask-image: url("../libs/svg/arrows.svg"); mask-image: url("../libs/svg/arrows.svg"); }
       .bi-arrows-fullscreen     { -webkit-mask-image: url("../libs/svg/arrows-fullscreen.svg"); mask-image: url("../libs/svg/arrows-fullscreen.svg"); }
       .bi-arrows-move           { -webkit-mask-image: url("../libs/svg/arrows-move.svg"); mask-image: url("../libs/svg/arrows-move.svg"); }
@@ -195,6 +196,13 @@
                     data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draw freehand closed polygon"
                     v-on:click="ToggleDrawTool('freehand')">
               <i class="bi bi-freehand-closed"></i>
+            </button>
+
+            <button type="button" class="btn btn-outline-secondary icon-btn"
+                    :class="{ active: activeDrawTool === 'arrow' }"
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draw arrow"
+                    v-on:click="ToggleDrawTool('arrow')">
+              <i class="bi bi-arrow-up-right"></i>
             </button>
           </div>
 
