@@ -247,6 +247,11 @@ var app = new Vue({
                   feature.set('label', label);
                 }
 
+                var date = response.data.features[i]['creation-datetime'];  // This is a numerical timestamp
+                if (date !== undefined) {
+                  feature.set('creation-datetime', new Date(date));
+                }
+
                 that.drawSource.addFeature(feature);
               }
             }
@@ -285,6 +290,11 @@ var app = new Vue({
             var label = feature.get('label');
             if (label !== undefined) {
               item['label'] = label;
+            }
+
+            var date = feature.get('creation-datetime');
+            if (date !== undefined) {
+              item['creation-datetime'] = date.getTime();
             }
 
             features.push(item);
@@ -945,6 +955,7 @@ var app = new Vue({
 
       function onDrawEnd(e, callPreventDoubleClickZoom) {
         e.feature.set('layer-id', app.activeUserLayerId);
+        e.feature.set('creation-datetime', new Date());
         if (callPreventDoubleClickZoom) {
           preventDoubleClickZoom();
         }
@@ -970,6 +981,13 @@ var app = new Vue({
         if (e.selected.length === 1) {
           var feature = e.selected[0];
           that.selectedFeature = feature;
+
+          var date = feature.get('creation-datetime');
+          if (date === undefined) {
+            that.AddReadOnlyProperty('Date', '');
+          } else {
+            that.AddReadOnlyProperty('Date', date.toLocaleString());
+          }
 
           var geometry = feature.getGeometry();
 
