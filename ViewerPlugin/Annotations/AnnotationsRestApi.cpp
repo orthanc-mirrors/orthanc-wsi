@@ -37,6 +37,8 @@
 
 #include "../../Resources/Orthanc/Plugins/OrthancPluginCppWrapper.h"
 
+#include <boost/regex.hpp>
+
 
 namespace OrthancWSI
 {
@@ -414,12 +416,12 @@ namespace OrthancWSI
   class UserLayer : public ILayer
   {
   private:
-    bool              isVisible_;
-    BackgroundColor   color_;
-    std::string       id_;
-    std::string       name_;
-    std::set<UserId>  sharedWith_;
-    bool              isPublic_;
+    bool                   isVisible_;
+    BackgroundColor        color_;
+    std::string            id_;
+    std::string            name_;
+    std::set<std::string>  sharedWith_;
+    bool                   isPublic_;
 
   public:
     UserLayer(const BackgroundColor& color,
@@ -446,17 +448,7 @@ namespace OrthancWSI
       name_ = Orthanc::SerializationToolbox::ReadString(serialized, KEY_NAME);
       isPublic_ = Orthanc::SerializationToolbox::ReadBoolean(serialized, KEY_PUBLIC);
 
-      const Json::Value& sharedWith = serialized[KEY_SHARED_WITH];
-
-      if (!sharedWith.isArray())
-      {
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_NetworkProtocol);
-      }
-
-      for (Json::Value::ArrayIndex i = 0; i < sharedWith.size(); i++)
-      {
-        sharedWith_.insert(UserId(sharedWith[i]));
-      }
+      Orthanc::SerializationToolbox::ReadSetOfStrings(sharedWith_, serialized, KEY_SHARED_WITH);
     }
 
     virtual std::string GetId() const ORTHANC_OVERRIDE
@@ -486,7 +478,7 @@ namespace OrthancWSI
 
       return (isPublic_ ||
               user.GetType() == UserId::Type_Root ||
-              sharedWith_.find(user) != sharedWith_.end());
+              sharedWith_.find(user.GetName()) != sharedWith_.end());
     }
 
     void Assign(const UserLayer& other)
@@ -501,11 +493,9 @@ namespace OrthancWSI
     virtual void Serialize(Json::Value& serialized) const ORTHANC_OVERRIDE
     {
       Json::Value sharedWith = Json::arrayValue;
-      for (std::set<UserId>::const_iterator it = sharedWith_.begin(); it != sharedWith_.end(); ++it)
+      for (std::set<std::string>::const_iterator it = sharedWith_.begin(); it != sharedWith_.end(); ++it)
       {
-        Json::Value item;
-        it->Serialize(item);
-        sharedWith.append(item);
+        sharedWith.append(*it);
       }
 
       serialized = Json::objectValue;
@@ -845,6 +835,30 @@ namespace OrthancWSI
       {
         assert(it->second != NULL);
         delete it->second;
+      }
+    }
+
+
+    void SearchActiveUsers(std::set<std::string>& target,
+                           const std::string& query)
+    {
+      Orthanc::ReaderWriterLock::ReadLock lock(mutex_);
+
+      target.clear();
+
+      const boost::regex re(query);
+      const std::set<UserId>& activeUsers = info_->GetActiveUsers();
+
+      for (std::set<UserId>::const_iterator it = activeUsers.begin(); it != activeUsers.end(); ++it)
+      {
+        assert(it->GetType() == UserId::Type_Root ||
+               it->GetType() == UserId::Type_Standard);
+
+        if (it->GetType() == UserId::Type_Standard &&
+            boost::regex_search(it->GetName(), re))
+        {
+          target.insert(it->GetName());
+        }
       }
     }
 
@@ -1426,6 +1440,45 @@ namespace OrthancWSI
       ViewerToolbox::AnswerJson(output, answer);
     }
   }
+
+
+  void SearchUsers(OrthancPluginRestOutput* output,
+                   const char* url,
+                   const OrthancPluginHttpRequest* request)
+  {
+    if (request->method != OrthancPluginHttpMethod_Post)
+    {
+      OrthancPluginSendMethodNotAllowed(OrthancPlugins::GetGlobalContext(), output, "POST");
+    }
+    else
+    {
+      AnnotationsCommandContext context(request);
+
+      const std::string query = context.GetBodyString("query");
+
+      std::set<std::string> users;
+      context.GetAnnotations().SearchActiveUsers(users, query);
+
+      Json::Value answer = Json::arrayValue;
+
+      for (std::set<std::string>::const_iterator it = users.begin(); it != users.end(); ++it)
+      {
+        if (answer.size() < 20 &&
+            // Don't add self
+            (context.GetUser().GetAnnotatingId().GetType() != UserId::Type_Standard ||
+             context.GetUser().GetAnnotatingId().GetName() != *it))
+        {
+          answer.append(*it);
+        }
+        else
+        {
+          break;  // Don't load too many users
+        }
+      }
+
+      ViewerToolbox::AnswerJson(output, answer);
+    }
+  }
 }
 
 
@@ -1441,6 +1494,7 @@ void RegisterAnnotationsRestApi()
     OrthancPlugins::RegisterRestCallback<OrthancWSI::SaveUserLayer>("/wsi/api/save-user-layer", true);
     OrthancPlugins::RegisterRestCallback<OrthancWSI::LoadUserFeatures>("/wsi/api/load-user-features", true);
     OrthancPlugins::RegisterRestCallback<OrthancWSI::SaveUserFeatures>("/wsi/api/save-user-features", true);
+    OrthancPlugins::RegisterRestCallback<OrthancWSI::SearchUsers>("/wsi/api/search-users", true);
 
     // TODO
     OrthancPlugins::RegisterRestCallback<OrthancWSI::ListSharedLayers>("/wsi/api/shared-layers", true);

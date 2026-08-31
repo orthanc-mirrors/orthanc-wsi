@@ -87,6 +87,15 @@ var app = new Vue({
        **/
       referenceMagnification: 40,
 
+      // Share user layer modal
+      shareLayerTarget: {},
+      shareLayerPublic: false,
+      shareLayerUsers: [],
+      shareLayerManualUserId: '',
+      shareLayerSearchQuery: '',
+      shareLayerSearchResults: [],
+      modalShareUserLayer: null,
+
       // TODO - Shared layers
       sharedSource: null,
       sharedLayer: null,
@@ -114,6 +123,7 @@ var app = new Vue({
 
     this.modalDeleteUserLayer = new bootstrap.Modal(document.getElementById('modal-delete-user-layer'));
     this.modalDeleteAnnotation = new bootstrap.Modal(document.getElementById('modal-delete-annotation'));
+    this.modalShareUserLayer = new bootstrap.Modal(document.getElementById('modal-share-user-layer'));
     this.modalImportSharedLayer = new bootstrap.Modal(document.getElementById('modal-import-shared-layer'));  // TODO
 
     document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) {
@@ -1053,6 +1063,52 @@ var app = new Vue({
     // -----------------------------------------------------------------------
     // TODO - Shared layers
     // -----------------------------------------------------------------------
+
+    ShowShareUserLayerModal: function(layer) {
+      this.shareLayerTarget = layer;
+      this.shareLayerPublic = layer.public;
+      this.shareLayerUsers = layer.shared_with;
+      this.shareLayerSearchQuery = '';
+      this.shareLayerSearchResults = [];
+      this.modalShareUserLayer.show();
+    },
+
+    ShareLayerAddUser: function(userId) {
+      var trimmed = userId.trim();
+
+      if (!this.shareLayerUsers.includes(trimmed)) {
+        this.shareLayerUsers.push(trimmed);
+      }
+
+      this.shareLayerSearchQuery = '';
+      this.shareLayerSearchResults = [];
+    },
+
+    ShareLayerSearchUsers: function() {
+      var query = this.shareLayerSearchQuery.trim();
+      if (!query) {
+        this.shareLayerSearchResults = [];
+      } else {
+        var that = this;
+        axios.post('../api/search-users',
+                   this.CreatePostPayload({ 'query': query }))
+          .then(function(response) {
+            that.shareLayerSearchResults = response.data;
+          })
+          .catch(function() {
+            that.shareLayerSearchResults = [];
+          });
+      }
+    },
+
+    ShareLayerSave: function() {
+      this.shareLayerTarget.public = this.shareLayerPublic;
+      this.shareLayerTarget.shared_with = this.shareLayerUsers;
+      this.SaveUserLayer(this.shareLayerTarget);
+      this.modalShareUserLayer.hide();
+    },
+
+
 
     ShowImportSharedLayerModal: function() {
       this.importSelectedUser = '';
