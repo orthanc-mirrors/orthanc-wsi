@@ -31,6 +31,7 @@
 #include "OrthancPluginConnection.h"
 #include "OrthancPyramidFrameFetcher.h"
 #include "RawTile.h"
+#include "ViewerConfiguration.h"
 #include "ViewerToolbox.h"
 
 #include <Logging.h>
@@ -596,39 +597,20 @@ extern "C"
 #endif
     }
 
-    OrthancPlugins::OrthancConfiguration mainConfiguration;
-
-    OrthancPlugins::OrthancConfiguration wsiConfiguration;
-    mainConfiguration.GetSection(wsiConfiguration, "WholeSlideImaging");
-
-    const bool enableIIIF = wsiConfiguration.GetBooleanValue("EnableIIIF", true);
+    const bool enableIIIF = OrthancWSI::ViewerConfiguration::GetInstance().IsIIIFEnabled();
     bool serveMirador = false;
     bool serveOpenSeadragon = false;
     std::string iiifPublicUrl;
 
     if (enableIIIF)
     {
-      if (!wsiConfiguration.LookupStringValue(iiifPublicUrl, "OrthancPublicURL"))
-      {
-        unsigned int port = mainConfiguration.GetUnsignedIntegerValue("HttpPort", 8042);
-        iiifPublicUrl = "http://localhost:" + boost::lexical_cast<std::string>(port) + "/";
-      }
-
-      if (iiifPublicUrl.empty() ||
-          iiifPublicUrl[iiifPublicUrl.size() - 1] != '/')
-      {
-        iiifPublicUrl += "/";
-      }
-
-      iiifPublicUrl += "wsi/iiif/";
-
       InitializeIIIF(iiifPublicUrl);
 
-      serveMirador = wsiConfiguration.GetBooleanValue("ServeMirador", false);
-      serveOpenSeadragon = wsiConfiguration.GetBooleanValue("ServeOpenSeadragon", false);
+      serveMirador = OrthancWSI::ViewerConfiguration::GetInstance().IsServeMirador();
+      serveOpenSeadragon = OrthancWSI::ViewerConfiguration::GetInstance().IsServeOpenSeadragon();
 
       bool value;
-      if (wsiConfiguration.LookupBooleanValue(value, "ForcePowersOfTwoScaleFactors"))
+      if (OrthancWSI::ViewerConfiguration::GetInstance().LookupForcePowersOfTwoScaleFactors(value))
       {
         SetIIIFForcePowersOfTwoScaleFactors(value);
       }

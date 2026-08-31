@@ -195,6 +195,7 @@ set(ORTHANC_WSI_SOURCES
   OrthancPyramidFrameFetcher.cpp
   Plugin.cpp
   RawTile.cpp
+  ViewerConfiguration.cpp
   ViewerToolbox.cpp
 
   ${ORTHANC_WSI_DIR}/Framework/BackgroundColor.cpp
