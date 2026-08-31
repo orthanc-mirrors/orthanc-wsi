@@ -111,6 +111,7 @@ namespace OrthancWSI
   static const char* const KEY_NAME = "name";
   static const char* const KEY_PUBLIC = "public";
   static const char* const KEY_SHARED_WITH = "shared_with";
+  static const char* const KEY_VERSION = "version";
   static const char* const KEY_VISIBLE = "visible";
 
   static const char* const KEY_VALUE_STORE = "wsi";
@@ -1196,13 +1197,35 @@ namespace OrthancWSI
         Orthanc::GzipCompressor compressor;
         Orthanc::IBufferCompressor::Uncompress(uncompressed, compressor, compressed);
 
-        if (!Orthanc::Toolbox::ReadJson(answer[KEY_FEATURES], uncompressed))
+        Json::Value unserialized;
+
+        if (!Orthanc::Toolbox::ReadJson(unserialized, uncompressed) ||
+            !unserialized.isObject() ||
+            !unserialized.isMember(KEY_FEATURES))
         {
           throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
         }
+
+        const unsigned int version = Orthanc::SerializationToolbox::ReadUnsignedInteger(unserialized, KEY_VERSION);
+
+        if (version == ORTHANC_WSI_ANNOTATIONS_VERSION)
+        {
+          answer[KEY_FEATURES] = unserialized[KEY_FEATURES];
+        }
+        else
+        {
+          switch (version)
+          {
+            // Implement version conversion here
+
+          default:
+            throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "Cannot load annotations from version: " +
+                                            boost::lexical_cast<std::string>(version));
+          }
+        }
       }
 #else
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "Your Orthanc SDK is too old to load annotations");
+      LOG(WARNING) << "Your Orthanc SDK is too old to load annotations";
 #endif
 
       ViewerToolbox::AnswerJson(output, answer);
@@ -1222,19 +1245,24 @@ namespace OrthancWSI
     {
       AnnotationsCommandContext context(request);
 
-      std::string features;
-      Orthanc::Toolbox::WriteFastJson(features, context.GetBodyField(KEY_FEATURES));
+      Json::Value content;
+      content[KEY_VERSION] = static_cast<unsigned int>(ORTHANC_WSI_ANNOTATIONS_VERSION);
+      content[KEY_FEATURES] = context.GetBodyField(KEY_FEATURES);
+
+      std::string serialized;
+      Orthanc::Toolbox::WriteFastJson(serialized, content);
 
       std::string compressed;
       Orthanc::GzipCompressor compressor;
-      Orthanc::IBufferCompressor::Compress(compressed, compressor, features);
+      Orthanc::IBufferCompressor::Compress(compressed, compressor, serialized);
 
 #if ORTHANC_PLUGINS_VERSION_IS_ABOVE(1, 12, 8)
       SetKeyValueStore(context.GetFeaturesKey(), compressed);
-      ViewerToolbox::AnswerEmpty(output);
 #else
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "Your Orthanc SDK is too old to save annotations");
+      LOG(WARNING) << "Your Orthanc SDK is too old to save annotations";
 #endif
+
+      ViewerToolbox::AnswerEmpty(output);
     }
   }
 
