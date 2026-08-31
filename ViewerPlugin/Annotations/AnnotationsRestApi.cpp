@@ -164,14 +164,14 @@ namespace OrthancWSI
     {
     }
 
-    virtual void Serialize(Json::Value& target) const = 0;
+    virtual void Serialize(Json::Value& serialized) const = 0;
 
-    static void Serialize(std::string& target,
+    static void Serialize(std::string& serialized,
                           const ISerializable& obj)
     {
       Json::Value value;
       obj.Serialize(value);
-      Orthanc::Toolbox::WriteFastJson(target, value);
+      Orthanc::Toolbox::WriteFastJson(serialized, value);
     }
   };
 
@@ -270,9 +270,9 @@ namespace OrthancWSI
       }
     }
 
-    virtual void Serialize(Json::Value& target) const ORTHANC_OVERRIDE
+    virtual void Serialize(Json::Value& serialized) const ORTHANC_OVERRIDE
     {
-      target = Json::arrayValue;
+      serialized = Json::arrayValue;
 
       for (Content::const_iterator it = content_.begin(); it != content_.end(); ++it)
       {
@@ -280,7 +280,7 @@ namespace OrthancWSI
 
         Json::Value item;
         (*it)->Serialize(item);
-        target.append(item);
+        serialized.append(item);
       }
     }
   };
@@ -398,21 +398,21 @@ namespace OrthancWSI
     {
     }
 
-    UserLayer(const Json::Value& source)
+    UserLayer(const Json::Value& serialized)
     {
-      if (!source.isObject() ||
-          !source.isMember(KEY_SHARED_WITH))
+      if (!serialized.isObject() ||
+          !serialized.isMember(KEY_SHARED_WITH))
       {
         throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
       }
 
-      isVisible_ = Orthanc::SerializationToolbox::ReadBoolean(source, KEY_VISIBLE);
-      color_ = BackgroundColor::FromHexadecimalString(Orthanc::SerializationToolbox::ReadString(source, KEY_COLOR));
-      id_ = Orthanc::SerializationToolbox::ReadString(source, KEY_ID);
-      name_ = Orthanc::SerializationToolbox::ReadString(source, KEY_NAME);
-      isPublic_ = Orthanc::SerializationToolbox::ReadBoolean(source, KEY_PUBLIC);
+      isVisible_ = Orthanc::SerializationToolbox::ReadBoolean(serialized, KEY_VISIBLE);
+      color_ = BackgroundColor::FromHexadecimalString(Orthanc::SerializationToolbox::ReadString(serialized, KEY_COLOR));
+      id_ = Orthanc::SerializationToolbox::ReadString(serialized, KEY_ID);
+      name_ = Orthanc::SerializationToolbox::ReadString(serialized, KEY_NAME);
+      isPublic_ = Orthanc::SerializationToolbox::ReadBoolean(serialized, KEY_PUBLIC);
 
-      const Json::Value& sharedWith = source[KEY_SHARED_WITH];
+      const Json::Value& sharedWith = serialized[KEY_SHARED_WITH];
 
       if (!sharedWith.isArray())
       {
@@ -460,7 +460,7 @@ namespace OrthancWSI
       isPublic_ = other.isPublic_;
     }
 
-    virtual void Serialize(Json::Value& target) const ORTHANC_OVERRIDE
+    virtual void Serialize(Json::Value& serialized) const ORTHANC_OVERRIDE
     {
       Json::Value sharedWith = Json::arrayValue;
       for (std::set<UserId>::const_iterator it = sharedWith_.begin(); it != sharedWith_.end(); ++it)
@@ -470,13 +470,13 @@ namespace OrthancWSI
         sharedWith.append(item);
       }
 
-      target = Json::objectValue;
-      target[KEY_VISIBLE] = isVisible_;
-      target[KEY_COLOR] = color_.ToHexadecimalString();
-      target[KEY_ID] = id_;
-      target[KEY_NAME] = name_;
-      target[KEY_PUBLIC] = isPublic_;
-      target[KEY_SHARED_WITH] = sharedWith;
+      serialized = Json::objectValue;
+      serialized[KEY_VISIBLE] = isVisible_;
+      serialized[KEY_COLOR] = color_.ToHexadecimalString();
+      serialized[KEY_ID] = id_;
+      serialized[KEY_NAME] = name_;
+      serialized[KEY_PUBLIC] = isPublic_;
+      serialized[KEY_SHARED_WITH] = sharedWith;
     }
   };
 
@@ -501,19 +501,19 @@ namespace OrthancWSI
     {
     }
 
-    SharedLayer(const Json::Value& source)
+    SharedLayer(const Json::Value& serialized)
     {
-      if (!source.isObject() ||
-          !source.isMember(KEY_AUTHOR))
+      if (!serialized.isObject() ||
+          !serialized.isMember(KEY_AUTHOR))
       {
         throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
       }
 
-      isVisible_ = Orthanc::SerializationToolbox::ReadBoolean(source, KEY_VISIBLE);
-      author_ = UserId(source[KEY_AUTHOR]);
-      id_ = Orthanc::SerializationToolbox::ReadString(source, KEY_ID);
-      name_ = Orthanc::SerializationToolbox::ReadString(source, KEY_NAME);
-      color_ = BackgroundColor::FromHexadecimalString(Orthanc::SerializationToolbox::ReadString(source, KEY_COLOR));
+      isVisible_ = Orthanc::SerializationToolbox::ReadBoolean(serialized, KEY_VISIBLE);
+      author_ = UserId(serialized[KEY_AUTHOR]);
+      id_ = Orthanc::SerializationToolbox::ReadString(serialized, KEY_ID);
+      name_ = Orthanc::SerializationToolbox::ReadString(serialized, KEY_NAME);
+      color_ = BackgroundColor::FromHexadecimalString(Orthanc::SerializationToolbox::ReadString(serialized, KEY_COLOR));
     }
 
     virtual std::string GetId() const ORTHANC_OVERRIDE
@@ -541,15 +541,15 @@ namespace OrthancWSI
       return name_;
     }
 
-    virtual void Serialize(Json::Value& target) const ORTHANC_OVERRIDE
+    virtual void Serialize(Json::Value& serialized) const ORTHANC_OVERRIDE
     {
-      target = Json::objectValue;
-      target[KEY_VISIBLE] = isVisible_;
-      target[KEY_COLOR] = color_.ToHexadecimalString();
-      target[KEY_ID] = id_;
-      target[KEY_NAME] = name_;
+      serialized = Json::objectValue;
+      serialized[KEY_VISIBLE] = isVisible_;
+      serialized[KEY_COLOR] = color_.ToHexadecimalString();
+      serialized[KEY_ID] = id_;
+      serialized[KEY_NAME] = name_;
 
-      author_.Serialize(target[KEY_AUTHOR]);
+      author_.Serialize(serialized[KEY_AUTHOR]);
     }
   };
 
@@ -564,17 +564,17 @@ namespace OrthancWSI
     {
     }
 
-    UserData(const Json::Value& source)
+    UserData(const Json::Value& serialized)
     {
-      if (!source.isArray())
+      if (!serialized.isArray())
       {
         throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
       }
       else
       {
-        for (Json::Value::ArrayIndex i = 0; i < source.size(); i++)
+        for (Json::Value::ArrayIndex i = 0; i < serialized.size(); i++)
         {
-          userLayers_.AddLayer(new UserLayer(source[i]));
+          userLayers_.AddLayer(new UserLayer(serialized[i]));
         }
       }
     }
@@ -636,9 +636,9 @@ namespace OrthancWSI
       userLayers_.DeleteLayer(layerId);
     }
 
-    virtual void Serialize(Json::Value& target) const ORTHANC_OVERRIDE
+    virtual void Serialize(Json::Value& serialized) const ORTHANC_OVERRIDE
     {
-      userLayers_.Serialize(target);
+      userLayers_.Serialize(serialized);
     }
   };
 
@@ -655,12 +655,12 @@ namespace OrthancWSI
     {
     }
 
-    AnnotationsInfo(const Json::Value& source)
+    AnnotationsInfo(const Json::Value& serialized)
     {
-      projectName_ = Orthanc::SerializationToolbox::ReadString(source, KEY_PROJECT_NAME);
-      projectDescription_ = Orthanc::SerializationToolbox::ReadString(source, KEY_PROJECT_DESCRIPTION);
+      projectName_ = Orthanc::SerializationToolbox::ReadString(serialized, KEY_PROJECT_NAME);
+      projectDescription_ = Orthanc::SerializationToolbox::ReadString(serialized, KEY_PROJECT_DESCRIPTION);
 
-      const Json::Value& users = source[KEY_ACTIVE_USERS];
+      const Json::Value& users = serialized[KEY_ACTIVE_USERS];
 
       if (!users.isArray())
       {
@@ -712,7 +712,7 @@ namespace OrthancWSI
       return activeUsers_;
     }
 
-    virtual void Serialize(Json::Value& target) const ORTHANC_OVERRIDE
+    virtual void Serialize(Json::Value& serialized) const ORTHANC_OVERRIDE
     {
       Json::Value users = Json::arrayValue;
       for (std::set<UserId>::const_iterator it = activeUsers_.begin(); it != activeUsers_.end(); ++it)
@@ -722,10 +722,10 @@ namespace OrthancWSI
         users.append(user);
       }
 
-      target = Json::objectValue;
-      target[KEY_PROJECT_NAME] = projectName_;
-      target[KEY_PROJECT_DESCRIPTION] = projectDescription_;
-      target[KEY_ACTIVE_USERS] = users;
+      serialized = Json::objectValue;
+      serialized[KEY_PROJECT_NAME] = projectName_;
+      serialized[KEY_PROJECT_DESCRIPTION] = projectDescription_;
+      serialized[KEY_ACTIVE_USERS] = users;
     }
   };
 
@@ -835,19 +835,19 @@ namespace OrthancWSI
         return info_;
       }
 
-      void ListLayers(Json::Value& target) const
+      void ListLayers(Json::Value& serialized) const
       {
-        target = Json::objectValue;
+        serialized = Json::objectValue;
 
         if (IsValid())
         {
-          userData_->Serialize(target[KEY_USER_LAYERS]);
-          target[KEY_SHARED_LAYERS] = Json::arrayValue;  // TODO
+          userData_->Serialize(serialized[KEY_USER_LAYERS]);
+          serialized[KEY_SHARED_LAYERS] = Json::arrayValue;  // TODO
         }
         else
         {
-          target[KEY_USER_LAYERS] = Json::arrayValue;
-          target[KEY_SHARED_LAYERS] = Json::arrayValue;
+          serialized[KEY_USER_LAYERS] = Json::arrayValue;
+          serialized[KEY_SHARED_LAYERS] = Json::arrayValue;
         }
       }
     };
