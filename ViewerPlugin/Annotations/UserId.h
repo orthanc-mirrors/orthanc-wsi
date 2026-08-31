@@ -31,7 +31,7 @@ class UserId
 public:
   enum Type
   {
-    Type_Administrator,
+    Type_Root,
     Type_Standard,
     Type_Invalid
   };

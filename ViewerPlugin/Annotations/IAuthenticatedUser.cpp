@@ -24,6 +24,8 @@
 #include "../../Framework/PrecompiledHeadersWSI.h"
 #include "IAuthenticatedUser.h"
 
+#include "../ViewerConfiguration.h"
+
 #include <Compatibility.h>
 #include <OrthancException.h>
 #include <SerializationToolbox.h>
@@ -42,7 +44,7 @@ namespace
   public:
     virtual UserId GetAnnotatingId() const ORTHANC_OVERRIDE
     {
-      return UserId(UserId::Type_Administrator);
+      return UserId(UserId::Type_Root);
     }
 
     virtual std::string Format() const ORTHANC_OVERRIDE
@@ -129,7 +131,7 @@ namespace
       switch (role_)
       {
       case EducationRole_Administrator:
-        return UserId(UserId::Type_Administrator);
+        return UserId(UserId::Type_Root);
 
       case EducationRole_Standard:
         return UserId(UserId::Type_Standard, id_);
@@ -208,14 +210,70 @@ namespace
 }
 
 
-IAuthenticatedUser* IAuthenticatedUser::FromHttpRequest(const OrthancPluginHttpRequest* request)
+static IAuthenticatedUser* FromRegisteredUsers(const OrthancPluginHttpRequest* request)
 {
-#if ORTHANC_PLUGINS_VERSION_IS_ABOVE(1, 12, 9)
+  for (uint32_t i = 0; i < request->headersCount; i++)
+  {
+    if (std::string(request->headersKeys[i]) == "authorization")
+    {
+      const std::string value(request->headersValues[i]);
 
+      std::vector<std::string> tokens;
+      Orthanc::Toolbox::TokenizeString(tokens, value, ' ');
+
+      if (tokens.size() == 2 &&
+          tokens[0] == "Basic")
+      {
+        std::string decoded;
+        Orthanc::Toolbox::DecodeBase64(decoded, tokens[1]);
+
+        Orthanc::Toolbox::TokenizeString(tokens, decoded, ':');
+        if (!tokens.empty() &&
+            !tokens[0].empty())
+        {
+          return new GenericInstructor(tokens[0]);
+        }
+      }
+    }
+  }
+
+  throw Orthanc::OrthancException(Orthanc::ErrorCode_ForbiddenAccess,
+                                  "Forbidden access, HTTP basic authentication is missing");
+}
+
+
+static IAuthenticatedUser* FromHttpHeader(const OrthancPluginHttpRequest* request)
+{
+  const std::string& header = OrthancWSI::ViewerConfiguration::GetInstance().GetAuthenticationHttpHeader();
+
+  for (uint32_t i = 0; i < request->headersCount; i++)
+  {
+    if (std::string(request->headersKeys[i]) == header)
+    {
+      const std::string user(request->headersValues[i]);
+
+      if (user.empty())
+      {
+        return new GuestUser;
+      }
+      else
+      {
+        return new GenericInstructor(request->headersValues[i]);
+      }
+    }
+  }
+
+  throw Orthanc::OrthancException(Orthanc::ErrorCode_ForbiddenAccess,
+                                  "Forbidden access, as HTTP header \"" + header + "\" is not set by your proxy");
+}
+
+
+#if ORTHANC_PLUGINS_VERSION_IS_ABOVE(1, 12, 9)
+static IAuthenticatedUser* FromPlugin(const OrthancPluginHttpRequest* request)
+{
   if (request->authenticationPayloadSize == 0)
   {
-    // No authentication plugin is installed
-    return new RootUser;
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError, "No authentication plugin is properly installed");
   }
   else
   {
@@ -228,27 +286,47 @@ IAuthenticatedUser* IAuthenticatedUser::FromHttpRequest(const OrthancPluginHttpR
     Json::Value authentication;
     if (reader.parse(payload, payload + request->authenticationPayloadSize, authentication, false))
     {
-      const std::string source = Orthanc::SerializationToolbox::ReadString(authentication, "source", "");
+      const std::string source = Orthanc::SerializationToolbox::ReadString(authentication, "source", "(none)");
 
       if (source == "orthanc-education")
       {
         return new EducationPluginAuthenticatedUser(authentication);
       }
-#if 0
-      else if (source == "orthanc-python-sample-authentication")
+      else
       {
-        return new GenericInstructor(Orthanc::SerializationToolbox::ReadString(authentication, "username"));
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "Unknown authentication plugin: " + source);
       }
-#endif
     }
 
-    return new GuestUser;
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "Unknown authentication plugin");
   }
-
-#else
-
-  // SDK is too old to support per-user authentication
-  return new RootUser;
-
+}
 #endif
+
+
+
+IAuthenticatedUser* IAuthenticatedUser::FromHttpRequest(const OrthancPluginHttpRequest* request)
+{
+  switch (OrthancWSI::ViewerConfiguration::GetInstance().GetAuthenticationSource())
+  {
+  case OrthancWSI::AuthenticationSource_None:
+    // No authentication is available, use the root user of Orthanc
+    return new RootUser;
+
+  case OrthancWSI::AuthenticationSource_RegisteredUsers:
+    return FromRegisteredUsers(request);
+
+  case OrthancWSI::AuthenticationSource_HttpHeader:
+    return FromHttpHeader(request);
+
+  case OrthancWSI::AuthenticationSource_Plugin:
+#if ORTHANC_PLUGINS_VERSION_IS_ABOVE(1, 12, 9)
+    return FromPlugin(request);
+#else
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+#endif
+
+  default:
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
+  }
 }

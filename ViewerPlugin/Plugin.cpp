@@ -544,114 +544,122 @@ extern "C"
       return -1;
     }
 
-    // Limit the number of PNG transcoders to the number of available
-    // hardware threads (e.g. number of CPUs or cores or
-    // hyperthreading units)
-    unsigned int threads = Orthanc::SystemToolbox::GetHardwareConcurrency();
-    OrthancWSI::RawTile::InitializeTranscoderSemaphore(threads);
-
-    LOG(WARNING) << "The whole-slide imaging plugin will use at most " << threads << " threads to transcode the tiles";
-
-    OrthancPlugins::SetDescription(ORTHANC_PLUGIN_NAME, "Provides a Web viewer of whole-slide microscopic images within Orthanc.");
-
-    OrthancWSI::DicomPyramidCache::InitializeInstance(10 /* Number of pyramids to be cached - TODO parameter */,
-                                                      true /* Use the metadata cache - Should be "false" only during development */);
-
+    try
     {
-      std::unique_ptr<OrthancWSI::OrthancPyramidFrameFetcher> fetcher(
-        new OrthancWSI::OrthancPyramidFrameFetcher(new OrthancWSI::OrthancPluginConnection(), false /* smooth - TODO PARAMETER */));
-      fetcher->SetPaddingX(64);  // TODO PARAMETER
-      fetcher->SetPaddingY(64);  // TODO PARAMETER
-      fetcher->SetDefaultBackgroundColor(255, 255, 255);  // TODO PARAMETER
+      // Limit the number of PNG transcoders to the number of available
+      // hardware threads (e.g. number of CPUs or cores or
+      // hyperthreading units)
+      unsigned int threads = Orthanc::SystemToolbox::GetHardwareConcurrency();
+      OrthancWSI::RawTile::InitializeTranscoderSemaphore(threads);
 
-      OrthancWSI::DecodedPyramidCache::InitializeInstance(fetcher.release(),
-                                                          10 /* TODO - PARAMETER */,
-                                                          256 * 1024 * 1024 /* TODO - PARAMETER */);
-    }
+      LOG(WARNING) << "The whole-slide imaging plugin will use at most " << threads << " threads to transcode the tiles";
 
-    OrthancPluginRegisterOnChangeCallback(OrthancPlugins::GetGlobalContext(), OnChangeCallback);
+      OrthancPlugins::SetDescription(ORTHANC_PLUGIN_NAME, "Provides a Web viewer of whole-slide microscopic images within Orthanc.");
 
-    OrthancPlugins::RegisterRestCallback<ServeJavaScriptLibraries>("/wsi/libs/(.*)", true);
+      OrthancWSI::DicomPyramidCache::InitializeInstance(10 /* Number of pyramids to be cached - TODO parameter */,
+                                                        true /* Use the metadata cache - Should be "false" only during development */);
+
+      {
+        std::unique_ptr<OrthancWSI::OrthancPyramidFrameFetcher> fetcher(
+          new OrthancWSI::OrthancPyramidFrameFetcher(new OrthancWSI::OrthancPluginConnection(), false /* smooth - TODO PARAMETER */));
+        fetcher->SetPaddingX(64);  // TODO PARAMETER
+        fetcher->SetPaddingY(64);  // TODO PARAMETER
+        fetcher->SetDefaultBackgroundColor(255, 255, 255);  // TODO PARAMETER
+
+        OrthancWSI::DecodedPyramidCache::InitializeInstance(fetcher.release(),
+                                                            10 /* TODO - PARAMETER */,
+                                                            256 * 1024 * 1024 /* TODO - PARAMETER */);
+      }
+
+      OrthancPluginRegisterOnChangeCallback(OrthancPlugins::GetGlobalContext(), OnChangeCallback);
+
+      OrthancPlugins::RegisterRestCallback<ServeJavaScriptLibraries>("/wsi/libs/(.*)", true);
 
 #if ORTHANC_STANDALONE == 1
-    OrthancPlugins::RegisterRestCallback<ServeEmbeddedFile>("/wsi/app/(viewer.html)", true);
-    OrthancPlugins::RegisterRestCallback<ServeEmbeddedFile>("/wsi/app/(viewer.js)", true);
+      OrthancPlugins::RegisterRestCallback<ServeEmbeddedFile>("/wsi/app/(viewer.html)", true);
+      OrthancPlugins::RegisterRestCallback<ServeEmbeddedFile>("/wsi/app/(viewer.js)", true);
 #else
-    OrthancPlugins::RegisterRestCallback<ServeSourceFile>("/wsi/app/(viewer.html)", true);
-    OrthancPlugins::RegisterRestCallback<ServeSourceFile>("/wsi/app/(viewer.js)", true);
+      OrthancPlugins::RegisterRestCallback<ServeSourceFile>("/wsi/app/(viewer.html)", true);
+      OrthancPlugins::RegisterRestCallback<ServeSourceFile>("/wsi/app/(viewer.js)", true);
 #endif
 
-    OrthancPlugins::RegisterRestCallback<ServePyramid>("/wsi/pyramids/([0-9a-f-]+)", true);
-    OrthancPlugins::RegisterRestCallback<ServeTile>("/wsi/tiles/([0-9a-f-]+)/([0-9-]+)/([0-9-]+)/([0-9-]+)", true);
-    OrthancPlugins::RegisterRestCallback<ServeFramePyramid>("/wsi/frames-pyramids/([0-9a-f-]+)/([0-9-]+)", true);
-    OrthancPlugins::RegisterRestCallback<ServeFrameTile>("/wsi/frames-tiles/([0-9a-f-]+)/([0-9-]+)/([0-9-]+)/([0-9-]+)/([0-9-]+)", true);
+      OrthancPlugins::RegisterRestCallback<ServePyramid>("/wsi/pyramids/([0-9a-f-]+)", true);
+      OrthancPlugins::RegisterRestCallback<ServeTile>("/wsi/tiles/([0-9a-f-]+)/([0-9-]+)/([0-9-]+)/([0-9-]+)", true);
+      OrthancPlugins::RegisterRestCallback<ServeFramePyramid>("/wsi/frames-pyramids/([0-9a-f-]+)/([0-9-]+)", true);
+      OrthancPlugins::RegisterRestCallback<ServeFrameTile>("/wsi/frames-tiles/([0-9a-f-]+)/([0-9-]+)/([0-9-]+)/([0-9-]+)/([0-9-]+)", true);
 
-    if (true)  // TODO - Protect by some configuration option
-    {
-      RegisterAnnotationsRestApi();
+      if (true)  // TODO - Protect by some configuration option
+      {
+        RegisterAnnotationsRestApi();
 
 #if ORTHANC_STANDALONE == 1
-      OrthancPlugins::RegisterRestCallback<ServeEmbeddedFile>("/wsi/app/(annotations.js)", true);
+        OrthancPlugins::RegisterRestCallback<ServeEmbeddedFile>("/wsi/app/(annotations.js)", true);
 #else
-      OrthancPlugins::RegisterRestCallback<ServeSourceFile>("/wsi/app/(annotations.js)", true);
+        OrthancPlugins::RegisterRestCallback<ServeSourceFile>("/wsi/app/(annotations.js)", true);
 #endif
-    }
-
-    const bool enableIIIF = OrthancWSI::ViewerConfiguration::GetInstance().IsIIIFEnabled();
-    bool serveMirador = false;
-    bool serveOpenSeadragon = false;
-    std::string iiifPublicUrl;
-
-    if (enableIIIF)
-    {
-      InitializeIIIF(iiifPublicUrl);
-
-      serveMirador = OrthancWSI::ViewerConfiguration::GetInstance().IsServeMirador();
-      serveOpenSeadragon = OrthancWSI::ViewerConfiguration::GetInstance().IsServeOpenSeadragon();
-
-      bool value;
-      if (OrthancWSI::ViewerConfiguration::GetInstance().LookupForcePowersOfTwoScaleFactors(value))
-      {
-        SetIIIFForcePowersOfTwoScaleFactors(value);
       }
-      else
+
+      const bool enableIIIF = OrthancWSI::ViewerConfiguration::GetInstance().IsIIIFEnabled();
+      bool serveMirador = false;
+      bool serveOpenSeadragon = false;
+      std::string iiifPublicUrl;
+
+      if (enableIIIF)
       {
-        /**
-         * By default, compatibility mode is disabled. However, if
-         * Mirador or OSD are enabled, compatibility mode is
-         * automatically enabled to enhance user experience, at least
-         * until issue 2379 of OSD is solved:
-         * https://github.com/openseadragon/openseadragon/issues/2379
-         **/
-        SetIIIFForcePowersOfTwoScaleFactors(serveMirador || serveOpenSeadragon);
+        InitializeIIIF(iiifPublicUrl);
+
+        serveMirador = OrthancWSI::ViewerConfiguration::GetInstance().IsServeMirador();
+        serveOpenSeadragon = OrthancWSI::ViewerConfiguration::GetInstance().IsServeOpenSeadragon();
+
+        bool value;
+        if (OrthancWSI::ViewerConfiguration::GetInstance().LookupForcePowersOfTwoScaleFactors(value))
+        {
+          SetIIIFForcePowersOfTwoScaleFactors(value);
+        }
+        else
+        {
+          /**
+           * By default, compatibility mode is disabled. However, if
+           * Mirador or OSD are enabled, compatibility mode is
+           * automatically enabled to enhance user experience, at least
+           * until issue 2379 of OSD is solved:
+           * https://github.com/openseadragon/openseadragon/issues/2379
+           **/
+          SetIIIFForcePowersOfTwoScaleFactors(serveMirador || serveOpenSeadragon);
+        }
+      }
+
+      LOG(WARNING) << "Support of IIIF is " << (enableIIIF ? "enabled" : "disabled") << " in the whole-slide imaging plugin";
+
+      if (serveMirador)
+      {
+        OrthancPlugins::RegisterRestCallback<ServeEmbeddedFile>("/wsi/app/(mirador.html)", true);
+      }
+
+      if (serveOpenSeadragon)
+      {
+        OrthancPlugins::RegisterRestCallback<ServeEmbeddedFile>("/wsi/app/(openseadragon.html)", true);
+      }
+
+      {
+        // Extend the default Orthanc Explorer with custom JavaScript for WSI
+
+        std::string explorer;
+        Orthanc::EmbeddedResources::GetFileResource(explorer, Orthanc::EmbeddedResources::ORTHANC_EXPLORER);
+
+        std::map<std::string, std::string> dictionary;
+        dictionary["ENABLE_IIIF"] = (enableIIIF ? "true" : "false");
+        dictionary["SERVE_MIRADOR"] = (serveMirador ? "true" : "false");
+        dictionary["SERVE_OPEN_SEADRAGON"] = (serveOpenSeadragon ? "true" : "false");
+        explorer = Orthanc::Toolbox::SubstituteVariables(explorer, dictionary);
+
+        OrthancPlugins::ExtendOrthancExplorer(ORTHANC_PLUGIN_NAME, explorer);
       }
     }
-
-    LOG(WARNING) << "Support of IIIF is " << (enableIIIF ? "enabled" : "disabled") << " in the whole-slide imaging plugin";
-
-    if (serveMirador)
+    catch (Orthanc::OrthancException& e)
     {
-      OrthancPlugins::RegisterRestCallback<ServeEmbeddedFile>("/wsi/app/(mirador.html)", true);
-    }
-
-    if (serveOpenSeadragon)
-    {
-      OrthancPlugins::RegisterRestCallback<ServeEmbeddedFile>("/wsi/app/(openseadragon.html)", true);
-    }
-
-    {
-      // Extend the default Orthanc Explorer with custom JavaScript for WSI
-
-      std::string explorer;
-      Orthanc::EmbeddedResources::GetFileResource(explorer, Orthanc::EmbeddedResources::ORTHANC_EXPLORER);
-
-      std::map<std::string, std::string> dictionary;
-      dictionary["ENABLE_IIIF"] = (enableIIIF ? "true" : "false");
-      dictionary["SERVE_MIRADOR"] = (serveMirador ? "true" : "false");
-      dictionary["SERVE_OPEN_SEADRAGON"] = (serveOpenSeadragon ? "true" : "false");
-      explorer = Orthanc::Toolbox::SubstituteVariables(explorer, dictionary);
-
-      OrthancPlugins::ExtendOrthancExplorer(ORTHANC_PLUGIN_NAME, explorer);
+      LOG(ERROR) << "Exception while starting whole-slide imaging viewer: " << e.What();
+      return -1;
     }
 
     return 0;

@@ -24,7 +24,13 @@
 #include "../Framework/PrecompiledHeadersWSI.h"
 #include "ViewerConfiguration.h"
 
+#include <SerializationToolbox.h>
 #include <Toolbox.h>
+
+
+static const char* const KEY_AUTHENTICATION_SOURCE = "AuthenticationSource";
+static const char* const KEY_AUTHENTICATION_HTTP_HEADER = "AuthenticationHttpHeader";
+static const char* const KEY_AUTHENTICATION_ENABLED = "AuthenticationEnabled";
 
 
 namespace OrthancWSI
@@ -32,6 +38,60 @@ namespace OrthancWSI
   ViewerConfiguration::ViewerConfiguration()
   {
     mainConfiguration_.GetSection(wsiConfiguration_, "WholeSlideImaging");
+
+    std::string value;
+    if (wsiConfiguration_.LookupStringValue(value, KEY_AUTHENTICATION_SOURCE))
+    {
+      if (value == "None")
+      {
+        authenticationSource_ = AuthenticationSource_None;
+      }
+      else if (value == "HttpHeader")
+      {
+        authenticationSource_ = AuthenticationSource_HttpHeader;
+
+        if (!wsiConfiguration_.LookupStringValue(authenticationHttpHeader_, KEY_AUTHENTICATION_HTTP_HEADER) ||
+            authenticationHttpHeader_.empty())
+        {
+          throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange, "Configuration option \"" +
+                                          std::string(KEY_AUTHENTICATION_HTTP_HEADER) + "\" must be defined and non-empty");
+        }
+
+        Orthanc::Toolbox::ToLowerCase(authenticationHttpHeader_);
+      }
+      else if (value == "RegisteredUsers")
+      {
+        if (mainConfiguration_.GetBooleanValue(KEY_AUTHENTICATION_ENABLED, false))
+        {
+          authenticationSource_ = AuthenticationSource_RegisteredUsers;
+        }
+        else
+        {
+          throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange, "Configuration option \"" +
+                                          std::string(KEY_AUTHENTICATION_ENABLED) + "\" must be set to \"true\" " +
+                                          "to use the registered users as the authentication source");
+        }
+      }
+      else if (value == "Plugin")
+      {
+#if ORTHANC_PLUGINS_VERSION_IS_ABOVE(1, 12, 9)
+        authenticationSource_ = AuthenticationSource_Plugin;
+#else
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "Your Orthanc SDK is too old to support "
+                                        "authentication from plugins, check configuration option \"" +
+                                        std::string(KEY_AUTHENTICATION_SOURCE) + "\"");
+#endif
+      }
+      else
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange,
+                                        "Unknown source of authentication: " + value);
+      }
+    }
+    else
+    {
+      authenticationSource_ = AuthenticationSource_None;
+    }
   }
 
 
@@ -119,5 +179,19 @@ namespace OrthancWSI
   bool ViewerConfiguration::AreAnnotationsEnabled() const
   {
     return wsiConfiguration_.GetBooleanValue("EnableAnnotations", true);
+  }
+
+
+  const std::string& ViewerConfiguration::GetAuthenticationHttpHeader() const
+  {
+    if (authenticationSource_ != AuthenticationSource_HttpHeader)
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
+    }
+    else
+    {
+      assert(!authenticationHttpHeader_.empty());
+      return authenticationHttpHeader_;
+    }
   }
 }

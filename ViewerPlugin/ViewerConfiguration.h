@@ -28,11 +28,22 @@
 
 namespace OrthancWSI
 {
+  enum AuthenticationSource
+  {
+    AuthenticationSource_None,
+    AuthenticationSource_RegisteredUsers,
+    AuthenticationSource_Plugin,
+    AuthenticationSource_HttpHeader
+  };
+
+
   class ViewerConfiguration
   {
   private:
     OrthancPlugins::OrthancConfiguration mainConfiguration_;
     OrthancPlugins::OrthancConfiguration wsiConfiguration_;
+    AuthenticationSource                 authenticationSource_;
+    std::string                          authenticationHttpHeader_;
 
     ViewerConfiguration();
 
@@ -52,5 +63,12 @@ namespace OrthancWSI
     bool LookupForcePowersOfTwoScaleFactors(bool& value) const;
 
     bool AreAnnotationsEnabled() const;
+
+    AuthenticationSource GetAuthenticationSource() const
+    {
+      return authenticationSource_;
+    }
+
+    const std::string& GetAuthenticationHttpHeader() const;
   };
 }

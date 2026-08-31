@@ -6,8 +6,12 @@ Pending changes in the mainline
 
 * Support for annotations
 * New configuration option "EnableAnnotations" to enable annotations
+* New configuration option "AuthenticationSource" to enable per-user annotations:
+  - "None" uses the administrative Orthanc user (default)
+  - "RegisteredUsers" relies on the HTTP basic authentication that is built in Orthanc
+  - "HttpHeader" takes the user out of the HTTP header specified in "AuthenticationHttpHeader" option
+  - "Plugin" can be used if the "orthanc-education" plugin is installed
 * Persistence of annotations in the Orthanc database (SDK 1.12.8 is required)
-* Per-user annotations if the "orthanc-education" plugin is installed
 
 Maintenance
 -----------

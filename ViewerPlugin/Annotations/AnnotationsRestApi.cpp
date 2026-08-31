@@ -1084,17 +1084,7 @@ namespace OrthancWSI
       answer["enabled"] = ViewerConfiguration::GetInstance().AreAnnotationsEnabled();
       answer["project-name"] = reader.GetAnnotationsInfo().GetProjectName();
       answer["project-description"] = reader.GetAnnotationsInfo().GetProjectDescription();
-
-      const UserId user = context.GetUser().GetAnnotatingId();
-
-      if (user.GetType() == UserId::Type_Standard)
-      {
-        answer["user"] = user.GetName();
-      }
-      else
-      {
-        answer["user"] = "";
-      }
+      answer["user"] = context.GetUser().Format();
 
 #if ORTHANC_PLUGINS_VERSION_IS_ABOVE(1, 12, 8)
       answer["persistent-annotations"] = true;

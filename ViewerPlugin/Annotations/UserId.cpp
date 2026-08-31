@@ -42,7 +42,7 @@ void UserId::Setup(Type type,
   switch (type_)
   {
   case Type_Invalid:
-  case Type_Administrator:
+  case Type_Root:
     if (!name.empty())
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
@@ -90,7 +90,7 @@ std::string UserId::GetKey() const
 {
   switch (type_)
   {
-  case Type_Administrator:
+  case Type_Root:
     return "root";
 
   case Type_Standard:
