@@ -141,7 +141,7 @@
     <div id="app">
       <div id="map" :style="{ background: mapBackground }">
         <div id="toolbar-top" style="display:none" v-show="toolbarsVisible">
-          <div class="btn-group" role="group" v-if="annotationsEnabled">
+          <div class="btn-group" role="group" v-if="annotationsInfo.enabled">
             <button type="button" class="btn btn-outline-secondary icon-btn"
                     :class="{ active: activeDrawTool === 'select' }"
                     data-bs-toggle="tooltip" data-bs-placement="bottom" title="Select annotation"
@@ -206,7 +206,7 @@
             </button>
           </div>
 
-          <div class="btn-group" role="group" v-if="annotationsEnabled">
+          <div class="btn-group" role="group" v-if="annotationsInfo.enabled">
             <button type="button" class="btn btn-outline-secondary icon-btn"
                     :class="{ active: activeDrawTool === 'move' }"
                     data-bs-toggle="tooltip" data-bs-placement="bottom" title="Move annotation"
@@ -229,7 +229,8 @@
             </button>
           </div>
 
-          <div class="alert alert-danger alert-dismissible d-inline-block py-0" role="alert" v-if="alertNotPersistent">
+          <div class="alert alert-danger alert-dismissible d-inline-block py-0" role="alert"
+               v-if="annotationsInfo.enabled && !annotationsInfo.persistent">
             Your annotations will not be saved
             <button type="button" class="btn-close top-50 translate-middle-y" data-bs-dismiss="alert" aria-label="Close"></button>
           </div>
@@ -288,21 +289,21 @@
       </div>
 
       <div class="offcanvas offcanvas-end" data-bs-backdrop="false" data-bs-scroll="true"
-           tabindex="-1" id="right-panel" v-show="annotationsEnabled">
+           tabindex="-1" id="right-panel" v-show="annotationsInfo.enabled">
         <div class="offcanvas-header">
           <h5 class="offcanvas-title">Annotations</h5>
           <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
         </div>
         <div class="offcanvas-body p-2">
-          <h5 v-if="projectName !== ''">{{ projectName }}</h5>
+          <h5 v-if="annotationsInfo.name !== ''">{{ annotationsInfo.name }}</h5>
 
-          <p v-if="projectDescription !== ''">
-            <small>{{ projectDescription }}</small>
+          <p v-if="annotationsInfo.description !== ''">
+            <small>{{ annotationsInfo.description }}</small>
           </p>
 
-          <p v-if="projectUser !== ''">
+          <p v-if="annotationsInfo.user !== ''">
             <small>Logged as:</small>
-            <span class="badge bg-secondary">{{ projectUser }}</span>
+            <span class="badge bg-secondary">{{ annotationsInfo.user }}</span>
           </p>
 
           <div class="d-flex align-items-center mb-1">
@@ -320,7 +321,8 @@
                 <th class="p-0 text-center fw-normal" title="Visible">V</th>
                 <th class="p-0 text-center fw-normal" title="Color">C</th>
                 <th class="px-1 py-0 fw-normal">Name</th>
-                <th class="p-0 text-center fw-normal" title="Sharing (coming soon)">S</th>
+                <th class="p-0 text-center fw-normal" title="Share layer with other users"
+                    v-if="annotationsInfo.sharing">S</th>
                 <th class="p-0"></th>
               </tr>
             </thead>
@@ -350,8 +352,11 @@
                          v-model:value="layer.name"
                          v-on:change="SaveUserLayer(layer)">
                 </td>
-                <td class="text-center align-middle p-0">
-                  <i class="bi bi-share p-1" style="opacity:0.25"></i>
+                <td class="text-center align-middle p-0" v-if="annotationsInfo.sharing">
+                  <button type="button" class="btn btn-link p-1"
+                          v-on:click="alert('ici')">
+                    <i class="bi bi-share"></i>
+                  </button>
                 </td>
                 <td class="text-center align-middle p-0">
                   <button type="button" class="btn btn-link p-0"
@@ -450,7 +455,7 @@
       </div>
 
       <button id="right-panel-toggle" type="button" class="btn btn-secondary"
-              style="display:none" v-show="annotationsEnabled && toolbarsVisible"
+              style="display:none" v-show="annotationsInfo.enabled && toolbarsVisible"
               data-bs-toggle="offcanvas" data-bs-target="#right-panel">
         <i class="bi" :class="panelOpen ? 'bi-chevron-compact-right' : 'bi-chevron-compact-left'"></i>
       </button>

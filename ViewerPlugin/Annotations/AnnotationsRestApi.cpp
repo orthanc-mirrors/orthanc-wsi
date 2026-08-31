@@ -1207,16 +1207,16 @@ namespace OrthancWSI
       Annotations::UserReader reader(context.GetAnnotations(), context.GetUser());
 
       Json::Value answer;
+      answer["description"] = reader.GetAnnotationsInfo().GetProjectDescription();
       answer["enabled"] = ViewerConfiguration::GetInstance().AreAnnotationsEnabled();
-      answer["project-name"] = reader.GetAnnotationsInfo().GetProjectName();
-      answer["project-description"] = reader.GetAnnotationsInfo().GetProjectDescription();
-      answer["user"] = context.GetUser().Format();
+      answer["name"] = reader.GetAnnotationsInfo().GetProjectName();
       answer["sharing"] = ViewerConfiguration::GetInstance().IsAnnotationsSharingEnabled();
+      answer["user"] = context.GetUser().Format();
 
 #if ORTHANC_PLUGINS_VERSION_IS_ABOVE(1, 12, 8)
-      answer["persistent-annotations"] = true;
+      answer["persistent"] = true;
 #else
-      answer["persistent-annotations"] = false;
+      answer["persistent"] = false;
 #endif
 
       ViewerToolbox::AnswerJson(output, answer);

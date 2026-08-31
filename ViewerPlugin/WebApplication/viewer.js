@@ -38,16 +38,12 @@ var app = new Vue({
       // hue: 0,        // Degrees, in the range between [-180,180]
 
       // Main state for annotations
-      annotationsEnabled: false,
-      projectName: '',
-      projectDescription: '',
-      projectUser: null,
+      annotationsInfo: {},
       imageDescription: '',
       userLayers: [],
       activeUserLayerId: null,
 
       // UI state
-      alertNotPersistent: false,
       toolbarsVisible: false,
       panelOpen: true,
       mapBackground: '',
@@ -405,16 +401,14 @@ var app = new Vue({
       axios.post('../api/annotations-info',
                  this.CreatePostPayload({}))
         .then(function(response) {
-          that.annotationsEnabled = response.data['enabled'];
-          that.projectName = response.data['project-name'];
-          that.projectDescription = response.data['project-description'];
-          that.projectUser = response.data['user'];
-          that.alertNotPersistent = !response.data['persistent-annotations'];
+          that.annotationsInfo = response.data;
 
-          if (that.annotationsEnabled) {
+          if (that.annotationsInfo.enabled) {
             that.LoadUserLayers();
             // that.LoadSharedLayers();  // TODO
           }
+        })
+        .catch(function(error) {
         });
     },
 
