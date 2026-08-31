@@ -88,7 +88,6 @@ var app = new Vue({
       referenceMagnification: 40,
 
       // TODO - Shared layers
-      sharedLayersSupported: true,
       sharedSource: null,
       sharedLayer: null,
       modalImportSharedLayer: null,
@@ -116,8 +115,6 @@ var app = new Vue({
     this.modalDeleteUserLayer = new bootstrap.Modal(document.getElementById('modal-delete-user-layer'));
     this.modalDeleteAnnotation = new bootstrap.Modal(document.getElementById('modal-delete-annotation'));
     this.modalImportSharedLayer = new bootstrap.Modal(document.getElementById('modal-import-shared-layer'));  // TODO
-
-    this.sharedLayersSupported = false;  // TODO
 
     document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) {
       new bootstrap.Tooltip(el, { trigger: 'hover' });

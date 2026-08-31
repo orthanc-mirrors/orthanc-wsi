@@ -372,7 +372,7 @@
 
           <hr class="my-4">
 
-          <div class="d-flex align-items-center mb-1" v-if="sharedLayersSupported">
+          <div class="d-flex align-items-center mb-1" v-if="annotationsInfo.sharing">
             <h5>Shared layers</h5>
             <button type="button" class="btn btn-primary btn-sm ms-auto"
                     v-on:click="ShowImportSharedLayerModal()">
@@ -380,7 +380,7 @@
               Import
             </button>
           </div>
-          <table class="table table-sm table-borderless mb-0 align-middle" v-if="sharedLayersSupported">
+          <table class="table table-sm table-borderless mb-0 align-middle" v-if="annotationsInfo.sharing">
             <thead class="small text-muted">
               <tr>
                 <th class="p-0 text-center fw-normal" title="Visible">V</th>
@@ -418,11 +418,12 @@
             </tbody>
           </table>
 
-          <hr class="my-4" v-if="sharedLayersSupported">
-
-          <button class="btn btn-sm btn-primary w-100 mb-2" v-on:click="ReloadSharedLayers()" v-if="sharedLayersSupported">
+          <button class="btn btn-sm btn-primary w-100 mb-2" v-on:click="ReloadSharedLayers()" v-if="annotationsInfo.sharing">
             <i class="bi bi-arrow-clockwise me-2 align-middle"></i> Reload shared content
           </button>
+
+          <hr class="my-4" v-if="annotationsInfo.sharing">
+
           <div v-show="selectedFeature !== null" class="mb-3">
             <h5>Current selection</h5>
             <button class="btn btn-sm btn-primary w-100 mb-2" v-on:click="FocusAnnotation()">
