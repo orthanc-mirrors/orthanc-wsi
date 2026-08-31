@@ -1442,9 +1442,9 @@ namespace OrthancWSI
   }
 
 
-  void SearchUsers(OrthancPluginRestOutput* output,
-                   const char* url,
-                   const OrthancPluginHttpRequest* request)
+  void SearchActiveUsers(OrthancPluginRestOutput* output,
+                         const char* url,
+                         const OrthancPluginHttpRequest* request)
   {
     if (request->method != OrthancPluginHttpMethod_Post)
     {
@@ -1494,7 +1494,7 @@ void RegisterAnnotationsRestApi()
     OrthancPlugins::RegisterRestCallback<OrthancWSI::SaveUserLayer>("/wsi/api/save-user-layer", true);
     OrthancPlugins::RegisterRestCallback<OrthancWSI::LoadUserFeatures>("/wsi/api/load-user-features", true);
     OrthancPlugins::RegisterRestCallback<OrthancWSI::SaveUserFeatures>("/wsi/api/save-user-features", true);
-    OrthancPlugins::RegisterRestCallback<OrthancWSI::SearchUsers>("/wsi/api/search-users", true);
+    OrthancPlugins::RegisterRestCallback<OrthancWSI::SearchActiveUsers>("/wsi/api/search-active-users", true);
 
     // TODO
     OrthancPlugins::RegisterRestCallback<OrthancWSI::ListSharedLayers>("/wsi/api/shared-layers", true);

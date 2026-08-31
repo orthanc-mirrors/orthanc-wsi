@@ -311,7 +311,7 @@
             <button type="button" class="btn btn-primary btn-sm ms-auto"
                     v-on:click="CreateUserLayer()">
               <i class="bi bi-file-earmark-plus"></i>
-              Add
+              Create
             </button>
           </div>
           <table class="table table-sm table-borderless mb-0 align-middle">
@@ -516,7 +516,7 @@
                 <span v-for="(userId, index) in shareLayerUsers" :key="userId"
                       class="badge bg-secondary me-1 mb-1"
                       style="cursor:pointer"
-                      v-on:click="shareLayerUsers.splice(index, 1)"
+                      v-on:click="shareLayerUsers.splice(index, 1); shareLayerSearchQuery = ''; shareLayerSearchResults = [];"
                       :title="'Remove ' + userId">
                   {{ userId }} &times;
                 </span>

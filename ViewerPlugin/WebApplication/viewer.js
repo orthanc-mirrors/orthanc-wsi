@@ -1076,7 +1076,8 @@ var app = new Vue({
     ShareLayerAddUser: function(userId) {
       var trimmed = userId.trim();
 
-      if (!this.shareLayerUsers.includes(trimmed)) {
+      if (trimmed.length > 0 &&
+          !this.shareLayerUsers.includes(trimmed)) {
         this.shareLayerUsers.push(trimmed);
       }
 
@@ -1090,10 +1091,15 @@ var app = new Vue({
         this.shareLayerSearchResults = [];
       } else {
         var that = this;
-        axios.post('../api/search-users',
+        axios.post('../api/search-active-users',
                    this.CreatePostPayload({ 'query': query }))
           .then(function(response) {
-            that.shareLayerSearchResults = response.data;
+            that.shareLayerSearchResults = [];
+            for (var i = 0; i < response.data.length; i++) {
+              if (!that.shareLayerUsers.includes(response.data[i])) {
+                that.shareLayerSearchResults.push(response.data[i]);
+              }
+            }
           })
           .catch(function() {
             that.shareLayerSearchResults = [];
