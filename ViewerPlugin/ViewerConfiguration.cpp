@@ -194,4 +194,10 @@ namespace OrthancWSI
       return authenticationHttpHeader_;
     }
   }
+
+
+  unsigned int ViewerConfiguration::GetAnnotationsCacheSize() const
+  {
+    return 100;   // TODO - Configuration option?
+  }
 }

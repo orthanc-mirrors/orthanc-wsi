@@ -730,12 +730,12 @@ namespace OrthancWSI
   };
 
 
-  class CachedAnnotations : public Orthanc::IDynamicObject
+  class Annotations : public Orthanc::IDynamicObject
   {
   private:
     void LoadUserData(const UserId& user)
     {
-      const std::string key = id_.GetKey() + "|layers|" + user.GetKey();
+      const std::string key = GetLayersKey(id_, user);
 
       Json::Value layers;
       if (LookupKeyValueStore(layers, key))
@@ -757,7 +757,7 @@ namespace OrthancWSI
     Content                           content_;
 
   public:
-    CachedAnnotations(const AnnotationsId& id) :
+    Annotations(const AnnotationsId& id) :
       id_(id)
     {
       const std::string key = GetInfoKey(id);
@@ -790,7 +790,7 @@ namespace OrthancWSI
       }
     }
 
-    ~CachedAnnotations()
+    ~Annotations()
     {
       for (Content::iterator it = content_.begin(); it != content_.end(); ++it)
       {
@@ -807,7 +807,7 @@ namespace OrthancWSI
       const UserData*                     userData_;
 
     public:
-      UserReader(CachedAnnotations& that,
+      UserReader(Annotations& that,
                  const IAuthenticatedUser& user) :
         lock_(that.mutex_),
         info_(*that.info_)
@@ -857,7 +857,7 @@ namespace OrthancWSI
     {
     private:
       Orthanc::ReaderWriterLock::WriteLock  lock_;
-      CachedAnnotations&                    that_;
+      Annotations&                          that_;
       UserId                                userId_;
       UserData*                             userData_;
 
@@ -867,7 +867,7 @@ namespace OrthancWSI
       }
 
     public:
-      UserWriter(CachedAnnotations& that,
+      UserWriter(Annotations& that,
                  const IAuthenticatedUser& user) :
         lock_(that.mutex_),
         that_(that),
@@ -959,13 +959,64 @@ namespace OrthancWSI
   };
 
 
+  class CachedAnnotations : public boost::noncopyable
+  {
+  private:
+    boost::shared_ptr<Orthanc::IDynamicObject>  content_;
+
+    static Orthanc::SharedObjectCache& GetCache()
+    {
+      static boost::mutex  mutex;
+      static std::unique_ptr<Orthanc::SharedObjectCache>  cache;
+
+      {
+        boost::mutex::scoped_lock lock(mutex);
+
+        if (cache.get() == NULL)
+        {
+          cache.reset(new Orthanc::SharedObjectCache(ViewerConfiguration::GetInstance().GetAnnotationsCacheSize()));
+        }
+
+        return *cache;
+      }
+    }
+
+  public:
+    CachedAnnotations(const AnnotationsId& id)
+    {
+      const std::string key = id.GetKey();
+
+      content_ = GetCache().GetCachedValue(key);
+
+      if (content_.get() == NULL)
+      {
+        content_.reset(new Annotations(id));
+        GetCache().Store(key, content_, 1);
+      }
+    }
+
+
+    Annotations& GetContent()
+    {
+      return dynamic_cast<Annotations&>(*content_);
+    }
+
+
+    static void Invalidate(const AnnotationsId& id)
+    {
+      const std::string key = id.GetKey();
+      GetCache().Invalidate(key);
+    }
+  };
+
+
   class AnnotationsCommandContext : public boost::noncopyable
   {
   private:
-    std::unique_ptr<IAuthenticatedUser>         user_;
-    Json::Value                                 body_;
-    std::unique_ptr<AnnotationsId>              annotationsId_;
-    boost::shared_ptr<Orthanc::IDynamicObject>  cachedAnnotations_;
+    std::unique_ptr<IAuthenticatedUser>  user_;
+    Json::Value                          body_;
+    std::unique_ptr<AnnotationsId>       annotationsId_;
+    std::unique_ptr<CachedAnnotations>   annotations_;
 
   public:
     AnnotationsCommandContext(const OrthancPluginHttpRequest* request)
@@ -999,23 +1050,18 @@ namespace OrthancWSI
                                         "\" is not instructor or learner of project \"" + annotationsId_->GetProjectId() + "\"");
       }
 
-      const std::string cacheKey = annotationsId_->GetKey();
-
-      static Orthanc::SharedObjectCache annotationsCache_(100);  // TODO - PARAMETER
-
-      cachedAnnotations_ = annotationsCache_.GetCachedValue(cacheKey);
-
-      if (cachedAnnotations_.get() == NULL)
-      {
-        cachedAnnotations_.reset(new CachedAnnotations(*annotationsId_));
-        annotationsCache_.Store(cacheKey, cachedAnnotations_, 1);
-      }
+      annotations_.reset(new CachedAnnotations(*annotationsId_));
     }
 
     const IAuthenticatedUser& GetUser() const
     {
       assert(user_.get() != NULL);
       return *user_;
+    }
+
+    bool IsRootUser() const
+    {
+      return GetUser().GetAnnotatingId().GetType() == UserId::Type_Root;
     }
 
     const AnnotationsId& GetAnnotationsId() const
@@ -1046,9 +1092,10 @@ namespace OrthancWSI
       }
     }
 
-    CachedAnnotations& GetCachedAnnotations()
+    Annotations& GetAnnotations()
     {
-      return dynamic_cast<CachedAnnotations&>(*cachedAnnotations_);
+      assert(annotations_.get() != NULL);
+      return annotations_->GetContent();
     }
   };
 
@@ -1068,8 +1115,6 @@ namespace OrthancWSI
   }
 
 
-
-
   void GetAnnotationsInfo(OrthancPluginRestOutput* output,
                           const char* url,
                           const OrthancPluginHttpRequest* request)
@@ -1078,7 +1123,7 @@ namespace OrthancWSI
     {
       AnnotationsCommandContext context(request);
 
-      CachedAnnotations::UserReader reader(context.GetCachedAnnotations(), context.GetUser());
+      Annotations::UserReader reader(context.GetAnnotations(), context.GetUser());
 
       Json::Value answer;
       answer["enabled"] = ViewerConfiguration::GetInstance().AreAnnotationsEnabled();
@@ -1105,7 +1150,7 @@ namespace OrthancWSI
     {
       AnnotationsCommandContext context(request);
 
-      CachedAnnotations::UserReader reader(context.GetCachedAnnotations(), context.GetUser());
+      Annotations::UserReader reader(context.GetAnnotations(), context.GetUser());
 
       Json::Value answer;
       reader.ListLayers(answer);
@@ -1123,7 +1168,7 @@ namespace OrthancWSI
     {
       AnnotationsCommandContext context(request);
 
-      CachedAnnotations::UserWriter writer(context.GetCachedAnnotations(), context.GetUser());
+      Annotations::UserWriter writer(context.GetAnnotations(), context.GetUser());
 
       Json::Value answer;
       writer.CreateUserLayer(answer);
@@ -1144,7 +1189,7 @@ namespace OrthancWSI
       UserLayer updated(context.GetBodyField("layer"));
 
       {
-        CachedAnnotations::UserWriter writer(context.GetCachedAnnotations(), context.GetUser());
+        Annotations::UserWriter writer(context.GetAnnotations(), context.GetUser());
         writer.UpdateUserLayer(updated);
       }
 
@@ -1164,7 +1209,7 @@ namespace OrthancWSI
       const std::string layerId = context.GetBodyString("layer-id");
 
       {
-        CachedAnnotations::UserWriter writer(context.GetCachedAnnotations(), context.GetUser());
+        Annotations::UserWriter writer(context.GetAnnotations(), context.GetUser());
         writer.DeleteUserLayer(layerId);
       }
 
