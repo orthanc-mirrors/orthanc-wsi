@@ -302,7 +302,7 @@ namespace OrthancWSI
       return false;
     }
 
-    void ListLayersSharedWith(std::set<std::string>& target,
+    void ListLayersSharedWith(Json::Value& target,
                               const UserId& user) const
     {
       target.clear();
@@ -312,7 +312,9 @@ namespace OrthancWSI
         assert(*it != NULL);
         if ((*it)->IsSharedWith(user))
         {
-          target.insert((*it)->GetId());
+          Json::Value item;
+          (*it)->Serialize(item);
+          target.append(item);
         }
       }
     }
@@ -512,11 +514,11 @@ namespace OrthancWSI
   class SharedLayer : public ILayer
   {
   private:
-    bool         isVisible_;
-    BackgroundColor     color_;
-    UserId       author_;
-    std::string  id_;
-    std::string  name_;
+    bool             isVisible_;
+    BackgroundColor  color_;
+    UserId           author_;
+    std::string      id_;
+    std::string      name_;
 
   public:
     SharedLayer(const UserId& author,
@@ -674,7 +676,7 @@ namespace OrthancWSI
       return userLayers_.HasLayerSharedWith(user);
     }
 
-    void ListLayersSharedWith(std::set<std::string>& target,
+    void ListLayersSharedWith(Json::Value& target,
                               const UserId& user) const
     {
       return userLayers_.ListLayersSharedWith(target, user);
@@ -890,11 +892,11 @@ namespace OrthancWSI
 
     public:
       UserReader(Annotations& that,
-                 const IAuthenticatedUser& user) :
+                 const UserId& userId) :
         lock_(that.mutex_),
         info_(*that.info_)
       {
-        Content::const_iterator found = that.content_.find(user.GetAnnotatingId());
+        Content::const_iterator found = that.content_.find(userId);
 
         if (found == that.content_.end())
         {
@@ -933,16 +935,16 @@ namespace OrthancWSI
         }
       }
 
-      void ListLayersSharedWith(std::set<std::string>& layers,
+      void ListLayersSharedWith(Json::Value& target,
                                 const UserId& user) const
       {
         if (IsValid())
         {
-          userData_->ListLayersSharedWith(layers, user);
+          userData_->ListLayersSharedWith(target, user);
         }
         else
         {
-          layers.clear();
+          target = Json::arrayValue;
         }
       }
     };
@@ -963,13 +965,11 @@ namespace OrthancWSI
 
     public:
       UserWriter(Annotations& that,
-                 const IAuthenticatedUser& user) :
+                 const UserId& userId) :
         lock_(that.mutex_),
         that_(that),
-        userId_(user.GetAnnotatingId())
+        userId_(userId)
       {
-        const UserId id = user.GetAnnotatingId();
-
         if (that.info_->AddActiveUser(userId_))
         {
           // Only update the key-value store if this is the first time we meet this user
@@ -1218,7 +1218,7 @@ namespace OrthancWSI
     {
       AnnotationsCommandContext context(request);
 
-      Annotations::UserReader reader(context.GetAnnotations(), context.GetUser());
+      Annotations::UserReader reader(context.GetAnnotations(), context.GetUser().GetAnnotatingId());
 
       Json::Value answer;
       answer["description"] = reader.GetAnnotationsInfo().GetProjectDescription();
@@ -1246,7 +1246,7 @@ namespace OrthancWSI
     {
       AnnotationsCommandContext context(request);
 
-      Annotations::UserReader reader(context.GetAnnotations(), context.GetUser());
+      Annotations::UserReader reader(context.GetAnnotations(), context.GetUser().GetAnnotatingId());
 
       Json::Value answer;
       reader.ListLayers(answer);
@@ -1264,7 +1264,7 @@ namespace OrthancWSI
     {
       AnnotationsCommandContext context(request);
 
-      Annotations::UserWriter writer(context.GetAnnotations(), context.GetUser());
+      Annotations::UserWriter writer(context.GetAnnotations(), context.GetUser().GetAnnotatingId());
 
       Json::Value answer;
       writer.CreateUserLayer(answer);
@@ -1285,7 +1285,7 @@ namespace OrthancWSI
       UserLayer updated(context.GetBodyField("layer"));
 
       {
-        Annotations::UserWriter writer(context.GetAnnotations(), context.GetUser());
+        Annotations::UserWriter writer(context.GetAnnotations(), context.GetUser().GetAnnotatingId());
         writer.UpdateUserLayer(updated);
       }
 
@@ -1305,7 +1305,7 @@ namespace OrthancWSI
       const std::string layerId = context.GetBodyString("layer-id");
 
       {
-        Annotations::UserWriter writer(context.GetAnnotations(), context.GetUser());
+        Annotations::UserWriter writer(context.GetAnnotations(), context.GetUser().GetAnnotatingId());
         writer.DeleteUserLayer(layerId);
       }
 
@@ -1399,49 +1399,6 @@ namespace OrthancWSI
   }
 
 
-  void ListSharedLayers(OrthancPluginRestOutput* output,
-                        const char* url,
-                        const OrthancPluginHttpRequest* request)
-  {
-    if (request->method != OrthancPluginHttpMethod_Post)
-    {
-      OrthancPluginSendMethodNotAllowed(OrthancPlugins::GetGlobalContext(), output, "POST");
-    }
-    else
-    {
-      std::unique_ptr<IAuthenticatedUser> user(IAuthenticatedUser::FromHttpRequest(request));
-
-      Json::Value body;
-      if (!Orthanc::Toolbox::ReadJson(body, request->body, request->bodySize) ||
-          !body.isObject())
-      {
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_NetworkProtocol);
-      }
-
-      Json::Value answer;
-
-      for (size_t i = 0; i < 10; i++)
-      {
-        const std::string userId = "User " + boost::lexical_cast<std::string>(i);
-
-        Json::Value layers = Json::arrayValue;
-        for (size_t j = 0; j < 5; j++) {
-          Json::Value layer;
-          layer["id"] = Orthanc::Toolbox::GenerateUuid();
-          layer["name"] = "Layer " + boost::lexical_cast<std::string>(j);
-          layers.append(layer);
-        }
-
-        Json::Value user;
-        user["layers"] = layers;
-        answer[userId] = user;
-      }
-
-      ViewerToolbox::AnswerJson(output, answer);
-    }
-  }
-
-
   void SearchActiveUsers(OrthancPluginRestOutput* output,
                          const char* url,
                          const OrthancPluginHttpRequest* request)
@@ -1479,6 +1436,60 @@ namespace OrthancWSI
       ViewerToolbox::AnswerJson(output, answer);
     }
   }
+
+
+  void ListUsersSharingLayers(OrthancPluginRestOutput* output,
+                              const char* url,
+                              const OrthancPluginHttpRequest* request)
+  {
+    if (request->method != OrthancPluginHttpMethod_Post)
+    {
+      OrthancPluginSendMethodNotAllowed(OrthancPlugins::GetGlobalContext(), output, "POST");
+    }
+    else
+    {
+      AnnotationsCommandContext context(request);
+
+      std::set<UserId> users;
+      context.GetAnnotations().ListUsersSharingLayerWith(users, context.GetUser().GetAnnotatingId());
+
+      Json::Value answer = Json::arrayValue;
+
+      for (std::set<UserId>::const_iterator it = users.begin(); it != users.end(); ++it)
+      {
+        if (it->GetType() == UserId::Type_Standard)
+        {
+          answer.append(it->GetName());
+        }
+      }
+
+      ViewerToolbox::AnswerJson(output, answer);
+    }
+  }
+
+
+  void ListLayersSharedByUser(OrthancPluginRestOutput* output,
+                              const char* url,
+                              const OrthancPluginHttpRequest* request)
+  {
+    if (request->method != OrthancPluginHttpMethod_Post)
+    {
+      OrthancPluginSendMethodNotAllowed(OrthancPlugins::GetGlobalContext(), output, "POST");
+    }
+    else
+    {
+      AnnotationsCommandContext context(request);
+
+      const UserId user(UserId::Type_Standard, context.GetBodyString("user"));
+
+      Annotations::UserReader reader(context.GetAnnotations(), user);
+
+      Json::Value answer;
+      reader.ListLayersSharedWith(answer, context.GetUser().GetAnnotatingId());
+
+      ViewerToolbox::AnswerJson(output, answer);
+    }
+  }
 }
 
 
@@ -1496,7 +1507,7 @@ void RegisterAnnotationsRestApi()
     OrthancPlugins::RegisterRestCallback<OrthancWSI::SaveUserFeatures>("/wsi/api/save-user-features", true);
     OrthancPlugins::RegisterRestCallback<OrthancWSI::SearchActiveUsers>("/wsi/api/search-active-users", true);
 
-    // TODO
-    OrthancPlugins::RegisterRestCallback<OrthancWSI::ListSharedLayers>("/wsi/api/shared-layers", true);
+    OrthancPlugins::RegisterRestCallback<OrthancWSI::ListUsersSharingLayers>("/wsi/api/users-sharing-layers", true);
+    OrthancPlugins::RegisterRestCallback<OrthancWSI::ListLayersSharedByUser>("/wsi/api/shared-layers", true);
   }
 }

@@ -109,12 +109,10 @@ var app = new Vue({
           "author" : "tata"
         }
       ],
-      importAvailableSharedLayers: {},
+      importAvailableUsers: [],
       importSelectedUser: '',
       importSelectedLayer: '',
-      importAvailableLayers: [],
-      importUsersLoading: false,
-      importUsersFailed: false,
+      importAvailableLayers: []
     };
   },
 
@@ -1119,35 +1117,38 @@ var app = new Vue({
     ShowImportSharedLayerModal: function() {
       this.importSelectedUser = '';
       this.importSelectedLayer = '';
+      this.importAvailableUsers = [];
       this.importAvailableLayers = [];
-      this.importAvailableSharedLayers = {};
-      this.importUsersLoading = true;
-      this.importUsersFailed = false;
       this.modalImportSharedLayer.show();
 
       var that = this;
-      axios.post('../api/shared-layers',
+      axios.post('../api/users-sharing-layers',
                  this.CreatePostPayload({}))
         .then(function(response) {
-          that.importAvailableSharedLayers = response.data;
-          that.importUsersLoading = false;
+          that.importAvailableUsers = response.data;
         })
-        .catch(function(error) {
-          that.importUsersLoading = false;
-          that.importUsersFailed = true;
+        .catch(function() {
+          console.error('Cannot load users sharing layers');
         });
     },
 
     ImportUserChanged: function() {
       this.importSelectedLayer = '';
-      if (this.importSelectedUser && this.importAvailableSharedLayers[this.importSelectedUser]) {
-        this.importAvailableLayers = this.importAvailableSharedLayers[this.importSelectedUser].layers || [];
-      } else {
-        this.importAvailableLayers = [];
-      }
+      this.importAvailableLayers = [];
+
+      var that = this;
+      axios.post('../api/shared-layers',
+                 this.CreatePostPayload({ 'user': this.importSelectedUser }))
+        .then(function(response) {
+          that.importAvailableLayers = response.data;
+        })
+        .catch(function() {
+          console.error('Cannot load shared layers');
+        });
     },
 
     ImportSharedLayerConfirmed: function() {
+      // TODO
       var userId = this.importSelectedUser;
       var layerId = this.importSelectedLayer;
       if (!userId || !layerId) { return; }
