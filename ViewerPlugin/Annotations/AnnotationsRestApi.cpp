@@ -90,14 +90,14 @@ namespace OrthancWSI
     {
       switch (level_)
       {
-        case Orthanc::ResourceType_Series:
-          return projectId_ + "|series|" + resourceId_;
+      case Orthanc::ResourceType_Series:
+        return projectId_ + "|series|" + resourceId_;
 
-        case Orthanc::ResourceType_Instance:
-          return projectId_ + "|instance|" + boost::lexical_cast<std::string>(frameNumber_) + "|" + resourceId_;
+      case Orthanc::ResourceType_Instance:
+        return projectId_ + "|instance|" + boost::lexical_cast<std::string>(frameNumber_) + "|" + resourceId_;
 
-        default:
-          throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+      default:
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
       }
     }
   };
@@ -1286,13 +1286,17 @@ namespace OrthancWSI
 void RegisterAnnotationsRestApi()
 {
   OrthancPlugins::RegisterRestCallback<OrthancWSI::GetAnnotationsInfo>("/wsi/api/annotations-info", true);
-  OrthancPlugins::RegisterRestCallback<OrthancWSI::CreateUserLayer>("/wsi/api/create-user-layer", true);
-  OrthancPlugins::RegisterRestCallback<OrthancWSI::DeleteUserLayer>("/wsi/api/delete-user-layer", true);
-  OrthancPlugins::RegisterRestCallback<OrthancWSI::ListLayers>("/wsi/api/list-layers", true);
-  OrthancPlugins::RegisterRestCallback<OrthancWSI::SaveUserLayer>("/wsi/api/save-user-layer", true);
-  OrthancPlugins::RegisterRestCallback<OrthancWSI::LoadUserFeatures>("/wsi/api/load-user-features", true);
-  OrthancPlugins::RegisterRestCallback<OrthancWSI::SaveUserFeatures>("/wsi/api/save-user-features", true);
 
-  // TODO
-  OrthancPlugins::RegisterRestCallback<OrthancWSI::ListSharedLayers>("/wsi/api/shared-layers", true);
+  if (OrthancWSI::ViewerConfiguration::GetInstance().AreAnnotationsEnabled())
+  {
+    OrthancPlugins::RegisterRestCallback<OrthancWSI::CreateUserLayer>("/wsi/api/create-user-layer", true);
+    OrthancPlugins::RegisterRestCallback<OrthancWSI::DeleteUserLayer>("/wsi/api/delete-user-layer", true);
+    OrthancPlugins::RegisterRestCallback<OrthancWSI::ListLayers>("/wsi/api/list-layers", true);
+    OrthancPlugins::RegisterRestCallback<OrthancWSI::SaveUserLayer>("/wsi/api/save-user-layer", true);
+    OrthancPlugins::RegisterRestCallback<OrthancWSI::LoadUserFeatures>("/wsi/api/load-user-features", true);
+    OrthancPlugins::RegisterRestCallback<OrthancWSI::SaveUserFeatures>("/wsi/api/save-user-features", true);
+
+    // TODO
+    OrthancPlugins::RegisterRestCallback<OrthancWSI::ListSharedLayers>("/wsi/api/shared-layers", true);
+  }
 }
