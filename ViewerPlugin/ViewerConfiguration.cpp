@@ -114,4 +114,10 @@ namespace OrthancWSI
       throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
     }
   }
+
+
+  bool ViewerConfiguration::AreAnnotationsEnabled() const
+  {
+    return wsiConfiguration_.GetBooleanValue("EnableAnnotations", true);
+  }
 }

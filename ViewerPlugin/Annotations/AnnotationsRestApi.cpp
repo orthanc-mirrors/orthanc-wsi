@@ -25,6 +25,7 @@
 #include "AnnotationsRestApi.h"
 
 #include "../../Framework/BackgroundColor.h"
+#include "../ViewerConfiguration.h"
 #include "../ViewerToolbox.h"
 #include "IAuthenticatedUser.h"
 
@@ -1070,6 +1071,7 @@ namespace OrthancWSI
       CachedAnnotations::UserReader reader(context.GetCachedAnnotations(), context.GetUser());
 
       Json::Value answer;
+      answer["enabled"] = ViewerConfiguration::GetInstance().AreAnnotationsEnabled();
       answer["project-name"] = reader.GetAnnotationsInfo().GetProjectName();
       answer["project-description"] = reader.GetAnnotationsInfo().GetProjectDescription();
 

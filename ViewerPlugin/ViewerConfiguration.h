@@ -50,5 +50,7 @@ namespace OrthancWSI
     bool IsServeOpenSeadragon() const;
 
     bool LookupForcePowersOfTwoScaleFactors(bool& value) const;
+
+    bool AreAnnotationsEnabled() const;
   };
 }

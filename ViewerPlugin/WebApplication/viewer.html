@@ -140,8 +140,8 @@
   <body>
     <div id="app">
       <div id="map" :style="{ background: mapBackground }">
-        <div id="toolbar-top" style="display:none" :style="{ display: toolbarsVisible ? 'block' : 'none' }">
-          <div class="btn-group" role="group">
+        <div id="toolbar-top" style="display:none" v-show="toolbarsVisible">
+          <div class="btn-group" role="group" v-if="annotationsEnabled">
             <button type="button" class="btn btn-outline-secondary icon-btn"
                     :class="{ active: activeDrawTool === 'select' }"
                     data-bs-toggle="tooltip" data-bs-placement="bottom" title="Select annotation"
@@ -206,7 +206,7 @@
             </button>
           </div>
 
-          <div class="btn-group" role="group">
+          <div class="btn-group" role="group" v-if="annotationsEnabled">
             <button type="button" class="btn btn-outline-secondary icon-btn"
                     :class="{ active: activeDrawTool === 'move' }"
                     data-bs-toggle="tooltip" data-bs-placement="bottom" title="Move annotation"
@@ -235,7 +235,7 @@
           </div>
         </div>
 
-        <div id="toolbar-left" style="display:none" :style="{ display: toolbarsVisible ? 'block' : 'none' }">
+        <div id="toolbar-left" style="display:none" v-show="toolbarsVisible">
           <div id="toolbar-left-content" style="position:absolute; display:flex; flex-direction:column; align-items:center;">
             <div class="btn-group-vertical" role="group" style="padding-top: 1em">
               <button type="button" class="btn btn-outline-secondary p-0" v-if="showMagnificationButtons"
@@ -288,7 +288,7 @@
       </div>
 
       <div class="offcanvas offcanvas-end" data-bs-backdrop="false" data-bs-scroll="true"
-           tabindex="-1" id="right-panel">
+           tabindex="-1" id="right-panel" v-show="annotationsEnabled">
         <div class="offcanvas-header">
           <h5 class="offcanvas-title">Annotations</h5>
           <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
@@ -450,7 +450,7 @@
       </div>
 
       <button id="right-panel-toggle" type="button" class="btn btn-secondary"
-              style="display:none" :style="{ display: toolbarsVisible ? 'block' : 'none' }"
+              style="display:none" v-show="annotationsEnabled && toolbarsVisible"
               data-bs-toggle="offcanvas" data-bs-target="#right-panel">
         <i class="bi" :class="panelOpen ? 'bi-chevron-compact-right' : 'bi-chevron-compact-left'"></i>
       </button>

@@ -5,6 +5,7 @@ Pending changes in the mainline
 => Minimum SDK version: 1.7.0 <=
 
 * Support for annotations
+* New configuration option "EnableAnnotations" to enable annotations
 * Persistence of annotations in the Orthanc database (SDK 1.12.8 is required)
 * Per-user annotations if the "orthanc-education" plugin is installed
 
