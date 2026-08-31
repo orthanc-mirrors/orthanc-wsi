@@ -64,10 +64,19 @@ namespace OrthancWSI
         throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
       }
 
-      if (projectId_.find('|') != std::string::npos ||
+      // The pipe symbol is disallowed as it is used to build the key, cf. GetKey()
+      if (!Orthanc::Toolbox::IsAsciiString(projectId_) ||
+          projectId_.find('|') != std::string::npos)
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange,
+                                        "Project name containing non-ASCII characters or the pipe symbol: " + projectId_);
+      }
+
+      if (!Orthanc::Toolbox::IsAsciiString(resourceId_) ||
           resourceId_.find('|') != std::string::npos)
       {
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange,
+                                        "Resource ID containing non-ASCII characters or the pipe symbol: " + resourceId_);
       }
     }
 
