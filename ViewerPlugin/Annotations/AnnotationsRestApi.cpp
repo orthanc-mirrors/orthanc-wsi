@@ -180,6 +180,8 @@ namespace OrthancWSI
   {
   public:
     virtual std::string GetId() const = 0;
+
+    virtual bool IsSharedWith(const UserId& user) const = 0;
   };
 
 
@@ -283,6 +285,35 @@ namespace OrthancWSI
         serialized.append(item);
       }
     }
+
+    bool HasLayerSharedWith(const UserId& user) const
+    {
+      for (Content::const_iterator it = content_.begin(); it != content_.end(); ++it)
+      {
+        assert(*it != NULL);
+        if ((*it)->IsSharedWith(user))
+        {
+          return true;
+        }
+      }
+
+      return false;
+    }
+
+    void ListLayersSharedWith(std::set<std::string>& target,
+                              const UserId& user) const
+    {
+      target.clear();
+
+      for (Content::const_iterator it = content_.begin(); it != content_.end(); ++it)
+      {
+        assert(*it != NULL);
+        if ((*it)->IsSharedWith(user))
+        {
+          target.insert((*it)->GetId());
+        }
+      }
+    }
   };
 
 
@@ -292,6 +323,8 @@ namespace OrthancWSI
 #if ORTHANC_PLUGINS_VERSION_IS_ABOVE(1, 12, 8)
     OrthancPlugins::KeyValueStore store(KEY_VALUE_STORE);
     store.Store(key, value);
+#else
+    LOG(WARNING) << "Your Orthanc SDK is too old to save annotations";
 #endif
   }
 
@@ -321,6 +354,7 @@ namespace OrthancWSI
     OrthancPlugins::KeyValueStore store(KEY_VALUE_STORE);
     return store.GetValue(value, key);
 #else
+    LOG(WARNING) << "Your Orthanc SDK is too old to load annotations";
     return false;
 #endif
   }
@@ -445,9 +479,13 @@ namespace OrthancWSI
       return name_;
     }
 
-    bool IsSharedWith(const UserId& user) const
+    virtual bool IsSharedWith(const UserId& user) const ORTHANC_OVERRIDE
     {
+      assert(user.GetType() == UserId::Type_Root ||
+             user.GetType() == UserId::Type_Standard);
+
       return (isPublic_ ||
+              user.GetType() == UserId::Type_Root ||
               sharedWith_.find(user) != sharedWith_.end());
     }
 
@@ -640,6 +678,17 @@ namespace OrthancWSI
     {
       userLayers_.Serialize(serialized);
     }
+
+    bool HasLayerSharedWith(const UserId& user) const
+    {
+      return userLayers_.HasLayerSharedWith(user);
+    }
+
+    void ListLayersSharedWith(std::set<std::string>& target,
+                              const UserId& user) const
+    {
+      return userLayers_.ListLayersSharedWith(target, user);
+    }
   };
 
 
@@ -752,8 +801,8 @@ namespace OrthancWSI
     typedef std::map<UserId, UserData*>   Content;
 
     Orthanc::ReaderWriterLock         mutex_;
-    std::unique_ptr<AnnotationsInfo>  info_;
     AnnotationsId                     id_;
+    std::unique_ptr<AnnotationsInfo>  info_;
     Content                           content_;
 
   public:
@@ -798,6 +847,25 @@ namespace OrthancWSI
         delete it->second;
       }
     }
+
+
+    void ListUsersSharingLayerWith(std::set<UserId>& target,
+                                   const UserId& user)
+    {
+      Orthanc::ReaderWriterLock::ReadLock lock(mutex_);
+
+      target.clear();
+
+      for (Content::const_iterator it = content_.begin(); it != content_.end(); ++it)
+      {
+        assert(it->second != NULL);
+        if (it->second->HasLayerSharedWith(user))
+        {
+          target.insert(it->first);
+        }
+      }
+    }
+
 
     class UserReader : public boost::noncopyable
     {
@@ -848,6 +916,19 @@ namespace OrthancWSI
         {
           serialized[KEY_USER_LAYERS] = Json::arrayValue;
           serialized[KEY_SHARED_LAYERS] = Json::arrayValue;
+        }
+      }
+
+      void ListLayersSharedWith(std::set<std::string>& layers,
+                                const UserId& user) const
+      {
+        if (IsValid())
+        {
+          userData_->ListLayersSharedWith(layers, user);
+        }
+        else
+        {
+          layers.clear();
         }
       }
     };
@@ -1130,6 +1211,7 @@ namespace OrthancWSI
       answer["project-name"] = reader.GetAnnotationsInfo().GetProjectName();
       answer["project-description"] = reader.GetAnnotationsInfo().GetProjectDescription();
       answer["user"] = context.GetUser().Format();
+      answer["sharing"] = ViewerConfiguration::GetInstance().IsAnnotationsSharingEnabled();
 
 #if ORTHANC_PLUGINS_VERSION_IS_ABOVE(1, 12, 8)
       answer["persistent-annotations"] = true;
@@ -1233,7 +1315,6 @@ namespace OrthancWSI
       Json::Value answer;
       answer[KEY_FEATURES] = Json::arrayValue;
 
-#if ORTHANC_PLUGINS_VERSION_IS_ABOVE(1, 12, 8)
       std::string compressed;
       if (LookupKeyValueStore(compressed, context.GetFeaturesKey()))
       {
@@ -1268,9 +1349,6 @@ namespace OrthancWSI
           }
         }
       }
-#else
-      LOG(WARNING) << "Your Orthanc SDK is too old to load annotations";
-#endif
 
       ViewerToolbox::AnswerJson(output, answer);
     }
@@ -1300,11 +1378,7 @@ namespace OrthancWSI
       Orthanc::GzipCompressor compressor;
       Orthanc::IBufferCompressor::Compress(compressed, compressor, serialized);
 
-#if ORTHANC_PLUGINS_VERSION_IS_ABOVE(1, 12, 8)
       SetKeyValueStore(context.GetFeaturesKey(), compressed);
-#else
-      LOG(WARNING) << "Your Orthanc SDK is too old to save annotations";
-#endif
 
       ViewerToolbox::AnswerEmpty(output);
     }

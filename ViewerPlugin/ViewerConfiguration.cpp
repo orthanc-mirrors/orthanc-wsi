@@ -200,4 +200,10 @@ namespace OrthancWSI
   {
     return 100;   // TODO - Configuration option?
   }
+
+
+  bool ViewerConfiguration::IsAnnotationsSharingEnabled() const
+  {
+    return wsiConfiguration_.GetBooleanValue("EnableAnnotationSharing", false);
+  }
 }

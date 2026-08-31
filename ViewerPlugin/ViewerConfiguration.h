@@ -72,5 +72,7 @@ namespace OrthancWSI
     const std::string& GetAuthenticationHttpHeader() const;
 
     unsigned int GetAnnotationsCacheSize() const;
+
+    bool IsAnnotationsSharingEnabled() const;
   };
 }
