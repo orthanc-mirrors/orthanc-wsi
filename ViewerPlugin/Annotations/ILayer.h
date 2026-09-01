@@ -23,26 +23,14 @@
 
 #pragma once
 
-#include <boost/noncopyable.hpp>
-#include <json/value.h>
-#include <string>
+#include "ISerializable.h"
 
 
 namespace OrthancWSI
 {
-  class ISerializable : public boost::noncopyable
+  class ILayer : public ISerializable
   {
   public:
-    virtual ~ISerializable()
-    {
-    }
-
-    virtual void Serialize(Json::Value& serialized) const = 0;
-
-    static void Serialize(std::string& serialized,
-                          const ISerializable& obj);
-
-    static void SetKeyValueStore(const std::string& key,
-                                 const ISerializable& obj);
+    virtual std::string GetId() const = 0;
   };
 }

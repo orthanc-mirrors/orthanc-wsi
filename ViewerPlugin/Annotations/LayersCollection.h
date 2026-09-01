@@ -23,26 +23,54 @@
 
 #pragma once
 
-#include <boost/noncopyable.hpp>
-#include <json/value.h>
-#include <string>
+#include "ILayer.h"
+
+#include <Compatibility.h>
+
+#include <list>
+#include <map>
 
 
 namespace OrthancWSI
 {
-  class ISerializable : public boost::noncopyable
+  class LayersCollection : public ISerializable
   {
+  private:
+    typedef std::list<ILayer*>                        Content;
+    typedef std::map<std::string, Content::iterator>  Index;
+
+    Content  content_;
+    Index    index_;
+
   public:
-    virtual ~ISerializable()
+    ~LayersCollection();
+
+    size_t GetSize() const;
+
+    void AddLayer(ILayer* layer /* takes ownership */);
+
+    bool HasLayer(const std::string& id) const;
+
+    ILayer& GetLayer(const std::string& id) const;
+
+    void DeleteLayer(const std::string& id);
+
+    virtual void Serialize(Json::Value& serialized) const ORTHANC_OVERRIDE;
+
+    class Iterator : public boost::noncopyable
     {
-    }
+    private:
+      Content::const_iterator  it_;
+      Content::const_iterator  end_;
 
-    virtual void Serialize(Json::Value& serialized) const = 0;
+    public:
+      Iterator(const LayersCollection& that);
 
-    static void Serialize(std::string& serialized,
-                          const ISerializable& obj);
+      bool IsDone() const;
 
-    static void SetKeyValueStore(const std::string& key,
-                                 const ISerializable& obj);
+      const ILayer& GetLayer() const;
+
+      void Next();
+    };
   };
 }
