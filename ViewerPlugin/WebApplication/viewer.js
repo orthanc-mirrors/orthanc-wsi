@@ -41,6 +41,7 @@ var app = new Vue({
       annotationsInfo: {},
       imageDescription: '',
       userLayers: [],
+      sharedLayers: [],
       activeUserLayerId: null,
 
       // UI state
@@ -53,6 +54,7 @@ var app = new Vue({
 
       // Bootstrap modals
       modalDeleteUserLayer: null,
+      modalDeleteSharedLayer: null,
       modalDeleteAnnotation: null,
       pendingDelete: null,
 
@@ -97,19 +99,10 @@ var app = new Vue({
       shareLayerSearchResults: [],
       modalShareUserLayer: null,
 
-      // TODO - Shared layers
+      // Import shared layers modal
       sharedSource: null,
       sharedLayer: null,
       modalImportSharedLayer: null,
-      sharedLayers: [
-        {
-          "id": "toto",
-          "visible": true,
-          "name": "Coucou",
-          "color" : "#ff0000",
-          "author" : "tata"
-        }
-      ],
       importAvailableUsers: [],
       importUserSearchQuery: '',
       importUserSearchResults: [],
@@ -123,9 +116,10 @@ var app = new Vue({
     this.InitializePanelAnimation();
 
     this.modalDeleteUserLayer = new bootstrap.Modal(document.getElementById('modal-delete-user-layer'));
+    this.modalDeleteSharedLayer = new bootstrap.Modal(document.getElementById('modal-delete-shared-layer'));
     this.modalDeleteAnnotation = new bootstrap.Modal(document.getElementById('modal-delete-annotation'));
     this.modalShareUserLayer = new bootstrap.Modal(document.getElementById('modal-share-user-layer'));
-    this.modalImportSharedLayer = new bootstrap.Modal(document.getElementById('modal-import-shared-layer'));  // TODO
+    this.modalImportSharedLayer = new bootstrap.Modal(document.getElementById('modal-import-shared-layer'));
 
     document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) {
       new bootstrap.Tooltip(el, { trigger: 'hover' });
@@ -176,12 +170,13 @@ var app = new Vue({
       return JSON.stringify(args);
     },
 
-    LoadUserLayers: function(activeLayerId) {
+    LoadLayers: function(activeLayerId) {
       var that = this;
       axios.post('../api/list-layers',
                  this.CreatePostPayload({}))
         .then(function(response) {
           that.userLayers = response.data['user-layers'];
+          that.sharedLayers = response.data['shared-layers'];
 
           if (that.userLayers.length == 0) {
             that.CreateUserLayer();
@@ -190,6 +185,8 @@ var app = new Vue({
           } else {
             that.activeUserLayerId = that.userLayers[0].id;
           }
+
+          that.ReloadSharedLayersContent();
         })
         .catch(function() {
           console.error('Cannot load the saved annotations');
@@ -201,7 +198,7 @@ var app = new Vue({
       axios.post('../api/create-user-layer',
                  this.CreatePostPayload({}))
         .then(function(response) {
-          that.LoadUserLayers(response.data.id);
+          that.LoadLayers(response.data.id);
         })
         .catch(function() {
           console.error('Cannot create a new layer');
@@ -362,7 +359,7 @@ var app = new Vue({
                  })
                 )
         .then(function(response) {
-          that.LoadUserLayers();
+          that.LoadLayers();
 
           // Remove the features that were part of this layer
           that.drawSource.getFeatures().forEach(function(feature) {
@@ -412,8 +409,7 @@ var app = new Vue({
           that.annotationsInfo = response.data;
 
           if (that.annotationsInfo.enabled) {
-            that.LoadUserLayers();
-            // that.LoadSharedLayers();  // TODO
+            that.LoadLayers();
           }
         })
         .catch(function(error) {
@@ -1055,10 +1051,6 @@ var app = new Vue({
 
           /*
           // TODO
-          that.AddReadOnlyProperty('Length', '1.23 mm');
-          that.AddReadOnlyProperty('Bounding box', '100 x 200 px');
-          that.AddReadOnlyProperty('Surface', '0.05 mm²');
-          that.AddEditableProperty('Label', feature.get('label') || '', 'label');
           that.AddDropdownProperty('Category', [
           { value: 'tumor',    label: 'Tumor' },
           { value: 'stroma',   label: 'Stroma' },
@@ -1076,7 +1068,7 @@ var app = new Vue({
     },
 
     // -----------------------------------------------------------------------
-    // TODO - Shared layers
+    // Shared layers
     // -----------------------------------------------------------------------
 
     ShowShareUserLayerModal: function(layer) {
@@ -1191,43 +1183,51 @@ var app = new Vue({
     },
 
     ImportSharedLayerConfirmed: function() {
-      // TODO
+      this.modalImportSharedLayer.hide();
       var userId = this.importSelectedUser;
       var layerId = this.importSelectedLayer;
-      if (!userId || !layerId) { return; }
 
-      var layerName = '';
-      for (var i = 0; i < this.importAvailableLayers.length; i++) {
-        if (this.importAvailableLayers[i].id === layerId) {
-          layerName = this.importAvailableLayers[i].name;
-          break;
-        }
-      }
-
-      var sharedLayers = this.sharedLayers;
-      var alreadyImported = sharedLayers.some(function(s) {
-        return s.userId === userId && s.id === layerId;
-      });
-      if (!alreadyImported) {
-        /*var entry = {
-          id: layerId,
-          userId: userId,
-          author: userId,
-          name: layerName,
-          color: predefinedPalette[sharedLayers.length % predefinedPalette.length],
-          visible: true
-        };
-        sharedLayers.push(entry);
-        LoadSharedLayerAnnotations(entry);*/
-
-        // TODO
-      }
-
-      this.modalImportSharedLayer.hide();
+      var that = this;
+      axios.post('../api/import-shared-layer',
+                 this.CreatePostPayload({
+                   'owner': userId,
+                   'layer': layerId
+                 }))
+        .then(function(response) {
+          that.LoadLayers();
+        })
+        .catch(function() {
+          console.error('Cannot import shared layer');
+        });
     },
 
-    ReloadSharedLayers: function() {
+
+    DeleteSharedLayer: function(layerId) {
+      this.pendingDelete = layerId;
+      this.modalDeleteSharedLayer.show();
+    },
+
+    SharedLayerDeleteConfirmed: function() {
+      this.modalDeleteSharedLayer.hide();
+      var layerId = this.pendingDelete;
+
+      var that = this;
+      axios.post('../api/remove-shared-layer',
+                 this.CreatePostPayload({
+                   'layer': layerId
+                 }))
+        .then(function(response) {
+          that.LoadLayers();
+        })
+        .catch(function() {
+          console.error('Cannot remove shared layer');
+        });
+    },
+
+
+    ReloadSharedLayersContent: function() {
       // TODO
+      console.log('ReloadSharedLayersContent()');
     }
   }
 });

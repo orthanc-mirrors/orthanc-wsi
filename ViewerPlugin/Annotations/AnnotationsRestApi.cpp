@@ -583,13 +583,19 @@ namespace OrthancWSI
 
       author_.Serialize(serialized[KEY_AUTHOR]);
     }
+
+    virtual bool IsSharedWith(const UserId& user) const ORTHANC_OVERRIDE
+    {
+      return false;
+    }
   };
 
 
   class UserData : public ISerializable
   {
   private:
-    LayersCollection    userLayers_;
+    LayersCollection  userLayers_;
+    LayersCollection  sharedLayers_;
 
   public:
     UserData()
@@ -598,15 +604,26 @@ namespace OrthancWSI
 
     UserData(const Json::Value& serialized)
     {
-      if (!serialized.isArray())
+      if (!serialized.isObject() ||
+          !serialized.isMember(KEY_USER_LAYERS) ||
+          !serialized.isMember(KEY_SHARED_LAYERS) ||
+          !serialized[KEY_USER_LAYERS].isArray() ||
+          !serialized[KEY_SHARED_LAYERS].isArray())
       {
         throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
       }
       else
       {
-        for (Json::Value::ArrayIndex i = 0; i < serialized.size(); i++)
+        const Json::Value& a = serialized[KEY_USER_LAYERS];
+        for (Json::Value::ArrayIndex i = 0; i < a.size(); i++)
         {
-          userLayers_.AddLayer(new UserLayer(serialized[i]));
+          userLayers_.AddLayer(new UserLayer(a[i]));
+        }
+
+        const Json::Value& b = serialized[KEY_SHARED_LAYERS];
+        for (Json::Value::ArrayIndex i = 0; i < b.size(); i++)
+        {
+          sharedLayers_.AddLayer(new SharedLayer(b[i]));
         }
       }
     }
@@ -670,7 +687,9 @@ namespace OrthancWSI
 
     virtual void Serialize(Json::Value& serialized) const ORTHANC_OVERRIDE
     {
-      userLayers_.Serialize(serialized);
+      serialized = Json::objectValue;
+      userLayers_.Serialize(serialized[KEY_USER_LAYERS]);
+      sharedLayers_.Serialize(serialized[KEY_SHARED_LAYERS]);
     }
 
     bool HasLayerSharedWith(const UserId& user) const
@@ -683,6 +702,24 @@ namespace OrthancWSI
                               const UserId& user) const
     {
       return userLayers_.ListLayersSharedWith(target, owner, user);
+    }
+
+    void ImportSharedLayer(const UserId& owner,
+                           const UserLayer& layer)
+    {
+      if (sharedLayers_.HasLayer(layer.GetId()))
+      {
+        LOG(INFO) << "Cannot re-import already imported layer: " << layer.GetId();
+      }
+      else
+      {
+        sharedLayers_.AddLayer(new SharedLayer(owner, layer));
+      }
+    }
+
+    void RemoveSharedLayer(const std::string& layerId)
+    {
+      sharedLayers_.DeleteLayer(layerId);
     }
   };
 
@@ -927,8 +964,7 @@ namespace OrthancWSI
 
         if (IsValid())
         {
-          userData_->Serialize(serialized[KEY_USER_LAYERS]);
-          serialized[KEY_SHARED_LAYERS] = Json::arrayValue;  // TODO
+          userData_->Serialize(serialized);
         }
         else
         {
@@ -1020,39 +1056,38 @@ namespace OrthancWSI
         userData_->DeleteUserLayer(layerId);
         Commit();
       }
+
+      void ImportSharedLayer(const UserId& owner,
+                             const std::string& layerId)
+      {
+        assert(userData_ != NULL);
+
+        Content::const_iterator found = that_.content_.find(owner);
+        if (found == that_.content_.end())
+        {
+          throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
+        }
+
+        assert(found->second != NULL);
+        const UserData& ownerData = *found->second;
+
+        UserLayer& layer = ownerData.GetUserLayer(layerId);
+        if (!layer.IsSharedWith(userId_))
+        {
+          throw Orthanc::OrthancException(Orthanc::ErrorCode_ForbiddenAccess);
+        }
+
+        userData_->ImportSharedLayer(owner, layer);
+        Commit();
+      }
+
+      void RemoveSharedLayer(const std::string& layerId)
+      {
+        assert(userData_ != NULL);
+        userData_->RemoveSharedLayer(layerId);
+        Commit();
+      }
     };
-
-
-#if 0
-    void GetSharedLayers(Json::Value& layers,
-                         const IAuthenticatedUser& user)
-    {
-      Orthanc::ReaderWriterLock::ReadLock lock(mutex_);
-
-      layers = Json::arrayValue;   // TODO
-    }
-
-    bool HasAccessToLayer(const IAuthenticatedUser& user,
-                          const UserId& author,
-                          const std::string& layerId)
-    {
-      Orthanc::ReaderWriterLock::ReadLock lock(mutex_);
-
-      return false;  // TODO
-    }
-
-    void CreateUserLayer(const IAuthenticatedUser& user)
-    {
-      // TODO
-    }
-
-    void AnswerLayers(OrthancPluginRestOutput* output,
-                      const IAuthenticatedUser& user)
-    {
-
-      ViewerToolbox::AnswerJson(output, answer);
-    }
-#endif
   };
 
 
@@ -1493,6 +1528,51 @@ namespace OrthancWSI
       ViewerToolbox::AnswerJson(output, answer);
     }
   }
+
+
+  void ImportSharedLayer(OrthancPluginRestOutput* output,
+                         const char* url,
+                         const OrthancPluginHttpRequest* request)
+  {
+    if (request->method != OrthancPluginHttpMethod_Post)
+    {
+      OrthancPluginSendMethodNotAllowed(OrthancPlugins::GetGlobalContext(), output, "POST");
+    }
+    else
+    {
+      AnnotationsCommandContext context(request);
+
+      const UserId owner(UserId::Type_Standard, context.GetBodyString("owner"));
+      const std::string layerId = context.GetBodyString("layer");
+
+      Annotations::UserWriter writer(context.GetAnnotations(), context.GetUser().GetAnnotatingId());
+      writer.ImportSharedLayer(owner, layerId);
+
+      ViewerToolbox::AnswerEmpty(output);
+    }
+  }
+
+
+  void RemoveSharedLayer(OrthancPluginRestOutput* output,
+                         const char* url,
+                         const OrthancPluginHttpRequest* request)
+  {
+    if (request->method != OrthancPluginHttpMethod_Post)
+    {
+      OrthancPluginSendMethodNotAllowed(OrthancPlugins::GetGlobalContext(), output, "POST");
+    }
+    else
+    {
+      AnnotationsCommandContext context(request);
+
+      const std::string layerId = context.GetBodyString("layer");
+
+      Annotations::UserWriter writer(context.GetAnnotations(), context.GetUser().GetAnnotatingId());
+      writer.RemoveSharedLayer(layerId);
+
+      ViewerToolbox::AnswerEmpty(output);
+    }
+  }
 }
 
 
@@ -1512,5 +1592,7 @@ void RegisterAnnotationsRestApi()
 
     OrthancPlugins::RegisterRestCallback<OrthancWSI::ListUsersSharingLayers>("/wsi/api/users-sharing-layers", true);
     OrthancPlugins::RegisterRestCallback<OrthancWSI::ListLayersSharedByUser>("/wsi/api/shared-layers", true);
+    OrthancPlugins::RegisterRestCallback<OrthancWSI::ImportSharedLayer>("/wsi/api/import-shared-layer", true);
+    OrthancPlugins::RegisterRestCallback<OrthancWSI::RemoveSharedLayer>("/wsi/api/remove-shared-layer", true);
   }
 }
