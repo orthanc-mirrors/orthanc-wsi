@@ -23,8 +23,6 @@
 
 var app = new Vue({
   el: '#app',
-  computed: {
-  },
 
   data() {
     return {
@@ -109,6 +107,17 @@ var app = new Vue({
       importSelectedLayer: '',
       importAvailableLayers: []
     };
+  },
+
+  computed: {
+  },
+
+  watch: {
+    activeUserLayerId: function() {
+      if (this.activeDrawTool === 'modify') {
+        this.RefreshModifyFeatureCollection();
+      }
+    }
   },
 
   mounted: function() {
@@ -532,12 +541,7 @@ var app = new Vue({
       this.DeactivateAll();
       if (!wasActive) {
         if (toolName === 'modify') {
-          this.modifyFeatureCollection.clear();
-          this.drawSource.getFeatures().forEach(function(feature) {
-            if (feature.get('layer-id') === app.activeUserLayerId) {
-              app.modifyFeatureCollection.push(feature);
-            }
-          });
+          this.RefreshModifyFeatureCollection();
         }
         this.map.addInteraction(interactions[toolName]);
         if (drawTools.indexOf(toolName) !== -1) {
@@ -548,6 +552,19 @@ var app = new Vue({
         if (cursor) {
           this.map.getViewport().style.cursor = cursor;
         }
+      }
+    },
+
+    RefreshModifyFeatureCollection: function() {
+      if (this.modifyFeatureCollection !== null &
+          this.drawSource !== null) {
+        var activeLayerId = this.activeUserLayerId;
+        this.modifyFeatureCollection.clear();
+        this.drawSource.getFeatures().forEach(function(feature) {
+          if (feature.get('layer-id') === activeLayerId) {
+            app.modifyFeatureCollection.push(feature);
+          }
+        });
       }
     },
 
