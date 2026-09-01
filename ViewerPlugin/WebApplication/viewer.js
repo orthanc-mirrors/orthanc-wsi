@@ -240,35 +240,12 @@ var app = new Vue({
           for (let i = 0; i < response.data.features.length; i++) {
             var layerId = response.data.features[i]['layer-id'];
 
-            if (layerId !== undefined &&
-                availableLayerIds.includes(layerId)) {
-              var geometry = UnserializeGeometry(response.data.features[i]);
-
-              if (geometry !== null) {
-                var feature = new ol.Feature(geometry);
-                feature.set('layer-id', layerId);
-
-                var type = response.data.features[i]['type'];
-                if (type !== undefined) {
-                  feature.set('type', type);
-                }
-
-                var label = response.data.features[i]['label'];
-                if (label !== undefined) {
-                  feature.set('label', label);
-                }
-
-                var date = response.data.features[i]['creation-datetime'];  // This is a numerical timestamp
-                if (date !== undefined) {
-                  feature.set('creation-datetime', new Date(date));
-                }
-
-                that.drawSource.addFeature(feature);
-              }
+            if (availableLayerIds.includes(layerId)) {
+              UnserializeFeatureOntoMap(that.drawSource, response.data.features[i]);
             }
           }
 
-          // Now that the features are loaded, we can install the save callback
+          // Now that the user features are loaded, we can install the save callback
           that.drawSource.on('addfeature', function (e) {
             that.SaveUserFeatures();
           });
@@ -842,11 +819,11 @@ var app = new Vue({
 
       this.map.once('postrender', function() {
         // Match Bootstrap button size to OL button size
-        var olBtnSize = document.querySelector('.ol-zoom button').offsetWidth + 'px';
+        /*var olBtnSize = document.querySelector('.ol-zoom button').offsetWidth + 'px';
         document.querySelectorAll('.icon-btn').forEach(function(el) {
           el.style.width = olBtnSize;
           el.style.height = olBtnSize;
-        });
+        });*/
 
         // Move the top toolbar directly right to the zoom control, regardless of scaling
         var zoomEl = document.querySelector('.ol-zoom');
@@ -1271,8 +1248,19 @@ var app = new Vue({
         return;
       }
 
-      // TODO
-      console.log('ReloadSharedLayersContent()');
+      var that = this;
+      axios.post('../api/load-shared-features',
+                 this.CreatePostPayload({}))
+        .then(function(response) {
+          that.drawSharedSource.clear();
+
+          for (let i = 0; i < response.data.features.length; i++) {
+            UnserializeFeatureOntoMap(that.drawSharedSource, response.data.features[i]);
+          }
+        })
+        .catch(function() {
+          console.error('Cannot load shared features');
+        });
     }
   }
 });
@@ -1461,6 +1449,37 @@ function UnserializeGeometry(json)
   } else {
     console.error('Not implemented: ' + json.type);
     return null;
+  }
+}
+
+
+function UnserializeFeatureOntoMap(mapSource, serialized)
+{
+  var geometry = UnserializeGeometry(serialized);
+
+  if (geometry !== null) {
+    var feature = new ol.Feature(geometry);
+
+    var layerId = serialized['layer-id'];
+    console.assert(layerId !== undefined);
+    feature.set('layer-id', layerId);
+
+    var type = serialized['type'];
+    if (type !== undefined) {
+      feature.set('type', type);
+    }
+
+    var label = serialized['label'];
+    if (label !== undefined) {
+      feature.set('label', label);
+    }
+
+    var date = serialized['creation-datetime'];  // This is a numerical timestamp
+    if (date !== undefined) {
+      feature.set('creation-datetime', new Date(date));
+    }
+
+    mapSource.addFeature(feature);
   }
 }
 
