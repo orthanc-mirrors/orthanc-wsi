@@ -79,6 +79,7 @@ var app = new Vue({
       drawArrow: null,
       moveFeature: null,
       modifyFeature: null,
+      modifyFeatureCollection: null,
       selectAnnotation: null,
 
       /**
@@ -553,6 +554,14 @@ var app = new Vue({
       var wasActive = this.activeDrawTool === toolName;
       this.DeactivateAll();
       if (!wasActive) {
+        if (toolName === 'modify') {
+          this.modifyFeatureCollection.clear();
+          this.drawSource.getFeatures().forEach(function(feature) {
+            if (feature.get('layer-id') === app.activeUserLayerId) {
+              app.modifyFeatureCollection.push(feature);
+            }
+          });
+        }
         this.map.addInteraction(interactions[toolName]);
         if (drawTools.indexOf(toolName) !== -1) {
           this.map.addInteraction(this.selectAnnotation);  // kept active to show blue highlight
@@ -945,8 +954,14 @@ var app = new Vue({
         maxPoints: 2
       });
 
-      this.moveFeature = new ol.interaction.Translate({ source: this.drawSource });
-      this.modifyFeature = new ol.interaction.Modify({ source: this.drawSource });
+      this.moveFeature = new ol.interaction.Translate({
+        source: this.drawSource,
+        filter: function(feature) {
+          return feature.get('layer-id') === app.activeUserLayerId;
+        }
+      });
+      this.modifyFeatureCollection = new ol.Collection();
+      this.modifyFeature = new ol.interaction.Modify({ features: this.modifyFeatureCollection });
 
       // Select interaction (inactive until toggled).
       // The condition restricts user-click selection to the dedicated select tool only,
