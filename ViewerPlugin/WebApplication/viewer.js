@@ -71,6 +71,8 @@ var app = new Vue({
       map: null,
       drawSource: null,
       drawLayer: null,  // Used in HTML
+      drawSharedSource: null,
+      drawSharedLayer: null,
       drawLine: null,
       drawPoint: null,
       drawCircle: null,
@@ -91,17 +93,14 @@ var app = new Vue({
       referenceMagnification: 40,
 
       // Share user layer modal
+      modalShareUserLayer: null,
       shareLayerTarget: {},
       shareLayerPublic: false,
       shareLayerUsers: [],
-      shareLayerManualUserId: '',
       shareLayerSearchQuery: '',
       shareLayerSearchResults: [],
-      modalShareUserLayer: null,
 
       // Import shared layers modal
-      sharedSource: null,
-      sharedLayer: null,
       modalImportSharedLayer: null,
       importAvailableUsers: [],
       importUserSearchQuery: '',
@@ -915,9 +914,9 @@ var app = new Vue({
       this.map.addLayer(this.drawLayer);
 
       // Shared annotations: a separate read-only source for all imported shared layers
-      this.sharedSource = new ol.source.Vector();
-      this.sharedLayer = new ol.layer.Vector({
-        source: this.sharedSource,
+      this.drawSharedSource = new ol.source.Vector();
+      this.drawSharedLayer = new ol.layer.Vector({
+        source: this.drawSharedSource,
         style: function(feature) {
           var entry = GetSharedLayerById(feature.get('shared-layer-id'));
           if (!entry || !entry.visible) {
@@ -926,7 +925,7 @@ var app = new Vue({
           return CreateLayerStyle(entry.color);
         }
       });
-      this.map.addLayer(this.sharedLayer);
+      this.map.addLayer(this.drawSharedLayer);
 
       // Draw interactions (inactive until toggled)
       this.drawLine = new ol.interaction.Draw({
@@ -1222,6 +1221,12 @@ var app = new Vue({
         .catch(function() {
           console.error('Cannot remove shared layer');
         });
+    },
+
+    SaveSharedLayer: function(layer) {
+      // TODO
+      console.log('SaveSharedLayer()');
+      console.log(layer);
     },
 
 
