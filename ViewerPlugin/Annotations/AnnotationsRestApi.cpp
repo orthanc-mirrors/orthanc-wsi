@@ -1304,7 +1304,8 @@ namespace OrthancWSI
       answer["description"] = reader.GetAnnotationsInfo().GetProjectDescription();
       answer["enabled"] = ViewerConfiguration::GetInstance().AreAnnotationsEnabled();
       answer["name"] = reader.GetAnnotationsInfo().GetProjectName();
-      answer["sharing"] = ViewerConfiguration::GetInstance().IsAnnotationsSharingEnabled();
+      answer["sharing"] = (ViewerConfiguration::GetInstance().AreAnnotationsEnabled() &&
+                           ViewerConfiguration::GetInstance().IsAnnotationsSharingEnabled());
       answer["user"] = context.GetUser().Format();
 
 #if ORTHANC_PLUGINS_VERSION_IS_ABOVE(1, 12, 8)

@@ -151,7 +151,6 @@ var app = new Vue({
       return;
     }
 
-    this.LoadAnnotationsInfo();
     this.LoadPyramid();
   },
 
@@ -185,6 +184,7 @@ var app = new Vue({
             that.activeUserLayerId = that.userLayers[0].id;
           }
 
+          that.LoadUserFeatures();
           that.ReloadSharedLayersContent();
         })
         .catch(function() {
@@ -217,6 +217,11 @@ var app = new Vue({
 
     LoadUserFeatures: function() {
       console.assert(this.drawSource !== null);  // InitializeAnnotations() must have been invoked
+      console.assert(this.annotationsInfo.enabled !== undefined);  // LoadLayers() must have been invoked
+
+      if (!this.annotationsInfo.enabled) {
+        return;
+      }
 
       this.showSpinner = true;
 
@@ -1063,7 +1068,7 @@ var app = new Vue({
         }
       });
 
-      this.LoadUserFeatures();
+      this.LoadAnnotationsInfo();
     },
 
     // -----------------------------------------------------------------------
@@ -1259,6 +1264,13 @@ var app = new Vue({
 
 
     ReloadSharedLayersContent: function() {
+      console.assert(this.drawSharedSource !== null);  // InitializeAnnotations() must have been invoked
+      console.assert(this.annotationsInfo.enabled !== undefined);  // LoadLayers() must have been invoked
+
+      if (!this.annotationsInfo.sharing) {
+        return;
+      }
+
       // TODO
       console.log('ReloadSharedLayersContent()');
     }
