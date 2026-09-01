@@ -725,26 +725,90 @@ namespace OrthancWSI
   };
 
 
+  class ProjectInformation : public boost::noncopyable
+  {
+  private:
+    boost::mutex              mutex_;
+    std::string               projectId_;
+    boost::posix_time::ptime  lastUpdate_;
+    std::string               name_;
+    std::string               description_;
+
+    static boost::posix_time::ptime GetNow()
+    {
+      return boost::posix_time::second_clock::universal_time();
+    }
+
+
+    void Load()
+    {
+      Json::Value info;
+
+      if (OrthancPlugins::RestApiGet(info, "/education/api-plugins/project?id=" + projectId_, true) &&
+          info.isObject())
+      {
+        // The "orthanc-education" plugin is available
+        name_ = Orthanc::SerializationToolbox::ReadString(info, "name", "");
+        description_ = Orthanc::SerializationToolbox::ReadString(info, "description", "");
+      }
+      else
+      {
+        name_.clear();
+        description_.clear();
+      }
+
+      lastUpdate_ = GetNow();
+
+      description_ = boost::posix_time::to_iso_string(lastUpdate_);
+    }
+
+    // The mutex must be locked
+    void Refresh()
+    {
+      if (GetNow() - lastUpdate_ >= boost::posix_time::seconds(10))
+      {
+        Load();
+      }
+    }
+
+  public:
+    ProjectInformation(const std::string& projectId) :
+      projectId_(projectId)
+    {
+      Load();
+    }
+
+    std::string GetName()
+    {
+      boost::mutex::scoped_lock lock(mutex_);
+      Refresh();
+      return name_;
+    }
+
+    std::string GetDescription()
+    {
+      boost::mutex::scoped_lock lock(mutex_);
+      Refresh();
+      return description_;
+    }
+  };
+
+
   class AnnotationsWorkspace : public Orthanc::IDynamicObject
   {
   private:
-    class Info : public ISerializable
+    class PersistentInfo : public ISerializable
     {
     private:
-      std::string        projectName_;
-      std::string        projectDescription_;
       std::set<UserId>   activeUsers_;
 
     public:
-      Info()
+      PersistentInfo()
       {
       }
 
-      Info(const Json::Value& serialized)
+      PersistentInfo(const Json::Value& serialized)
       {
-        projectName_ = Orthanc::SerializationToolbox::ReadString(serialized, KEY_PROJECT_NAME);
-        projectDescription_ = Orthanc::SerializationToolbox::ReadString(serialized, KEY_PROJECT_DESCRIPTION);
-
         const Json::Value& users = serialized[KEY_ACTIVE_USERS];
 
         if (!users.isArray())
@@ -756,26 +820,6 @@ namespace OrthancWSI
         {
           activeUsers_.insert(UserId(users[i]));
         }
-      }
-
-      const std::string& GetProjectName() const
-      {
-        return projectName_;
-      }
-
-      void SetProjectName(const std::string& name)
-      {
-        projectName_ = name;
-      }
-
-      const std::string& GetProjectDescription() const
-      {
-        return projectDescription_;
-      }
-
-      void SetProjectDescription(const std::string& description)
-      {
-        projectDescription_ = description;
       }
 
       // Return "true" iff. the user was not already tagged as active
@@ -808,8 +852,6 @@ namespace OrthancWSI
         }
 
         serialized = Json::objectValue;
-        serialized[KEY_PROJECT_NAME] = projectName_;
-        serialized[KEY_PROJECT_DESCRIPTION] = projectDescription_;
         serialized[KEY_ACTIVE_USERS] = users;
       }
     };
@@ -831,23 +873,19 @@ namespace OrthancWSI
       }
     }
 
-    const Info& GetInfo() const
-    {
-      assert(info_.get() != NULL);
-      return *info_;
-    }
-
 
     typedef std::map<UserId, UserAnnotationsSettings*>   Content;
 
-    Orthanc::ReaderWriterLock  mutex_;
-    AnnotationsWorkspaceId     id_;
-    std::unique_ptr<Info>      info_;
-    Content                    content_;
+    Orthanc::ReaderWriterLock        mutex_;
+    AnnotationsWorkspaceId           id_;
+    std::unique_ptr<PersistentInfo>  persistentInfo_;
+    Content                          content_;
+    ProjectInformation               projectInformation_;
 
   public:
     AnnotationsWorkspace(const AnnotationsWorkspaceId& id) :
-      id_(id)
+      id_(id),
+      projectInformation_(id.GetProjectId())
     {
       const std::string key = id.GetInfoKey();
 
@@ -855,26 +893,18 @@ namespace OrthancWSI
 
       if (LookupKeyValueStore(info, key))
       {
-        info_.reset(new Info(info));
+        persistentInfo_.reset(new PersistentInfo(info));
 
-        for (std::set<UserId>::const_iterator it = info_->GetActiveUsers().begin();
-             it != info_->GetActiveUsers().end(); ++it)
+        for (std::set<UserId>::const_iterator it = persistentInfo_->GetActiveUsers().begin();
+             it != persistentInfo_->GetActiveUsers().end(); ++it)
         {
           Load(*it);
         }
       }
       else
       {
-        info_.reset(new Info);
-
-        if (OrthancPlugins::RestApiGet(info, "/education/api-plugins/project?id=" + id.GetProjectId(), true))
-        {
-          // The "orthanc-education" plugin is available
-          info_->SetProjectName(Orthanc::SerializationToolbox::ReadString(info, "name"));
-          info_->SetProjectDescription(Orthanc::SerializationToolbox::ReadString(info, "description"));
-        }
-
-        info_->Serialize(info);
+        persistentInfo_.reset(new PersistentInfo);
+        persistentInfo_->Serialize(info);
         SetKeyValueStore(key, info);
       }
     }
@@ -888,6 +918,16 @@ namespace OrthancWSI
       }
     }
 
+    std::string GetProjectName()
+    {
+      return projectInformation_.GetName();
+    }
+
+    std::string GetProjectDescription()
+    {
+      return projectInformation_.GetDescription();
+    }
+
 
     void SearchActiveUsers(std::set<UserId>& target,
                            const std::string& query)
@@ -897,7 +937,7 @@ namespace OrthancWSI
       target.clear();
 
       const boost::regex re(query);
-      const std::set<UserId>& activeUsers = info_->GetActiveUsers();
+      const std::set<UserId>& activeUsers = persistentInfo_->GetActiveUsers();
 
       for (std::set<UserId>::const_iterator it = activeUsers.begin(); it != activeUsers.end(); ++it)
       {
@@ -975,16 +1015,6 @@ namespace OrthancWSI
       bool IsValid() const
       {
         return userSettings_ != NULL;
-      }
-
-      const std::string& GetProjectName() const
-      {
-        return that_.GetInfo().GetProjectName();
-      }
-
-      const std::string& GetProjectDescription() const
-      {
-        return that_.GetInfo().GetProjectDescription();
       }
 
       void ListLayers(Json::Value& serialized) const
@@ -1088,10 +1118,10 @@ namespace OrthancWSI
         that_(that),
         userId_(userId)
       {
-        if (that.info_->AddActiveUser(userId_))
+        if (that.persistentInfo_->AddActiveUser(userId_))
         {
           // Only update the key-value store if this is the first time we meet this user
-          SetKeyValueStore(that.id_.GetInfoKey(), *that.info_);
+          SetKeyValueStore(that.id_.GetInfoKey(), *that.persistentInfo_);
         }
 
         Content::iterator found = that.content_.find(userId_);
@@ -1328,12 +1358,8 @@ namespace OrthancWSI
 
       Json::Value answer;
 
-      {
-        AnnotationsWorkspace::UserReader reader(context.GetWorkspace(), context.GetUser().GetAnnotatingId());
-        answer["description"] = reader.GetProjectDescription();
-        answer["name"] = reader.GetProjectName();
-      }
-
+      answer["name"] = context.GetWorkspace().GetProjectName();
+      answer["description"] = context.GetWorkspace().GetProjectDescription();
       answer["enabled"] = ViewerConfiguration::GetInstance().AreAnnotationsEnabled();
       answer["sharing"] = (ViewerConfiguration::GetInstance().AreAnnotationsEnabled() &&
                            ViewerConfiguration::GetInstance().IsAnnotationsSharingEnabled());
