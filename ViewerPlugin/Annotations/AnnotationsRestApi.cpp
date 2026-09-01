@@ -303,6 +303,7 @@ namespace OrthancWSI
     }
 
     void ListLayersSharedWith(Json::Value& target,
+                              const UserId& owner,
                               const UserId& user) const
     {
       target.clear();
@@ -310,7 +311,8 @@ namespace OrthancWSI
       for (Content::const_iterator it = content_.begin(); it != content_.end(); ++it)
       {
         assert(*it != NULL);
-        if ((*it)->IsSharedWith(user))
+        if (!owner.Equals(user) &&  // Don't add self
+            (*it)->IsSharedWith(user))
         {
           Json::Value item;
           (*it)->Serialize(item);
@@ -422,7 +424,7 @@ namespace OrthancWSI
     BackgroundColor        color_;
     std::string            id_;
     std::string            name_;
-    std::set<std::string>  sharedWith_;
+    std::set<std::string>  sharedWith_;  // TODO - Switch back to UserId
     bool                   isPublic_;
 
   public:
@@ -677,9 +679,10 @@ namespace OrthancWSI
     }
 
     void ListLayersSharedWith(Json::Value& target,
+                              const UserId& owner,
                               const UserId& user) const
     {
-      return userLayers_.ListLayersSharedWith(target, user);
+      return userLayers_.ListLayersSharedWith(target, owner, user);
     }
   };
 
@@ -841,7 +844,7 @@ namespace OrthancWSI
     }
 
 
-    void SearchActiveUsers(std::set<std::string>& target,
+    void SearchActiveUsers(std::set<UserId>& target,
                            const std::string& query)
     {
       Orthanc::ReaderWriterLock::ReadLock lock(mutex_);
@@ -853,13 +856,9 @@ namespace OrthancWSI
 
       for (std::set<UserId>::const_iterator it = activeUsers.begin(); it != activeUsers.end(); ++it)
       {
-        assert(it->GetType() == UserId::Type_Root ||
-               it->GetType() == UserId::Type_Standard);
-
-        if (it->GetType() == UserId::Type_Standard &&
-            boost::regex_search(it->GetName(), re))
+        if (boost::regex_search(it->GetName(), re))
         {
-          target.insert(it->GetName());
+          target.insert(*it);
         }
       }
     }
@@ -875,7 +874,8 @@ namespace OrthancWSI
       for (Content::const_iterator it = content_.begin(); it != content_.end(); ++it)
       {
         assert(it->second != NULL);
-        if (it->second->HasLayerSharedWith(user))
+        if (!user.Equals(it->first) &&  // Don't add self
+            it->second->HasLayerSharedWith(user))
         {
           target.insert(it->first);
         }
@@ -888,13 +888,15 @@ namespace OrthancWSI
     private:
       Orthanc::ReaderWriterLock::ReadLock lock_;
       const AnnotationsInfo&              info_;
+      UserId                              userId_;
       const UserData*                     userData_;
 
     public:
       UserReader(Annotations& that,
                  const UserId& userId) :
         lock_(that.mutex_),
-        info_(*that.info_)
+        info_(*that.info_),
+        userId_(userId)
       {
         Content::const_iterator found = that.content_.find(userId);
 
@@ -940,7 +942,7 @@ namespace OrthancWSI
       {
         if (IsValid())
         {
-          userData_->ListLayersSharedWith(target, user);
+          userData_->ListLayersSharedWith(target, userId_, user);
         }
         else
         {
@@ -1410,26 +1412,27 @@ namespace OrthancWSI
     else
     {
       AnnotationsCommandContext context(request);
+      const UserId self = context.GetUser().GetAnnotatingId();
 
       const std::string query = context.GetBodyString("query");
 
-      std::set<std::string> users;
+      std::set<UserId> users;
       context.GetAnnotations().SearchActiveUsers(users, query);
 
       Json::Value answer = Json::arrayValue;
 
-      for (std::set<std::string>::const_iterator it = users.begin(); it != users.end(); ++it)
+      for (std::set<UserId>::const_iterator it = users.begin(); it != users.end(); ++it)
       {
-        if (answer.size() < 20 &&
-            // Don't add self
-            (context.GetUser().GetAnnotatingId().GetType() != UserId::Type_Standard ||
-             context.GetUser().GetAnnotatingId().GetName() != *it))
-        {
-          answer.append(*it);
-        }
-        else
+        assert(it->GetType() == UserId::Type_Root ||
+               it->GetType() == UserId::Type_Standard);
+
+        if (answer.size() >= 20)
         {
           break;  // Don't load too many users
+        }
+        else if (!self.Equals(*it)) // Don't add self
+        {
+          answer.append(it->GetName());
         }
       }
 

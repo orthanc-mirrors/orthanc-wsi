@@ -72,6 +72,8 @@ public:
     return name_;
   }
 
+  bool Equals(const UserId& other) const;
+
   bool operator<(const UserId& other) const;
 
   std::string GetKey() const;

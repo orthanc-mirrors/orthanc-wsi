@@ -69,6 +69,23 @@ UserId::UserId(const Json::Value& serialized)
 }
 
 
+bool UserId::Equals(const UserId& other) const
+{
+  if (type_ != other.type_)
+  {
+    return false;
+  }
+  else if (type_ == Type_Standard)
+  {
+    return name_ == other.name_;
+  }
+  else
+  {
+    return true;
+  }
+}
+
+
 bool UserId::operator<(const UserId& other) const
 {
   if (type_ < other.type_)

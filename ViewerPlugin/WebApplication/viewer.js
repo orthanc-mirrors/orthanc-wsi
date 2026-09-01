@@ -110,6 +110,8 @@ var app = new Vue({
         }
       ],
       importAvailableUsers: [],
+      importUserSearchQuery: '',
+      importUserSearchResults: [],
       importSelectedUser: '',
       importSelectedLayer: '',
       importAvailableLayers: []
@@ -1115,6 +1117,8 @@ var app = new Vue({
 
 
     ShowImportSharedLayerModal: function() {
+      this.importUserSearchQuery = '';
+      this.importUserSearchResults = [];
       this.importSelectedUser = '';
       this.importSelectedLayer = '';
       this.importAvailableUsers = [];
@@ -1130,6 +1134,30 @@ var app = new Vue({
         .catch(function() {
           console.error('Cannot load users sharing layers');
         });
+    },
+
+    ImportUserSearchChanged: function() {
+      this.importSelectedUser = '';
+      this.importSelectedLayer = '';
+      this.importAvailableLayers = [];
+      this.importUserSearchResults = [];
+
+      var query = this.importUserSearchQuery.trim().toLowerCase();
+
+      if (query !== '') {
+        for (var i = 0; i < this.importAvailableUsers.length; i++) {
+          if (this.importAvailableUsers[i].toLowerCase().indexOf(query) !== -1) {
+            this.importUserSearchResults.push(this.importAvailableUsers[i]);
+          }
+        }
+      }
+    },
+
+    ImportUserSelect: function(userId) {
+      this.importUserSearchQuery = '';
+      this.importUserSearchResults = [];
+      this.importSelectedUser = userId;
+      this.ImportUserChanged();
     },
 
     ImportUserChanged: function() {
