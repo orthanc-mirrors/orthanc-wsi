@@ -408,16 +408,6 @@ void ServeEmbeddedFile(OrthancPluginRestOutput* output,
     resource = Orthanc::EmbeddedResources::OPEN_SEADRAGON_HTML;
     mime = "text/html";
   }
-  else if (f == "annotations.js")
-  {
-#if ORTHANC_STANDALONE == 0
-    throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
-#else
-    resource = Orthanc::EmbeddedResources::ANNOTATIONS_JS;
-#endif
-
-    mime = "application/javascript";
-  }
   else
   {
     throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
@@ -439,8 +429,7 @@ void ServeSourceFile(OrthancPluginRestOutput* output,
 
   std::string filename(request->groups[0]);
 
-  if (filename != "annotations.js" &&
-      filename != "viewer.html" &&
+  if (filename != "viewer.html" &&
       filename != "viewer.js")
   {
     throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
@@ -588,17 +577,6 @@ extern "C"
       OrthancPlugins::RegisterRestCallback<ServeFramePyramid>("/wsi/frames-pyramids/([0-9a-f-]+)/([0-9-]+)", true);
       OrthancPlugins::RegisterRestCallback<ServeFrameTile>("/wsi/frames-tiles/([0-9a-f-]+)/([0-9-]+)/([0-9-]+)/([0-9-]+)/([0-9-]+)", true);
 
-      if (true)  // TODO - Protect by some configuration option
-      {
-        RegisterAnnotationsRestApi();
-
-#if ORTHANC_STANDALONE == 1
-        OrthancPlugins::RegisterRestCallback<ServeEmbeddedFile>("/wsi/app/(annotations.js)", true);
-#else
-        OrthancPlugins::RegisterRestCallback<ServeSourceFile>("/wsi/app/(annotations.js)", true);
-#endif
-      }
-
       const bool enableIIIF = OrthancWSI::ViewerConfiguration::GetInstance().IsIIIFEnabled();
       bool serveMirador = false;
       bool serveOpenSeadragon = false;
@@ -655,6 +633,9 @@ extern "C"
 
         OrthancPlugins::ExtendOrthancExplorer(ORTHANC_PLUGIN_NAME, explorer);
       }
+
+      // New in WSI 4.0
+      RegisterAnnotationsRestApi();
     }
     catch (Orthanc::OrthancException& e)
     {
