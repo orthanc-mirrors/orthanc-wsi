@@ -223,7 +223,7 @@
 
             <button type="button" class="btn btn-outline-secondary icon-btn"
                     data-bs-toggle="tooltip" data-bs-placement="bottom" title="Delete selected annotation"
-                    v-bind:disabled="selectedFeature === null"
+                    v-bind:disabled="selectedFeature === null || selectedFeature.get('layer-id') !== activeUserLayerId"
                     v-on:click="DeleteSelectedAnnotation()">
               <i class="bi bi-trash"></i>
             </button>
