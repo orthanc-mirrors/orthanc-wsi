@@ -1670,13 +1670,16 @@ void RegisterAnnotationsRestApi()
     OrthancPlugins::RegisterRestCallback<OrthancWSI::SaveUserLayer>("/wsi/api/save-user-layer", true);
     OrthancPlugins::RegisterRestCallback<OrthancWSI::LoadUserFeatures>("/wsi/api/load-user-features", true);
     OrthancPlugins::RegisterRestCallback<OrthancWSI::SaveUserFeatures>("/wsi/api/save-user-features", true);
-    OrthancPlugins::RegisterRestCallback<OrthancWSI::SearchActiveUsers>("/wsi/api/search-active-users", true);
 
-    OrthancPlugins::RegisterRestCallback<OrthancWSI::ListUsersSharingLayers>("/wsi/api/users-sharing-layers", true);
-    OrthancPlugins::RegisterRestCallback<OrthancWSI::ListLayersSharedByUser>("/wsi/api/shared-layers", true);
-    OrthancPlugins::RegisterRestCallback<OrthancWSI::ImportSharedLayer>("/wsi/api/import-shared-layer", true);
-    OrthancPlugins::RegisterRestCallback<OrthancWSI::RemoveSharedLayer>("/wsi/api/remove-shared-layer", true);
-    OrthancPlugins::RegisterRestCallback<OrthancWSI::SaveSharedLayer>("/wsi/api/save-shared-layer", true);
-    OrthancPlugins::RegisterRestCallback<OrthancWSI::CreateStandardUser>("/wsi/api/create-standard-user", true);
+    if (OrthancWSI::ViewerConfiguration::GetInstance().IsAnnotationsSharingEnabled())
+    {
+      OrthancPlugins::RegisterRestCallback<OrthancWSI::SearchActiveUsers>("/wsi/api/search-active-users", true);
+      OrthancPlugins::RegisterRestCallback<OrthancWSI::ListUsersSharingLayers>("/wsi/api/users-sharing-layers", true);
+      OrthancPlugins::RegisterRestCallback<OrthancWSI::ListLayersSharedByUser>("/wsi/api/shared-layers", true);
+      OrthancPlugins::RegisterRestCallback<OrthancWSI::ImportSharedLayer>("/wsi/api/import-shared-layer", true);
+      OrthancPlugins::RegisterRestCallback<OrthancWSI::RemoveSharedLayer>("/wsi/api/remove-shared-layer", true);
+      OrthancPlugins::RegisterRestCallback<OrthancWSI::SaveSharedLayer>("/wsi/api/save-shared-layer", true);
+      OrthancPlugins::RegisterRestCallback<OrthancWSI::CreateStandardUser>("/wsi/api/create-standard-user", true);
+    }
   }
 }
