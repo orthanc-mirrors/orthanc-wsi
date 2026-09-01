@@ -531,12 +531,12 @@
               <label class="form-label small mb-1">Shared with specific users:</label>
               <div class="mb-3 border rounded p-2" style="min-height:2.5em; max-height:8em; overflow-y:auto">
                 <span v-if="shareLayerUsers.length === 0" class="text-muted small">No users added</span>
-                <span v-for="(userId, index) in shareLayerUsers" :key="userId"
+                <span v-for="(user, index) in shareLayerUsers" :key="user.name"
                       class="badge bg-secondary me-1 mb-1"
                       style="cursor:pointer"
                       v-on:click="shareLayerUsers.splice(index, 1); shareLayerSearchQuery = ''; shareLayerSearchResults = [];"
-                      :title="'Remove ' + userId">
-                  {{ userId }} &times;
+                      :title="'Remove ' + user.name">
+                  {{ user.name }} &times;
                 </span>
               </div>
 
@@ -545,19 +545,19 @@
                 <input type="text" class="form-control" placeholder="Type to search or enter a user ID..."
                        v-model="shareLayerSearchQuery"
                        v-on:input="ShareLayerSearchUsers()"
-                       v-on:keydown.enter="ShareLayerAddUser(shareLayerSearchQuery)">
+                       v-on:keydown.enter="ShareLayerAddStandardUser(shareLayerSearchQuery)">
                 <button class="btn btn-outline-secondary" type="button"
-                        v-on:click="ShareLayerAddUser(shareLayerSearchQuery)">Add</button>
+                        v-on:click="ShareLayerAddStandardUser(shareLayerSearchQuery)">Add</button>
               </div>
               <div v-if="shareLayerSearchResults.length > 0"
                    class="list-group list-group-flush mt-1 border rounded"
                    style="max-height:8em; overflow-y:auto">
                 <button type="button"
                         class="list-group-item list-group-item-action py-1 small"
-                        v-for="userId in shareLayerSearchResults"
-                        :key="userId"
-                        v-on:click="ShareLayerAddUser(userId)">
-                  {{ userId }}
+                        v-for="user in shareLayerSearchResults"
+                        :key="user.name"
+                        v-on:click="ShareLayerAddUser(user)">
+                  {{ user.name }}
                 </button>
               </div>
 
@@ -591,14 +591,14 @@
                      style="max-height:8em; overflow-y:auto">
                   <button type="button"
                           class="list-group-item list-group-item-action py-1 small"
-                          v-for="userId in importUserSearchResults"
-                          :key="userId"
-                          v-on:click="ImportUserSelect(userId)">
-                    {{ userId }}
+                          v-for="user in importUserSearchResults"
+                          :key="user.name"
+                          v-on:click="ImportUserSelect(user)">
+                    {{ user.name }}
                   </button>
                 </div>
                 <div v-if="importSelectedUser" class="mt-1 small text-muted">
-                  Selected: <strong>{{ importSelectedUser }}</strong>
+                  Selected: <strong>{{ importSelectedUser.name }}</strong>
                 </div>
               </div>
               <div v-show="importSelectedUser !== ''">

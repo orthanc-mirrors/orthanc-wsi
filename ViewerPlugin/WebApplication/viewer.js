@@ -1079,13 +1079,36 @@ var app = new Vue({
       this.modalShareUserLayer.show();
     },
 
-    ShareLayerAddUser: function(userId) {
-      var trimmed = userId.trim();
-
-      if (trimmed.length > 0 &&
-          !this.shareLayerUsers.includes(trimmed)) {
-        this.shareLayerUsers.push(trimmed);
+    ShareLayerIsUserSelected: function(user) {
+      for (var i = 0; i < this.shareLayerUsers.length; i++) {
+        if (this.shareLayerUsers[i].type == user.type &&
+            this.shareLayerUsers[i].name == user.name) {
+          return true;
+        }
       }
+
+      return false;
+    },
+
+    ShareLayerAddUser: function(user) {
+      if (!this.ShareLayerIsUserSelected(user)) {
+        this.shareLayerUsers.push(user);
+      }
+
+      this.shareLayerSearchQuery = '';
+      this.shareLayerSearchResults = [];
+    },
+
+    ShareLayerAddStandardUser: function(name) {
+      var that = this;
+      axios.post('../api/create-standard-user',
+                 this.CreatePostPayload({ 'name': name }))
+        .then(function(response) {
+          that.ShareLayerAddUser(response.data);
+        })
+        .catch(function() {
+          console.error('Cannot create standard user');
+        });
 
       this.shareLayerSearchQuery = '';
       this.shareLayerSearchResults = [];
@@ -1102,7 +1125,7 @@ var app = new Vue({
           .then(function(response) {
             that.shareLayerSearchResults = [];
             for (var i = 0; i < response.data.length; i++) {
-              if (!that.shareLayerUsers.includes(response.data[i])) {
+              if (!that.ShareLayerIsUserSelected(response.data[i])) {
                 that.shareLayerSearchResults.push(response.data[i]);
               }
             }
@@ -1152,7 +1175,7 @@ var app = new Vue({
 
       if (query !== '') {
         for (var i = 0; i < this.importAvailableUsers.length; i++) {
-          if (this.importAvailableUsers[i].toLowerCase().indexOf(query) !== -1) {
+          if (this.importAvailableUsers[i].name.toLowerCase().indexOf(query) !== -1) {
             this.importUserSearchResults.push(this.importAvailableUsers[i]);
           }
         }
