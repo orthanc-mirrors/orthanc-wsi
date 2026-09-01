@@ -866,6 +866,15 @@ var app = new Vue({
         return null;
       }
 
+      function GetSharedLayerById(id) {
+        for (var i = 0; i < app.sharedLayers.length; i++) {
+          if (app.sharedLayers[i].id == id) {
+            return app.sharedLayers[i];
+          }
+        }
+        return null;
+      }
+
       function GetLayerOfFeature(feature) {
         var layerId = feature.get('layer-id');
         console.assert(layerId !== null);
@@ -900,7 +909,7 @@ var app = new Vue({
       this.drawSharedLayer = new ol.layer.Vector({
         source: this.drawSharedSource,
         style: function(feature) {
-          var entry = GetSharedLayerById(feature.get('shared-layer-id'));
+          var entry = GetSharedLayerById(feature.get('layer-id'));
           if (!entry || !entry.visible) {
             return null;
           }

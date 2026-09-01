@@ -134,9 +134,11 @@ namespace OrthancWSI
   static const char* const KEY_FEATURES = "features";
   static const char* const KEY_ID = "id";
   static const char* const KEY_LAYERS = "layers";
+  static const char* const KEY_LAYER_ID = "layer-id";
   static const char* const KEY_NAME = "name";
   static const char* const KEY_PUBLIC = "public";
   static const char* const KEY_SHARED_WITH = "shared_with";
+  static const char* const KEY_TYPE = "type";
   static const char* const KEY_VERSION = "version";
   static const char* const KEY_VISIBLE = "visible";
 
@@ -754,32 +756,6 @@ namespace OrthancWSI
   };
 
 
-  class SharedLayerId
-  {
-  private:
-    UserId       author_;
-    std::string  layerId_;
-
-  public:
-    SharedLayerId(const UserId& author,
-                  const std::string& layerId) :
-      author_(author),
-      layerId_(layerId)
-    {
-    }
-
-    const UserId& GetAuthor() const
-    {
-      return author_;
-    }
-
-    const std::string& GetLayerId() const
-    {
-      return layerId_;
-    }
-  };
-
-
   class AnnotationsWorkspace : public Orthanc::IDynamicObject
   {
   private:
@@ -1075,9 +1051,11 @@ namespace OrthancWSI
         }
       }
 
-      void ListSharedLayers(std::list<SharedLayerId>& target) const
+      void ListSharedLayers(std::set<UserId>& authors,
+                            std::set<std::string>& layerIds) const
       {
-        target.clear();
+        authors.clear();
+        layerIds.clear();
 
         if (IsValid())
         {
@@ -1085,7 +1063,12 @@ namespace OrthancWSI
 
           while (!iterator.IsDone())
           {
-            target.push_back(SharedLayerId(userId_, iterator.GetLayer().GetId()));
+            const SharedLayer& layer = dynamic_cast<const SharedLayer&>(iterator.GetLayer());
+
+            // TODO - Ensure that layer is still shared with "userId_"
+
+            authors.insert(layer.GetAuthor());
+            layerIds.insert(layer.GetId());
             iterator.Next();
           }
         }
@@ -1443,7 +1426,7 @@ namespace OrthancWSI
     {
       AnnotationsCommandContext context(request);
 
-      const std::string layerId = context.GetBodyString("layer-id");
+      const std::string layerId = context.GetBodyString(KEY_LAYER_ID);
 
       {
         AnnotationsWorkspace::UserWriter writer(context.GetWorkspace(), context.GetUser().GetAnnotatingId());
@@ -1477,7 +1460,8 @@ namespace OrthancWSI
 
         if (!Orthanc::Toolbox::ReadJson(unserialized, uncompressed) ||
             !unserialized.isObject() ||
-            !unserialized.isMember(KEY_FEATURES))
+            !unserialized.isMember(KEY_FEATURES) ||
+            !unserialized[KEY_FEATURES].isArray())
         {
           throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
         }
@@ -1504,6 +1488,8 @@ namespace OrthancWSI
 
     void Save() const
     {
+      assert(content_.isArray());
+
       Json::Value unserialized;
       unserialized[KEY_VERSION] = static_cast<unsigned int>(ORTHANC_WSI_ANNOTATIONS_VERSION);
       unserialized[KEY_FEATURES] = content_;
@@ -1528,14 +1514,35 @@ namespace OrthancWSI
     void GetContent(Json::Value& target)
     {
       Orthanc::ReaderWriterLock::ReadLock lock(mutex_);
+
+      assert(content_.isArray());
       target = content_;
     }
 
     void SetContent(const Json::Value& content)
     {
-      Orthanc::ReaderWriterLock::WriteLock lock(mutex_);
-      content_ = content;
-      Save();
+      if (!content.isArray())
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
+      }
+
+      for (Json::Value::ArrayIndex i = 0; i < content.size(); i++)
+      {
+        if (!content[i].isObject() ||
+            !content[i].isMember(KEY_LAYER_ID) ||
+            !content[i].isMember(KEY_TYPE) ||
+            !content[i][KEY_LAYER_ID].isString() ||
+            !content[i][KEY_TYPE].isString())
+        {
+          throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
+        }
+      }
+
+      {
+        Orthanc::ReaderWriterLock::WriteLock lock(mutex_);
+        content_ = content;
+        Save();
+      }
     }
   };
 
@@ -1563,10 +1570,10 @@ namespace OrthancWSI
     }
 
   public:
-    CachedUserFeatures(const AnnotationsWorkspaceId& annotations,
+    CachedUserFeatures(const AnnotationsWorkspaceId& id,
                        const UserId& user)
     {
-      const std::string key = annotations.GetFeaturesKey(user);
+      const std::string key = id.GetFeaturesKey(user);
 
       cached_ = GetCache().GetCachedValue(key);
 
@@ -1821,19 +1828,40 @@ namespace OrthancWSI
     {
       AnnotationsCommandContext context(request);
 
-      std::list<SharedLayerId> layers;
+      std::set<UserId> authors;
+      std::set<std::string> layerIds;
 
       {
         AnnotationsWorkspace::UserReader reader(context.GetWorkspace(), context.GetUser().GetAnnotatingId());
-        reader.ListSharedLayers(layers);
+        reader.ListSharedLayers(authors, layerIds);
       }
 
-      for (std::list<SharedLayerId>::const_iterator it = layers.begin(); it != layers.end(); ++it)
+      Json::Value sharedFeatures = Json::arrayValue;
+
+      // Loop over the imported authors
+      for (std::set<UserId>::const_iterator it = authors.begin(); it != authors.end(); ++it)
       {
-        printf("[%s] [%s]\n", it->GetAuthor().GetName().c_str(), it->GetLayerId().c_str());
+        Json::Value authorFeatures;
+
+        {
+          CachedUserFeatures author(context.GetWorkspaceId(), *it);
+          author.GetFeatures().GetContent(authorFeatures);
+        }
+
+        assert(authorFeatures.isArray());
+
+        for (Json::Value::ArrayIndex i = 0; i < authorFeatures.size(); i++)
+        {
+          std::string layerId = Orthanc::SerializationToolbox::ReadString(authorFeatures[i], KEY_LAYER_ID);
+          if (layerIds.find(layerId) != layerIds.end())
+          {
+            sharedFeatures.append(authorFeatures[i]);
+          }
+        }
       }
 
       Json::Value answer;
+      answer[KEY_FEATURES] = sharedFeatures;
       ViewerToolbox::AnswerJson(output, answer);
     }
   }

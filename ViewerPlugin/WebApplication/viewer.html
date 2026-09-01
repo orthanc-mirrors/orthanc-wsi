@@ -396,13 +396,14 @@
                   <button type="button" class="btn btn-link p-1" style="color:inherit">
                     <i class="bi"
                        :class="layer.visible ? 'bi-eye' : 'bi-eye-slash'"
-                       v-on:click="layer.visible = !layer.visible; SaveSharedLayer(layer)"
+                       v-on:click="layer.visible = !layer.visible; drawSharedLayer.changed(); SaveSharedLayer(layer)"
                        ></i>
                   </button>
                 </td>
                 <td class="text-center align-middle p-0">
                   <input type="color" style="width:22px;height:22px;padding:1px;border:none;cursor:pointer;border-radius:3px"
                          v-model:value="layer.color"
+                         v-on:input="drawSharedLayer.changed()"
                          v-on:change="SaveSharedLayer(layer)">
                 </td>
                 <td class="align-middle px-1 py-0">
