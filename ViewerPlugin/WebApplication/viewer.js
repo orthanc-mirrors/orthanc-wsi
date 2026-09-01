@@ -41,7 +41,7 @@ var app = new Vue({
       workspaceInfo: {},
       imageDescription: '',
       userLayers: [],
-      sharedLayers: [],
+      importedLayers: [],
       activeUserLayerId: null,
 
       // UI state
@@ -54,7 +54,7 @@ var app = new Vue({
 
       // Bootstrap modals
       modalDeleteUserLayer: null,
-      modalDeleteSharedLayer: null,
+      modalDeleteImportedLayer: null,
       modalDeleteAnnotation: null,
       pendingDelete: null,
 
@@ -71,8 +71,8 @@ var app = new Vue({
       map: null,
       drawSource: null,
       drawLayer: null,  // Used in HTML
-      drawSharedSource: null,
-      drawSharedLayer: null,
+      drawImportedSource: null,
+      drawImportedLayer: null,
       drawLine: null,
       drawPoint: null,
       drawCircle: null,
@@ -100,8 +100,8 @@ var app = new Vue({
       shareLayerSearchQuery: '',
       shareLayerSearchResults: [],
 
-      // Import shared layers modal
-      modalImportSharedLayer: null,
+      // Import layers modal
+      modalImportLayer: null,
       importAvailableUsers: [],
       importUserSearchQuery: '',
       importUserSearchResults: [],
@@ -115,10 +115,10 @@ var app = new Vue({
     this.InitializePanelAnimation();
 
     this.modalDeleteUserLayer = new bootstrap.Modal(document.getElementById('modal-delete-user-layer'));
-    this.modalDeleteSharedLayer = new bootstrap.Modal(document.getElementById('modal-delete-shared-layer'));
+    this.modalDeleteImportedLayer = new bootstrap.Modal(document.getElementById('modal-delete-imported-layer'));
     this.modalDeleteAnnotation = new bootstrap.Modal(document.getElementById('modal-delete-annotation'));
     this.modalShareUserLayer = new bootstrap.Modal(document.getElementById('modal-share-user-layer'));
-    this.modalImportSharedLayer = new bootstrap.Modal(document.getElementById('modal-import-shared-layer'));
+    this.modalImportLayer = new bootstrap.Modal(document.getElementById('modal-import-layer'));
 
     document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) {
       new bootstrap.Tooltip(el, { trigger: 'hover' });
@@ -174,7 +174,7 @@ var app = new Vue({
                  this.CreatePostPayload({}))
         .then(function(response) {
           that.userLayers = response.data['user-layers'];
-          that.sharedLayers = response.data['imported-layers'];
+          that.importedLayers = response.data['imported-layers'];
 
           if (that.userLayers.length == 0) {
             that.CreateUserLayer();
@@ -185,7 +185,7 @@ var app = new Vue({
           }
 
           that.LoadUserFeatures();
-          that.ReloadSharedLayersContent();
+          that.ReloadImportedLayersContent();
         })
         .catch(function() {
           console.error('Cannot load the saved annotations');
@@ -866,10 +866,10 @@ var app = new Vue({
         return null;
       }
 
-      function GetSharedLayerById(id) {
-        for (var i = 0; i < app.sharedLayers.length; i++) {
-          if (app.sharedLayers[i].id == id) {
-            return app.sharedLayers[i];
+      function GetImportedLayerById(id) {
+        for (var i = 0; i < app.importedLayers.length; i++) {
+          if (app.importedLayers[i].id == id) {
+            return app.importedLayers[i];
           }
         }
         return null;
@@ -904,19 +904,19 @@ var app = new Vue({
 
       this.map.addLayer(this.drawLayer);
 
-      // Shared annotations: a separate read-only source for all imported shared layers
-      this.drawSharedSource = new ol.source.Vector();
-      this.drawSharedLayer = new ol.layer.Vector({
-        source: this.drawSharedSource,
+      // Shared annotations: a separate read-only source for all imported layers
+      this.drawImportedSource = new ol.source.Vector();
+      this.drawImportedLayer = new ol.layer.Vector({
+        source: this.drawImportedSource,
         style: function(feature) {
-          var entry = GetSharedLayerById(feature.get('layer-id'));
+          var entry = GetImportedLayerById(feature.get('layer-id'));
           if (!entry || !entry.visible) {
             return null;
           }
           return CreateLayerStyle(entry.color);
         }
       });
-      this.map.addLayer(this.drawSharedLayer);
+      this.map.addLayer(this.drawImportedLayer);
 
       // Draw interactions (inactive until toggled)
       this.drawLine = new ol.interaction.Draw({
@@ -1058,7 +1058,7 @@ var app = new Vue({
     },
 
     // -----------------------------------------------------------------------
-    // Shared layers
+    // Imported layers
     // -----------------------------------------------------------------------
 
     ShowShareUserLayerModal: function(layer) {
@@ -1136,14 +1136,14 @@ var app = new Vue({
 
 
 
-    ShowImportSharedLayerModal: function() {
+    ShowImportLayerModal: function() {
       this.importUserSearchQuery = '';
       this.importUserSearchResults = [];
       this.importSelectedUser = '';
       this.importSelectedLayer = '';
       this.importAvailableUsers = [];
       this.importAvailableLayers = [];
-      this.modalImportSharedLayer.show();
+      this.modalImportLayer.show();
 
       var that = this;
       axios.post('../api/users-sharing-layers',
@@ -1191,12 +1191,12 @@ var app = new Vue({
           that.importAvailableLayers = response.data;
         })
         .catch(function() {
-          console.error('Cannot load shared layers');
+          console.error('Cannot load imported layers');
         });
     },
 
-    ImportSharedLayerConfirmed: function() {
-      this.modalImportSharedLayer.hide();
+    ImportLayerConfirmed: function() {
+      this.modalImportLayer.hide();
       var userId = this.importSelectedUser;
       var layerId = this.importSelectedLayer;
 
@@ -1210,18 +1210,18 @@ var app = new Vue({
           that.LoadLayers();
         })
         .catch(function() {
-          console.error('Cannot import shared layer');
+          console.error('Cannot import layer');
         });
     },
 
 
-    DeleteSharedLayer: function(layerId) {
+    DeleteImportedLayer: function(layerId) {
       this.pendingDelete = layerId;
-      this.modalDeleteSharedLayer.show();
+      this.modalDeleteImportedLayer.show();
     },
 
-    SharedLayerDeleteConfirmed: function() {
-      this.modalDeleteSharedLayer.hide();
+    ImportedLayerDeleteConfirmed: function() {
+      this.modalDeleteImportedLayer.hide();
       var layerId = this.pendingDelete;
 
       var that = this;
@@ -1233,24 +1233,24 @@ var app = new Vue({
           that.LoadLayers();
         })
         .catch(function() {
-          console.error('Cannot remove shared layer');
+          console.error('Cannot remove imported layer');
         });
     },
 
-    SaveSharedLayer: function(layer) {
+    SaveImportedLayer: function(layer) {
       var that = this;
       axios.post('../api/save-shared-layer',
                  this.CreatePostPayload({
                    'layer': layer
                  }))
         .catch(function() {
-          console.error('Cannot save shared layer');
+          console.error('Cannot save imported layer');
         });
     },
 
 
-    ReloadSharedLayersContent: function() {
-      console.assert(this.drawSharedSource !== null);  // InitializeAnnotations() must have been invoked
+    ReloadImportedLayersContent: function() {
+      console.assert(this.drawImportedSource !== null);  // InitializeAnnotations() must have been invoked
       console.assert(this.workspaceInfo.enabled !== undefined);  // LoadLayers() must have been invoked
 
       if (!this.workspaceInfo.sharing) {
@@ -1261,14 +1261,14 @@ var app = new Vue({
       axios.post('../api/load-shared-features',
                  this.CreatePostPayload({}))
         .then(function(response) {
-          that.drawSharedSource.clear();
+          that.drawImportedSource.clear();
 
           for (let i = 0; i < response.data.features.length; i++) {
-            UnserializeFeatureOntoMap(that.drawSharedSource, response.data.features[i]);
+            UnserializeFeatureOntoMap(that.drawImportedSource, response.data.features[i]);
           }
         })
         .catch(function() {
-          console.error('Cannot load shared features');
+          console.error('Cannot load imported features');
         });
     }
   }

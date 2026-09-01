@@ -373,9 +373,9 @@
           <hr class="my-4">
 
           <div class="d-flex align-items-center mb-1" v-if="workspaceInfo.sharing">
-            <h5>Shared layers</h5>
+            <h5>Imported layers</h5>
             <button type="button" class="btn btn-primary btn-sm ms-auto"
-                    v-on:click="ShowImportSharedLayerModal()">
+                    v-on:click="ShowImportLayerModal()">
               <i class="bi bi-cloud-download"></i>
               Import
             </button>
@@ -391,20 +391,20 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="layer in sharedLayers">
+              <tr v-for="layer in importedLayers">
                 <td class="text-center align-middle p-0">
                   <button type="button" class="btn btn-link p-1" style="color:inherit">
                     <i class="bi"
                        :class="layer.visible ? 'bi-eye' : 'bi-eye-slash'"
-                       v-on:click="layer.visible = !layer.visible; drawSharedLayer.changed(); SaveSharedLayer(layer)"
+                       v-on:click="layer.visible = !layer.visible; drawImportedLayer.changed(); SaveImportedLayer(layer)"
                        ></i>
                   </button>
                 </td>
                 <td class="text-center align-middle p-0">
                   <input type="color" style="width:22px;height:22px;padding:1px;border:none;cursor:pointer;border-radius:3px"
                          v-model:value="layer.color"
-                         v-on:input="drawSharedLayer.changed()"
-                         v-on:change="SaveSharedLayer(layer)">
+                         v-on:input="drawImportedLayer.changed()"
+                         v-on:change="SaveImportedLayer(layer)">
                 </td>
                 <td class="align-middle px-1 py-0">
                   <span class="small d-block">{{layer.name}}</span>
@@ -412,7 +412,7 @@
                 </td>
                 <td class="text-center align-middle p-0">
                   <button type="button" class="btn btn-link p-0"
-                          v-on:click="DeleteSharedLayer(layer.id)">
+                          v-on:click="DeleteImportedLayer(layer.id)">
                     <i class="bi bi-trash"></i>
                   </button>
                 </td>
@@ -420,9 +420,9 @@
             </tbody>
           </table>
 
-          <button class="btn btn-sm btn-primary w-100 mb-2" v-on:click="ReloadSharedLayersContent()"
-                  v-if="workspaceInfo.sharing && sharedLayers.length > 0">
-            <i class="bi bi-arrow-clockwise me-2 align-middle"></i> Reload shared content
+          <button class="btn btn-sm btn-primary w-100 mb-2" v-on:click="ReloadImportedLayersContent()"
+                  v-if="workspaceInfo.sharing && importedLayers.length > 0">
+            <i class="bi bi-arrow-clockwise me-2 align-middle"></i> Reload imported content
           </button>
 
           <hr class="my-4" v-if="workspaceInfo.sharing">
@@ -497,8 +497,8 @@
       </div>
 
 
-      <!-- Confirmation modal for shared layer deletion -->
-      <div class="modal fade" id="modal-delete-shared-layer" tabindex="-1">
+      <!-- Confirmation modal for imported layer deletion -->
+      <div class="modal fade" id="modal-delete-imported-layer" tabindex="-1">
         <div class="modal-dialog modal-sm">
           <div class="modal-content">
             <div class="modal-body">
@@ -506,7 +506,7 @@
             </div>
             <div class="modal-footer py-1">
               <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
-              <button type="button" class="btn btn-sm btn-danger" v-on:click="SharedLayerDeleteConfirmed()">Delete</button>
+              <button type="button" class="btn btn-sm btn-danger" v-on:click="ImportedLayerDeleteConfirmed()">Delete</button>
             </div>
           </div>
         </div>
@@ -529,7 +529,7 @@
                 <label class="form-check-label" for="share-layer-public">Make this layer public (accessible to any user)</label>
               </div>
 
-              <label class="form-label small mb-1">Shared with specific users:</label>
+              <label class="form-label small mb-1">Share with specific users:</label>
               <div class="mb-3 border rounded p-2" style="min-height:2.5em; max-height:8em; overflow-y:auto">
                 <span v-if="shareLayerUsers.length === 0" class="text-muted small">No users added</span>
                 <span v-for="(user, index) in shareLayerUsers" :key="user.name"
@@ -572,8 +572,8 @@
       </div>
 
 
-      <!-- Modal to import a shared layer from another user -->
-      <div class="modal fade" id="modal-import-shared-layer" tabindex="-1">
+      <!-- Modal to import a layer from another user -->
+      <div class="modal fade" id="modal-import-layer" tabindex="-1">
         <div class="modal-dialog">
           <div class="modal-content">
             <div class="modal-header py-2">
@@ -614,7 +614,7 @@
               <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
               <button type="button" class="btn btn-sm btn-primary"
                       :disabled="!importSelectedLayer"
-                      v-on:click="ImportSharedLayerConfirmed()">Import</button>
+                      v-on:click="ImportLayerConfirmed()">Import</button>
             </div>
           </div>
         </div>
