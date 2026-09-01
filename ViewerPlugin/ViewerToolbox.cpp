@@ -24,9 +24,13 @@
 #include "../Framework/PrecompiledHeadersWSI.h"
 #include "ViewerToolbox.h"
 
+#include <Logging.h>
 #include <Toolbox.h>
 
 #include "../Resources/Orthanc/Plugins/OrthancPluginCppWrapper.h"
+
+
+static const char* const KEY_VALUE_STORE = "wsi";
 
 
 namespace OrthancWSI
@@ -46,6 +50,63 @@ namespace OrthancWSI
     {
       Json::Value answer = Json::objectValue;
       AnswerJson(output, answer);
+    }
+
+
+    void SetKeyValueStore(const std::string& key,
+                          const std::string& value)
+    {
+#if ORTHANC_PLUGINS_VERSION_IS_ABOVE(1, 12, 8)
+      OrthancPlugins::KeyValueStore store(KEY_VALUE_STORE);
+      store.Store(key, value);
+#else
+      LOG(WARNING) << "Your Orthanc SDK is too old to save annotations";
+#endif
+    }
+
+
+    void SetKeyValueStore(const std::string& key,
+                          const Json::Value& value)
+    {
+      std::string s;
+      Orthanc::Toolbox::WriteFastJson(s, value);
+      SetKeyValueStore(key, s);
+    }
+
+
+    bool LookupKeyValueStore(std::string& value,
+                             const std::string& key)
+    {
+#if ORTHANC_PLUGINS_VERSION_IS_ABOVE(1, 12, 8)
+      OrthancPlugins::KeyValueStore store(KEY_VALUE_STORE);
+      return store.GetValue(value, key);
+#else
+      LOG(WARNING) << "Your Orthanc SDK is too old to load annotations";
+      return false;
+#endif
+    }
+
+
+    bool LookupKeyValueStore(Json::Value& value,
+                             const std::string& key)
+    {
+      std::string s;
+      if (LookupKeyValueStore(s, key))
+      {
+        if (Orthanc::Toolbox::ReadJson(value, s))
+        {
+          return true;
+        }
+        else
+        {
+          LOG(WARNING) << "Discarding incorrect JSON in the key-value store: " << key;
+          return false;
+        }
+      }
+      else
+      {
+        return false;
+      }
     }
   }
 }

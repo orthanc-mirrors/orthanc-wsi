@@ -15,7 +15,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Affero General Public License for more details.
- *
+ * 
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  **/
@@ -23,29 +23,50 @@
 
 #pragma once
 
-#include <json/value.h>
-#include <orthanc/OrthancCPlugin.h>
+#include "UserId.h"
+
+#include <Enumerations.h>
 
 
 namespace OrthancWSI
 {
-  namespace ViewerToolbox
+  class AnnotationsWorkspaceId
   {
-    void AnswerJson(OrthancPluginRestOutput* output,
-                    const Json::Value& value);
+  private:
+    std::string            projectId_;
+    Orthanc::ResourceType  level_;
+    std::string            resourceId_;
+    unsigned int           frameNumber_;
 
-    void AnswerEmpty(OrthancPluginRestOutput* output);
+    std::string GetKeyPrefix() const;
 
-    void SetKeyValueStore(const std::string& key,
-                          const std::string& value);
+  public:
+    AnnotationsWorkspaceId(const std::string& projectId,
+                           Orthanc::ResourceType level,
+                           const std::string& resourceId,
+                           unsigned int frameNumber);
 
-    void SetKeyValueStore(const std::string& key,
-                          const Json::Value& value);
+    const std::string& GetProjectId() const
+    {
+      return projectId_;
+    }
 
-    bool LookupKeyValueStore(std::string& value,
-                             const std::string& key);
+    Orthanc::ResourceType GetLevel() const
+    {
+      return level_;
+    }
 
-    bool LookupKeyValueStore(Json::Value& value,
-                             const std::string& key);
-  }
+    const std::string& GetResourceId() const
+    {
+      return resourceId_;
+    }
+
+    unsigned int GetFrameNumber() const;
+
+    std::string GetInfoKey() const;
+
+    std::string GetSettingsKey(const UserId& user) const;
+
+    std::string GetFeaturesKey(const UserId& user) const;
+  };
 }

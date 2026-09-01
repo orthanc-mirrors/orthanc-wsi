@@ -27,7 +27,9 @@
 #include "../../Framework/BackgroundColor.h"
 #include "../ViewerConfiguration.h"
 #include "../ViewerToolbox.h"
+#include "AnnotationsWorkspaceId.h"
 #include "IAuthenticatedUser.h"
+#include "ISerializable.h"
 
 #include <Cache/SharedObjectCache.h>
 #include <Compression/GzipCompressor.h>
@@ -42,105 +44,6 @@
 
 namespace OrthancWSI
 {
-  class AnnotationsWorkspaceId
-  {
-  private:
-    std::string            projectId_;
-    Orthanc::ResourceType  level_;
-    std::string            resourceId_;
-    unsigned int           frameNumber_;
-
-    std::string GetKeyPrefix() const
-    {
-      switch (level_)
-      {
-      case Orthanc::ResourceType_Series:
-        return projectId_ + "|series|" + resourceId_;
-
-      case Orthanc::ResourceType_Instance:
-        return projectId_ + "|instance|" + boost::lexical_cast<std::string>(frameNumber_) + "|" + resourceId_;
-
-      default:
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
-      }
-    }
-
-  public:
-    AnnotationsWorkspaceId(const std::string& projectId,
-                           Orthanc::ResourceType level,
-                           const std::string& resourceId,
-                           unsigned int frameNumber) :
-      projectId_(projectId),
-      level_(level),
-      resourceId_(resourceId),
-      frameNumber_(frameNumber)
-    {
-      if (level_ != Orthanc::ResourceType_Series &&
-          level_ != Orthanc::ResourceType_Instance)
-      {
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
-      }
-
-      // The pipe symbol is disallowed as it is used to build the key, cf. GetKey()
-      if (!Orthanc::Toolbox::IsAsciiString(projectId_) ||
-          projectId_.find('|') != std::string::npos)
-      {
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange,
-                                        "Project name containing non-ASCII characters or the pipe symbol: " + projectId_);
-      }
-
-      if (!Orthanc::Toolbox::IsAsciiString(resourceId_) ||
-          resourceId_.find('|') != std::string::npos)
-      {
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange,
-                                        "Resource ID containing non-ASCII characters or the pipe symbol: " + resourceId_);
-      }
-    }
-
-    const std::string& GetProjectId() const
-    {
-      return projectId_;
-    }
-
-    Orthanc::ResourceType GetLevel() const
-    {
-      return level_;
-    }
-
-    const std::string& GetResourceId() const
-    {
-      return resourceId_;
-    }
-
-    unsigned int GetFrameNumber() const
-    {
-      if (level_ == Orthanc::ResourceType_Instance)
-      {
-        return frameNumber_;
-      }
-      else
-      {
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
-      }
-    }
-
-    std::string GetInfoKey() const
-    {
-      return GetKeyPrefix() + "|info";
-    }
-
-    std::string GetSettingsKey(const UserId& user) const
-    {
-      return GetKeyPrefix() + "|settings|" + user.GetKey();
-    }
-
-    std::string GetFeaturesKey(const UserId& user) const
-    {
-      return GetKeyPrefix() + "|features|" + user.GetKey();
-    }
-  };
-
-
   static const char* const KEY_AUTHOR = "author";
   static const char* const KEY_COLOR = "color";
   static const char* const KEY_FEATURES = "features";
@@ -153,27 +56,6 @@ namespace OrthancWSI
   static const char* const KEY_TYPE = "type";
   static const char* const KEY_VERSION = "version";
   static const char* const KEY_VISIBLE = "visible";
-
-  static const char* const KEY_VALUE_STORE = "wsi";
-
-
-  class ISerializable : public boost::noncopyable
-  {
-  public:
-    virtual ~ISerializable()
-    {
-    }
-
-    virtual void Serialize(Json::Value& serialized) const = 0;
-
-    static void Serialize(std::string& serialized,
-                          const ISerializable& obj)
-    {
-      Json::Value value;
-      obj.Serialize(value);
-      Orthanc::Toolbox::WriteFastJson(serialized, value);
-    }
-  };
 
 
   class ILayer : public ISerializable
@@ -329,71 +211,6 @@ namespace OrthancWSI
     };
   };
 
-
-  static void SetKeyValueStore(const std::string& key,
-                               const std::string& value)
-  {
-#if ORTHANC_PLUGINS_VERSION_IS_ABOVE(1, 12, 8)
-    OrthancPlugins::KeyValueStore store(KEY_VALUE_STORE);
-    store.Store(key, value);
-#else
-    LOG(WARNING) << "Your Orthanc SDK is too old to save annotations";
-#endif
-  }
-
-
-  static void SetKeyValueStore(const std::string& key,
-                               const Json::Value& value)
-  {
-    std::string s;
-    Orthanc::Toolbox::WriteFastJson(s, value);
-    SetKeyValueStore(key, s);
-  }
-
-
-  static void SetKeyValueStore(const std::string& key,
-                               const ISerializable& value)
-  {
-    std::string s;
-    ISerializable::Serialize(s, value);
-    SetKeyValueStore(key, s);
-  }
-
-
-  static bool LookupKeyValueStore(std::string& value,
-                                  const std::string& key)
-  {
-#if ORTHANC_PLUGINS_VERSION_IS_ABOVE(1, 12, 8)
-    OrthancPlugins::KeyValueStore store(KEY_VALUE_STORE);
-    return store.GetValue(value, key);
-#else
-    LOG(WARNING) << "Your Orthanc SDK is too old to load annotations";
-    return false;
-#endif
-  }
-
-
-  static bool LookupKeyValueStore(Json::Value& value,
-                                  const std::string& key)
-  {
-    std::string s;
-    if (LookupKeyValueStore(s, key))
-    {
-      if (Orthanc::Toolbox::ReadJson(value, s))
-      {
-        return true;
-      }
-      else
-      {
-        LOG(WARNING) << "Discarding incorrect JSON in the key-value store: " << key;
-        return false;
-      }
-    }
-    else
-    {
-      return false;
-    }
-  }
 
 
   static const char* const KEY_ACTIVE_USERS = "active-users";
@@ -873,7 +690,7 @@ namespace OrthancWSI
       const std::string key = id_.GetSettingsKey(user);
 
       Json::Value layers;
-      if (LookupKeyValueStore(layers, key))
+      if (ViewerToolbox::LookupKeyValueStore(layers, key))
       {
         std::unique_ptr<UserAnnotationsSettings> item(new UserAnnotationsSettings(layers));
 
@@ -902,7 +719,7 @@ namespace OrthancWSI
 
       Json::Value info;
 
-      if (LookupKeyValueStore(info, key))
+      if (ViewerToolbox::LookupKeyValueStore(info, key))
       {
         persistentInfo_.reset(new PersistentInfo(info));
 
@@ -916,7 +733,7 @@ namespace OrthancWSI
       {
         persistentInfo_.reset(new PersistentInfo);
         persistentInfo_->Serialize(info);
-        SetKeyValueStore(key, info);
+        ViewerToolbox::SetKeyValueStore(key, info);
       }
     }
 
@@ -1124,7 +941,7 @@ namespace OrthancWSI
 
       void Commit()
       {
-        SetKeyValueStore(that_.id_.GetSettingsKey(userId_), *userSettings_);
+        ISerializable::SetKeyValueStore(that_.id_.GetSettingsKey(userId_), *userSettings_);
       }
 
     public:
@@ -1137,7 +954,7 @@ namespace OrthancWSI
         if (that.persistentInfo_->AddActiveUser(userId_))
         {
           // Only update the key-value store if this is the first time we meet this user
-          SetKeyValueStore(that.id_.GetInfoKey(), *that.persistentInfo_);
+          ISerializable::SetKeyValueStore(that.id_.GetInfoKey(), *that.persistentInfo_);
         }
 
         Content::iterator found = that.content_.find(userId_);
@@ -1483,7 +1300,7 @@ namespace OrthancWSI
       content_ = Json::arrayValue;
 
       std::string compressed;
-      if (LookupKeyValueStore(compressed, key_))
+      if (ViewerToolbox::LookupKeyValueStore(compressed, key_))
       {
         std::string uncompressed;
         Orthanc::GzipCompressor compressor;
@@ -1534,7 +1351,7 @@ namespace OrthancWSI
       Orthanc::GzipCompressor compressor;
       Orthanc::IBufferCompressor::Compress(compressed, compressor, serialized);
 
-      SetKeyValueStore(key_, compressed);
+      ViewerToolbox::SetKeyValueStore(key_, compressed);
     }
 
   public:

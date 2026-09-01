@@ -15,37 +15,36 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Affero General Public License for more details.
- *
+ * 
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  **/
 
 
-#pragma once
+#include "../../Framework/PrecompiledHeadersWSI.h"
+#include "ISerializable.h"
 
-#include <json/value.h>
-#include <orthanc/OrthancCPlugin.h>
+#include "../ViewerToolbox.h"
+
+#include <Toolbox.h>
 
 
 namespace OrthancWSI
 {
-  namespace ViewerToolbox
+  void ISerializable::Serialize(std::string& serialized,
+                                const ISerializable& obj)
   {
-    void AnswerJson(OrthancPluginRestOutput* output,
-                    const Json::Value& value);
+    Json::Value value;
+    obj.Serialize(value);
+    Orthanc::Toolbox::WriteFastJson(serialized, value);
+  }
 
-    void AnswerEmpty(OrthancPluginRestOutput* output);
 
-    void SetKeyValueStore(const std::string& key,
-                          const std::string& value);
-
-    void SetKeyValueStore(const std::string& key,
-                          const Json::Value& value);
-
-    bool LookupKeyValueStore(std::string& value,
-                             const std::string& key);
-
-    bool LookupKeyValueStore(Json::Value& value,
-                             const std::string& key);
+  void ISerializable::SetKeyValueStore(const std::string& key,
+                                       const ISerializable& obj)
+  {
+    std::string s;
+    ISerializable::Serialize(s, obj);
+    ViewerToolbox::SetKeyValueStore(key, s);
   }
 }

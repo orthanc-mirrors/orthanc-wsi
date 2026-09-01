@@ -15,7 +15,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Affero General Public License for more details.
- *
+ * 
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  **/
@@ -23,29 +23,25 @@
 
 #pragma once
 
+#include <boost/noncopyable.hpp>
 #include <json/value.h>
-#include <orthanc/OrthancCPlugin.h>
 
 
 namespace OrthancWSI
 {
-  namespace ViewerToolbox
+  class ISerializable : public boost::noncopyable
   {
-    void AnswerJson(OrthancPluginRestOutput* output,
-                    const Json::Value& value);
+  public:
+    virtual ~ISerializable()
+    {
+    }
 
-    void AnswerEmpty(OrthancPluginRestOutput* output);
+    virtual void Serialize(Json::Value& serialized) const = 0;
 
-    void SetKeyValueStore(const std::string& key,
-                          const std::string& value);
+    static void Serialize(std::string& serialized,
+                          const ISerializable& obj);
 
-    void SetKeyValueStore(const std::string& key,
-                          const Json::Value& value);
-
-    bool LookupKeyValueStore(std::string& value,
-                             const std::string& key);
-
-    bool LookupKeyValueStore(Json::Value& value,
-                             const std::string& key);
-  }
+    static void SetKeyValueStore(const std::string& key,
+                                 const ISerializable& obj);
+  };
 }

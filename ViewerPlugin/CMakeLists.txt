@@ -186,7 +186,9 @@ EmbedResources(
 
 set(ORTHANC_WSI_SOURCES
   Annotations/AnnotationsRestApi.cpp
+  Annotations/AnnotationsWorkspaceId.cpp
   Annotations/IAuthenticatedUser.cpp
+  Annotations/ISerializable.cpp
   Annotations/UserId.cpp
   DicomPyramidCache.cpp
   IIIF.cpp
