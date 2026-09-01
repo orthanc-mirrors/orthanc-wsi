@@ -862,6 +862,13 @@ namespace OrthancWSI
       }
     }
 
+    const Info& GetInfo() const
+    {
+      assert(info_.get() != NULL);
+      return *info_;
+    }
+
+
     typedef std::map<UserId, UserAnnotationsSettings*>   Content;
 
     Orthanc::ReaderWriterLock  mutex_;
@@ -972,7 +979,7 @@ namespace OrthancWSI
     {
     private:
       Orthanc::ReaderWriterLock::ReadLock lock_;
-      const Info&                         info_;
+      AnnotationsWorkspace&               that_;
       UserId                              userId_;
       const UserAnnotationsSettings*      userSettings_;
 
@@ -980,7 +987,7 @@ namespace OrthancWSI
       UserReader(AnnotationsWorkspace& that,
                  const UserId& userId) :
         lock_(that.mutex_),
-        info_(*that.info_),
+        that_(that),
         userId_(userId)
       {
         Content::const_iterator found = that.content_.find(userId);
@@ -1003,12 +1010,12 @@ namespace OrthancWSI
 
       const std::string& GetProjectName() const
       {
-        return info_.GetProjectName();
+        return that_.GetInfo().GetProjectName();
       }
 
       const std::string& GetProjectDescription() const
       {
-        return info_.GetProjectDescription();
+        return that_.GetInfo().GetProjectDescription();
       }
 
       void ListLayers(Json::Value& serialized) const
@@ -1065,10 +1072,26 @@ namespace OrthancWSI
           {
             const SharedLayer& layer = dynamic_cast<const SharedLayer&>(iterator.GetLayer());
 
-            // TODO - Ensure that layer is still shared with "userId_"
+            Content::const_iterator found = that_.content_.find(layer.GetAuthor());
 
-            authors.insert(layer.GetAuthor());
-            layerIds.insert(layer.GetId());
+            if (found != that_.content_.end())
+            {
+              assert(found->second != NULL);
+
+              // Check that the layer has not been deleted in the meantime by its author,
+              // and that the layer is still shared with this user
+              if (found->second->GetUserLayers().HasLayer(layer.GetId()))
+              {
+                const UserLayer& authorLayer = dynamic_cast<const UserLayer&>(found->second->GetUserLayers().GetLayer(layer.GetId()));
+
+                if (authorLayer.IsSharedWith(userId_))
+                {
+                  authors.insert(layer.GetAuthor());
+                  layerIds.insert(layer.GetId());
+                }
+              }
+            }
+
             iterator.Next();
           }
         }
