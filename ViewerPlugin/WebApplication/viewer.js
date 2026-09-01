@@ -174,7 +174,7 @@ var app = new Vue({
                  this.CreatePostPayload({}))
         .then(function(response) {
           that.userLayers = response.data['user-layers'];
-          that.sharedLayers = response.data['shared-layers'];
+          that.sharedLayers = response.data['imported-layers'];
 
           if (that.userLayers.length == 0) {
             that.CreateUserLayer();
