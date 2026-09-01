@@ -725,9 +725,24 @@ namespace OrthancWSI
       return AddUserLayer(new UserLayer(color, name));
     }
 
-    void DeleteUserLayer(const std::string& layerId)  // TODO REMOVE
+    LayersCollection& GetUserLayers()
     {
-      userLayers_.DeleteLayer(layerId);
+      return userLayers_;
+    }
+
+    const LayersCollection& GetUserLayers() const
+    {
+      return userLayers_;
+    }
+
+    LayersCollection& GetSharedLayers()
+    {
+      return sharedLayers_;
+    }
+
+    const LayersCollection& GetSharedLayers() const
+    {
+      return sharedLayers_;
     }
 
     virtual void Serialize(Json::Value& serialized) const ORTHANC_OVERRIDE
@@ -737,14 +752,14 @@ namespace OrthancWSI
       sharedLayers_.Serialize(serialized[KEY_SHARED_LAYERS]);
     }
 
-    bool HasLayerSharedWith(const UserId& user) const  // TODO REMOVE
+    bool HasLayerSharedWith(const UserId& user) const
     {
       return userLayers_.HasLayerSharedWith(user);
     }
 
     void ListLayersSharedWith(Json::Value& target,
                               const UserId& author,
-                              const UserId& user) const  // TODO REMOVE
+                              const UserId& user) const
     {
       return userLayers_.ListLayersSharedWith(target, author, user);
     }
@@ -760,16 +775,6 @@ namespace OrthancWSI
       {
         sharedLayers_.AddLayer(new SharedLayer(author, layer));
       }
-    }
-
-    void RemoveSharedLayer(const std::string& layerId)  // TODO REMOVE
-    {
-      sharedLayers_.DeleteLayer(layerId);
-    }
-
-    void ListSharedLayers(std::list<std::string>& target) const  // TODO REMOVE
-    {
-      sharedLayers_.ListLayers(target);
     }
   };
 
@@ -1074,7 +1079,7 @@ namespace OrthancWSI
         if (IsValid())
         {
           std::list<std::string> layerIds;
-          userSettings_->ListSharedLayers(layerIds);
+          userSettings_->GetSharedLayers().ListLayers(layerIds);
 
           for (std::list<std::string>::const_iterator it = layerIds.begin(); it != layerIds.end(); ++it)
           {
@@ -1150,7 +1155,7 @@ namespace OrthancWSI
       void DeleteUserLayer(const std::string& layerId)
       {
         assert(userSettings_ != NULL);
-        userSettings_->DeleteUserLayer(layerId);
+        userSettings_->GetUserLayers().DeleteLayer(layerId);
         Commit();
       }
 
@@ -1181,7 +1186,7 @@ namespace OrthancWSI
       void RemoveSharedLayer(const std::string& layerId)
       {
         assert(userSettings_ != NULL);
-        userSettings_->RemoveSharedLayer(layerId);
+        userSettings_->GetSharedLayers().DeleteLayer(layerId);
         Commit();
       }
 
