@@ -758,96 +758,96 @@ namespace OrthancWSI
   };
 
 
-  class AnnotationsInfo : public ISerializable
-  {
-  private:
-    std::string        projectName_;
-    std::string        projectDescription_;
-    std::set<UserId>   activeUsers_;
-
-  public:
-    AnnotationsInfo()
-    {
-    }
-
-    AnnotationsInfo(const Json::Value& serialized)
-    {
-      projectName_ = Orthanc::SerializationToolbox::ReadString(serialized, KEY_PROJECT_NAME);
-      projectDescription_ = Orthanc::SerializationToolbox::ReadString(serialized, KEY_PROJECT_DESCRIPTION);
-
-      const Json::Value& users = serialized[KEY_ACTIVE_USERS];
-
-      if (!users.isArray())
-      {
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
-      }
-
-      for (Json::Value::ArrayIndex i = 0; i < users.size(); i++)
-      {
-        activeUsers_.insert(UserId(users[i]));
-      }
-    }
-
-    const std::string& GetProjectName() const
-    {
-      return projectName_;
-    }
-
-    void SetProjectName(const std::string& name)
-    {
-      projectName_ = name;
-    }
-
-    const std::string& GetProjectDescription() const
-    {
-      return projectDescription_;
-    }
-
-    void SetProjectDescription(const std::string& description)
-    {
-      projectDescription_ = description;
-    }
-
-    // Return "true" iff. the user was not already tagged as active
-    bool AddActiveUser(const UserId& user)
-    {
-      if (activeUsers_.find(user) == activeUsers_.end())
-      {
-        activeUsers_.insert(user);
-        return true;
-      }
-      else
-      {
-        return false;
-      }
-    }
-
-    const std::set<UserId>& GetActiveUsers() const
-    {
-      return activeUsers_;
-    }
-
-    virtual void Serialize(Json::Value& serialized) const ORTHANC_OVERRIDE
-    {
-      Json::Value users = Json::arrayValue;
-      for (std::set<UserId>::const_iterator it = activeUsers_.begin(); it != activeUsers_.end(); ++it)
-      {
-        Json::Value user;
-        it->Serialize(user);
-        users.append(user);
-      }
-
-      serialized = Json::objectValue;
-      serialized[KEY_PROJECT_NAME] = projectName_;
-      serialized[KEY_PROJECT_DESCRIPTION] = projectDescription_;
-      serialized[KEY_ACTIVE_USERS] = users;
-    }
-  };
-
-
   class AnnotationsManager : public Orthanc::IDynamicObject
   {
   private:
+    class Info : public ISerializable
+    {
+    private:
+      std::string        projectName_;
+      std::string        projectDescription_;
+      std::set<UserId>   activeUsers_;
+
+    public:
+      Info()
+      {
+      }
+
+      Info(const Json::Value& serialized)
+      {
+        projectName_ = Orthanc::SerializationToolbox::ReadString(serialized, KEY_PROJECT_NAME);
+        projectDescription_ = Orthanc::SerializationToolbox::ReadString(serialized, KEY_PROJECT_DESCRIPTION);
+
+        const Json::Value& users = serialized[KEY_ACTIVE_USERS];
+
+        if (!users.isArray())
+        {
+          throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
+        }
+
+        for (Json::Value::ArrayIndex i = 0; i < users.size(); i++)
+        {
+          activeUsers_.insert(UserId(users[i]));
+        }
+      }
+
+      const std::string& GetProjectName() const
+      {
+        return projectName_;
+      }
+
+      void SetProjectName(const std::string& name)
+      {
+        projectName_ = name;
+      }
+
+      const std::string& GetProjectDescription() const
+      {
+        return projectDescription_;
+      }
+
+      void SetProjectDescription(const std::string& description)
+      {
+        projectDescription_ = description;
+      }
+
+      // Return "true" iff. the user was not already tagged as active
+      bool AddActiveUser(const UserId& user)
+      {
+        if (activeUsers_.find(user) == activeUsers_.end())
+        {
+          activeUsers_.insert(user);
+          return true;
+        }
+        else
+        {
+          return false;
+        }
+      }
+
+      const std::set<UserId>& GetActiveUsers() const
+      {
+        return activeUsers_;
+      }
+
+      virtual void Serialize(Json::Value& serialized) const ORTHANC_OVERRIDE
+      {
+        Json::Value users = Json::arrayValue;
+        for (std::set<UserId>::const_iterator it = activeUsers_.begin(); it != activeUsers_.end(); ++it)
+        {
+          Json::Value user;
+          it->Serialize(user);
+          users.append(user);
+        }
+
+        serialized = Json::objectValue;
+        serialized[KEY_PROJECT_NAME] = projectName_;
+        serialized[KEY_PROJECT_DESCRIPTION] = projectDescription_;
+        serialized[KEY_ACTIVE_USERS] = users;
+      }
+    };
+
+
     void Load(const UserId& user)
     {
       const std::string key = GetLayersKey(id_, user);
@@ -868,7 +868,7 @@ namespace OrthancWSI
 
     Orthanc::ReaderWriterLock         mutex_;
     AnnotationsManagerId              id_;
-    std::unique_ptr<AnnotationsInfo>  info_;
+    std::unique_ptr<Info>  info_;
     Content                           content_;
 
   public:
@@ -881,7 +881,7 @@ namespace OrthancWSI
 
       if (LookupKeyValueStore(info, key))
       {
-        info_.reset(new AnnotationsInfo(info));
+        info_.reset(new Info(info));
 
         for (std::set<UserId>::const_iterator it = info_->GetActiveUsers().begin();
              it != info_->GetActiveUsers().end(); ++it)
@@ -891,7 +891,7 @@ namespace OrthancWSI
       }
       else
       {
-        info_.reset(new AnnotationsInfo);
+        info_.reset(new Info);
 
         if (OrthancPlugins::RestApiGet(info, "/education/api-plugins/project?id=" + id.GetProjectId(), true))
         {
@@ -958,7 +958,7 @@ namespace OrthancWSI
     {
     private:
       Orthanc::ReaderWriterLock::ReadLock lock_;
-      const AnnotationsInfo&              info_;
+      const Info&                         info_;
       UserId                              userId_;
       const UserAnnotationsSettings*      userSettings_;
 
@@ -987,9 +987,14 @@ namespace OrthancWSI
         return userSettings_ != NULL;
       }
 
-      const AnnotationsInfo& GetAnnotationsInfo() const
+      const std::string& GetProjectName() const
       {
-        return info_;
+        return info_.GetProjectName();
+      }
+
+      const std::string& GetProjectDescription() const
+      {
+        return info_.GetProjectDescription();
       }
 
       void ListLayers(Json::Value& serialized) const
@@ -1283,9 +1288,9 @@ namespace OrthancWSI
       AnnotationsManager::UserReader reader(context.GetAnnotations(), context.GetUser().GetAnnotatingId());
 
       Json::Value answer;
-      answer["description"] = reader.GetAnnotationsInfo().GetProjectDescription();
+      answer["description"] = reader.GetProjectDescription();
       answer["enabled"] = ViewerConfiguration::GetInstance().AreAnnotationsEnabled();
-      answer["name"] = reader.GetAnnotationsInfo().GetProjectName();
+      answer["name"] = reader.GetProjectName();
       answer["sharing"] = (ViewerConfiguration::GetInstance().AreAnnotationsEnabled() &&
                            ViewerConfiguration::GetInstance().IsAnnotationsSharingEnabled());
       answer["user"] = context.GetUser().Format();
