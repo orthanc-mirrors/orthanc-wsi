@@ -1137,7 +1137,7 @@ namespace OrthancWSI
   class CachedAnnotations : public boost::noncopyable
   {
   private:
-    boost::shared_ptr<Orthanc::IDynamicObject>  content_;
+    boost::shared_ptr<Orthanc::IDynamicObject>  cached_;
 
     static Orthanc::SharedObjectCache& GetCache()
     {
@@ -1161,26 +1161,18 @@ namespace OrthancWSI
     {
       const std::string key = id.GetKey();
 
-      content_ = GetCache().GetCachedValue(key);
+      cached_ = GetCache().GetCachedValue(key);
 
-      if (content_.get() == NULL)
+      if (cached_.get() == NULL)
       {
-        content_.reset(new Annotations(id));
-        GetCache().Store(key, content_, 1);
+        cached_.reset(new Annotations(id));
+        GetCache().Store(key, cached_, 1);
       }
     }
 
-
-    Annotations& GetContent()
+    Annotations& GetContent() const
     {
-      return dynamic_cast<Annotations&>(*content_);
-    }
-
-
-    static void Invalidate(const AnnotationsId& id)
-    {
-      const std::string key = id.GetKey();
-      GetCache().Invalidate(key);
+      return dynamic_cast<Annotations&>(*cached_);
     }
   };
 
@@ -1234,20 +1226,10 @@ namespace OrthancWSI
       return *user_;
     }
 
-    bool IsRootUser() const
-    {
-      return GetUser().GetAnnotatingId().GetType() == UserId::Type_Root;
-    }
-
     const AnnotationsId& GetAnnotationsId() const
     {
       assert(annotationsId_.get() != NULL);
       return *annotationsId_;
-    }
-
-    std::string GetFeaturesKey() const
-    {
-      return ::OrthancWSI::GetFeaturesKey(GetAnnotationsId(), GetUser().GetAnnotatingId());
     }
 
     std::string GetBodyString(const char* field) const
@@ -1395,23 +1377,19 @@ namespace OrthancWSI
   }
 
 
-  void LoadUserFeatures(OrthancPluginRestOutput* output,
-                        const char* url,
-                        const OrthancPluginHttpRequest* request)
+  class UserFeatures : public Orthanc::IDynamicObject
   {
-    if (request->method != OrthancPluginHttpMethod_Post)
-    {
-      OrthancPluginSendMethodNotAllowed(OrthancPlugins::GetGlobalContext(), output, "POST");
-    }
-    else
-    {
-      AnnotationsCommandContext context(request);
+  private:
+    Orthanc::ReaderWriterLock  mutex_;
+    std::string                key_;
+    Json::Value                content_;
 
-      Json::Value answer;
-      answer[KEY_FEATURES] = Json::arrayValue;
+    void Load()
+    {
+      content_ = Json::arrayValue;
 
       std::string compressed;
-      if (LookupKeyValueStore(compressed, context.GetFeaturesKey()))
+      if (LookupKeyValueStore(compressed, key_))
       {
         std::string uncompressed;
         Orthanc::GzipCompressor compressor;
@@ -1430,7 +1408,7 @@ namespace OrthancWSI
 
         if (version == ORTHANC_WSI_ANNOTATIONS_VERSION)
         {
-          answer[KEY_FEATURES] = unserialized[KEY_FEATURES];
+          content_ = unserialized[KEY_FEATURES];
         }
         else
         {
@@ -1443,6 +1421,108 @@ namespace OrthancWSI
                                             boost::lexical_cast<std::string>(version));
           }
         }
+      }
+    }
+
+    void Save() const
+    {
+      Json::Value unserialized;
+      unserialized[KEY_VERSION] = static_cast<unsigned int>(ORTHANC_WSI_ANNOTATIONS_VERSION);
+      unserialized[KEY_FEATURES] = content_;
+
+      std::string serialized;
+      Orthanc::Toolbox::WriteFastJson(serialized, unserialized);
+
+      std::string compressed;
+      Orthanc::GzipCompressor compressor;
+      Orthanc::IBufferCompressor::Compress(compressed, compressor, serialized);
+
+      SetKeyValueStore(key_, compressed);
+    }
+
+  public:
+    UserFeatures(const std::string& key) :
+      key_(key)
+    {
+      Load();
+    }
+
+    void GetContent(Json::Value& target)
+    {
+      Orthanc::ReaderWriterLock::ReadLock lock(mutex_);
+      target = content_;
+    }
+
+    void SetContent(const Json::Value& content)
+    {
+      Orthanc::ReaderWriterLock::WriteLock lock(mutex_);
+      content_ = content;
+      Save();
+    }
+  };
+
+
+  class CachedUserFeatures : public boost::noncopyable
+  {
+  private:
+    boost::shared_ptr<Orthanc::IDynamicObject>  cached_;
+
+    static Orthanc::SharedObjectCache& GetCache()
+    {
+      static boost::mutex  mutex;
+      static std::unique_ptr<Orthanc::SharedObjectCache>  cache;
+
+      {
+        boost::mutex::scoped_lock lock(mutex);
+
+        if (cache.get() == NULL)
+        {
+          cache.reset(new Orthanc::SharedObjectCache(ViewerConfiguration::GetInstance().GetFeaturesCacheSize()));
+        }
+
+        return *cache;
+      }
+    }
+
+  public:
+    CachedUserFeatures(const AnnotationsId& annotations,
+                       const UserId& user)
+    {
+      const std::string key = GetFeaturesKey(annotations, user);
+
+      cached_ = GetCache().GetCachedValue(key);
+
+      if (cached_.get() == NULL)
+      {
+        cached_.reset(new UserFeatures(key));
+        GetCache().Store(key, cached_, 1);
+      }
+    }
+
+    UserFeatures& GetFeatures() const
+    {
+      return dynamic_cast<UserFeatures&>(*cached_);
+    }
+  };
+
+
+  void LoadUserFeatures(OrthancPluginRestOutput* output,
+                        const char* url,
+                        const OrthancPluginHttpRequest* request)
+  {
+    if (request->method != OrthancPluginHttpMethod_Post)
+    {
+      OrthancPluginSendMethodNotAllowed(OrthancPlugins::GetGlobalContext(), output, "POST");
+    }
+    else
+    {
+      AnnotationsCommandContext context(request);
+
+      Json::Value answer;
+
+      {
+        CachedUserFeatures cached(context.GetAnnotationsId(), context.GetUser().GetAnnotatingId());
+        cached.GetFeatures().GetContent(answer[KEY_FEATURES]);
       }
 
       ViewerToolbox::AnswerJson(output, answer);
@@ -1462,18 +1542,10 @@ namespace OrthancWSI
     {
       AnnotationsCommandContext context(request);
 
-      Json::Value content;
-      content[KEY_VERSION] = static_cast<unsigned int>(ORTHANC_WSI_ANNOTATIONS_VERSION);
-      content[KEY_FEATURES] = context.GetBodyField(KEY_FEATURES);
-
-      std::string serialized;
-      Orthanc::Toolbox::WriteFastJson(serialized, content);
-
-      std::string compressed;
-      Orthanc::GzipCompressor compressor;
-      Orthanc::IBufferCompressor::Compress(compressed, compressor, serialized);
-
-      SetKeyValueStore(context.GetFeaturesKey(), compressed);
+      {
+        CachedUserFeatures cached(context.GetAnnotationsId(), context.GetUser().GetAnnotatingId());
+        cached.GetFeatures().SetContent(context.GetBodyField(KEY_FEATURES));
+      }
 
       ViewerToolbox::AnswerEmpty(output);
     }

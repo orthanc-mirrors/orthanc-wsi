@@ -73,6 +73,8 @@ namespace OrthancWSI
 
     unsigned int GetAnnotationsCacheSize() const;
 
+    unsigned int GetFeaturesCacheSize() const;
+
     bool IsAnnotationsSharingEnabled() const;
   };
 }

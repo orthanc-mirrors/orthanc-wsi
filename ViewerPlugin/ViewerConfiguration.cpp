@@ -202,6 +202,12 @@ namespace OrthancWSI
   }
 
 
+  unsigned int ViewerConfiguration::GetFeaturesCacheSize() const
+  {
+    return 100;   // TODO - Configuration option?
+  }
+
+
   bool ViewerConfiguration::IsAnnotationsSharingEnabled() const
   {
     return wsiConfiguration_.GetBooleanValue("EnableAnnotationsSharing", false);
