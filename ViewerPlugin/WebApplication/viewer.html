@@ -420,7 +420,7 @@
             </tbody>
           </table>
 
-          <button class="btn btn-sm btn-primary w-100 mb-2" v-on:click="ReloadImportedLayersContent()"
+          <button class="btn btn-sm btn-primary w-100 mb-2" v-on:click="ReloadImportedFeatures()"
                   v-if="workspaceInfo.sharing && importedLayers.length > 0">
             <i class="bi bi-arrow-clockwise me-2 align-middle"></i> Reload imported content
           </button>
@@ -529,7 +529,7 @@
                 <label class="form-check-label" for="share-layer-public">Make this layer public (accessible to any user)</label>
               </div>
 
-              <label class="form-label small mb-1">Share with specific users:</label>
+              <label class="form-label small mb-1">Shared with specific users:</label>
               <div class="mb-3 border rounded p-2" style="min-height:2.5em; max-height:8em; overflow-y:auto">
                 <span v-if="shareLayerUsers.length === 0" class="text-muted small">No users added</span>
                 <span v-for="(user, index) in shareLayerUsers" :key="user.name"

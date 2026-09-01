@@ -90,7 +90,7 @@ var app = new Vue({
        **/
       referenceMagnification: 40,
 
-      // Share user layer modal
+      // Share layer modal
       modalShareUserLayer: null,
       shareLayerTarget: {},
       shareLayerPublic: false,
@@ -98,7 +98,7 @@ var app = new Vue({
       shareLayerSearchQuery: '',
       shareLayerSearchResults: [],
 
-      // Import layers modal
+      // Import layer modal
       modalImportLayer: null,
       importAvailableUsers: [],
       importUserSearchQuery: '',
@@ -179,7 +179,7 @@ var app = new Vue({
 
     LoadLayers: function(activeLayerId) {
       var that = this;
-      axios.post('../api/list-layers',
+      axios.post('../api/list-user-layers',
                  this.CreatePostPayload({}))
         .then(function(response) {
           that.userLayers = response.data['user-layers'];
@@ -194,7 +194,7 @@ var app = new Vue({
           }
 
           that.LoadUserFeatures();
-          that.ReloadImportedLayersContent();
+          that.ReloadImportedFeatures();
         })
         .catch(function() {
           console.error('Cannot load the saved annotations');
@@ -1163,7 +1163,7 @@ var app = new Vue({
       this.modalImportLayer.show();
 
       var that = this;
-      axios.post('../api/users-sharing-layers',
+      axios.post('../api/list-sharing-users',
                  this.CreatePostPayload({}))
         .then(function(response) {
           that.importAvailableUsers = response.data;
@@ -1202,7 +1202,7 @@ var app = new Vue({
       this.importAvailableLayers = [];
 
       var that = this;
-      axios.post('../api/shared-layers',
+      axios.post('../api/list-shared-layers',
                  this.CreatePostPayload({ 'user': this.importSelectedUser }))
         .then(function(response) {
           that.importAvailableLayers = response.data;
@@ -1218,7 +1218,7 @@ var app = new Vue({
       var layerId = this.importSelectedLayer;
 
       var that = this;
-      axios.post('../api/import-shared-layer',
+      axios.post('../api/import-layer',
                  this.CreatePostPayload({
                    'author': userId,
                    'layer': layerId
@@ -1242,7 +1242,7 @@ var app = new Vue({
       var layerId = this.pendingDelete;
 
       var that = this;
-      axios.post('../api/remove-shared-layer',
+      axios.post('../api/remove-imported-layer',
                  this.CreatePostPayload({
                    'layer': layerId
                  }))
@@ -1256,7 +1256,7 @@ var app = new Vue({
 
     SaveImportedLayer: function(layer) {
       var that = this;
-      axios.post('../api/save-shared-layer',
+      axios.post('../api/save-imported-layer',
                  this.CreatePostPayload({
                    'layer': layer
                  }))
@@ -1266,7 +1266,7 @@ var app = new Vue({
     },
 
 
-    ReloadImportedLayersContent: function() {
+    ReloadImportedFeatures: function() {
       console.assert(this.drawImportedSource !== null);  // InitializeAnnotations() must have been invoked
       console.assert(this.workspaceInfo.enabled !== undefined);  // LoadLayers() must have been invoked
 
@@ -1275,7 +1275,7 @@ var app = new Vue({
       }
 
       var that = this;
-      axios.post('../api/load-shared-features',
+      axios.post('../api/load-imported-features',
                  this.CreatePostPayload({}))
         .then(function(response) {
           that.drawImportedSource.clear();
