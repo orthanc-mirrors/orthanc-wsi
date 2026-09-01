@@ -189,8 +189,11 @@ set(ORTHANC_WSI_SOURCES
   Annotations/AnnotationsWorkspaceId.cpp
   Annotations/IAuthenticatedUser.cpp
   Annotations/ISerializable.cpp
+  Annotations/ImportedLayer.cpp
   Annotations/LayersCollection.cpp
+  Annotations/ProjectInformation.cpp
   Annotations/UserId.cpp
+  Annotations/UserLayer.cpp
   DicomPyramidCache.cpp
   IIIF.cpp
   OrthancPluginConnection.cpp

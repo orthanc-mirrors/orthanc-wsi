@@ -24,14 +24,14 @@
 #include "../../Framework/PrecompiledHeadersWSI.h"
 #include "AnnotationsRestApi.h"
 
-#include "../../Framework/BackgroundColor.h"
 #include "../ViewerConfiguration.h"
 #include "../ViewerToolbox.h"
 #include "AnnotationsWorkspaceId.h"
 #include "IAuthenticatedUser.h"
-#include "ILayer.h"
-#include "ISerializable.h"
+#include "ImportedLayer.h"
 #include "LayersCollection.h"
+#include "ProjectInformation.h"
+#include "UserLayer.h"
 
 #include <Cache/SharedObjectCache.h>
 #include <Compression/GzipCompressor.h>
@@ -46,221 +46,19 @@
 
 namespace OrthancWSI
 {
-  static const char* const KEY_AUTHOR = "author";
-  static const char* const KEY_COLOR = "color";
   static const char* const KEY_FEATURES = "features";
   static const char* const KEY_ID = "id";
   static const char* const KEY_LAYERS = "layers";
   static const char* const KEY_LAYER_ID = "layer-id";
   static const char* const KEY_NAME = "name";
   static const char* const KEY_PUBLIC = "public";
-  static const char* const KEY_SHARED_WITH = "shared_with";
   static const char* const KEY_TYPE = "type";
   static const char* const KEY_VERSION = "version";
-  static const char* const KEY_VISIBLE = "visible";
   static const char* const KEY_ACTIVE_USERS = "active-users";
   static const char* const KEY_PROJECT_NAME = "project-name";
   static const char* const KEY_PROJECT_DESCRIPTION = "project-description";
   static const char* const KEY_USER_LAYERS = "user-layers";
   static const char* const KEY_IMPORTED_LAYERS = "imported-layers";
-
-
-  class UserLayer : public ILayer
-  {
-  private:
-    bool              isVisible_;
-    BackgroundColor   color_;
-    std::string       id_;
-    std::string       name_;
-    std::set<UserId>  sharedWith_;
-    bool              isPublic_;
-
-  public:
-    UserLayer(const BackgroundColor& color,
-              const std::string& name) :
-      isVisible_(true),
-      color_(color),
-      id_(Orthanc::Toolbox::GenerateUuid()),
-      name_(name),
-      isPublic_(false)
-    {
-    }
-
-    UserLayer(const Json::Value& serialized)
-    {
-      if (!serialized.isObject() ||
-          !serialized.isMember(KEY_SHARED_WITH) ||
-          !serialized[KEY_SHARED_WITH].isArray())
-      {
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
-      }
-
-      isVisible_ = Orthanc::SerializationToolbox::ReadBoolean(serialized, KEY_VISIBLE);
-      color_ = BackgroundColor::FromHexadecimalString(Orthanc::SerializationToolbox::ReadString(serialized, KEY_COLOR));
-      id_ = Orthanc::SerializationToolbox::ReadString(serialized, KEY_ID);
-      name_ = Orthanc::SerializationToolbox::ReadString(serialized, KEY_NAME);
-      isPublic_ = Orthanc::SerializationToolbox::ReadBoolean(serialized, KEY_PUBLIC);
-
-      const Json::Value& v = serialized[KEY_SHARED_WITH];
-      for (Json::Value::ArrayIndex i = 0; i < v.size(); i++)
-      {
-        sharedWith_.insert(UserId(v[i]));
-      }
-    }
-
-    virtual std::string GetId() const ORTHANC_OVERRIDE
-    {
-      return id_;
-    }
-
-    bool IsVisible() const
-    {
-      return isVisible_;
-    }
-
-    const BackgroundColor& GetColor() const
-    {
-      return color_;
-    }
-
-    const std::string& GetName() const
-    {
-      return name_;
-    }
-
-    bool IsSharedWith(const UserId& user) const
-    {
-      assert(user.GetType() == UserId::Type_Root ||
-             user.GetType() == UserId::Type_Standard);
-
-      return (isPublic_ ||
-              user.GetType() == UserId::Type_Root ||
-              sharedWith_.find(user) != sharedWith_.end());
-    }
-
-    void Assign(const UserLayer& other)
-    {
-      if (other.GetId() != id_)
-      {
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
-      }
-      else
-      {
-        isVisible_ = other.isVisible_;
-        color_ = other.color_;
-        name_ = other.name_;
-        sharedWith_ = other.sharedWith_;
-        isPublic_ = other.isPublic_;
-      }
-    }
-
-    virtual void Serialize(Json::Value& serialized) const ORTHANC_OVERRIDE
-    {
-      Json::Value sharedWith = Json::arrayValue;
-      for (std::set<UserId>::const_iterator it = sharedWith_.begin(); it != sharedWith_.end(); ++it)
-      {
-        Json::Value item;
-        it->Serialize(item);
-        sharedWith.append(item);
-      }
-
-      serialized = Json::objectValue;
-      serialized[KEY_VISIBLE] = isVisible_;
-      serialized[KEY_COLOR] = color_.ToHexadecimalString();
-      serialized[KEY_ID] = id_;
-      serialized[KEY_NAME] = name_;
-      serialized[KEY_PUBLIC] = isPublic_;
-      serialized[KEY_SHARED_WITH] = sharedWith;
-    }
-  };
-
-
-  class ImportedLayer : public ILayer
-  {
-  private:
-    bool             isVisible_;
-    BackgroundColor  color_;
-    UserId           author_;
-    std::string      id_;
-    std::string      name_;
-
-  public:
-    ImportedLayer(const UserId& author,
-                  const UserLayer& layer) :
-      isVisible_(true),
-      color_(layer.GetColor()),
-      author_(author),
-      id_(layer.GetId()),
-      name_(layer.GetName())
-    {
-    }
-
-    ImportedLayer(const Json::Value& serialized)
-    {
-      if (!serialized.isObject() ||
-          !serialized.isMember(KEY_AUTHOR))
-      {
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
-      }
-
-      isVisible_ = Orthanc::SerializationToolbox::ReadBoolean(serialized, KEY_VISIBLE);
-      author_ = UserId(serialized[KEY_AUTHOR]);
-      id_ = Orthanc::SerializationToolbox::ReadString(serialized, KEY_ID);
-      name_ = Orthanc::SerializationToolbox::ReadString(serialized, KEY_NAME);
-      color_ = BackgroundColor::FromHexadecimalString(Orthanc::SerializationToolbox::ReadString(serialized, KEY_COLOR));
-    }
-
-    void Assign(const ImportedLayer& other)
-    {
-      if (other.GetId() != id_)
-      {
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
-      }
-      else
-      {
-        isVisible_ = other.isVisible_;
-        color_ = other.color_;
-        author_ = other.author_;
-        name_ = other.name_;
-      }
-    }
-
-    virtual std::string GetId() const ORTHANC_OVERRIDE
-    {
-      return id_;
-    }
-
-    bool IsVisible() const
-    {
-      return isVisible_;
-    }
-
-    const BackgroundColor& GetColor() const
-    {
-      return color_;
-    }
-
-    const UserId& GetAuthor() const
-    {
-      return author_;
-    }
-
-    const std::string& GetName() const
-    {
-      return name_;
-    }
-
-    virtual void Serialize(Json::Value& serialized) const ORTHANC_OVERRIDE
-    {
-      serialized = Json::objectValue;
-      serialized[KEY_VISIBLE] = isVisible_;
-      serialized[KEY_COLOR] = color_.ToHexadecimalString();
-      serialized[KEY_ID] = id_;
-      serialized[KEY_NAME] = name_;
-
-      author_.Serialize(serialized[KEY_AUTHOR]);
-    }
-  };
 
 
   class UserAnnotationsSettings : public ISerializable
@@ -395,74 +193,6 @@ namespace OrthancWSI
       {
         importedLayers_.AddLayer(new ImportedLayer(author, layer));
       }
-    }
-  };
-
-
-  class ProjectInformation : public boost::noncopyable
-  {
-  private:
-    boost::mutex              mutex_;
-    std::string               projectId_;
-    boost::posix_time::ptime  lastUpdate_;
-    std::string               name_;
-    std::string               description_;
-
-    static boost::posix_time::ptime GetNow()
-    {
-      return boost::posix_time::second_clock::universal_time();
-    }
-
-    void Load()
-    {
-      Json::Value info;
-
-      if (OrthancPlugins::RestApiGet(info, "/education/api-plugins/project?id=" + projectId_, true) &&
-          info.isObject())
-      {
-        // The "orthanc-education" plugin is available
-        name_ = Orthanc::SerializationToolbox::ReadString(info, "name", "");
-        description_ = Orthanc::SerializationToolbox::ReadString(info, "description", "");
-      }
-      else
-      {
-        name_.clear();
-        description_.clear();
-      }
-
-      lastUpdate_ = GetNow();
-
-      description_ = boost::posix_time::to_iso_string(lastUpdate_);
-    }
-
-    // The mutex must be locked
-    void Refresh()
-    {
-      if (GetNow() - lastUpdate_ >= boost::posix_time::seconds(10))
-      {
-        Load();
-      }
-    }
-
-  public:
-    ProjectInformation(const std::string& projectId) :
-      projectId_(projectId)
-    {
-      Load();
-    }
-
-    std::string GetName()
-    {
-      boost::mutex::scoped_lock lock(mutex_);
-      Refresh();
-      return name_;
-    }
-
-    std::string GetDescription()
-    {
-      boost::mutex::scoped_lock lock(mutex_);
-      Refresh();
-      return description_;
     }
   };
 
