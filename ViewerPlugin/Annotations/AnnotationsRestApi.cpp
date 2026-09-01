@@ -50,6 +50,21 @@ namespace OrthancWSI
     std::string            resourceId_;
     unsigned int           frameNumber_;
 
+    std::string GetKeyPrefix() const
+    {
+      switch (level_)
+      {
+      case Orthanc::ResourceType_Series:
+        return projectId_ + "|series|" + resourceId_;
+
+      case Orthanc::ResourceType_Instance:
+        return projectId_ + "|instance|" + boost::lexical_cast<std::string>(frameNumber_) + "|" + resourceId_;
+
+      default:
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+      }
+    }
+
   public:
     AnnotationsWorkspaceId(const std::string& projectId,
                            Orthanc::ResourceType level,
@@ -97,19 +112,19 @@ namespace OrthancWSI
       return resourceId_;
     }
 
-    std::string GetKey() const
+    std::string GetInfoKey() const
     {
-      switch (level_)
-      {
-      case Orthanc::ResourceType_Series:
-        return projectId_ + "|series|" + resourceId_;
+      return GetKeyPrefix() + "|info";
+    }
 
-      case Orthanc::ResourceType_Instance:
-        return projectId_ + "|instance|" + boost::lexical_cast<std::string>(frameNumber_) + "|" + resourceId_;
+    std::string GetSettingsKey(const UserId& user) const
+    {
+      return GetKeyPrefix() + "|settings|" + user.GetKey();
+    }
 
-      default:
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
-      }
+    std::string GetFeaturesKey(const UserId& user) const
+    {
+      return GetKeyPrefix() + "|features|" + user.GetKey();
     }
   };
 
@@ -396,27 +411,6 @@ namespace OrthancWSI
       return false;
     }
   }
-
-
-  static std::string GetInfoKey(const AnnotationsWorkspaceId& annotations)
-  {
-    return annotations.GetKey() + "|info";
-  }
-
-
-  static std::string GetLayersKey(const AnnotationsWorkspaceId& annotations,
-                                  const UserId& user)
-  {
-    return annotations.GetKey() + "|layers|" + user.GetKey();
-  }
-
-
-  static std::string GetFeaturesKey(const AnnotationsWorkspaceId& annotations,
-                                    const UserId& user)
-  {
-    return annotations.GetKey() + "|features|" + user.GetKey();
-  }
-
 
 
   static const char* const KEY_ACTIVE_USERS = "active-users";
@@ -745,49 +739,6 @@ namespace OrthancWSI
       sharedLayers_.Serialize(serialized[KEY_SHARED_LAYERS]);
     }
 
-    bool HasLayerSharedWith(const UserId& user) const
-    {
-      LayersCollection::Iterator iterator(userLayers_);
-
-      while (!iterator.IsDone())
-      {
-        const UserLayer& layer = dynamic_cast<const UserLayer&>(iterator.GetLayer());
-
-        if (layer.IsSharedWith(user))
-        {
-          return true;
-        }
-
-        iterator.Next();
-      }
-
-      return false;
-    }
-
-    void ListLayersSharedWith(Json::Value& target,
-                              const UserId& author,
-                              const UserId& user) const
-    {
-      target = Json::arrayValue;
-
-      LayersCollection::Iterator iterator(userLayers_);
-
-      while (!iterator.IsDone())
-      {
-        const UserLayer& layer = dynamic_cast<const UserLayer&>(iterator.GetLayer());
-
-        if (!author.Equals(user) &&  // Don't add self - TODO MAKES NO SENSE (constant)
-            layer.IsSharedWith(user))
-        {
-          Json::Value item;
-          layer.Serialize(item);
-          target.append(item);
-        }
-
-        iterator.Next();
-      }
-    }
-
     void ImportSharedLayer(const UserId& author,
                            const UserLayer& layer)
     {
@@ -921,7 +872,7 @@ namespace OrthancWSI
 
     void Load(const UserId& user)
     {
-      const std::string key = GetLayersKey(id_, user);
+      const std::string key = id_.GetSettingsKey(user);
 
       Json::Value layers;
       if (LookupKeyValueStore(layers, key))
@@ -946,7 +897,7 @@ namespace OrthancWSI
     AnnotationsWorkspace(const AnnotationsWorkspaceId& id) :
       id_(id)
     {
-      const std::string key = GetInfoKey(id);
+      const std::string key = id.GetInfoKey();
 
       Json::Value info;
 
@@ -1013,14 +964,29 @@ namespace OrthancWSI
 
       target.clear();
 
-      // Loop over the users
+      // Loop over all the users in this workspace
       for (Content::const_iterator it = content_.begin(); it != content_.end(); ++it)
       {
         assert(it->second != NULL);
-        if (!user.Equals(it->first) &&  // Don't add self
-            it->second->HasLayerSharedWith(user))
+        if (!user.Equals(it->first))  // Don't add self
         {
-          target.insert(it->first);
+          LayersCollection::Iterator iterator(it->second->GetUserLayers());
+
+          // Loop over all the user layers in this workspace
+          while (!iterator.IsDone())
+          {
+            const UserLayer& layer = dynamic_cast<const UserLayer&>(iterator.GetLayer());
+
+            if (layer.IsSharedWith(user))
+            {
+              target.insert(it->first);
+              break;
+            }
+            else
+            {
+              iterator.Next();
+            }
+          }
         }
       }
     }
@@ -1087,13 +1053,25 @@ namespace OrthancWSI
       void ListLayersSharedWith(Json::Value& target,
                                 const UserId& user) const
       {
+        target = Json::arrayValue;
+
         if (IsValid())
         {
-          userSettings_->ListLayersSharedWith(target, userId_, user);
-        }
-        else
-        {
-          target = Json::arrayValue;
+          LayersCollection::Iterator iterator(userSettings_->GetUserLayers());
+
+          while (!iterator.IsDone())
+          {
+            const UserLayer& layer = dynamic_cast<const UserLayer&>(iterator.GetLayer());
+
+            if (layer.IsSharedWith(user))
+            {
+              Json::Value item;
+              layer.Serialize(item);
+              target.append(item);
+            }
+
+            iterator.Next();
+          }
         }
       }
 
@@ -1125,7 +1103,7 @@ namespace OrthancWSI
 
       void Commit()
       {
-        SetKeyValueStore(GetLayersKey(that_.id_, userId_), *userSettings_);
+        SetKeyValueStore(that_.id_.GetSettingsKey(userId_), *userSettings_);
       }
 
     public:
@@ -1138,7 +1116,7 @@ namespace OrthancWSI
         if (that.info_->AddActiveUser(userId_))
         {
           // Only update the key-value store if this is the first time we meet this user
-          SetKeyValueStore(GetInfoKey(that.id_), *that.info_);
+          SetKeyValueStore(that.id_.GetInfoKey(), *that.info_);
         }
 
         Content::iterator found = that.content_.find(userId_);
@@ -1252,7 +1230,7 @@ namespace OrthancWSI
   public:
     CachedAnnotationsWorkspace(const AnnotationsWorkspaceId& id)
     {
-      const std::string key = id.GetKey();
+      const std::string key = id.GetInfoKey();
 
       cached_ = GetCache().GetCachedValue(key);
 
@@ -1588,7 +1566,7 @@ namespace OrthancWSI
     CachedUserFeatures(const AnnotationsWorkspaceId& annotations,
                        const UserId& user)
     {
-      const std::string key = GetFeaturesKey(annotations, user);
+      const std::string key = annotations.GetFeaturesKey(user);
 
       cached_ = GetCache().GetCachedValue(key);
 
