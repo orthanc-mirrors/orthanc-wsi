@@ -200,7 +200,7 @@ var app = new Vue({
           that.LoadLayers(response.data.id);
         })
         .catch(function() {
-          console.error('Cannot create a new layer');
+          console.error('Cannot create a new user layer');
         });
     },
 
@@ -211,7 +211,7 @@ var app = new Vue({
                    'layer': layer
                  }))
         .catch(function() {
-          console.error('Cannot save layer');
+          console.error('Cannot save user layer');
         });
     },
 
@@ -1224,9 +1224,14 @@ var app = new Vue({
     },
 
     SaveSharedLayer: function(layer) {
-      // TODO
-      console.log('SaveSharedLayer()');
-      console.log(layer);
+      var that = this;
+      axios.post('../api/save-shared-layer',
+                 this.CreatePostPayload({
+                   'layer': layer
+                 }))
+        .catch(function() {
+          console.error('Cannot save shared layer');
+        });
     },
 
 
