@@ -38,7 +38,7 @@ var app = new Vue({
       // hue: 0,        // Degrees, in the range between [-180,180]
 
       // Main state for annotations
-      annotationsInfo: {},
+      workspaceInfo: {},
       imageDescription: '',
       userLayers: [],
       sharedLayers: [],
@@ -217,9 +217,9 @@ var app = new Vue({
 
     LoadUserFeatures: function() {
       console.assert(this.drawSource !== null);  // InitializeAnnotations() must have been invoked
-      console.assert(this.annotationsInfo.enabled !== undefined);  // LoadLayers() must have been invoked
+      console.assert(this.workspaceInfo.enabled !== undefined);  // LoadLayers() must have been invoked
 
-      if (!this.annotationsInfo.enabled) {
+      if (!this.workspaceInfo.enabled) {
         return;
       }
 
@@ -384,12 +384,12 @@ var app = new Vue({
 
     LoadAnnotationsInfo: function() {
       var that = this;
-      axios.post('../api/annotations-info',
+      axios.post('../api/workspace-info',
                  this.CreatePostPayload({}))
         .then(function(response) {
-          that.annotationsInfo = response.data;
+          that.workspaceInfo = response.data;
 
-          if (that.annotationsInfo.enabled) {
+          if (that.workspaceInfo.enabled) {
             that.LoadLayers();
           }
         })
@@ -1242,9 +1242,9 @@ var app = new Vue({
 
     ReloadSharedLayersContent: function() {
       console.assert(this.drawSharedSource !== null);  // InitializeAnnotations() must have been invoked
-      console.assert(this.annotationsInfo.enabled !== undefined);  // LoadLayers() must have been invoked
+      console.assert(this.workspaceInfo.enabled !== undefined);  // LoadLayers() must have been invoked
 
-      if (!this.annotationsInfo.sharing) {
+      if (!this.workspaceInfo.sharing) {
         return;
       }
 

@@ -141,7 +141,7 @@
     <div id="app">
       <div id="map" :style="{ background: mapBackground }">
         <div id="toolbar-top" style="display:none" v-show="toolbarsVisible">
-          <div class="btn-group" role="group" v-if="annotationsInfo.enabled">
+          <div class="btn-group" role="group" v-if="workspaceInfo.enabled">
             <button type="button" class="btn btn-outline-secondary icon-btn"
                     :class="{ active: activeDrawTool === 'select' }"
                     data-bs-toggle="tooltip" data-bs-placement="bottom" title="Select annotation"
@@ -206,7 +206,7 @@
             </button>
           </div>
 
-          <div class="btn-group" role="group" v-if="annotationsInfo.enabled">
+          <div class="btn-group" role="group" v-if="workspaceInfo.enabled">
             <button type="button" class="btn btn-outline-secondary icon-btn"
                     :class="{ active: activeDrawTool === 'move' }"
                     data-bs-toggle="tooltip" data-bs-placement="bottom" title="Move annotation"
@@ -230,7 +230,7 @@
           </div>
 
           <div class="alert alert-danger alert-dismissible d-inline-block py-0" role="alert"
-               v-if="annotationsInfo.enabled && !annotationsInfo.persistent">
+               v-if="workspaceInfo.enabled && !workspaceInfo.persistent">
             Your annotations will not be saved
             <button type="button" class="btn-close top-50 translate-middle-y" data-bs-dismiss="alert" aria-label="Close"></button>
           </div>
@@ -289,21 +289,21 @@
       </div>
 
       <div class="offcanvas offcanvas-end" data-bs-backdrop="false" data-bs-scroll="true"
-           tabindex="-1" id="right-panel" v-show="annotationsInfo.enabled">
+           tabindex="-1" id="right-panel" v-show="workspaceInfo.enabled">
         <div class="offcanvas-header">
           <h5 class="offcanvas-title">Annotations</h5>
           <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
         </div>
         <div class="offcanvas-body p-2">
-          <h5 v-if="annotationsInfo.name !== ''">{{ annotationsInfo.name }}</h5>
+          <h5 v-if="workspaceInfo.name !== ''">{{ workspaceInfo.name }}</h5>
 
-          <p v-if="annotationsInfo.description !== ''">
-            <small>{{ annotationsInfo.description }}</small>
+          <p v-if="workspaceInfo.description !== ''">
+            <small>{{ workspaceInfo.description }}</small>
           </p>
 
-          <p v-if="annotationsInfo.user !== ''">
+          <p v-if="workspaceInfo.user !== ''">
             <small>Logged as:</small>
-            <span class="badge bg-secondary">{{ annotationsInfo.user }}</span>
+            <span class="badge bg-secondary">{{ workspaceInfo.user }}</span>
           </p>
 
           <div class="d-flex align-items-center mb-1">
@@ -322,7 +322,7 @@
                 <th class="p-0 text-center fw-normal" title="Color">C</th>
                 <th class="px-1 py-0 fw-normal">Name</th>
                 <th class="p-0 text-center fw-normal" title="Share layer with other users"
-                    v-if="annotationsInfo.sharing">S</th>
+                    v-if="workspaceInfo.sharing">S</th>
                 <th class="p-0"></th>
               </tr>
             </thead>
@@ -352,7 +352,7 @@
                          v-model:value="layer.name"
                          v-on:change="SaveUserLayer(layer)">
                 </td>
-                <td class="text-center align-middle p-0" v-if="annotationsInfo.sharing">
+                <td class="text-center align-middle p-0" v-if="workspaceInfo.sharing">
                   <button type="button" class="btn btn-link p-1"
                           v-on:click="ShowShareUserLayerModal(layer)">
                     <i class="bi bi-share"></i>
@@ -372,7 +372,7 @@
 
           <hr class="my-4">
 
-          <div class="d-flex align-items-center mb-1" v-if="annotationsInfo.sharing">
+          <div class="d-flex align-items-center mb-1" v-if="workspaceInfo.sharing">
             <h5>Shared layers</h5>
             <button type="button" class="btn btn-primary btn-sm ms-auto"
                     v-on:click="ShowImportSharedLayerModal()">
@@ -381,7 +381,7 @@
             </button>
           </div>
 
-          <table class="table table-sm table-borderless mb-3 align-middle" v-if="annotationsInfo.sharing">
+          <table class="table table-sm table-borderless mb-3 align-middle" v-if="workspaceInfo.sharing">
             <thead class="small text-muted">
               <tr>
                 <th class="p-0 text-center fw-normal" title="Visible">V</th>
@@ -420,11 +420,11 @@
           </table>
 
           <button class="btn btn-sm btn-primary w-100 mb-2" v-on:click="ReloadSharedLayersContent()"
-                  v-if="annotationsInfo.sharing && sharedLayers.length > 0">
+                  v-if="workspaceInfo.sharing && sharedLayers.length > 0">
             <i class="bi bi-arrow-clockwise me-2 align-middle"></i> Reload shared content
           </button>
 
-          <hr class="my-4" v-if="annotationsInfo.sharing">
+          <hr class="my-4" v-if="workspaceInfo.sharing">
 
           <div v-show="selectedFeature !== null" class="mb-3">
             <h5>Current selection</h5>
@@ -458,7 +458,7 @@
       </div>
 
       <button id="right-panel-toggle" type="button" class="btn btn-secondary"
-              style="display:none" v-show="annotationsInfo.enabled && toolbarsVisible"
+              style="display:none" v-show="workspaceInfo.enabled && toolbarsVisible"
               data-bs-toggle="offcanvas" data-bs-target="#right-panel">
         <i class="bi" :class="panelOpen ? 'bi-chevron-compact-right' : 'bi-chevron-compact-left'"></i>
       </button>
