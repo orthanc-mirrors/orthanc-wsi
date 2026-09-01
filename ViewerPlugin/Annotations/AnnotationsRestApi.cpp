@@ -112,6 +112,18 @@ namespace OrthancWSI
       return resourceId_;
     }
 
+    unsigned int GetFrameNumber() const
+    {
+      if (level_ == Orthanc::ResourceType_Instance)
+      {
+        return frameNumber_;
+      }
+      else
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
+      }
+    }
+
     std::string GetInfoKey() const
     {
       return GetKeyPrefix() + "|info";
@@ -652,6 +664,26 @@ namespace OrthancWSI
       return dynamic_cast<ImportedLayer&>(importedLayers_.GetLayer(layerId));
     }
 
+    LayersCollection& GetUserLayers()
+    {
+      return userLayers_;
+    }
+
+    const LayersCollection& GetUserLayers() const
+    {
+      return userLayers_;
+    }
+
+    LayersCollection& GetImportedLayers()
+    {
+      return importedLayers_;
+    }
+
+    const LayersCollection& GetImportedLayers() const
+    {
+      return importedLayers_;
+    }
+
     std::string CreateUserLayer()
     {
       static const uint8_t PALETTE[] = {
@@ -681,26 +713,6 @@ namespace OrthancWSI
       }
 
       return AddUserLayer(new UserLayer(color, name));
-    }
-
-    LayersCollection& GetUserLayers()
-    {
-      return userLayers_;
-    }
-
-    const LayersCollection& GetUserLayers() const
-    {
-      return userLayers_;
-    }
-
-    LayersCollection& GetImportedLayers()
-    {
-      return importedLayers_;
-    }
-
-    const LayersCollection& GetImportedLayers() const
-    {
-      return importedLayers_;
     }
 
     virtual void Serialize(Json::Value& serialized) const ORTHANC_OVERRIDE
@@ -738,7 +750,6 @@ namespace OrthancWSI
     {
       return boost::posix_time::second_clock::universal_time();
     }
-
 
     void Load()
     {
@@ -918,6 +929,11 @@ namespace OrthancWSI
       }
     }
 
+    const AnnotationsWorkspaceId& GetId() const
+    {
+      return id_;
+    }
+
     std::string GetProjectName()
     {
       return projectInformation_.GetName();
@@ -1081,7 +1097,7 @@ namespace OrthancWSI
               // and that the layer is still shared with this user
               if (found->second->GetUserLayers().HasLayer(layer.GetId()))
               {
-                const UserLayer& authorLayer = dynamic_cast<const UserLayer&>(found->second->GetUserLayers().GetLayer(layer.GetId()));
+                const UserLayer& authorLayer = found->second->GetUserLayer(layer.GetId());
 
                 if (authorLayer.IsSharedWith(userId_))
                 {
@@ -1258,8 +1274,8 @@ namespace OrthancWSI
   private:
     std::unique_ptr<IAuthenticatedUser>          user_;
     Json::Value                                  body_;
-    std::unique_ptr<AnnotationsWorkspaceId>      workspaceId_;
     std::unique_ptr<CachedAnnotationsWorkspace>  workspace_;
+    IAuthenticatedUser::ProjectRole              role_;
 
   public:
     AnnotationsCommandContext(const OrthancPluginHttpRequest* request)
@@ -1278,22 +1294,22 @@ namespace OrthancWSI
       }
 
       const std::string projectId = Orthanc::SerializationToolbox::ReadString(body_, "project", "" /* default project */);
-      const std::string level = Orthanc::SerializationToolbox::ReadString(body_, "level");
+      const std::string levelString = Orthanc::SerializationToolbox::ReadString(body_, "level");
       const std::string resourceId = Orthanc::SerializationToolbox::ReadString(body_, "resource");
       unsigned int frameNumber = Orthanc::SerializationToolbox::ReadUnsignedInteger(body_, "frame", 0 /* default frame */);
 
-      workspaceId_.reset(new AnnotationsWorkspaceId(projectId, Orthanc::StringToResourceType(level.c_str()), resourceId, frameNumber));
+      role_ = user_->GetRoleInProject(projectId);
 
-      IAuthenticatedUser::ProjectRole role = user_->GetRoleInProject(workspaceId_->GetProjectId());
-
-      if (role != IAuthenticatedUser::ProjectRole_Instructor &&
-          role != IAuthenticatedUser::ProjectRole_Learner)
+      if (role_ != IAuthenticatedUser::ProjectRole_Instructor &&
+          role_ != IAuthenticatedUser::ProjectRole_Learner)
       {
         throw Orthanc::OrthancException(Orthanc::ErrorCode_ForbiddenAccess, "User \"" + user_->Format() +
-                                        "\" is not instructor or learner of project \"" + workspaceId_->GetProjectId() + "\"");
+                                        "\" is not instructor or learner of project \"" + projectId + "\"");
       }
 
-      workspace_.reset(new CachedAnnotationsWorkspace(*workspaceId_));
+      Orthanc::ResourceType level = Orthanc::StringToResourceType(levelString.c_str());
+      AnnotationsWorkspaceId workspaceId(projectId, level, resourceId, frameNumber);
+      workspace_.reset(new CachedAnnotationsWorkspace(workspaceId));
     }
 
     const IAuthenticatedUser& GetUser() const
@@ -1302,10 +1318,15 @@ namespace OrthancWSI
       return *user_;
     }
 
-    const AnnotationsWorkspaceId& GetWorkspaceId() const
+    AnnotationsWorkspace& GetWorkspace()
     {
-      assert(workspaceId_.get() != NULL);
-      return *workspaceId_;
+      assert(workspace_.get() != NULL);
+      return workspace_->GetContent();
+    }
+
+    IAuthenticatedUser::ProjectRole GetUserRoleInProject() const
+    {
+      return role_;
     }
 
     std::string GetBodyString(const char* field) const
@@ -1323,12 +1344,6 @@ namespace OrthancWSI
       {
         return body_[field];
       }
-    }
-
-    AnnotationsWorkspace& GetWorkspace()
-    {
-      assert(workspace_.get() != NULL);
-      return workspace_->GetContent();
     }
   };
 
@@ -1624,7 +1639,7 @@ namespace OrthancWSI
       Json::Value answer;
 
       {
-        CachedUserFeatures cached(context.GetWorkspaceId(), context.GetUser().GetAnnotatingId());
+        CachedUserFeatures cached(context.GetWorkspace().GetId(), context.GetUser().GetAnnotatingId());
         cached.GetFeatures().GetContent(answer[KEY_FEATURES]);
       }
 
@@ -1646,7 +1661,7 @@ namespace OrthancWSI
       AnnotationsCommandContext context(request);
 
       {
-        CachedUserFeatures cached(context.GetWorkspaceId(), context.GetUser().GetAnnotatingId());
+        CachedUserFeatures cached(context.GetWorkspace().GetId(), context.GetUser().GetAnnotatingId());
         cached.GetFeatures().SetContent(context.GetBodyField(KEY_FEATURES));
       }
 
@@ -1862,7 +1877,7 @@ namespace OrthancWSI
         Json::Value authorFeatures;
 
         {
-          CachedUserFeatures author(context.GetWorkspaceId(), *it);
+          CachedUserFeatures author(context.GetWorkspace().GetId(), *it);
           author.GetFeatures().GetContent(authorFeatures);
         }
 
