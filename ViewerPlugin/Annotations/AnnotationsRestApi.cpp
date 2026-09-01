@@ -42,7 +42,7 @@
 
 namespace OrthancWSI
 {
-  class AnnotationsId
+  class AnnotationsManagerId
   {
   private:
     std::string            projectId_;
@@ -51,10 +51,10 @@ namespace OrthancWSI
     unsigned int           frameNumber_;
 
   public:
-    AnnotationsId(const std::string& projectId,
-                  Orthanc::ResourceType level,
-                  const std::string& resourceId,
-                  unsigned int frameNumber) :
+    AnnotationsManagerId(const std::string& projectId,
+                         Orthanc::ResourceType level,
+                         const std::string& resourceId,
+                         unsigned int frameNumber) :
       projectId_(projectId),
       level_(level),
       resourceId_(resourceId),
@@ -389,20 +389,20 @@ namespace OrthancWSI
   }
 
 
-  static std::string GetInfoKey(const AnnotationsId& annotations)
+  static std::string GetInfoKey(const AnnotationsManagerId& annotations)
   {
     return annotations.GetKey() + "|info";
   }
 
 
-  static std::string GetLayersKey(const AnnotationsId& annotations,
+  static std::string GetLayersKey(const AnnotationsManagerId& annotations,
                                   const UserId& user)
   {
     return annotations.GetKey() + "|layers|" + user.GetKey();
   }
 
 
-  static std::string GetFeaturesKey(const AnnotationsId& annotations,
+  static std::string GetFeaturesKey(const AnnotationsManagerId& annotations,
                                     const UserId& user)
   {
     return annotations.GetKey() + "|features|" + user.GetKey();
@@ -620,18 +620,18 @@ namespace OrthancWSI
   };
 
 
-  class UserData : public ISerializable
+  class UserAnnotationsSettings : public ISerializable
   {
   private:
     LayersCollection  userLayers_;
     LayersCollection  sharedLayers_;
 
   public:
-    UserData()
+    UserAnnotationsSettings()
     {
     }
 
-    UserData(const Json::Value& serialized)
+    UserAnnotationsSettings(const Json::Value& serialized)
     {
       if (!serialized.isObject() ||
           !serialized.isMember(KEY_USER_LAYERS) ||
@@ -845,17 +845,17 @@ namespace OrthancWSI
   };
 
 
-  class Annotations : public Orthanc::IDynamicObject
+  class AnnotationsManager : public Orthanc::IDynamicObject
   {
   private:
-    void LoadUserData(const UserId& user)
+    void Load(const UserId& user)
     {
       const std::string key = GetLayersKey(id_, user);
 
       Json::Value layers;
       if (LookupKeyValueStore(layers, key))
       {
-        std::unique_ptr<UserData> item(new UserData(layers));
+        std::unique_ptr<UserAnnotationsSettings> item(new UserAnnotationsSettings(layers));
 
         if (content_.find(user) == content_.end())  // Should never be false
         {
@@ -864,15 +864,15 @@ namespace OrthancWSI
       }
     }
 
-    typedef std::map<UserId, UserData*>   Content;
+    typedef std::map<UserId, UserAnnotationsSettings*>   Content;
 
     Orthanc::ReaderWriterLock         mutex_;
-    AnnotationsId                     id_;
+    AnnotationsManagerId              id_;
     std::unique_ptr<AnnotationsInfo>  info_;
     Content                           content_;
 
   public:
-    Annotations(const AnnotationsId& id) :
+    AnnotationsManager(const AnnotationsManagerId& id) :
       id_(id)
     {
       const std::string key = GetInfoKey(id);
@@ -886,7 +886,7 @@ namespace OrthancWSI
         for (std::set<UserId>::const_iterator it = info_->GetActiveUsers().begin();
              it != info_->GetActiveUsers().end(); ++it)
         {
-          LoadUserData(*it);
+          Load(*it);
         }
       }
       else
@@ -905,7 +905,7 @@ namespace OrthancWSI
       }
     }
 
-    ~Annotations()
+    ~AnnotationsManager()
     {
       for (Content::iterator it = content_.begin(); it != content_.end(); ++it)
       {
@@ -960,10 +960,10 @@ namespace OrthancWSI
       Orthanc::ReaderWriterLock::ReadLock lock_;
       const AnnotationsInfo&              info_;
       UserId                              userId_;
-      const UserData*                     userData_;
+      const UserAnnotationsSettings*      userSettings_;
 
     public:
-      UserReader(Annotations& that,
+      UserReader(AnnotationsManager& that,
                  const UserId& userId) :
         lock_(that.mutex_),
         info_(*that.info_),
@@ -973,18 +973,18 @@ namespace OrthancWSI
 
         if (found == that.content_.end())
         {
-          userData_ = NULL;
+          userSettings_ = NULL;
         }
         else
         {
           assert(found->second != NULL);
-          userData_ = found->second;
+          userSettings_ = found->second;
         }
       }
 
       bool IsValid() const
       {
-        return userData_ != NULL;
+        return userSettings_ != NULL;
       }
 
       const AnnotationsInfo& GetAnnotationsInfo() const
@@ -998,7 +998,7 @@ namespace OrthancWSI
 
         if (IsValid())
         {
-          userData_->Serialize(serialized);
+          userSettings_->Serialize(serialized);
         }
         else
         {
@@ -1012,7 +1012,7 @@ namespace OrthancWSI
       {
         if (IsValid())
         {
-          userData_->ListLayersSharedWith(target, userId_, user);
+          userSettings_->ListLayersSharedWith(target, userId_, user);
         }
         else
         {
@@ -1026,17 +1026,17 @@ namespace OrthancWSI
     {
     private:
       Orthanc::ReaderWriterLock::WriteLock  lock_;
-      Annotations&                          that_;
+      AnnotationsManager&                   that_;
       UserId                                userId_;
-      UserData*                             userData_;
+      UserAnnotationsSettings*              userSettings_;
 
       void Commit()
       {
-        SetKeyValueStore(GetLayersKey(that_.id_, userId_), *userData_);
+        SetKeyValueStore(GetLayersKey(that_.id_, userId_), *userSettings_);
       }
 
     public:
-      UserWriter(Annotations& that,
+      UserWriter(AnnotationsManager& that,
                  const UserId& userId) :
         lock_(that.mutex_),
         that_(that),
@@ -1052,49 +1052,49 @@ namespace OrthancWSI
 
         if (found == that.content_.end())
         {
-          std::unique_ptr<UserData> layers(new UserData);
-          userData_ = layers.get();
+          std::unique_ptr<UserAnnotationsSettings> layers(new UserAnnotationsSettings);
+          userSettings_ = layers.get();
           that.content_[userId_] = layers.release();
           Commit();
         }
         else
         {
           assert(found->second != NULL);
-          userData_ = found->second;
+          userSettings_ = found->second;
         }
       }
 
       void CreateUserLayer(Json::Value& answer)
       {
-        assert(userData_ != NULL);
+        assert(userSettings_ != NULL);
 
-        const std::string layerId = userData_->CreateUserLayer();
+        const std::string layerId = userSettings_->CreateUserLayer();
         Commit();
 
-        UserLayer& layer = userData_->GetUserLayer(layerId);
+        UserLayer& layer = userSettings_->GetUserLayer(layerId);
         layer.Serialize(answer);
       }
 
       void UpdateUserLayer(const UserLayer& updated)
       {
-        assert(userData_ != NULL);
+        assert(userSettings_ != NULL);
 
-        UserLayer& layer = userData_->GetUserLayer(updated.GetId());
+        UserLayer& layer = userSettings_->GetUserLayer(updated.GetId());
         layer.Assign(updated);
         Commit();
       }
 
       void DeleteUserLayer(const std::string& layerId)
       {
-        assert(userData_ != NULL);
-        userData_->DeleteUserLayer(layerId);
+        assert(userSettings_ != NULL);
+        userSettings_->DeleteUserLayer(layerId);
         Commit();
       }
 
       void ImportSharedLayer(const UserId& author,
                              const std::string& layerId)
       {
-        assert(userData_ != NULL);
+        assert(userSettings_ != NULL);
 
         Content::const_iterator found = that_.content_.find(author);
         if (found == that_.content_.end())
@@ -1103,7 +1103,7 @@ namespace OrthancWSI
         }
 
         assert(found->second != NULL);
-        const UserData& authorData = *found->second;
+        const UserAnnotationsSettings& authorData = *found->second;
 
         UserLayer& layer = authorData.GetUserLayer(layerId);
         if (!layer.IsSharedWith(userId_))
@@ -1111,22 +1111,22 @@ namespace OrthancWSI
           throw Orthanc::OrthancException(Orthanc::ErrorCode_ForbiddenAccess);
         }
 
-        userData_->ImportSharedLayer(author, layer);
+        userSettings_->ImportSharedLayer(author, layer);
         Commit();
       }
 
       void RemoveSharedLayer(const std::string& layerId)
       {
-        assert(userData_ != NULL);
-        userData_->RemoveSharedLayer(layerId);
+        assert(userSettings_ != NULL);
+        userSettings_->RemoveSharedLayer(layerId);
         Commit();
       }
 
       void UpdateSharedLayer(const SharedLayer& updated)
       {
-        assert(userData_ != NULL);
+        assert(userSettings_ != NULL);
 
-        SharedLayer& layer = userData_->GetSharedLayer(updated.GetId());
+        SharedLayer& layer = userSettings_->GetSharedLayer(updated.GetId());
         layer.Assign(updated);
         Commit();
       }
@@ -1134,7 +1134,7 @@ namespace OrthancWSI
   };
 
 
-  class CachedAnnotations : public boost::noncopyable
+  class CachedAnnotationsManager : public boost::noncopyable
   {
   private:
     boost::shared_ptr<Orthanc::IDynamicObject>  cached_;
@@ -1157,7 +1157,7 @@ namespace OrthancWSI
     }
 
   public:
-    CachedAnnotations(const AnnotationsId& id)
+    CachedAnnotationsManager(const AnnotationsManagerId& id)
     {
       const std::string key = id.GetKey();
 
@@ -1165,14 +1165,14 @@ namespace OrthancWSI
 
       if (cached_.get() == NULL)
       {
-        cached_.reset(new Annotations(id));
+        cached_.reset(new AnnotationsManager(id));
         GetCache().Store(key, cached_, 1);
       }
     }
 
-    Annotations& GetContent() const
+    AnnotationsManager& GetContent() const
     {
-      return dynamic_cast<Annotations&>(*cached_);
+      return dynamic_cast<AnnotationsManager&>(*cached_);
     }
   };
 
@@ -1180,10 +1180,10 @@ namespace OrthancWSI
   class AnnotationsCommandContext : public boost::noncopyable
   {
   private:
-    std::unique_ptr<IAuthenticatedUser>  user_;
-    Json::Value                          body_;
-    std::unique_ptr<AnnotationsId>       annotationsId_;
-    std::unique_ptr<CachedAnnotations>   annotations_;
+    std::unique_ptr<IAuthenticatedUser>        user_;
+    Json::Value                                body_;
+    std::unique_ptr<AnnotationsManagerId>      managerId_;
+    std::unique_ptr<CachedAnnotationsManager>  manager_;
 
   public:
     AnnotationsCommandContext(const OrthancPluginHttpRequest* request)
@@ -1206,18 +1206,18 @@ namespace OrthancWSI
       const std::string resourceId = Orthanc::SerializationToolbox::ReadString(body_, "resource");
       unsigned int frameNumber = Orthanc::SerializationToolbox::ReadUnsignedInteger(body_, "frame", 0 /* default frame */);
 
-      annotationsId_.reset(new AnnotationsId(projectId, Orthanc::StringToResourceType(level.c_str()), resourceId, frameNumber));
+      managerId_.reset(new AnnotationsManagerId(projectId, Orthanc::StringToResourceType(level.c_str()), resourceId, frameNumber));
 
-      IAuthenticatedUser::ProjectRole role = user_->GetRoleInProject(annotationsId_->GetProjectId());
+      IAuthenticatedUser::ProjectRole role = user_->GetRoleInProject(managerId_->GetProjectId());
 
       if (role != IAuthenticatedUser::ProjectRole_Instructor &&
           role != IAuthenticatedUser::ProjectRole_Learner)
       {
         throw Orthanc::OrthancException(Orthanc::ErrorCode_ForbiddenAccess, "User \"" + user_->Format() +
-                                        "\" is not instructor or learner of project \"" + annotationsId_->GetProjectId() + "\"");
+                                        "\" is not instructor or learner of project \"" + managerId_->GetProjectId() + "\"");
       }
 
-      annotations_.reset(new CachedAnnotations(*annotationsId_));
+      manager_.reset(new CachedAnnotationsManager(*managerId_));
     }
 
     const IAuthenticatedUser& GetUser() const
@@ -1226,10 +1226,10 @@ namespace OrthancWSI
       return *user_;
     }
 
-    const AnnotationsId& GetAnnotationsId() const
+    const AnnotationsManagerId& GetAnnotationsId() const
     {
-      assert(annotationsId_.get() != NULL);
-      return *annotationsId_;
+      assert(managerId_.get() != NULL);
+      return *managerId_;
     }
 
     std::string GetBodyString(const char* field) const
@@ -1249,10 +1249,10 @@ namespace OrthancWSI
       }
     }
 
-    Annotations& GetAnnotations()
+    AnnotationsManager& GetAnnotations()
     {
-      assert(annotations_.get() != NULL);
-      return annotations_->GetContent();
+      assert(manager_.get() != NULL);
+      return manager_->GetContent();
     }
   };
 
@@ -1280,7 +1280,7 @@ namespace OrthancWSI
     {
       AnnotationsCommandContext context(request);
 
-      Annotations::UserReader reader(context.GetAnnotations(), context.GetUser().GetAnnotatingId());
+      AnnotationsManager::UserReader reader(context.GetAnnotations(), context.GetUser().GetAnnotatingId());
 
       Json::Value answer;
       answer["description"] = reader.GetAnnotationsInfo().GetProjectDescription();
@@ -1309,7 +1309,7 @@ namespace OrthancWSI
     {
       AnnotationsCommandContext context(request);
 
-      Annotations::UserReader reader(context.GetAnnotations(), context.GetUser().GetAnnotatingId());
+      AnnotationsManager::UserReader reader(context.GetAnnotations(), context.GetUser().GetAnnotatingId());
 
       Json::Value answer;
       reader.ListLayers(answer);
@@ -1327,7 +1327,7 @@ namespace OrthancWSI
     {
       AnnotationsCommandContext context(request);
 
-      Annotations::UserWriter writer(context.GetAnnotations(), context.GetUser().GetAnnotatingId());
+      AnnotationsManager::UserWriter writer(context.GetAnnotations(), context.GetUser().GetAnnotatingId());
 
       Json::Value answer;
       writer.CreateUserLayer(answer);
@@ -1348,7 +1348,7 @@ namespace OrthancWSI
       UserLayer updated(context.GetBodyField("layer"));
 
       {
-        Annotations::UserWriter writer(context.GetAnnotations(), context.GetUser().GetAnnotatingId());
+        AnnotationsManager::UserWriter writer(context.GetAnnotations(), context.GetUser().GetAnnotatingId());
         writer.UpdateUserLayer(updated);
       }
 
@@ -1368,7 +1368,7 @@ namespace OrthancWSI
       const std::string layerId = context.GetBodyString("layer-id");
 
       {
-        Annotations::UserWriter writer(context.GetAnnotations(), context.GetUser().GetAnnotatingId());
+        AnnotationsManager::UserWriter writer(context.GetAnnotations(), context.GetUser().GetAnnotatingId());
         writer.DeleteUserLayer(layerId);
       }
 
@@ -1485,7 +1485,7 @@ namespace OrthancWSI
     }
 
   public:
-    CachedUserFeatures(const AnnotationsId& annotations,
+    CachedUserFeatures(const AnnotationsManagerId& annotations,
                        const UserId& user)
     {
       const std::string key = GetFeaturesKey(annotations, user);
@@ -1637,7 +1637,7 @@ namespace OrthancWSI
 
       const UserId user(context.GetBodyField("user"));
 
-      Annotations::UserReader reader(context.GetAnnotations(), user);
+      AnnotationsManager::UserReader reader(context.GetAnnotations(), user);
 
       Json::Value answer;
       reader.ListLayersSharedWith(answer, context.GetUser().GetAnnotatingId());
@@ -1662,7 +1662,7 @@ namespace OrthancWSI
       const UserId author(context.GetBodyField("author"));
       const std::string layerId = context.GetBodyString("layer");
 
-      Annotations::UserWriter writer(context.GetAnnotations(), context.GetUser().GetAnnotatingId());
+      AnnotationsManager::UserWriter writer(context.GetAnnotations(), context.GetUser().GetAnnotatingId());
       writer.ImportSharedLayer(author, layerId);
 
       ViewerToolbox::AnswerEmpty(output);
@@ -1684,7 +1684,7 @@ namespace OrthancWSI
 
       const std::string layerId = context.GetBodyString("layer");
 
-      Annotations::UserWriter writer(context.GetAnnotations(), context.GetUser().GetAnnotatingId());
+      AnnotationsManager::UserWriter writer(context.GetAnnotations(), context.GetUser().GetAnnotatingId());
       writer.RemoveSharedLayer(layerId);
 
       ViewerToolbox::AnswerEmpty(output);
@@ -1703,7 +1703,7 @@ namespace OrthancWSI
       SharedLayer updated(context.GetBodyField("layer"));
 
       {
-        Annotations::UserWriter writer(context.GetAnnotations(), context.GetUser().GetAnnotatingId());
+        AnnotationsManager::UserWriter writer(context.GetAnnotations(), context.GetUser().GetAnnotatingId());
         writer.UpdateSharedLayer(updated);
       }
 
