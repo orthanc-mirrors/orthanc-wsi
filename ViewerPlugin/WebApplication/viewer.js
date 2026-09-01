@@ -1212,7 +1212,7 @@ var app = new Vue({
       var that = this;
       axios.post('../api/import-shared-layer',
                  this.CreatePostPayload({
-                   'owner': userId,
+                   'author': userId,
                    'layer': layerId
                  }))
         .then(function(response) {

@@ -303,7 +303,7 @@ namespace OrthancWSI
     }
 
     void ListLayersSharedWith(Json::Value& target,
-                              const UserId& owner,
+                              const UserId& author,
                               const UserId& user) const
     {
       target.clear();
@@ -311,7 +311,7 @@ namespace OrthancWSI
       for (Content::const_iterator it = content_.begin(); it != content_.end(); ++it)
       {
         assert(*it != NULL);
-        if (!owner.Equals(user) &&  // Don't add self
+        if (!author.Equals(user) &&  // Don't add self
             (*it)->IsSharedWith(user))
         {
           Json::Value item;
@@ -732,13 +732,13 @@ namespace OrthancWSI
     }
 
     void ListLayersSharedWith(Json::Value& target,
-                              const UserId& owner,
+                              const UserId& author,
                               const UserId& user) const
     {
-      return userLayers_.ListLayersSharedWith(target, owner, user);
+      return userLayers_.ListLayersSharedWith(target, author, user);
     }
 
-    void ImportSharedLayer(const UserId& owner,
+    void ImportSharedLayer(const UserId& author,
                            const UserLayer& layer)
     {
       if (sharedLayers_.HasLayer(layer.GetId()))
@@ -747,7 +747,7 @@ namespace OrthancWSI
       }
       else
       {
-        sharedLayers_.AddLayer(new SharedLayer(owner, layer));
+        sharedLayers_.AddLayer(new SharedLayer(author, layer));
       }
     }
 
@@ -1091,27 +1091,27 @@ namespace OrthancWSI
         Commit();
       }
 
-      void ImportSharedLayer(const UserId& owner,
+      void ImportSharedLayer(const UserId& author,
                              const std::string& layerId)
       {
         assert(userData_ != NULL);
 
-        Content::const_iterator found = that_.content_.find(owner);
+        Content::const_iterator found = that_.content_.find(author);
         if (found == that_.content_.end())
         {
           throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
         }
 
         assert(found->second != NULL);
-        const UserData& ownerData = *found->second;
+        const UserData& authorData = *found->second;
 
-        UserLayer& layer = ownerData.GetUserLayer(layerId);
+        UserLayer& layer = authorData.GetUserLayer(layerId);
         if (!layer.IsSharedWith(userId_))
         {
           throw Orthanc::OrthancException(Orthanc::ErrorCode_ForbiddenAccess);
         }
 
-        userData_->ImportSharedLayer(owner, layer);
+        userData_->ImportSharedLayer(author, layer);
         Commit();
       }
 
@@ -1586,11 +1586,11 @@ namespace OrthancWSI
     {
       AnnotationsCommandContext context(request);
 
-      const UserId owner(context.GetBodyField("owner"));
+      const UserId author(context.GetBodyField("author"));
       const std::string layerId = context.GetBodyString("layer");
 
       Annotations::UserWriter writer(context.GetAnnotations(), context.GetUser().GetAnnotatingId());
-      writer.ImportSharedLayer(owner, layerId);
+      writer.ImportSharedLayer(author, layerId);
 
       ViewerToolbox::AnswerEmpty(output);
     }
