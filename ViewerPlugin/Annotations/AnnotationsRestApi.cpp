@@ -182,8 +182,6 @@ namespace OrthancWSI
   {
   public:
     virtual std::string GetId() const = 0;
-
-    virtual bool IsSharedWith(const UserId& user) const = 0;  // TODO - REMOVE?
   };
 
 
@@ -288,49 +286,49 @@ namespace OrthancWSI
       }
     }
 
-    bool HasLayerSharedWith(const UserId& user) const  // TODO - Replace by ListLayers() ?
+    class Iterator : public boost::noncopyable
     {
-      for (Content::const_iterator it = content_.begin(); it != content_.end(); ++it)
+    private:
+      Content::const_iterator  it_;
+      Content::const_iterator  end_;
+
+    public:
+      Iterator(const LayersCollection& that) :
+        it_(that.content_.begin()),
+        end_(that.content_.end())
       {
-        assert(*it != NULL);
-        if ((*it)->IsSharedWith(user))
+      }
+
+      bool IsDone() const
+      {
+        return it_ == end_;
+      }
+
+      const ILayer& GetLayer() const
+      {
+        if (IsDone())
         {
-          return true;
+          throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
+        }
+        else
+        {
+          assert(*it_ != NULL);
+          return **it_;
         }
       }
 
-      return false;
-    }
-
-    void ListLayersSharedWith(Json::Value& target,
-                              const UserId& author,
-                              const UserId& user) const  // TODO - Replace by ListLayers() ?
-    {
-      target.clear();
-
-      for (Content::const_iterator it = content_.begin(); it != content_.end(); ++it)
+      void Next()
       {
-        assert(*it != NULL);
-        if (!author.Equals(user) &&  // Don't add self
-            (*it)->IsSharedWith(user))
+        if (IsDone())
         {
-          Json::Value item;
-          (*it)->Serialize(item);
-          target.append(item);
+          throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
+        }
+        else
+        {
+          it_++;
         }
       }
-    }
-
-    void ListLayers(std::list<std::string>& target) const
-    {
-      target.clear();
-
-      for (Content::const_iterator it = content_.begin(); it != content_.end(); ++it)
-      {
-        assert(*it != NULL);
-        target.push_back((*it)->GetId());
-      }
-    }
+    };
   };
 
 
@@ -491,7 +489,7 @@ namespace OrthancWSI
       return name_;
     }
 
-    virtual bool IsSharedWith(const UserId& user) const ORTHANC_OVERRIDE
+    bool IsSharedWith(const UserId& user) const
     {
       assert(user.GetType() == UserId::Type_Root ||
              user.GetType() == UserId::Type_Standard);
@@ -623,11 +621,6 @@ namespace OrthancWSI
 
       author_.Serialize(serialized[KEY_AUTHOR]);
     }
-
-    virtual bool IsSharedWith(const UserId& user) const ORTHANC_OVERRIDE
-    {
-      return false;
-    }
   };
 
 
@@ -754,14 +747,45 @@ namespace OrthancWSI
 
     bool HasLayerSharedWith(const UserId& user) const
     {
-      return userLayers_.HasLayerSharedWith(user);
+      LayersCollection::Iterator iterator(userLayers_);
+
+      while (!iterator.IsDone())
+      {
+        const UserLayer& layer = dynamic_cast<const UserLayer&>(iterator.GetLayer());
+
+        if (layer.IsSharedWith(user))
+        {
+          return true;
+        }
+
+        iterator.Next();
+      }
+
+      return false;
     }
 
     void ListLayersSharedWith(Json::Value& target,
                               const UserId& author,
                               const UserId& user) const
     {
-      return userLayers_.ListLayersSharedWith(target, author, user);
+      target = Json::arrayValue;
+
+      LayersCollection::Iterator iterator(userLayers_);
+
+      while (!iterator.IsDone())
+      {
+        const UserLayer& layer = dynamic_cast<const UserLayer&>(iterator.GetLayer());
+
+        if (!author.Equals(user) &&  // Don't add self - TODO MAKES NO SENSE (constant)
+            layer.IsSharedWith(user))
+        {
+          Json::Value item;
+          layer.Serialize(item);
+          target.append(item);
+        }
+
+        iterator.Next();
+      }
     }
 
     void ImportSharedLayer(const UserId& author,
@@ -1078,12 +1102,12 @@ namespace OrthancWSI
 
         if (IsValid())
         {
-          std::list<std::string> layerIds;
-          userSettings_->GetSharedLayers().ListLayers(layerIds);
+          LayersCollection::Iterator iterator(userSettings_->GetSharedLayers());
 
-          for (std::list<std::string>::const_iterator it = layerIds.begin(); it != layerIds.end(); ++it)
+          while (!iterator.IsDone())
           {
-            target.push_back(SharedLayerId(userId_, *it));
+            target.push_back(SharedLayerId(userId_, iterator.GetLayer().GetId()));
+            iterator.Next();
           }
         }
       }
@@ -1823,6 +1847,11 @@ namespace OrthancWSI
       {
         AnnotationsManager::UserReader reader(context.GetAnnotations(), context.GetUser().GetAnnotatingId());
         reader.ListSharedLayers(layers);
+      }
+
+      for (std::list<SharedLayerId>::const_iterator it = layers.begin(); it != layers.end(); ++it)
+      {
+        printf("[%s] [%s]\n", it->GetAuthor().GetName().c_str(), it->GetLayerId().c_str());
       }
 
       Json::Value answer;
