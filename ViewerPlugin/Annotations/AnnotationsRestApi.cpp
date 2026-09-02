@@ -26,11 +26,11 @@
 
 #include "../ViewerConfiguration.h"
 #include "../ViewerToolbox.h"
-#include "AnnotationsWorkspace.h"
+#include "CachedAnnotationsWorkspace.h"
 #include "IAuthenticatedUser.h"
+#include "UserFeatures.h"
 
 #include <Cache/SharedObjectCache.h>
-#include <Compression/GzipCompressor.h>
 #include <Logging.h>
 #include <SerializationToolbox.h>
 
@@ -42,56 +42,11 @@ namespace OrthancWSI
   static const char* const KEY_FEATURES = "features";
   static const char* const KEY_ID = "id";
   static const char* const KEY_LAYERS = "layers";
-  static const char* const KEY_LAYER_ID = "layer-id";
   static const char* const KEY_NAME = "name";
   static const char* const KEY_PUBLIC = "public";
-  static const char* const KEY_TYPE = "type";
-  static const char* const KEY_VERSION = "version";
   static const char* const KEY_PROJECT_NAME = "project-name";
   static const char* const KEY_PROJECT_DESCRIPTION = "project-description";
-
-
-  class CachedAnnotationsWorkspace : public boost::noncopyable
-  {
-  private:
-    boost::shared_ptr<Orthanc::IDynamicObject>  cached_;
-
-    static Orthanc::SharedObjectCache& GetCache()
-    {
-      static boost::mutex  mutex;
-      static std::unique_ptr<Orthanc::SharedObjectCache>  cache;
-
-      {
-        boost::mutex::scoped_lock lock(mutex);
-
-        if (cache.get() == NULL)
-        {
-          cache.reset(new Orthanc::SharedObjectCache(ViewerConfiguration::GetInstance().GetAnnotationsCacheSize()));
-        }
-
-        return *cache;
-      }
-    }
-
-  public:
-    CachedAnnotationsWorkspace(const AnnotationsWorkspaceId& id)
-    {
-      const std::string key = id.GetInfoKey();
-
-      cached_ = GetCache().GetCachedValue(key);
-
-      if (cached_.get() == NULL)
-      {
-        cached_.reset(new AnnotationsWorkspace(id));
-        GetCache().Store(key, cached_, 1);
-      }
-    }
-
-    AnnotationsWorkspace& GetContent() const
-    {
-      return dynamic_cast<AnnotationsWorkspace&>(*cached_);
-    }
-  };
+  static const char* const KEY_LAYER_ID = "layer-id";
 
 
   class AnnotationsCommandContext : public boost::noncopyable
@@ -294,115 +249,6 @@ namespace OrthancWSI
       ViewerToolbox::AnswerEmpty(output);
     }
   }
-
-
-  class UserFeatures : public Orthanc::IDynamicObject
-  {
-  private:
-    Orthanc::ReaderWriterLock  mutex_;
-    std::string                key_;
-    Json::Value                content_;
-
-    void Load()
-    {
-      content_ = Json::arrayValue;
-
-      std::string compressed;
-      if (ViewerToolbox::LookupKeyValueStore(compressed, key_))
-      {
-        std::string uncompressed;
-        Orthanc::GzipCompressor compressor;
-        Orthanc::IBufferCompressor::Uncompress(uncompressed, compressor, compressed);
-
-        Json::Value unserialized;
-
-        if (!Orthanc::Toolbox::ReadJson(unserialized, uncompressed) ||
-            !unserialized.isObject() ||
-            !unserialized.isMember(KEY_FEATURES) ||
-            !unserialized[KEY_FEATURES].isArray())
-        {
-          throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
-        }
-
-        const unsigned int version = Orthanc::SerializationToolbox::ReadUnsignedInteger(unserialized, KEY_VERSION);
-
-        if (version == ORTHANC_WSI_ANNOTATIONS_VERSION)
-        {
-          content_ = unserialized[KEY_FEATURES];
-        }
-        else
-        {
-          switch (version)
-          {
-            // Implement version conversion here
-
-          default:
-            throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented, "Cannot load annotations from version: " +
-                                            boost::lexical_cast<std::string>(version));
-          }
-        }
-      }
-    }
-
-    void Save() const
-    {
-      assert(content_.isArray());
-
-      Json::Value unserialized;
-      unserialized[KEY_VERSION] = static_cast<unsigned int>(ORTHANC_WSI_ANNOTATIONS_VERSION);
-      unserialized[KEY_FEATURES] = content_;
-
-      std::string serialized;
-      Orthanc::Toolbox::WriteFastJson(serialized, unserialized);
-
-      std::string compressed;
-      Orthanc::GzipCompressor compressor;
-      Orthanc::IBufferCompressor::Compress(compressed, compressor, serialized);
-
-      ViewerToolbox::SetKeyValueStore(key_, compressed);
-    }
-
-  public:
-    UserFeatures(const std::string& key) :
-      key_(key)
-    {
-      Load();
-    }
-
-    void GetContent(Json::Value& target)
-    {
-      Orthanc::ReaderWriterLock::ReadLock lock(mutex_);
-
-      assert(content_.isArray());
-      target = content_;
-    }
-
-    void SetContent(const Json::Value& content)
-    {
-      if (!content.isArray())
-      {
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
-      }
-
-      for (Json::Value::ArrayIndex i = 0; i < content.size(); i++)
-      {
-        if (!content[i].isObject() ||
-            !content[i].isMember(KEY_LAYER_ID) ||
-            !content[i].isMember(KEY_TYPE) ||
-            !content[i][KEY_LAYER_ID].isString() ||
-            !content[i][KEY_TYPE].isString())
-        {
-          throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
-        }
-      }
-
-      {
-        Orthanc::ReaderWriterLock::WriteLock lock(mutex_);
-        content_ = content;
-        Save();
-      }
-    }
-  };
 
 
   class CachedUserFeatures : public boost::noncopyable
