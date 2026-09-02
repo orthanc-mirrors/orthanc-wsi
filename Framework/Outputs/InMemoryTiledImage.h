@@ -58,7 +58,7 @@ namespace OrthancWSI
                        Orthanc::PhotometricInterpretation photometric,
                        BackgroundColor backgroundColor);
 
-    virtual ~InMemoryTiledImage();
+    virtual ~InMemoryTiledImage() ORTHANC_OVERRIDE;
 
     virtual unsigned int GetLevelCount() const ORTHANC_OVERRIDE
     {

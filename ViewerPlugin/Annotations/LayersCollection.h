@@ -43,7 +43,7 @@ namespace OrthancWSI
     Index    index_;
 
   public:
-    ~LayersCollection();
+    virtual ~LayersCollection() ORTHANC_OVERRIDE;
 
     size_t GetSize() const;
 

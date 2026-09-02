@@ -84,7 +84,7 @@ namespace OrthancWSI
       Orthanc::ImageProcessing::Convert(*baseLevel_, *protection);
     }
 
-    Orthanc::ImageAccessor* current = baseLevel_.get();
+    const Orthanc::ImageAccessor* current = baseLevel_.get();
     while (current->GetWidth() > tileWidth_ ||
            current->GetHeight() > tileHeight_)
     {

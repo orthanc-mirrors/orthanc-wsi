@@ -161,7 +161,15 @@ namespace OrthancWSI
     while (!cache_.IsEmpty())
     {
       CachedPyramid* pyramid = NULL;
-      cache_.RemoveOldest(pyramid);
+
+      try
+      {
+        cache_.RemoveOldest(pyramid);
+      }
+      catch (Orthanc::OrthancException&)
+      {
+        // Should never happen, don't throw exceptions in destructor
+      }
 
       if (pyramid != NULL)
       {

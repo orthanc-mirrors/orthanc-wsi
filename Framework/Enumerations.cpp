@@ -34,7 +34,7 @@
 #include <string.h>
 #include <boost/algorithm/string/predicate.hpp>
 
-#define HEADER(s) (const void*) (s), sizeof(s)-1
+#define HEADER(s) reinterpret_cast<const void*>(s), sizeof(s) - 1
 
 namespace OrthancWSI
 {

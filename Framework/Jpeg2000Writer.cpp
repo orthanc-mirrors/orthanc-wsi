@@ -248,7 +248,7 @@ namespace OrthancWSI
 #endif
 
     public:
-      explicit OpenJpegOutput(OpenJpegEncoder& encoder) :
+      explicit OpenJpegOutput(const OpenJpegEncoder& encoder) :
         cio_(NULL)
       {
 #if ORTHANC_OPENJPEG_MAJOR_VERSION == 1

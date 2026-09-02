@@ -580,10 +580,10 @@ extern "C"
       const bool enableIIIF = OrthancWSI::ViewerConfiguration::GetInstance().IsIIIFEnabled();
       bool serveMirador = false;
       bool serveOpenSeadragon = false;
-      std::string iiifPublicUrl;
 
       if (enableIIIF)
       {
+        std::string iiifPublicUrl;
         InitializeIIIF(iiifPublicUrl);
 
         serveMirador = OrthancWSI::ViewerConfiguration::GetInstance().IsServeMirador();

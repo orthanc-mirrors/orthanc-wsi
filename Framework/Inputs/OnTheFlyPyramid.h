@@ -53,7 +53,7 @@ namespace OrthancWSI
                     unsigned int tileHeight,
                     bool smooth);
 
-    virtual ~OnTheFlyPyramid();
+    virtual ~OnTheFlyPyramid() ORTHANC_OVERRIDE;
 
     const Orthanc::ImageAccessor& GetLevel(unsigned int level) const;
 

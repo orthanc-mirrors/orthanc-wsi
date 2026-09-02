@@ -51,7 +51,7 @@ namespace OrthancWSI
   public:
     explicit AnnotationsWorkspace(const AnnotationsWorkspaceId& id);
 
-    ~AnnotationsWorkspace();
+    virtual ~AnnotationsWorkspace() ORTHANC_OVERRIDE;
 
     const AnnotationsWorkspaceId& GetId() const
     {

@@ -81,8 +81,8 @@ namespace OrthancWSI
 
   struct HierarchicalTiffWriter::Comparator
   {
-    inline bool operator() (PendingTile* const& a,
-                            PendingTile* const& b)
+    inline bool operator() (const PendingTile* const& a,
+                            const PendingTile* const& b)
     {
       if (a->GetLevel() < b->GetLevel())
       {

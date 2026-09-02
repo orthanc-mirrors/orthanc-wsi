@@ -91,11 +91,11 @@ namespace OrthancWSI
   }
 
 
-  DecodedTiledPyramid* OrthancPyramidFrameFetcher::Fetch(const std::string &instanceId,
+  DecodedTiledPyramid* OrthancPyramidFrameFetcher::Fetch(const std::string& instanceId,
                                                          unsigned frameNumber)
   {
     OrthancPlugins::MemoryBuffer buffer;
-    buffer.GetDicomInstance(instanceId.c_str());
+    buffer.GetDicomInstance(instanceId);
 
     OrthancPlugins::DicomInstance dicom(buffer.GetData(), buffer.GetSize());
 
