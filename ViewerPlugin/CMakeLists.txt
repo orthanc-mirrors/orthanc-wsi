@@ -186,12 +186,14 @@ EmbedResources(
 
 set(ORTHANC_WSI_SOURCES
   Annotations/AnnotationsRestApi.cpp
+  Annotations/AnnotationsWorkspace.cpp
   Annotations/AnnotationsWorkspaceId.cpp
   Annotations/IAuthenticatedUser.cpp
   Annotations/ISerializable.cpp
   Annotations/ImportedLayer.cpp
   Annotations/LayersCollection.cpp
   Annotations/ProjectInformation.cpp
+  Annotations/UserAnnotationsSettings.cpp
   Annotations/UserId.cpp
   Annotations/UserLayer.cpp
   DicomPyramidCache.cpp
