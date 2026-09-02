@@ -64,7 +64,7 @@ namespace OrthancWSI
       Content::const_iterator  end_;
 
     public:
-      Iterator(const LayersCollection& that);
+      explicit Iterator(const LayersCollection& that);
 
       bool IsDone() const;
 

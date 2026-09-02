@@ -41,7 +41,7 @@ namespace OrthancWSI
     {
     }
 
-    UserAnnotationsSettings(const Json::Value& serialized);
+    explicit UserAnnotationsSettings(const Json::Value& serialized);
 
     std::string AddUserLayer(UserLayer* layer);
 

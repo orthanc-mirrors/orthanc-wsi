@@ -49,7 +49,7 @@ namespace OrthancWSI
     ProjectInformation               projectInformation_;
 
   public:
-    AnnotationsWorkspace(const AnnotationsWorkspaceId& id);
+    explicit AnnotationsWorkspace(const AnnotationsWorkspaceId& id);
 
     ~AnnotationsWorkspace();
 

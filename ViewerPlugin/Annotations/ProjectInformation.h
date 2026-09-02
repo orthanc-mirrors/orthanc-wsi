@@ -45,7 +45,7 @@ namespace OrthancWSI
     void Refresh();
 
   public:
-    ProjectInformation(const std::string& projectId);
+    explicit ProjectInformation(const std::string& projectId);
 
     std::string GetName();
 

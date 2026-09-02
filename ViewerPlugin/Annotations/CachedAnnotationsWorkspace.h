@@ -36,7 +36,7 @@ namespace OrthancWSI
     boost::shared_ptr<Orthanc::IDynamicObject>  cached_;
 
   public:
-    CachedAnnotationsWorkspace(const AnnotationsWorkspaceId& id);
+    explicit CachedAnnotationsWorkspace(const AnnotationsWorkspaceId& id);
 
     AnnotationsWorkspace& GetContent() const
     {

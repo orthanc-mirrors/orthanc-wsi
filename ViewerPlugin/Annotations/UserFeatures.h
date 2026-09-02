@@ -44,7 +44,7 @@ namespace OrthancWSI
     void Save() const;
 
   public:
-    UserFeatures(const std::string& key);
+    explicit UserFeatures(const std::string& key);
 
     void GetContent(Json::Value& target);
 

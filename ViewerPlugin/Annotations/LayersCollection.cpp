@@ -164,7 +164,7 @@ namespace OrthancWSI
     }
     else
     {
-      it_++;
+      ++it_;
     }
   }
 }

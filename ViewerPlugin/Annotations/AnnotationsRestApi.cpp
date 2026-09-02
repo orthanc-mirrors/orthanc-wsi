@@ -51,7 +51,7 @@ namespace OrthancWSI
     IAuthenticatedUser::ProjectRole              role_;
 
   public:
-    AnnotationsCommandContext(const OrthancPluginHttpRequest* request)
+    explicit AnnotationsCommandContext(const OrthancPluginHttpRequest* request)
     {
       if (request->method != OrthancPluginHttpMethod_Post)
       {

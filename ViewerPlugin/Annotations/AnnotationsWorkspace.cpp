@@ -47,7 +47,7 @@ namespace OrthancWSI
     }
 
 
-    PersistentInfo(const Json::Value& serialized)
+    explicit PersistentInfo(const Json::Value& serialized)
     {
       const Json::Value& users = serialized[KEY_ACTIVE_USERS];
 
@@ -353,7 +353,7 @@ namespace OrthancWSI
     const std::string layerId = userSettings_->CreateUserLayer();
     Commit();
 
-    UserLayer& layer = userSettings_->GetUserLayer(layerId);
+    const UserLayer& layer = userSettings_->GetUserLayer(layerId);
     layer.Serialize(answer);
   }
 
@@ -390,7 +390,7 @@ namespace OrthancWSI
     assert(found->second != NULL);
     const UserAnnotationsSettings& authorData = *found->second;
 
-    UserLayer& layer = authorData.GetUserLayer(layerId);
+    const UserLayer& layer = authorData.GetUserLayer(layerId);
     if (!layer.IsSharedWith(userId_))
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_ForbiddenAccess);

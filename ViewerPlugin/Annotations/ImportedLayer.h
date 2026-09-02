@@ -47,7 +47,7 @@ namespace OrthancWSI
     ImportedLayer(const UserId& author,
                   const UserLayer& layer);
 
-    ImportedLayer(const Json::Value& serialized);
+    explicit ImportedLayer(const Json::Value& serialized);
 
     void Assign(const ImportedLayer& other);
 

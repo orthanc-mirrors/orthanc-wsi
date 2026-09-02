@@ -187,7 +187,7 @@ namespace
     std::string  username_;
 
   public:
-    GenericInstructor(const std::string& username) :
+    explicit GenericInstructor(const std::string& username) :
       username_(username)
     {
     }

@@ -48,7 +48,7 @@ namespace OrthancWSI
     UserLayer(const BackgroundColor& color,
               const std::string& name);
 
-    UserLayer(const Json::Value& serialized);
+    explicit UserLayer(const Json::Value& serialized);
 
     virtual std::string GetId() const ORTHANC_OVERRIDE
     {
