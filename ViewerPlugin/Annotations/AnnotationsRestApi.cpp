@@ -27,28 +27,21 @@
 #include "../ViewerConfiguration.h"
 #include "../ViewerToolbox.h"
 #include "CachedAnnotationsWorkspace.h"
+#include "CachedUserFeatures.h"
 #include "IAuthenticatedUser.h"
-#include "UserFeatures.h"
 
-#include <Cache/SharedObjectCache.h>
-#include <Logging.h>
 #include <SerializationToolbox.h>
+#include <Toolbox.h>
 
 #include "../../Resources/Orthanc/Plugins/OrthancPluginCppWrapper.h"
 
 
+static const char* const KEY_FEATURES = "features";
+static const char* const KEY_LAYER_ID = "layer-id";
+
+
 namespace OrthancWSI
 {
-  static const char* const KEY_FEATURES = "features";
-  static const char* const KEY_ID = "id";
-  static const char* const KEY_LAYERS = "layers";
-  static const char* const KEY_NAME = "name";
-  static const char* const KEY_PUBLIC = "public";
-  static const char* const KEY_PROJECT_NAME = "project-name";
-  static const char* const KEY_PROJECT_DESCRIPTION = "project-description";
-  static const char* const KEY_LAYER_ID = "layer-id";
-
-
   class AnnotationsCommandContext : public boost::noncopyable
   {
   private:
@@ -249,50 +242,6 @@ namespace OrthancWSI
       ViewerToolbox::AnswerEmpty(output);
     }
   }
-
-
-  class CachedUserFeatures : public boost::noncopyable
-  {
-  private:
-    boost::shared_ptr<Orthanc::IDynamicObject>  cached_;
-
-    static Orthanc::SharedObjectCache& GetCache()
-    {
-      static boost::mutex  mutex;
-      static std::unique_ptr<Orthanc::SharedObjectCache>  cache;
-
-      {
-        boost::mutex::scoped_lock lock(mutex);
-
-        if (cache.get() == NULL)
-        {
-          cache.reset(new Orthanc::SharedObjectCache(ViewerConfiguration::GetInstance().GetFeaturesCacheSize()));
-        }
-
-        return *cache;
-      }
-    }
-
-  public:
-    CachedUserFeatures(const AnnotationsWorkspaceId& id,
-                       const UserId& user)
-    {
-      const std::string key = id.GetFeaturesKey(user);
-
-      cached_ = GetCache().GetCachedValue(key);
-
-      if (cached_.get() == NULL)
-      {
-        cached_.reset(new UserFeatures(key));
-        GetCache().Store(key, cached_, 1);
-      }
-    }
-
-    UserFeatures& GetFeatures() const
-    {
-      return dynamic_cast<UserFeatures&>(*cached_);
-    }
-  };
 
 
   void LoadUserFeatures(OrthancPluginRestOutput* output,
