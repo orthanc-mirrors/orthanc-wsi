@@ -55,8 +55,6 @@ namespace OrthancWSI
     }
 
     lastUpdate_ = GetNow();
-
-    description_ = boost::posix_time::to_iso_string(lastUpdate_);
   }
 
 
