@@ -83,7 +83,7 @@ namespace OrthancWSI
     };
 
 
-    class EducationPluginAuthenticatedUser : public IAuthenticatedUser
+    class EducationPluginUser : public IAuthenticatedUser
     {
     public:
       enum EducationRole
@@ -100,7 +100,7 @@ namespace OrthancWSI
       std::set<std::string>  learnerOfProjects_;
 
     public:
-      explicit EducationPluginAuthenticatedUser(const Json::Value& authentication)
+      explicit EducationPluginUser(const Json::Value& authentication)
       {
         assert(Orthanc::SerializationToolbox::ReadString(authentication, "source") == "orthanc-education");
 
@@ -184,13 +184,16 @@ namespace OrthancWSI
     };
 
 
-    class GenericInstructor : public IAuthenticatedUser
+    class GenericStandardUser : public IAuthenticatedUser
     {
     private:
+      ProjectRole  role_;
       std::string  username_;
 
     public:
-      explicit GenericInstructor(const std::string& username) :
+      GenericStandardUser(ProjectRole role,
+                          const std::string& username) :
+        role_(role),
         username_(username)
       {
       }
@@ -207,7 +210,7 @@ namespace OrthancWSI
 
       virtual ProjectRole GetRoleInProject(const std::string& projectId) const ORTHANC_OVERRIDE
       {
-        return ProjectRole_Instructor;
+        return role_;
       }
     };
   }
@@ -234,7 +237,8 @@ namespace OrthancWSI
           if (!tokens.empty() &&
               !tokens[0].empty())
           {
-            return new GenericInstructor(tokens[0]);
+            //return new GenericStandardUser(IAuthenticatedUser::ProjectRole_Instructor, tokens[0]);
+            return new GenericStandardUser(IAuthenticatedUser::ProjectRole_Learner, tokens[0]);
           }
         }
       }
@@ -261,7 +265,7 @@ namespace OrthancWSI
         }
         else
         {
-          return new GenericInstructor(request->headersValues[i]);
+          return new GenericStandardUser(IAuthenticatedUser::ProjectRole_Instructor, request->headersValues[i]);
         }
       }
     }
@@ -293,7 +297,7 @@ namespace OrthancWSI
 
         if (source == "orthanc-education")
         {
-          return new EducationPluginAuthenticatedUser(authentication);
+          return new EducationPluginUser(authentication);
         }
         else
         {
