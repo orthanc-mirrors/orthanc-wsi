@@ -31,7 +31,8 @@
 #include <boost/regex.hpp>
 
 
-static const char* const KEY_ACTIVE_USERS = "active-users";
+static const char* const KEY_ACTIVE_INSTRUCTORS = "active-instructors";
+static const char* const KEY_ACTIVE_LEARNERS = "active-learners";
 
 
 namespace OrthancWSI
@@ -39,7 +40,40 @@ namespace OrthancWSI
   class AnnotationsWorkspace::PersistentInfo : public ISerializable
   {
   private:
-    std::set<UserId>   activeUsers_;
+    // An active user is always of type "standard"
+    std::set<UserId>   activeInstructors_;
+    std::set<UserId>   activeLearners_;
+
+
+    static void ParseActiveUsers(std::set<UserId>& target,
+                                 const Json::Value& serialized)
+    {
+      if (!serialized.isArray())
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
+      }
+
+      target.clear();
+
+      for (Json::Value::ArrayIndex i = 0; i < serialized.size(); i++)
+      {
+        target.insert(UserId(serialized[i]));
+      }
+    }
+
+
+    static void SerializeActiveUsers(Json::Value& serialized,
+                                     const std::set<UserId>& source)
+    {
+      serialized = Json::arrayValue;
+
+      for (std::set<UserId>::const_iterator it = source.begin(); it != source.end(); ++it)
+      {
+        Json::Value user;
+        it->Serialize(user);
+        serialized.append(user);
+      }
+    }
 
   public:
     PersistentInfo()
@@ -49,54 +83,137 @@ namespace OrthancWSI
 
     explicit PersistentInfo(const Json::Value& serialized)
     {
-      const Json::Value& users = serialized[KEY_ACTIVE_USERS];
-
-      if (!users.isArray())
+      if (!serialized.isObject() ||
+          !serialized.isMember(KEY_ACTIVE_INSTRUCTORS) ||
+          !serialized.isMember(KEY_ACTIVE_LEARNERS))
       {
         throw Orthanc::OrthancException(Orthanc::ErrorCode_BadFileFormat);
       }
 
-      for (Json::Value::ArrayIndex i = 0; i < users.size(); i++)
-      {
-        activeUsers_.insert(UserId(users[i]));
-      }
+      ParseActiveUsers(activeInstructors_, serialized[KEY_ACTIVE_INSTRUCTORS]);
+      ParseActiveUsers(activeLearners_, serialized[KEY_ACTIVE_LEARNERS]);
     }
 
 
-    // Return "true" iff. the user was not already tagged as active
-    bool AddActiveUser(const UserId& user)
+    // Return "true" iff. the user was not already tagged as active or
+    // if the user has changed their role in the project (from learner
+    // to instructor, or from instructor to learner)
+    bool AddActiveUser(const UserId& user,
+                       ProjectRole role)
     {
-      if (activeUsers_.find(user) == activeUsers_.end())
+      switch (role)
       {
-        activeUsers_.insert(user);
-        return true;
-      }
-      else
-      {
-        return false;
-      }
-    }
+        case ProjectRole_Instructor:
+          if (activeInstructors_.find(user) == activeInstructors_.end())
+          {
+            activeLearners_.erase(user);  // Accomodate with change in the role
+            activeInstructors_.insert(user);
+            return true;
+          }
+          else
+          {
+            return false;
+          }
 
+        case ProjectRole_Learner:
+          if (activeLearners_.find(user) == activeLearners_.end())
+          {
+            activeInstructors_.erase(user);  // Accomodate with change in the role
+            activeLearners_.insert(user);
+            return true;
+          }
+          else
+          {
+            return false;
+          }
 
-    const std::set<UserId>& GetActiveUsers() const
-    {
-      return activeUsers_;
+          break;
+
+        default:
+          throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
+      }
     }
 
 
     virtual void Serialize(Json::Value& serialized) const ORTHANC_OVERRIDE
     {
-      Json::Value users = Json::arrayValue;
-      for (std::set<UserId>::const_iterator it = activeUsers_.begin(); it != activeUsers_.end(); ++it)
+      serialized = Json::objectValue;
+      SerializeActiveUsers(serialized[KEY_ACTIVE_INSTRUCTORS], activeInstructors_);
+      SerializeActiveUsers(serialized[KEY_ACTIVE_LEARNERS], activeLearners_);
+    }
+
+
+    class ActiveUsersIterator : public boost::noncopyable
+    {
+    private:
+      std::set<UserId>::const_iterator  instructorsIterator_;
+      std::set<UserId>::const_iterator  instructorsEnd_;
+      std::set<UserId>::const_iterator  learnersIterator_;
+      std::set<UserId>::const_iterator  learnersEnd_;
+
+    public:
+      explicit ActiveUsersIterator(const PersistentInfo& that) :
+        instructorsIterator_(that.activeInstructors_.begin()),
+        instructorsEnd_(that.activeInstructors_.end()),
+        learnersIterator_(that.activeLearners_.begin()),
+        learnersEnd_(that.activeLearners_.end())
       {
-        Json::Value user;
-        it->Serialize(user);
-        users.append(user);
       }
 
-      serialized = Json::objectValue;
-      serialized[KEY_ACTIVE_USERS] = users;
-    }
+      bool IsDone() const
+      {
+        return (instructorsIterator_ == instructorsEnd_ &&
+                learnersIterator_ == learnersEnd_);
+      }
+
+      const UserId& GetUser() const
+      {
+        if (instructorsIterator_ != instructorsEnd_)
+        {
+          return *instructorsIterator_;
+        }
+        else if (learnersIterator_ != learnersEnd_)
+        {
+          return *learnersIterator_;
+        }
+        else
+        {
+          throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
+        }
+      }
+
+      ProjectRole GetRole() const
+      {
+        if (instructorsIterator_ != instructorsEnd_)
+        {
+          return ProjectRole_Instructor;
+        }
+        else if (learnersIterator_ != learnersEnd_)
+        {
+          return ProjectRole_Learner;
+        }
+        else
+        {
+          throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
+        }
+      }
+
+      void Next()
+      {
+        if (instructorsIterator_ != instructorsEnd_)
+        {
+          ++instructorsIterator_;
+        }
+        else if (learnersIterator_ != learnersEnd_)
+        {
+          ++learnersIterator_;
+        }
+        else
+        {
+          throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
+        }
+      }
+    };
   };
 
 
@@ -129,10 +246,10 @@ namespace OrthancWSI
     {
       persistentInfo_.reset(new PersistentInfo(info));
 
-      for (std::set<UserId>::const_iterator it = persistentInfo_->GetActiveUsers().begin();
-           it != persistentInfo_->GetActiveUsers().end(); ++it)
+      PersistentInfo::ActiveUsersIterator it(*persistentInfo_);
+      while (!it.IsDone())
       {
-        Load(*it);
+        Load(it.GetUser());
       }
     }
     else
@@ -162,13 +279,13 @@ namespace OrthancWSI
     target.clear();
 
     const boost::regex re(query);
-    const std::set<UserId>& activeUsers = persistentInfo_->GetActiveUsers();
 
-    for (std::set<UserId>::const_iterator it = activeUsers.begin(); it != activeUsers.end(); ++it)
+    PersistentInfo::ActiveUsersIterator it(*persistentInfo_);
+    while (!it.IsDone())
     {
-      if (boost::regex_search(it->GetName(), re))
+      if (boost::regex_search(it.GetUser().GetName(), re))
       {
-        target.insert(*it);
+        target.insert(it.GetUser());
       }
     }
   }
@@ -210,10 +327,12 @@ namespace OrthancWSI
 
 
   AnnotationsWorkspace::UserReader::UserReader(AnnotationsWorkspace& that,
-                                               const UserId& userId) :
+                                               const UserId& userId,
+                                               ProjectRole userRole) :
     lock_(that.mutex_),
     that_(that),
-    userId_(userId)
+    userId_(userId),
+    userRole_(userRole)
   {
     Content::const_iterator found = that.content_.find(userId);
 
@@ -318,14 +437,17 @@ namespace OrthancWSI
 
 
   AnnotationsWorkspace::UserWriter::UserWriter(AnnotationsWorkspace& that,
-                                               const UserId& userId) :
+                                               const UserId& userId,
+                                               ProjectRole userRole) :
     lock_(that.mutex_),
     that_(that),
-    userId_(userId)
+    userId_(userId),
+    userRole_(userRole)
   {
-    if (that.persistentInfo_->AddActiveUser(userId_))
+    if (that.persistentInfo_->AddActiveUser(userId_, userRole))
     {
-      // Only update the key-value store if this is the first time we meet this user
+      // Only update the key-value store if this is the first time we
+      // meet this user or if their role has changed in the project
       ISerializable::SetKeyValueStore(that.id_.GetInfoKey(), *that.persistentInfo_);
     }
 

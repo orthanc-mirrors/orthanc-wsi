@@ -48,7 +48,7 @@ namespace OrthancWSI
     std::unique_ptr<IAuthenticatedUser>          user_;
     Json::Value                                  body_;
     std::unique_ptr<CachedAnnotationsWorkspace>  workspace_;
-    IAuthenticatedUser::ProjectRole              role_;
+    ProjectRole                                  role_;
 
   public:
     explicit AnnotationsCommandContext(const OrthancPluginHttpRequest* request)
@@ -73,8 +73,8 @@ namespace OrthancWSI
 
       role_ = user_->GetRoleInProject(projectId);
 
-      if (role_ != IAuthenticatedUser::ProjectRole_Instructor &&
-          role_ != IAuthenticatedUser::ProjectRole_Learner)
+      if (role_ != ProjectRole_Instructor &&
+          role_ != ProjectRole_Learner)
       {
         throw Orthanc::OrthancException(Orthanc::ErrorCode_ForbiddenAccess, "User \"" + user_->Format() +
                                         "\" is not instructor or learner of project \"" + projectId + "\"");
@@ -97,11 +97,6 @@ namespace OrthancWSI
       return workspace_->GetContent();
     }
 
-    IAuthenticatedUser::ProjectRole GetUserRoleInProject() const
-    {
-      return role_;
-    }
-
     std::string GetBodyString(const char* field) const
     {
       return Orthanc::SerializationToolbox::ReadString(body_, field);
@@ -117,6 +112,16 @@ namespace OrthancWSI
       {
         return body_[field];
       }
+    }
+
+    AnnotationsWorkspace::UserReader* CreateUserReader() const
+    {
+      return new AnnotationsWorkspace::UserReader(workspace_->GetContent(), GetUser().GetAnnotatingId(), role_);
+    }
+
+    AnnotationsWorkspace::UserWriter* CreateUserWriter()
+    {
+      return new AnnotationsWorkspace::UserWriter(workspace_->GetContent(), GetUser().GetAnnotatingId(), role_);
     }
   };
 
@@ -175,8 +180,8 @@ namespace OrthancWSI
       Json::Value answer;
 
       {
-        AnnotationsWorkspace::UserReader reader(context.GetWorkspace(), context.GetUser().GetAnnotatingId());
-        reader.ListLayers(answer);
+        std::unique_ptr<AnnotationsWorkspace::UserReader> reader(context.CreateUserReader());
+        reader->ListLayers(answer);
       }
 
       ViewerToolbox::AnswerJson(output, answer);
@@ -195,8 +200,8 @@ namespace OrthancWSI
       Json::Value answer;
 
       {
-        AnnotationsWorkspace::UserWriter writer(context.GetWorkspace(), context.GetUser().GetAnnotatingId());
-        writer.CreateUserLayer(answer);
+        std::unique_ptr<AnnotationsWorkspace::UserWriter> writer(context.CreateUserWriter());
+        writer->CreateUserLayer(answer);
       }
 
       ViewerToolbox::AnswerJson(output, answer);
@@ -215,8 +220,8 @@ namespace OrthancWSI
       UserLayer updated(context.GetBodyField("layer"));
 
       {
-        AnnotationsWorkspace::UserWriter writer(context.GetWorkspace(), context.GetUser().GetAnnotatingId());
-        writer.UpdateUserLayer(updated);
+        std::unique_ptr<AnnotationsWorkspace::UserWriter> writer(context.CreateUserWriter());
+        writer->UpdateUserLayer(updated);
       }
 
       ViewerToolbox::AnswerEmpty(output);
@@ -235,8 +240,8 @@ namespace OrthancWSI
       const std::string layerId = context.GetBodyString(KEY_LAYER_ID);
 
       {
-        AnnotationsWorkspace::UserWriter writer(context.GetWorkspace(), context.GetUser().GetAnnotatingId());
-        writer.DeleteUserLayer(layerId);
+        std::unique_ptr<AnnotationsWorkspace::UserWriter> writer(context.CreateUserWriter());
+        writer->DeleteUserLayer(layerId);
       }
 
       ViewerToolbox::AnswerEmpty(output);
@@ -377,8 +382,8 @@ namespace OrthancWSI
       Json::Value answer;
 
       {
-        AnnotationsWorkspace::UserReader reader(context.GetWorkspace(), user);
-        reader.ListLayersSharedWith(answer, context.GetUser().GetAnnotatingId());
+        std::unique_ptr<AnnotationsWorkspace::UserReader> reader(context.CreateUserReader());
+        reader->ListLayersSharedWith(answer, context.GetUser().GetAnnotatingId());
       }
 
       ViewerToolbox::AnswerJson(output, answer);
@@ -402,8 +407,8 @@ namespace OrthancWSI
       const std::string layerId = context.GetBodyString("layer");
 
       {
-        AnnotationsWorkspace::UserWriter writer(context.GetWorkspace(), context.GetUser().GetAnnotatingId());
-        writer.ImportLayer(author, layerId);
+        std::unique_ptr<AnnotationsWorkspace::UserWriter> writer(context.CreateUserWriter());
+        writer->ImportLayer(author, layerId);
       }
 
       ViewerToolbox::AnswerEmpty(output);
@@ -426,8 +431,8 @@ namespace OrthancWSI
       const std::string layerId = context.GetBodyString("layer");
 
       {
-        AnnotationsWorkspace::UserWriter writer(context.GetWorkspace(), context.GetUser().GetAnnotatingId());
-        writer.RemoveImportedLayer(layerId);
+        std::unique_ptr<AnnotationsWorkspace::UserWriter> writer(context.CreateUserWriter());
+        writer->RemoveImportedLayer(layerId);
       }
 
       ViewerToolbox::AnswerEmpty(output);
@@ -446,8 +451,8 @@ namespace OrthancWSI
       ImportedLayer updated(context.GetBodyField("layer"));
 
       {
-        AnnotationsWorkspace::UserWriter writer(context.GetWorkspace(), context.GetUser().GetAnnotatingId());
-        writer.UpdateImportedLayer(updated);
+        std::unique_ptr<AnnotationsWorkspace::UserWriter> writer(context.CreateUserWriter());
+        writer->UpdateImportedLayer(updated);
       }
 
       ViewerToolbox::AnswerEmpty(output);
@@ -485,8 +490,8 @@ namespace OrthancWSI
       std::set<std::string> layerIds;
 
       {
-        AnnotationsWorkspace::UserReader reader(context.GetWorkspace(), context.GetUser().GetAnnotatingId());
-        reader.ListImportedLayers(authors, layerIds);
+        std::unique_ptr<AnnotationsWorkspace::UserReader> reader(context.CreateUserReader());
+        reader->ListImportedLayers(authors, layerIds);
       }
 
       Json::Value importedFeatures = Json::arrayValue;

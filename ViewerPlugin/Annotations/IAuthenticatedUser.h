@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include "../ViewerConfiguration.h"
 #include "UserId.h"
 
 #include <orthanc/OrthancCPlugin.h>
@@ -35,13 +36,6 @@ namespace OrthancWSI
   class IAuthenticatedUser : public boost::noncopyable
   {
   public:
-    enum ProjectRole
-    {
-      ProjectRole_Instructor,
-      ProjectRole_Learner,
-      ProjectRole_Guest
-    };
-
     virtual ~IAuthenticatedUser()
     {
     }

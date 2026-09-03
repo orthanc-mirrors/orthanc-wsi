@@ -37,6 +37,14 @@ namespace OrthancWSI
   };
 
 
+  enum ProjectRole
+  {
+    ProjectRole_Instructor,
+    ProjectRole_Learner,
+    ProjectRole_Guest
+  };
+
+
   class ViewerConfiguration
   {
   private:

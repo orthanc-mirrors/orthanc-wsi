@@ -237,8 +237,7 @@ namespace OrthancWSI
           if (!tokens.empty() &&
               !tokens[0].empty())
           {
-            //return new GenericStandardUser(IAuthenticatedUser::ProjectRole_Instructor, tokens[0]);
-            return new GenericStandardUser(IAuthenticatedUser::ProjectRole_Learner, tokens[0]);
+            return new GenericStandardUser(ProjectRole_Instructor, tokens[0]);
           }
         }
       }
@@ -265,7 +264,8 @@ namespace OrthancWSI
         }
         else
         {
-          return new GenericStandardUser(IAuthenticatedUser::ProjectRole_Instructor, request->headersValues[i]);
+          return new GenericStandardUser(ProjectRole_Instructor, request->headersValues[i]);
+          //return new GenericStandardUser(ProjectRole_Learner, request->headersValues[i]);
         }
       }
     }

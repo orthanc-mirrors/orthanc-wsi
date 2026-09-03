@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include "../ViewerConfiguration.h"
 #include "AnnotationsWorkspaceId.h"
 #include "ProjectInformation.h"
 #include "UserAnnotationsSettings.h"
@@ -82,10 +83,12 @@ namespace OrthancWSI
       AnnotationsWorkspace&               that_;
       UserId                              userId_;
       const UserAnnotationsSettings*      userSettings_;
+      ProjectRole                         userRole_;
 
     public:
       UserReader(AnnotationsWorkspace& that,
-                 const UserId& userId);
+                 const UserId& userId,
+                 ProjectRole userRole);
 
       bool IsValid() const
       {
@@ -109,12 +112,14 @@ namespace OrthancWSI
       AnnotationsWorkspace&                 that_;
       UserId                                userId_;
       UserAnnotationsSettings*              userSettings_;
+      ProjectRole                           userRole_;
 
       void Commit();
 
     public:
       UserWriter(AnnotationsWorkspace& that,
-                 const UserId& userId);
+                 const UserId& userId,
+                 ProjectRole userRole);
 
       void CreateUserLayer(Json::Value& answer);
 
