@@ -246,10 +246,12 @@ namespace OrthancWSI
     {
       persistentInfo_.reset(new PersistentInfo(info));
 
-      PersistentInfo::ActiveUsersIterator it(*persistentInfo_);
-      while (!it.IsDone())
+      PersistentInfo::ActiveUsersIterator iterator(*persistentInfo_);
+
+      while (!iterator.IsDone())
       {
-        Load(it.GetUser());
+        Load(iterator.GetUser());
+        iterator.Next();
       }
     }
     else
@@ -280,48 +282,16 @@ namespace OrthancWSI
 
     const boost::regex re(query);
 
-    PersistentInfo::ActiveUsersIterator it(*persistentInfo_);
-    while (!it.IsDone())
+    PersistentInfo::ActiveUsersIterator iterator(*persistentInfo_);
+
+    while (!iterator.IsDone())
     {
-      if (boost::regex_search(it.GetUser().GetName(), re))
+      if (boost::regex_search(iterator.GetUser().GetName(), re))
       {
-        target.insert(it.GetUser());
+        target.insert(iterator.GetUser());
       }
-    }
-  }
 
-
-  void AnnotationsWorkspace::ListUsersSharingLayerWith(std::set<UserId>& target,
-                                                       const UserId& user)
-  {
-    Orthanc::ReaderWriterLock::ReadLock lock(mutex_);
-
-    target.clear();
-
-    // Loop over all the users in this workspace
-    for (Content::const_iterator it = content_.begin(); it != content_.end(); ++it)
-    {
-      assert(it->second != NULL);
-      if (!user.Equals(it->first))  // Don't add self
-      {
-        LayersCollection::Iterator iterator(it->second->GetUserLayers());
-
-        // Loop over all the user layers in this workspace
-        while (!iterator.IsDone())
-        {
-          const UserLayer& layer = dynamic_cast<const UserLayer&>(iterator.GetLayer());
-
-          if (layer.IsSharedWith(user))
-          {
-            target.insert(it->first);
-            break;
-          }
-          else
-          {
-            iterator.Next();
-          }
-        }
-      }
+      iterator.Next();
     }
   }
 
@@ -364,27 +334,66 @@ namespace OrthancWSI
   }
 
 
-  void AnnotationsWorkspace::UserReader::ListLayersSharedWith(Json::Value& target,
-                                                              const UserId& user) const
+  void AnnotationsWorkspace::UserReader::ListUsersSharingLayersWithMe(std::set<UserId>& target) const
+  {
+    target.clear();
+
+    // Loop over all the users in this workspace
+    for (Content::const_iterator it = that_.content_.begin(); it != that_.content_.end(); ++it)
+    {
+      assert(it->second != NULL);
+
+      if (!userId_.Equals(it->first))  // Don't add self
+      {
+        LayersCollection::Iterator iterator(it->second->GetUserLayers());
+
+        // Loop over all the layers of this user in this workspace
+        while (!iterator.IsDone())
+        {
+          const UserLayer& layer = dynamic_cast<const UserLayer&>(iterator.GetLayer());
+
+          if (layer.IsSharedWith(userId_))
+          {
+            target.insert(it->first);
+            break;
+          }
+          else
+          {
+            iterator.Next();
+          }
+        }
+      }
+    }
+  }
+
+
+  void AnnotationsWorkspace::UserReader::ListLayersSharedWithMe(Json::Value& target,
+                                                                const UserId& author) const
   {
     target = Json::arrayValue;
 
     if (IsValid())
     {
-      LayersCollection::Iterator iterator(userSettings_->GetUserLayers());
+      Content::const_iterator found = that_.content_.find(author);
 
-      while (!iterator.IsDone())
+      if (found != that_.content_.end())
       {
-        const UserLayer& layer = dynamic_cast<const UserLayer&>(iterator.GetLayer());
+        assert(found->second != NULL);
+        LayersCollection::Iterator iterator(found->second->GetUserLayers());
 
-        if (layer.IsSharedWith(user))
+        while (!iterator.IsDone())
         {
-          Json::Value item;
-          layer.Serialize(item);
-          target.append(item);
-        }
+          const UserLayer& layer = dynamic_cast<const UserLayer&>(iterator.GetLayer());
 
-        iterator.Next();
+          if (layer.IsSharedWith(userId_))
+          {
+            Json::Value item;
+            layer.Serialize(item);
+            target.append(item);
+          }
+
+          iterator.Next();
+        }
       }
     }
   }

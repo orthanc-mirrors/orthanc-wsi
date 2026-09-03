@@ -264,8 +264,18 @@ namespace OrthancWSI
         }
         else
         {
+#if 0   // TODO - TEST
+          if (user == "learner@uclouvain.be")
+          {
+            return new GenericStandardUser(ProjectRole_Learner, request->headersValues[i]);
+          }
+          else
+          {
+            return new GenericStandardUser(ProjectRole_Instructor, request->headersValues[i]);
+          }
+#else
           return new GenericStandardUser(ProjectRole_Instructor, request->headersValues[i]);
-          //return new GenericStandardUser(ProjectRole_Learner, request->headersValues[i]);
+#endif
         }
       }
     }

@@ -26,6 +26,8 @@
 #include "AnnotationsWorkspaceId.h"
 #include "UserFeatures.h"
 
+#include <Cache/SharedObjectCache.h>
+
 #include <boost/shared_ptr.hpp>
 
 
@@ -34,6 +36,8 @@ namespace OrthancWSI
   class CachedUserFeatures : public boost::noncopyable
   {
   private:
+    static Orthanc::SharedObjectCache& GetCache();
+
     boost::shared_ptr<Orthanc::IDynamicObject>  cached_;
 
   public:

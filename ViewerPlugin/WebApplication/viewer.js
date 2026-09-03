@@ -1203,7 +1203,7 @@ var app = new Vue({
 
       var that = this;
       axios.post('../api/list-shared-layers',
-                 this.CreatePostPayload({ 'user': this.importSelectedUser }))
+                 this.CreatePostPayload({ 'author': this.importSelectedUser }))
         .then(function(response) {
           that.importAvailableLayers = response.data;
         })

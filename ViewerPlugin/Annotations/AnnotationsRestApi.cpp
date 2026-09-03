@@ -82,6 +82,7 @@ namespace OrthancWSI
 
       Orthanc::ResourceType level = Orthanc::StringToResourceType(levelString.c_str());
       AnnotationsWorkspaceId workspaceId(projectId, level, resourceId, frameNumber);
+
       workspace_.reset(new CachedAnnotationsWorkspace(workspaceId));
     }
 
@@ -337,9 +338,9 @@ namespace OrthancWSI
   }
 
 
-  void ListUsersSharingLayers(OrthancPluginRestOutput* output,
-                              const char* url,
-                              const OrthancPluginHttpRequest* request)
+  void ListUsersSharingLayersWithMe(OrthancPluginRestOutput* output,
+                                    const char* url,
+                                    const OrthancPluginHttpRequest* request)
   {
     if (request->method != OrthancPluginHttpMethod_Post)
     {
@@ -350,7 +351,11 @@ namespace OrthancWSI
       AnnotationsCommandContext context(request);
 
       std::set<UserId> users;
-      context.GetWorkspace().ListUsersSharingLayerWith(users, context.GetUser().GetAnnotatingId());
+
+      {
+        std::unique_ptr<AnnotationsWorkspace::UserReader> reader(context.CreateUserReader());
+        reader->ListUsersSharingLayersWithMe(users);
+      }
 
       Json::Value answer = Json::arrayValue;
 
@@ -366,7 +371,7 @@ namespace OrthancWSI
   }
 
 
-  void ListLayersSharedByUser(OrthancPluginRestOutput* output,
+  void ListLayersSharedWithMe(OrthancPluginRestOutput* output,
                               const char* url,
                               const OrthancPluginHttpRequest* request)
   {
@@ -378,12 +383,12 @@ namespace OrthancWSI
     {
       AnnotationsCommandContext context(request);
 
-      const UserId user(context.GetBodyField("user"));
+      const UserId author(context.GetBodyField("author"));
       Json::Value answer;
 
       {
         std::unique_ptr<AnnotationsWorkspace::UserReader> reader(context.CreateUserReader());
-        reader->ListLayersSharedWith(answer, context.GetUser().GetAnnotatingId());
+        reader->ListLayersSharedWithMe(answer, author);
       }
 
       ViewerToolbox::AnswerJson(output, answer);
@@ -546,8 +551,8 @@ void RegisterAnnotationsRestApi()
       OrthancPlugins::RegisterRestCallback<OrthancWSI::SearchActiveUsers>("/wsi/api/search-active-users", true);
 
       OrthancPlugins::RegisterRestCallback<OrthancWSI::ImportLayer>("/wsi/api/import-layer", true);
-      OrthancPlugins::RegisterRestCallback<OrthancWSI::ListLayersSharedByUser>("/wsi/api/list-shared-layers", true);
-      OrthancPlugins::RegisterRestCallback<OrthancWSI::ListUsersSharingLayers>("/wsi/api/list-sharing-users", true);
+      OrthancPlugins::RegisterRestCallback<OrthancWSI::ListLayersSharedWithMe>("/wsi/api/list-shared-layers", true);
+      OrthancPlugins::RegisterRestCallback<OrthancWSI::ListUsersSharingLayersWithMe>("/wsi/api/list-sharing-users", true);
       OrthancPlugins::RegisterRestCallback<OrthancWSI::RemoveImportedLayer>("/wsi/api/remove-imported-layer", true);
       OrthancPlugins::RegisterRestCallback<OrthancWSI::SaveImportedLayer>("/wsi/api/save-imported-layer", true);
 

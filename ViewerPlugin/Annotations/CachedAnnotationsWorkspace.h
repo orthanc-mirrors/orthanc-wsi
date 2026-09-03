@@ -25,6 +25,8 @@
 
 #include "AnnotationsWorkspace.h"
 
+#include <Cache/SharedObjectCache.h>
+
 #include <boost/shared_ptr.hpp>
 
 
@@ -33,6 +35,8 @@ namespace OrthancWSI
   class CachedAnnotationsWorkspace : public boost::noncopyable
   {
   private:
+    static Orthanc::SharedObjectCache& GetCache();
+
     boost::shared_ptr<Orthanc::IDynamicObject>  cached_;
 
   public:

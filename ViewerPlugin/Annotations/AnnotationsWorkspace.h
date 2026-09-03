@@ -72,9 +72,6 @@ namespace OrthancWSI
     void SearchActiveUsers(std::set<UserId>& target,
                            const std::string& query);
 
-    void ListUsersSharingLayerWith(std::set<UserId>& target,
-                                   const UserId& user);
-
 
     class UserReader : public boost::noncopyable
     {
@@ -97,8 +94,10 @@ namespace OrthancWSI
 
       void ListLayers(Json::Value& serialized) const;
 
-      void ListLayersSharedWith(Json::Value& target,
-                                const UserId& user) const;
+      void ListUsersSharingLayersWithMe(std::set<UserId>& target) const;
+
+      void ListLayersSharedWithMe(Json::Value& target,
+                                  const UserId& author) const;
 
       void ListImportedLayers(std::set<UserId>& authors,
                               std::set<std::string>& layerIds) const;

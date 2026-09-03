@@ -26,12 +26,10 @@
 
 #include "../ViewerConfiguration.h"
 
-#include <Cache/SharedObjectCache.h>
-
 
 namespace OrthancWSI
 {
-  static Orthanc::SharedObjectCache& GetCache()
+  Orthanc::SharedObjectCache& CachedUserFeatures::GetCache()
   {
     static boost::mutex  mutex;
     static std::unique_ptr<Orthanc::SharedObjectCache>  cache;
