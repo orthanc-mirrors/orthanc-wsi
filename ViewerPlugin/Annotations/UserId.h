@@ -26,57 +26,61 @@
 #include <json/value.h>
 #include <string>
 
-class UserId
+
+namespace OrthancWSI
 {
-public:
-  enum Type
+  class UserId
   {
-    Type_Root,
-    Type_Standard,
-    Type_Invalid
+  public:
+    enum Type
+    {
+      Type_Root,
+      Type_Standard,
+      Type_Invalid
+    };
+
+  private:
+    Type         type_;
+    std::string  name_;
+
+    void Setup(Type type,
+               const std::string& name);
+
+  public:
+    explicit UserId()
+    {
+      Setup(Type_Invalid, "");
+    }
+
+    explicit UserId(Type type)
+    {
+      Setup(type, "");
+    }
+
+    UserId(Type type,
+           const std::string& name)
+    {
+      Setup(type, name);
+    }
+
+    explicit UserId(const Json::Value& serialized);
+
+    Type GetType() const
+    {
+      return type_;
+    }
+
+    const std::string& GetName() const
+    {
+      return name_;
+    }
+
+    bool Equals(const UserId& other) const;
+
+    bool operator<(const UserId& other) const;
+
+    std::string GetKey() const;
+
+    void Serialize(Json::Value& target) const;
   };
-
-private:
-  Type         type_;
-  std::string  name_;
-
-  void Setup(Type type,
-             const std::string& name);
-
-public:
-  explicit UserId()
-  {
-    Setup(Type_Invalid, "");
-  }
-
-  explicit UserId(Type type)
-  {
-    Setup(type, "");
-  }
-
-  UserId(Type type,
-         const std::string& name)
-  {
-    Setup(type, name);
-  }
-
-  explicit UserId(const Json::Value& serialized);
-
-  Type GetType() const
-  {
-    return type_;
-  }
-
-  const std::string& GetName() const
-  {
-    return name_;
-  }
-
-  bool Equals(const UserId& other) const;
-
-  bool operator<(const UserId& other) const;
-
-  std::string GetKey() const;
-
-  void Serialize(Json::Value& target) const;
-};
+}

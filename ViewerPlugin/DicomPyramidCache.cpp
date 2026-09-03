@@ -162,7 +162,7 @@ namespace OrthancWSI
   {
     if (singleton_.get() == NULL)
     {
-      singleton_.reset(new DicomPyramidCache(new OrthancWSI::OrthancPluginConnection, maxSize, useMetadataCache));
+      singleton_.reset(new DicomPyramidCache(new OrthancPluginConnection, maxSize, useMetadataCache));
     }
     else
     {

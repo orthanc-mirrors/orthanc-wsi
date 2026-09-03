@@ -29,25 +29,29 @@
 
 #include <boost/noncopyable.hpp>
 
-class IAuthenticatedUser : public boost::noncopyable
+
+namespace OrthancWSI
 {
-public:
-  enum ProjectRole
+  class IAuthenticatedUser : public boost::noncopyable
   {
-    ProjectRole_Instructor,
-    ProjectRole_Learner,
-    ProjectRole_Guest
+  public:
+    enum ProjectRole
+    {
+      ProjectRole_Instructor,
+      ProjectRole_Learner,
+      ProjectRole_Guest
+    };
+
+    virtual ~IAuthenticatedUser()
+    {
+    }
+
+    virtual UserId GetAnnotatingId() const = 0;
+
+    virtual std::string Format() const = 0;
+
+    virtual ProjectRole GetRoleInProject(const std::string& projectId) const = 0;
+
+    static IAuthenticatedUser* FromHttpRequest(const OrthancPluginHttpRequest* request);
   };
-
-  virtual ~IAuthenticatedUser()
-  {
-  }
-
-  virtual UserId GetAnnotatingId() const = 0;
-
-  virtual std::string Format() const = 0;
-
-  virtual ProjectRole GetRoleInProject(const std::string& projectId) const = 0;
-
-  static IAuthenticatedUser* FromHttpRequest(const OrthancPluginHttpRequest* request);
-};
+}

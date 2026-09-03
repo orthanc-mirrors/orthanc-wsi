@@ -129,7 +129,7 @@ namespace OrthancWSI
 
     if (paddingX_ >= 2)
     {
-      paddedWidth = OrthancWSI::CeilingDivision(frame->GetWidth(), paddingX_) * paddingX_;
+      paddedWidth = CeilingDivision(frame->GetWidth(), paddingX_) * paddingX_;
     }
     else
     {
@@ -138,7 +138,7 @@ namespace OrthancWSI
 
     if (paddingY_ >= 2)
     {
-      paddedHeight = OrthancWSI::CeilingDivision(frame->GetHeight(), paddingY_) * paddingY_;
+      paddedHeight = CeilingDivision(frame->GetHeight(), paddingY_) * paddingY_;
     }
     else
     {

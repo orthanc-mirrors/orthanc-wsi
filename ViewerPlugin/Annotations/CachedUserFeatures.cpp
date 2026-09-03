@@ -29,27 +29,27 @@
 #include <Cache/SharedObjectCache.h>
 
 
-static Orthanc::SharedObjectCache& GetCache()
-{
-  static boost::mutex  mutex;
-  static std::unique_ptr<Orthanc::SharedObjectCache>  cache;
-
-  {
-    boost::mutex::scoped_lock lock(mutex);
-
-    if (cache.get() == NULL)
-    {
-      const unsigned int cacheSize = OrthancWSI::ViewerConfiguration::GetInstance().GetFeaturesCacheSize();
-      cache.reset(new Orthanc::SharedObjectCache(cacheSize));
-    }
-
-    return *cache;
-  }
-}
-
-
 namespace OrthancWSI
 {
+  static Orthanc::SharedObjectCache& GetCache()
+  {
+    static boost::mutex  mutex;
+    static std::unique_ptr<Orthanc::SharedObjectCache>  cache;
+
+    {
+      boost::mutex::scoped_lock lock(mutex);
+
+      if (cache.get() == NULL)
+      {
+        const unsigned int cacheSize = ViewerConfiguration::GetInstance().GetFeaturesCacheSize();
+        cache.reset(new Orthanc::SharedObjectCache(cacheSize));
+      }
+
+      return *cache;
+    }
+  }
+
+
   CachedUserFeatures::CachedUserFeatures(const AnnotationsWorkspaceId& id,
                                          const UserId& user)
   {

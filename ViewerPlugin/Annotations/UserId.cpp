@@ -33,110 +33,113 @@ static const char* const KEY_TYPE = "type";
 static const char* const KEY_NAME = "name";
 
 
-void UserId::Setup(Type type,
-                   const std::string& name)
+namespace OrthancWSI
 {
-  type_ = type;
-  name_ = name;
-
-  switch (type_)
+  void UserId::Setup(Type type,
+                     const std::string& name)
   {
-  case Type_Invalid:
-  case Type_Root:
-    if (!name.empty())
+    type_ = type;
+    name_ = name;
+
+    switch (type_)
     {
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
-    }
-    break;
+      case Type_Invalid:
+      case Type_Root:
+        if (!name.empty())
+        {
+          throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
+        }
+        break;
 
-  case Type_Standard:
-    if (name.empty())
+      case Type_Standard:
+        if (name.empty())
+        {
+          throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
+        }
+        break;
+
+      default:
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
+    }
+  }
+
+
+  UserId::UserId(const Json::Value& serialized)
+  {
+    Setup(static_cast<Type>(Orthanc::SerializationToolbox::ReadInteger(serialized, KEY_TYPE)),
+          Orthanc::SerializationToolbox::ReadString(serialized, KEY_NAME));
+  }
+
+
+  bool UserId::Equals(const UserId& other) const
+  {
+    if (type_ != other.type_)
     {
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
+      return false;
     }
-    break;
-
-  default:
-    throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
-  }
-}
-
-
-UserId::UserId(const Json::Value& serialized)
-{
-  Setup(static_cast<Type>(Orthanc::SerializationToolbox::ReadInteger(serialized, KEY_TYPE)),
-        Orthanc::SerializationToolbox::ReadString(serialized, KEY_NAME));
-}
-
-
-bool UserId::Equals(const UserId& other) const
-{
-  if (type_ != other.type_)
-  {
-    return false;
-  }
-  else if (type_ == Type_Standard)
-  {
-    return name_ == other.name_;
-  }
-  else
-  {
-    return true;
-  }
-}
-
-
-bool UserId::operator<(const UserId& other) const
-{
-  if (type_ < other.type_)
-  {
-    return true;
-  }
-  else if (type_ > other.type_)
-  {
-    return false;
-  }
-  else
-  {
-    return name_ < other.name_;
-  }
-}
-
-
-std::string UserId::GetKey() const
-{
-  switch (type_)
-  {
-  case Type_Root:
-    return "root";
-
-  case Type_Standard:
-  {
-    // The pipe character "|" is not part of Base64, so we can safely use it to separate components
-    std::string s;
-    Orthanc::Toolbox::EncodeBase64(s, name_);
-    return "user_" + s;
+    else if (type_ == Type_Standard)
+    {
+      return name_ == other.name_;
+    }
+    else
+    {
+      return true;
+    }
   }
 
-  case Type_Invalid:
-    throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
 
-  default:
-    throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
-  }
-}
-
-
-void UserId::Serialize(Json::Value& target) const
-{
-  if (type_ == Type_Invalid)
+  bool UserId::operator<(const UserId& other) const
   {
-    throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
+    if (type_ < other.type_)
+    {
+      return true;
+    }
+    else if (type_ > other.type_)
+    {
+      return false;
+    }
+    else
+    {
+      return name_ < other.name_;
+    }
   }
-  else
+
+
+  std::string UserId::GetKey() const
   {
-    target = Json::objectValue;
-    target[KEY_TYPE] = static_cast<int>(type_);
-    target[KEY_NAME] = name_;
+    switch (type_)
+    {
+      case Type_Root:
+        return "root";
+
+      case Type_Standard:
+      {
+        // The pipe character "|" is not part of Base64, so we can safely use it to separate components
+        std::string s;
+        Orthanc::Toolbox::EncodeBase64(s, name_);
+        return "user_" + s;
+      }
+
+      case Type_Invalid:
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
+
+      default:
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+    }
+  }
+
+
+  void UserId::Serialize(Json::Value& target) const
+  {
+    if (type_ == Type_Invalid)
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
+    }
+    else
+    {
+      target = Json::objectValue;
+      target[KEY_TYPE] = static_cast<int>(type_);
+      target[KEY_NAME] = name_;
+    }
   }
 }
