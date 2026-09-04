@@ -92,6 +92,11 @@ namespace OrthancWSI
       return *user_;
     }
 
+    ProjectRole GetRole() const
+    {
+      return role_;
+    }
+
     AnnotationsWorkspace& GetWorkspace()
     {
       assert(workspace_.get() != NULL);
@@ -154,10 +159,28 @@ namespace OrthancWSI
 
       answer["name"] = context.GetWorkspace().GetProjectName();
       answer["description"] = context.GetWorkspace().GetProjectDescription();
+      answer["project"] = context.GetWorkspace().GetId().GetProjectId();
       answer["enabled"] = ViewerConfiguration::GetInstance().AreAnnotationsEnabled();
       answer["sharing"] = (ViewerConfiguration::GetInstance().AreAnnotationsEnabled() &&
                            ViewerConfiguration::GetInstance().IsAnnotationsSharingEnabled());
       answer["user"] = context.GetUser().Format();
+
+      std::string role;
+      switch (context.GetRole())
+      {
+        case ProjectRole_Learner:
+          role = "learner";
+          break;
+
+        case ProjectRole_Instructor:
+          role = "instructor";
+          break;
+
+        default:
+          throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+      }
+
+      answer["role"] = role;
 
 #if ORTHANC_PLUGINS_VERSION_IS_ABOVE(1, 12, 8)
       answer["persistent"] = true;
