@@ -23,28 +23,13 @@
 
 #pragma once
 
+#include "../Framework/FrameworkEnumerations.h"
+
 #include "../Resources/Orthanc/Plugins/OrthancPluginCppWrapper.h"
 
 
 namespace OrthancWSI
 {
-  enum AuthenticationSource
-  {
-    AuthenticationSource_None,
-    AuthenticationSource_RegisteredUsers,
-    AuthenticationSource_Plugin,
-    AuthenticationSource_HttpHeader
-  };
-
-
-  enum ProjectRole
-  {
-    ProjectRole_Instructor,
-    ProjectRole_Learner,
-    ProjectRole_Guest
-  };
-
-
   class ViewerConfiguration
   {
   private:

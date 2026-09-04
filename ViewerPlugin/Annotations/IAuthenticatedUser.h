@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "../ViewerConfiguration.h"
+#include "../../Framework/FrameworkEnumerations.h"
 #include "UserId.h"
 
 #include <orthanc/OrthancCPlugin.h>

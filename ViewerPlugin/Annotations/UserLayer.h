@@ -24,7 +24,7 @@
 #pragma once
 
 #include "../../Framework/BackgroundColor.h"
-#include "../ViewerConfiguration.h"
+#include "../../Framework/FrameworkEnumerations.h"
 #include "ILayer.h"
 #include "UserId.h"
 

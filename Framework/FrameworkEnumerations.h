@@ -53,6 +53,26 @@ namespace OrthancWSI
     OpticalPath_Brightfield
   };
 
+
+  // Used by the viewer
+  enum AuthenticationSource
+  {
+    AuthenticationSource_None,
+    AuthenticationSource_RegisteredUsers,
+    AuthenticationSource_Plugin,
+    AuthenticationSource_HttpHeader
+  };
+
+
+  // Used by the viewer
+  enum ProjectRole
+  {
+    ProjectRole_Instructor,
+    ProjectRole_Learner,
+    ProjectRole_Guest
+  };
+
+
   const char* EnumerationToString(ImageCompression compression);
 
   ImageCompression DetectFormatFromFile(const std::string& path);

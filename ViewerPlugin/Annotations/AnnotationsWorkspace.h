@@ -23,7 +23,6 @@
 
 #pragma once
 
-#include "../ViewerConfiguration.h"
 #include "AnnotationsWorkspaceId.h"
 #include "ProjectInformation.h"
 #include "UserAnnotationsSettings.h"
