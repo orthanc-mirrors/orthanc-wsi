@@ -25,7 +25,7 @@
 
 #include "../../Resources/Orthanc/Stone/IOrthancConnection.h"
 #include "../BackgroundColor.h"
-#include "../Enumerations.h"
+#include "../FrameworkEnumerations.h"
 
 #include <boost/noncopyable.hpp>
 #include <vector>

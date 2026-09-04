@@ -211,7 +211,7 @@ set(ORTHANC_WSI_SOURCES
   ${ORTHANC_WSI_DIR}/Framework/BackgroundColor.cpp
   ${ORTHANC_WSI_DIR}/Framework/ColorSpaces.cpp
   ${ORTHANC_WSI_DIR}/Framework/DicomToolbox.cpp
-  ${ORTHANC_WSI_DIR}/Framework/Enumerations.cpp
+  ${ORTHANC_WSI_DIR}/Framework/FrameworkEnumerations.cpp
   ${ORTHANC_WSI_DIR}/Framework/ImageToolbox.cpp
   ${ORTHANC_WSI_DIR}/Framework/Inputs/DecodedPyramidCache.cpp
   ${ORTHANC_WSI_DIR}/Framework/Inputs/DecodedTiledPyramid.cpp

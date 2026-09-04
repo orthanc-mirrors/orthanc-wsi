@@ -23,7 +23,8 @@
 
 #pragma once
 
-#include "../Enumerations.h"
+#include "../FrameworkEnumerations.h"
+
 #include <Images/ImageAccessor.h>
 
 #include <boost/noncopyable.hpp>

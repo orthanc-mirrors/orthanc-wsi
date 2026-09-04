@@ -22,7 +22,7 @@
 
 
 #include "PrecompiledHeadersWSI.h"
-#include "Enumerations.h"
+#include "FrameworkEnumerations.h"
 
 #include "Jpeg2000Reader.h"
 

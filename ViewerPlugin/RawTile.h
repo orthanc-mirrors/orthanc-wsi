@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "../Framework/Enumerations.h"
+#include "../Framework/FrameworkEnumerations.h"
 #include "../Framework/Inputs/ITiledPyramid.h"
 
 #include <orthanc/OrthancCPlugin.h>

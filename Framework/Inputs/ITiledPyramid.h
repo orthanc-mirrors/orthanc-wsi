@@ -24,7 +24,7 @@
 #pragma once
 
 #include "../BackgroundColor.h"
-#include "../Enumerations.h"
+#include "../FrameworkEnumerations.h"
 
 #include <Compatibility.h>
 #include <Images/ImageAccessor.h>
