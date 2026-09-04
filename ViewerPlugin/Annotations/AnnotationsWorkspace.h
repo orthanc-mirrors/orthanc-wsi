@@ -39,8 +39,6 @@ namespace OrthancWSI
   private:
     class PersistentInfo;
 
-    void Load(const UserId& user);
-
     typedef std::map<UserId, UserAnnotationsSettings*>   Content;
 
     Orthanc::ReaderWriterLock        mutex_;
@@ -48,6 +46,13 @@ namespace OrthancWSI
     std::unique_ptr<PersistentInfo>  persistentInfo_;
     Content                          content_;
     ProjectInformation               projectInformation_;
+
+    void Load(const UserId& user);
+
+    bool IsSharedWith(const UserLayer& layer,
+                      const UserId& layerAuthorId,
+                      const UserId& viewerId,
+                      ProjectRole viewerRole) const;
 
   public:
     explicit AnnotationsWorkspace(const AnnotationsWorkspaceId& id);

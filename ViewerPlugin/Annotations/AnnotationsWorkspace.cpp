@@ -75,6 +75,21 @@ namespace OrthancWSI
       }
     }
 
+    void SanityCheck() const
+    {
+#if !defined(NDEBUG)
+      for (std::set<UserId>::const_iterator it = activeInstructors_.begin(); it != activeInstructors_.end(); ++it)
+      {
+        assert(activeLearners_.find(*it) == activeLearners_.end());
+      }
+
+      for (std::set<UserId>::const_iterator it = activeLearners_.begin(); it != activeLearners_.end(); ++it)
+      {
+        assert(activeInstructors_.find(*it) == activeInstructors_.end());
+      }
+#endif
+    }
+
   public:
     PersistentInfo()
     {
@@ -92,6 +107,8 @@ namespace OrthancWSI
 
       ParseActiveUsers(activeInstructors_, serialized[KEY_ACTIVE_INSTRUCTORS]);
       ParseActiveUsers(activeLearners_, serialized[KEY_ACTIVE_LEARNERS]);
+
+      SanityCheck();
     }
 
 
@@ -101,6 +118,8 @@ namespace OrthancWSI
     bool AddActiveUser(const UserId& user,
                        ProjectRole role)
     {
+      SanityCheck();
+
       switch (role)
       {
         case ProjectRole_Instructor:
@@ -108,6 +127,7 @@ namespace OrthancWSI
           {
             activeLearners_.erase(user);  // Accomodate with change in the role
             activeInstructors_.insert(user);
+            SanityCheck();
             return true;
           }
           else
@@ -120,6 +140,7 @@ namespace OrthancWSI
           {
             activeInstructors_.erase(user);  // Accomodate with change in the role
             activeLearners_.insert(user);
+            SanityCheck();
             return true;
           }
           else
@@ -131,6 +152,28 @@ namespace OrthancWSI
 
         default:
           throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
+      }
+    }
+
+
+    bool LookupUserRole(ProjectRole& role,
+                        const UserId& user) const
+    {
+      if (activeInstructors_.find(user) != activeInstructors_.end())
+      {
+        assert(activeLearners_.find(user) == activeLearners_.end());
+        role = ProjectRole_Instructor;
+        return true;
+      }
+      else if (activeLearners_.find(user) != activeLearners_.end())
+      {
+        assert(activeInstructors_.find(user) == activeInstructors_.end());
+        role = ProjectRole_Learner;
+        return true;
+      }
+      else
+      {
+        return false;
       }
     }
 
@@ -158,6 +201,7 @@ namespace OrthancWSI
         learnersIterator_(that.activeLearners_.begin()),
         learnersEnd_(that.activeLearners_.end())
       {
+        that.SanityCheck();
       }
 
       bool IsDone() const
@@ -217,6 +261,7 @@ namespace OrthancWSI
   };
 
 
+
   void AnnotationsWorkspace::Load(const UserId& user)
   {
     const std::string key = id_.GetSettingsKey(user);
@@ -230,6 +275,25 @@ namespace OrthancWSI
       {
         content_[user] = item.release();
       }
+    }
+  }
+
+
+  bool AnnotationsWorkspace::IsSharedWith(const UserLayer& layer,
+                                          const UserId& layerAuthorId,
+                                          const UserId& viewerId,
+                                          ProjectRole viewerRole) const
+  {
+    assert(persistentInfo_.get() != NULL);
+
+    ProjectRole authorRole;
+    if (persistentInfo_->LookupUserRole(authorRole, layerAuthorId))
+    {
+      return layer.IsSharedWith(authorRole, viewerId, viewerRole);
+    }
+    else
+    {
+      return false;
     }
   }
 
@@ -338,7 +402,7 @@ namespace OrthancWSI
   {
     target.clear();
 
-    // Loop over all the users in this workspace
+    // Loop over all the users (i.e., all the possible authors) in this workspace
     for (Content::const_iterator it = that_.content_.begin(); it != that_.content_.end(); ++it)
     {
       assert(it->second != NULL);
@@ -352,7 +416,7 @@ namespace OrthancWSI
         {
           const UserLayer& layer = dynamic_cast<const UserLayer&>(iterator.GetLayer());
 
-          if (layer.IsSharedWith(userId_))
+          if (that_.IsSharedWith(layer, it->first, userId_, userRole_))
           {
             target.insert(it->first);
             break;
@@ -385,7 +449,7 @@ namespace OrthancWSI
         {
           const UserLayer& layer = dynamic_cast<const UserLayer&>(iterator.GetLayer());
 
-          if (layer.IsSharedWith(userId_))
+          if (that_.IsSharedWith(layer, author, userId_, userRole_))
           {
             Json::Value item;
             layer.Serialize(item);
@@ -425,7 +489,7 @@ namespace OrthancWSI
           {
             const UserLayer& authorLayer = found->second->GetUserLayer(layer.GetId());
 
-            if (authorLayer.IsSharedWith(userId_))
+            if (that_.IsSharedWith(authorLayer, layer.GetAuthor(), userId_, userRole_))
             {
               authors.insert(layer.GetAuthor());
               layerIds.insert(layer.GetId());
@@ -522,7 +586,7 @@ namespace OrthancWSI
     const UserAnnotationsSettings& authorData = *found->second;
 
     const UserLayer& layer = authorData.GetUserLayer(layerId);
-    if (!layer.IsSharedWith(userId_))
+    if (!that_.IsSharedWith(layer, author, userId_, userRole_))
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_ForbiddenAccess);
     }

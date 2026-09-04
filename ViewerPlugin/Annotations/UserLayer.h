@@ -24,6 +24,7 @@
 #pragma once
 
 #include "../../Framework/BackgroundColor.h"
+#include "../ViewerConfiguration.h"
 #include "ILayer.h"
 #include "UserId.h"
 
@@ -70,7 +71,9 @@ namespace OrthancWSI
       return name_;
     }
 
-    bool IsSharedWith(const UserId& user) const;
+    bool IsSharedWith(ProjectRole authorRole,
+                      const UserId& viewerId,
+                      ProjectRole viewerRole) const;
 
     void Assign(const UserLayer& other);
 

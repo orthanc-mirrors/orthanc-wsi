@@ -75,14 +75,16 @@ namespace OrthancWSI
   }
 
 
-  bool UserLayer::IsSharedWith(const UserId& user) const
+  bool UserLayer::IsSharedWith(ProjectRole authorRole,
+                               const UserId& viewerId,
+                               ProjectRole viewerRole) const
   {
-    assert(user.GetType() == UserId::Type_Root ||
-           user.GetType() == UserId::Type_Standard);
+    assert(viewerId.GetType() == UserId::Type_Root ||
+           viewerId.GetType() == UserId::Type_Standard);
 
     return (isPublic_ ||
-            user.GetType() == UserId::Type_Root ||
-            sharedWith_.find(user) != sharedWith_.end());
+            viewerId.GetType() == UserId::Type_Root ||
+            sharedWith_.find(viewerId) != sharedWith_.end());
   }
 
 
