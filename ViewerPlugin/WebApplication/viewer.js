@@ -978,13 +978,7 @@ var app = new Vue({
           return ol.events.condition.singleClick(e) && app.activeDrawTool === 'select';
         },
         hitTolerance: 5,  /* pixels around the feature that count as a hit */
-        style: new ol.style.Style({
-          stroke: new ol.style.Stroke({ color: 'blue', width: 3 }),
-          image: new ol.style.Circle({
-            radius: 5,
-            fill: new ol.style.Fill({ color: 'blue' })
-          })
-        })
+        style: CreateLayerStyle('#0000ff')  /* selected annotation is in blue */
       });
 
 
