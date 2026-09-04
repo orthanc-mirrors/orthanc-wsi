@@ -262,20 +262,13 @@ namespace OrthancWSI
         {
           return new GuestUser;
         }
+        else if (ViewerConfiguration::GetInstance().IsInstructor(user))
+        {
+          return new GenericStandardUser(ProjectRole_Instructor, user);
+        }
         else
         {
-#if 0   // TODO - TEST
-          if (user == "learner@uclouvain.be")
-          {
-            return new GenericStandardUser(ProjectRole_Learner, request->headersValues[i]);
-          }
-          else
-          {
-            return new GenericStandardUser(ProjectRole_Instructor, request->headersValues[i]);
-          }
-#else
-          return new GenericStandardUser(ProjectRole_Instructor, request->headersValues[i]);
-#endif
+          return new GenericStandardUser(ProjectRole_Learner, user);
         }
       }
     }

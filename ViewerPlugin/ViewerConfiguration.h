@@ -52,6 +52,7 @@ namespace OrthancWSI
     OrthancPlugins::OrthancConfiguration wsiConfiguration_;
     AuthenticationSource                 authenticationSource_;
     std::string                          authenticationHttpHeader_;
+    std::set<std::string>                instructors_;
 
     ViewerConfiguration();
 
@@ -84,5 +85,7 @@ namespace OrthancWSI
     unsigned int GetFeaturesCacheSize() const;
 
     bool IsAnnotationsSharingEnabled() const;
+
+    bool IsInstructor(const std::string& username) const;
   };
 }

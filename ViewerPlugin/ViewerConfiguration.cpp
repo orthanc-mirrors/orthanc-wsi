@@ -58,6 +58,11 @@ namespace OrthancWSI
         }
 
         Orthanc::Toolbox::ToLowerCase(authenticationHttpHeader_);
+
+        if (!wsiConfiguration_.LookupSetOfStrings(instructors_, "Instructors", false))
+        {
+          instructors_.clear();
+        }
       }
       else if (value == "RegisteredUsers")
       {
@@ -211,5 +216,18 @@ namespace OrthancWSI
   bool ViewerConfiguration::IsAnnotationsSharingEnabled() const
   {
     return wsiConfiguration_.GetBooleanValue("EnableAnnotationsSharing", false);
+  }
+
+
+  bool ViewerConfiguration::IsInstructor(const std::string& username) const
+  {
+    if (username.empty())
+    {
+      return false;
+    }
+    else
+    {
+      return instructors_.find(username) != instructors_.end();
+    }
   }
 }

@@ -5,13 +5,20 @@ Pending changes in the mainline
 => Minimum SDK version: 1.7.0 <=
 
 * Support for annotations
+* Persistence of annotations in the Orthanc database (SDK 1.12.8 is required)
+
+Configuration
+-------------
+
 * New configuration option "EnableAnnotations" to enable annotations
 * New configuration option "AuthenticationSource" to enable per-user annotations:
   - "None" uses the administrative Orthanc user (default)
   - "RegisteredUsers" relies on the HTTP basic authentication that is built in Orthanc
   - "HttpHeader" takes the user out of the HTTP header specified in "AuthenticationHttpHeader" option
   - "Plugin" can be used if the "orthanc-education" plugin is installed
-* Persistence of annotations in the Orthanc database (SDK 1.12.8 is required)
+* New configuration option "Instructors" to distinguish between learners
+  and instructors, only if the authentication source is "HttpHeader"
+* New configuration option "EnableAnnotationsSharing" to enable sharing of annotations
 
 Maintenance
 -----------
