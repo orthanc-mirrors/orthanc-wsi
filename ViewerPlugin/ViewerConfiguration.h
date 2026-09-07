@@ -72,5 +72,7 @@ namespace OrthancWSI
     bool IsAnnotationsSharingEnabled() const;
 
     bool IsInstructor(const std::string& username) const;
+
+    bool IsLearnerToLearnerSharingEnabled() const;
   };
 }

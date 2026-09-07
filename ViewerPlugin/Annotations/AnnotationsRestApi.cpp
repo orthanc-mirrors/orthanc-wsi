@@ -151,6 +151,9 @@ namespace OrthancWSI
                         const char* url,
                         const OrthancPluginHttpRequest* request)
   {
+    static const char* const KEY_IS_LEARNER = "is_learner";
+    static const char* const KEY_IS_INSTRUCTOR = "is_instructor";
+
     if (ProtectPostRequest(output, request))
     {
       AnnotationsCommandContext context(request);
@@ -163,17 +166,20 @@ namespace OrthancWSI
       answer["enabled"] = ViewerConfiguration::GetInstance().AreAnnotationsEnabled();
       answer["sharing"] = (ViewerConfiguration::GetInstance().AreAnnotationsEnabled() &&
                            ViewerConfiguration::GetInstance().IsAnnotationsSharingEnabled());
+      answer["learner_to_learner_sharing"] = ViewerConfiguration::GetInstance().IsLearnerToLearnerSharingEnabled();
       answer["user"] = context.GetUser().Format();
 
       std::string role;
       switch (context.GetRole())
       {
         case ProjectRole_Learner:
-          role = "learner";
+          answer[KEY_IS_LEARNER] = true;
+          answer[KEY_IS_INSTRUCTOR] = false;
           break;
 
         case ProjectRole_Instructor:
-          role = "instructor";
+          answer[KEY_IS_LEARNER] = false;
+          answer[KEY_IS_INSTRUCTOR] = true;
           break;
 
         default:
@@ -335,7 +341,11 @@ namespace OrthancWSI
       const std::string query = context.GetBodyString("query");
 
       std::set<UserId> users;
-      context.GetWorkspace().SearchActiveUsers(users, query);
+
+      {
+        std::unique_ptr<AnnotationsWorkspace::UserReader> reader(context.CreateUserReader());
+        reader->SearchActiveUsers(users, query);
+      }
 
       Json::Value answer = Json::arrayValue;
 

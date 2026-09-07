@@ -88,7 +88,7 @@ var app = new Vue({
        * Magnification at full-resolution image pixels, convention
        * commonly used for pathology WSI: 40x scan = 0.25 µm/pixel
        **/
-      referenceMagnification: 40,
+      referenceMagnification: 40,  // TODO - Could be read from pyramid
 
       // Share layer modal
       modalShareUserLayer: null,
@@ -110,6 +110,11 @@ var app = new Vue({
   },
 
   computed: {
+    shareLayerCanAddLearner: function() {
+      return (this.workspaceInfo.is_instructor === true ||
+              (this.workspaceInfo.is_learner === true &&
+               this.workspaceInfo.learner_to_learner_sharing === true));
+    }
   },
 
   watch: {
@@ -133,7 +138,7 @@ var app = new Vue({
       new bootstrap.Tooltip(el, { trigger: 'hover' });
     });
 
-    // bootstrap.Offcanvas.getOrCreateInstance(document.getElementById('right-panel')).show();  // Open side menu on startup
+    // document.getElementById('right-panel-toggle').click();  // Open the side menu at startup
 
     const params = new URLSearchParams(document.location.search);
 
@@ -884,10 +889,10 @@ var app = new Vue({
       this.map.once('postrender', function() {
         // Match Bootstrap button size to OL button size
         /*var olBtnSize = document.querySelector('.ol-zoom button').offsetWidth + 'px';
-        document.querySelectorAll('.icon-btn').forEach(function(el) {
+          document.querySelectorAll('.icon-btn').forEach(function(el) {
           el.style.width = olBtnSize;
           el.style.height = olBtnSize;
-        });*/
+          });*/
 
         // Move the top toolbar directly right to the zoom control, regardless of scaling
         var zoomEl = document.querySelector('.ol-zoom');

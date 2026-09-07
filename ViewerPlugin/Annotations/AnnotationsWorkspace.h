@@ -73,9 +73,6 @@ namespace OrthancWSI
       return projectInformation_.GetDescription();
     }
 
-    void SearchActiveUsers(std::set<UserId>& target,
-                           const std::string& query);
-
 
     class UserReader : public boost::noncopyable
     {
@@ -105,6 +102,9 @@ namespace OrthancWSI
 
       void ListImportedLayers(std::set<UserId>& authors,
                               std::set<std::string>& layerIds) const;
+
+      void SearchActiveUsers(std::set<UserId>& target,
+                             const std::string& query) const;
     };
 
 

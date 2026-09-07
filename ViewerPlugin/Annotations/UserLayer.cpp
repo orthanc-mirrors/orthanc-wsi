@@ -24,6 +24,8 @@
 #include "../../Framework/PrecompiledHeadersWSI.h"
 #include "UserLayer.h"
 
+#include "../ViewerConfiguration.h"
+
 #include <OrthancException.h>
 #include <SerializationToolbox.h>
 #include <Toolbox.h>
@@ -79,12 +81,83 @@ namespace OrthancWSI
                                const UserId& viewerId,
                                ProjectRole viewerRole) const
   {
-    assert(viewerId.GetType() == UserId::Type_Root ||
-           viewerId.GetType() == UserId::Type_Standard);
+    /**
 
-    return (isPublic_ ||
-            viewerId.GetType() == UserId::Type_Root ||
-            sharedWith_.find(viewerId) != sharedWith_.end());
+       Instructors can see:
+
+       - All layers tagged "publicly shared with instructors"
+         (i.e. public), created by anyone (instructors or learners).
+
+       - Any layer explicitly shared with them, by anyone.
+
+       Learners can see:
+
+       - All layers tagged public that were created by instructors
+         (this is true "class-wide public" for instructor content).
+
+       - Any instructor layer explicitly shared with them.
+
+       - Any learner layer explicitly shared with them by name, only
+         if learner-to-learner sharing is enabled (cf. configuration
+         option "EnableLearnerToLearnerSharing").
+
+       Note 1: Learner layers tagged "public" are visible only to
+       instructors, never to other learners, regardless of the
+       learner-to-learner sharing configuration. This is a deliberate
+       asymmetry: for a learner, "public" means "submitted/visible to
+       instructors," not "visible to the class." This prevents one
+       learner's work from becoming broadcast to the whole cohort,
+       while still allowing small, named-group collaboration (e.g.,
+       project teams) through explicit sharing.
+
+       Note 2: Learner-to-learner sharing (configuration option)
+       governs only the explicit-share-list channel between
+       learners. It has no effect on instructor visibility and no
+       effect on the behavior of the "public" tag (public learner
+       layers are never learner-visible whether this option is "true"
+       or "false").
+
+     **/
+
+    if (viewerId.GetType() != UserId::Type_Standard)
+    {
+      return false;
+    }
+
+    const bool explicitlyShared = sharedWith_.find(viewerId) != sharedWith_.end();
+
+    switch (authorRole)
+    {
+      case ProjectRole_Instructor:
+        // Instructor layers: "public" truly means public to everyone,
+        // and explicit sharing is unconditional
+        return isPublic_ || explicitlyShared;
+
+      case ProjectRole_Learner:
+        switch (viewerRole)
+        {
+          case ProjectRole_Instructor:
+            // Instructors see public learner layers, and anything shared with them
+            return isPublic_ || explicitlyShared;
+
+          case ProjectRole_Learner:
+            // Learner viewing another learner's layer: "public" never applies,
+            // explicit sharing is gated by the configuration switch.
+            return explicitlyShared && ViewerConfiguration::GetInstance().IsLearnerToLearnerSharingEnabled();
+
+          case ProjectRole_Guest:
+            throw Orthanc::OrthancException(Orthanc::ErrorCode_ForbiddenAccess);
+
+          default:
+            throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+        }
+
+      case ProjectRole_Guest:
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_ForbiddenAccess);
+
+      default:
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+    }
   }
 
 

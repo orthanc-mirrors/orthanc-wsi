@@ -230,4 +230,10 @@ namespace OrthancWSI
       return instructors_.find(username) != instructors_.end();
     }
   }
+
+
+  bool ViewerConfiguration::IsLearnerToLearnerSharingEnabled() const
+  {
+    return wsiConfiguration_.GetBooleanValue("EnableLearnerToLearnerSharing", false);
+  }
 }

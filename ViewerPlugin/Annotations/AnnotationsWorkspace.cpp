@@ -24,6 +24,7 @@
 #include "../../Framework/PrecompiledHeadersWSI.h"
 #include "AnnotationsWorkspace.h"
 
+#include "../ViewerConfiguration.h"
 #include "../ViewerToolbox.h"
 
 #include <OrthancException.h>
@@ -337,29 +338,6 @@ namespace OrthancWSI
   }
 
 
-  void AnnotationsWorkspace::SearchActiveUsers(std::set<UserId>& target,
-                                               const std::string& query)
-  {
-    Orthanc::ReaderWriterLock::ReadLock lock(mutex_);
-
-    target.clear();
-
-    const boost::regex re(query);
-
-    PersistentInfo::ActiveUsersIterator iterator(*persistentInfo_);
-
-    while (!iterator.IsDone())
-    {
-      if (boost::regex_search(iterator.GetUser().GetName(), re))
-      {
-        target.insert(iterator.GetUser());
-      }
-
-      iterator.Next();
-    }
-  }
-
-
   AnnotationsWorkspace::UserReader::UserReader(AnnotationsWorkspace& that,
                                                const UserId& userId,
                                                ProjectRole userRole) :
@@ -459,6 +437,62 @@ namespace OrthancWSI
           iterator.Next();
         }
       }
+    }
+  }
+
+
+  void AnnotationsWorkspace::UserReader::SearchActiveUsers(std::set<UserId>& target,
+                                                           const std::string& query) const
+  {
+    target.clear();
+
+    const boost::regex re(query);
+
+    PersistentInfo::ActiveUsersIterator iterator(*that_.persistentInfo_);
+
+    while (!iterator.IsDone())
+    {
+      if (boost::regex_search(iterator.GetUser().GetName(), re))
+      {
+        bool add = false;
+
+        switch (userRole_)
+        {
+          case ProjectRole_Instructor:
+            add = true;
+            break;
+
+          case ProjectRole_Learner:
+            switch (iterator.GetRole())  // Consider the role of the other user
+            {
+              case ProjectRole_Instructor:
+                // Learners can always share with instructors
+                add = true;
+                break;
+
+              case ProjectRole_Learner:
+                add = ViewerConfiguration::GetInstance().IsLearnerToLearnerSharingEnabled();
+                break;
+
+              default:
+                throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+            }
+            break;
+
+          case ProjectRole_Guest:
+            throw Orthanc::OrthancException(Orthanc::ErrorCode_ForbiddenAccess);
+
+          default:
+            throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+        }
+
+        if (add)
+        {
+          target.insert(iterator.GetUser());
+        }
+      }
+
+      iterator.Next();
     }
   }
 
