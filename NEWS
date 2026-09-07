@@ -19,6 +19,7 @@ Configuration
 * New configuration option "Instructors" to distinguish between learners
   and instructors, only if the authentication source is "HttpHeader"
 * New configuration option "EnableAnnotationsSharing" to enable sharing of annotations
+* New configuration option "EnableLearnerToLearnerSharing" to enable sharing between learners
 
 Maintenance
 -----------
