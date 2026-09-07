@@ -418,9 +418,26 @@ var app = new Vue({
       });
     },
 
+    AddReadOnlyTextAreaProperty: function(label, value) {
+      this.annotationProperties.push({
+        type: 'readonly-textarea',
+        label: label,
+        value: value
+      });
+    },
+
     AddEditableProperty: function(label, value, featureProp) {
       this.annotationProperties.push({
         type: 'editable',
+        label: label,
+        value: value,
+        featureProp: featureProp
+      });
+    },
+
+    AddTextAreaProperty: function(label, value, featureProp) {
+      this.annotationProperties.push({
+        type: 'editable-textarea',
         label: label,
         value: value,
         featureProp: featureProp
@@ -1083,9 +1100,9 @@ var app = new Vue({
 
           if (that.drawSource !== null &&
               that.drawSource.hasFeature(feature)) {
-            that.AddEditableProperty('Label', feature.get('label') || '', 'label');
+            that.AddTextAreaProperty('Label', feature.get('label') || '', 'label');
           } else {
-            that.AddReadOnlyProperty('Label', feature.get('label') || '');
+            that.AddReadOnlyTextAreaProperty('Label', feature.get('label') || '');
           }
 
           /*
