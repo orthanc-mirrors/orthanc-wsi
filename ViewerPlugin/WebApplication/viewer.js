@@ -924,11 +924,7 @@ var app = new Vue({
         style: function(feature, resolution) {
           var layer = GetLayerOfFeature(feature);
           if (layer.visible) {
-            if (feature.get('type') === 'arrow') {
-              return CreateArrowStyle(feature, resolution, layer.color);
-            } else {
-              return CreateLayerStyle(layer.color);
-            }
+            return CreateFeatureStyle(feature, resolution, layer.color);
           } else {
             return null;
           }
@@ -947,11 +943,7 @@ var app = new Vue({
             return null;
           }
 
-          if (feature.get('type') === 'arrow') {
-            return CreateArrowStyle(feature, resolution, entry.color);
-          } else {
-            return CreateLayerStyle(entry.color);
-          }
+          return CreateFeatureStyle(feature, resolution, entry.color);
         }
       });
       this.map.addLayer(this.drawImportedLayer);
@@ -999,7 +991,9 @@ var app = new Vue({
           return ol.events.condition.singleClick(e) && app.activeDrawTool === 'select';
         },
         hitTolerance: 5,  /* pixels around the feature that count as a hit */
-        style: CreateLayerStyle('#0000ff')  /* selected annotation is in blue */
+        style: function(feature, resolution) {
+          return CreateFeatureStyle(feature, resolution, '#0000ff');  /* selected annotations are in blue */
+        }
       });
 
 
@@ -1450,13 +1444,29 @@ function CreateArrowStyle(feature, resolution, color)
 }
 
 
+function IsArrowFeature(feature)
+{
+  return feature.get('type') === 'arrow';
+}
+
+
+function CreateFeatureStyle(feature, resolution, color)
+{
+  if (IsArrowFeature(feature)) {
+    return CreateArrowStyle(feature, resolution, color);
+  } else {
+    return CreateLayerStyle(color);
+  }
+}
+
+
 function SerializeFeature(feature)
 {
   var type = feature.getGeometry().getType();
 
   if (type === 'LineString') {
     var s;
-    if (feature.get('type') === 'arrow') {
+    if (IsArrowFeature(feature)) {
       s = 'arrow';
     } else {
       s = 'polyline';
