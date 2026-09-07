@@ -329,4 +329,10 @@ namespace OrthancWSI
 
     return found;
   }
+
+
+  bool HierarchicalTiff::LookupObjectiveLensPower(float& power) const
+  {
+    return false;  // TODO - Some basic support for TIFF tags could be inserted here
+  }
 }

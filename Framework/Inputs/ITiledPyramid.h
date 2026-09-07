@@ -72,5 +72,7 @@ namespace OrthancWSI
     virtual Orthanc::PhotometricInterpretation GetPhotometricInterpretation() const = 0;
 
     virtual BackgroundColor GetBackgroundColor() const = 0;
+
+    virtual bool LookupObjectiveLensPower(float& power) const = 0;
   };
 }

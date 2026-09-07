@@ -100,6 +100,13 @@ static void DescribePyramid(Json::Value& result,
 
   // New in WSI 2.1 (Default background is white)
   result["BackgroundColor"] = pyramid.GetBackgroundColor().ToHexadecimalString(255, 255, 255);
+
+  // New in WSI 4.0
+  float power;
+  if (pyramid.LookupObjectiveLensPower(power))
+  {
+    result["ObjectiveLensPower"] = power;
+  }
 }
 
 

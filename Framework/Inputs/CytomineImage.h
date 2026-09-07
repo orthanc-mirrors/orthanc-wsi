@@ -96,5 +96,10 @@ namespace OrthancWSI
     {
       return 0;  // Image is stored on the remote Cytomine server
     }
+
+    virtual bool LookupObjectiveLensPower(float& power) const ORTHANC_OVERRIDE
+    {
+      return false;
+    }
   };
 }

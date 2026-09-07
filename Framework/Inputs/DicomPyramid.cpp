@@ -298,4 +298,33 @@ namespace OrthancWSI
 
     return found;
   }
+
+
+  bool DicomPyramid::LookupObjectiveLensPower(float& power) const
+  {
+    bool found = false;
+
+    for (size_t i = 0; i < instances_.size(); i++)
+    {
+      assert(instances_[i] != NULL);
+
+      float tmp;
+      if (instances_[i]->IsLevel(0) &&  // Only consider the finest level
+          instances_[i]->LookupObjectiveLensPower(tmp))
+      {
+        if (!found)
+        {
+          found = true;
+          power = tmp;
+        }
+        else if (!ImageToolbox::IsNear(power, tmp))
+        {
+          LOG(WARNING) << "Inconsistency of objective lens power in series: " << seriesId_;
+          return false;
+        }
+      }
+    }
+
+    return found;
+  }
 }

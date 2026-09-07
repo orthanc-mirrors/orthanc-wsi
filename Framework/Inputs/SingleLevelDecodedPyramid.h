@@ -86,5 +86,10 @@ namespace OrthancWSI
     {
       return image_.GetSize();
     }
+
+    virtual bool LookupObjectiveLensPower(float& power) const ORTHANC_OVERRIDE
+    {
+      return false;
+    }
   };
 }
