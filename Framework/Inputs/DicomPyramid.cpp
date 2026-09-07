@@ -39,8 +39,8 @@ namespace OrthancWSI
 {
   struct DicomPyramid::Comparator
   {
-    bool operator() (DicomPyramidInstance* const& a,
-                     DicomPyramidInstance* const& b) const
+    bool operator() (const DicomPyramidInstance* const& a,
+                     const DicomPyramidInstance* const& b) const
     {
       return a->GetTotalWidth() > b->GetTotalWidth();
     }

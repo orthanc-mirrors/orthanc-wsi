@@ -31,6 +31,23 @@ DownloadPackage(
   "${BASE_URL}/bootstrap-5.3.3.zip"
   "${CMAKE_CURRENT_BINARY_DIR}/bootstrap-5.3.3")
 
+DownloadPackage(
+  "6e819ef7fcd49bb13cf809fd8c5fb20b"
+  "${BASE_URL}/bootstrap-icons-1.13.1.zip"
+  "${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1")
+
+DownloadPackage(
+  "8242afdc5bd44105d9dc9e6535315484"
+  "${BASE_URL}/dicom-web/vuejs-2.6.10.tar.gz"
+  "${CMAKE_CURRENT_BINARY_DIR}/vue-2.6.10")
+
+# axios v0.31.0 is the last release before Axios removed the committed dist/ artifacts
+# https://github.com/axios/axios/releases?page=2#release-v0.31.0
+DownloadPackage(
+  "e1fe2cd9270b513874aea946977f2d47"
+  "${BASE_URL}/axios-0.31.0.tar.gz"
+  "${CMAKE_CURRENT_BINARY_DIR}/axios-0.31.0")
+
 # curl -L https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js | gzip > /tmp/popper-2.11.8.min.js.gz
 
 DownloadCompressedFile(
@@ -38,17 +55,30 @@ DownloadCompressedFile(
   "${BASE_URL}/WSI/popper-2.11.8.min.js.gz"
   "${CMAKE_CURRENT_BINARY_DIR}/popper.min.js")
 
+DownloadFile(
+  "aa2c54fdbbbeb1bb056793ec480928eb"
+  "${BASE_URL}/WSI/modern-screenshot-4.7.0.js")
+
 
 set(JAVASCRIPT_LIBS_DIR  ${CMAKE_CURRENT_BINARY_DIR}/javascript-libs)
 file(MAKE_DIRECTORY ${JAVASCRIPT_LIBS_DIR})
 
 
 file(COPY
+  ${CMAKE_CURRENT_BINARY_DIR}/axios-0.31.0/dist/axios.min.js
+  ${CMAKE_CURRENT_BINARY_DIR}/axios-0.31.0/dist/axios.min.js.map
   ${CMAKE_CURRENT_BINARY_DIR}/bootstrap-5.3.3/dist/js/bootstrap.min.js
   ${CMAKE_CURRENT_BINARY_DIR}/openlayers-10.6.1-package/dist/ol.js
   ${CMAKE_CURRENT_BINARY_DIR}/popper.min.js
+  ${CMAKE_CURRENT_BINARY_DIR}/vue-2.6.10/dist/vue.min.js
+  ${CMAKE_SOURCE_DIR}/ThirdPartyDownloads/modern-screenshot-4.7.0.js
   DESTINATION
   ${JAVASCRIPT_LIBS_DIR}/js
+  )
+
+file(RENAME
+  ${JAVASCRIPT_LIBS_DIR}/js/modern-screenshot-4.7.0.js
+  ${JAVASCRIPT_LIBS_DIR}/js/modern-screenshot.js
   )
 
 file(COPY
@@ -56,4 +86,34 @@ file(COPY
   ${CMAKE_CURRENT_BINARY_DIR}/openlayers-10.6.1-package/ol.css
   DESTINATION
   ${JAVASCRIPT_LIBS_DIR}/css
+  )
+
+file(COPY
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/arrow-clockwise.svg
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/arrow-up-right.svg
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/arrows-fullscreen.svg
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/arrows-move.svg
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/arrows.svg
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/brightness-high.svg
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/camera.svg
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/chevron-compact-left.svg
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/chevron-compact-right.svg
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/circle.svg
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/cloud-download.svg
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/eye-slash.svg
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/eye.svg
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/file-earmark-plus.svg
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/geo-alt.svg
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/hand-index.svg
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/pen.svg
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/pentagon.svg
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/share.svg
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/square.svg
+  ${CMAKE_CURRENT_BINARY_DIR}/icons-1.13.1/icons/trash.svg
+
+  ${CMAKE_CURRENT_LIST_DIR}/../Icons/freehand-area-svgrepo-com.svg
+  ${CMAKE_CURRENT_LIST_DIR}/../Icons/freehand-svgrepo-com.svg
+
+  DESTINATION
+  ${JAVASCRIPT_LIBS_DIR}/svg
   )

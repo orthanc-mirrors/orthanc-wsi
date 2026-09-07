@@ -86,7 +86,7 @@ namespace OrthancWSI
                            unsigned int tileHeight,
                            Orthanc::PhotometricInterpretation photometric);
 
-    virtual ~HierarchicalTiffWriter();
+    virtual ~HierarchicalTiffWriter() ORTHANC_OVERRIDE;
 
     virtual void Flush() ORTHANC_OVERRIDE;
   };

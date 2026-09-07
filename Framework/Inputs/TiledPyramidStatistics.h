@@ -40,7 +40,7 @@ namespace OrthancWSI
   public:
     explicit TiledPyramidStatistics(ITiledPyramid& source);   // Takes ownership
 
-    virtual ~TiledPyramidStatistics();
+    virtual ~TiledPyramidStatistics() ORTHANC_OVERRIDE;
 
     virtual unsigned int GetLevelCount() const ORTHANC_OVERRIDE
     {

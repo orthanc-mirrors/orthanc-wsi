@@ -3,7 +3,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Orthanc for Whole-Slide Imaging</title>
 
     <link rel="stylesheet" href="../libs/css/bootstrap.min.css" type="text/css">
@@ -14,6 +14,7 @@
       body {
           margin: 0;
           height: 100%;
+          overflow: hidden;
       }
 
       #map {
@@ -23,41 +24,682 @@
           width: 100%;
       }
 
-      .ol-rotate {
-          top: 4em;
-          left: .5em;
-          right: initial;
+      #toolbar-left { /* the top/left coordinates are adjusted in JavaScript */
+          position: absolute;
+          z-index: 20;
       }
+
+      #toolbar-left .ol-rotate {
+          right: auto;
+      }
+
+      #toolbar-top { /* the top/left coordinates are adjusted in JavaScript */
+          padding-left: 1em;
+          position: absolute;
+          z-index: 20;
+      }
+
+      .icon-btn { /* the width and height can be adjusted in JavaScript */
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 3px;
+      }
+
+      .icon-btn:disabled {
+          opacity: 100%;
+          background-color: white;
+      }
+
+      .btn-outline-secondary {
+          background-color: white;  /* make the toolbar buttons opaque */
+      }
+
+      .offcanvas {
+          background-color: #E5E5E5;
+      }
+
+      th {
+          background-color: transparent !important;
+      }
+
+      td {
+          background-color: transparent !important;
+      }
+
+      #right-panel {
+          --bs-offcanvas-width: 300px;
+          --bs-offcanvas-border-width: 0;
+          /*transition: 0.1s ease-in-out;*/   /* this gives a fast animation */
+          /*transition: none;*/   /* this removes the animation */
+      }
+
+      #right-panel-toggle {
+          position: fixed;
+          top: 0;
+          bottom: 0;
+          z-index: 20;
+          border-radius: 4px 0 0 4px;
+          border-right: none;
+          opacity: 0.75;
+          padding: 0px;
+      }
+
+      .ol-attribution {
+          right: 20px !important;  /* keep the description out of the vertical toggle button */
+      }
+
+      /* Bootstrap Icons */
+      .bi {
+          display: inline-block;
+          width: 1em;
+          height: 1em;
+          background-color: currentColor;
+          -webkit-mask-size: 100% 100%;
+          mask-size: 100% 100%;
+          -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+      }
+
+      /* The used icons must be added to ../Resources/CMake/JavaScriptLibraries.cmake */
+      .bi-arrow-clockwise       { -webkit-mask-image: url("../libs/svg/arrow-clockwise.svg"); mask-image: url("../libs/svg/arrow-clockwise.svg"); }
+      .bi-arrow-up-right        { -webkit-mask-image: url("../libs/svg/arrow-up-right.svg"); mask-image: url("../libs/svg/arrow-up-right.svg"); }
+      .bi-arrows                { -webkit-mask-image: url("../libs/svg/arrows.svg"); mask-image: url("../libs/svg/arrows.svg"); }
+      .bi-arrows-fullscreen     { -webkit-mask-image: url("../libs/svg/arrows-fullscreen.svg"); mask-image: url("../libs/svg/arrows-fullscreen.svg"); }
+      .bi-arrows-move           { -webkit-mask-image: url("../libs/svg/arrows-move.svg"); mask-image: url("../libs/svg/arrows-move.svg"); }
+      .bi-brightness-high       { -webkit-mask-image: url("../libs/svg/brightness-high.svg"); mask-image: url("../libs/svg/brightness-high.svg"); }
+      .bi-camera                { -webkit-mask-image: url("../libs/svg/camera.svg"); mask-image: url("../libs/svg/camera.svg"); }
+      .bi-chevron-compact-left  { -webkit-mask-image: url("../libs/svg/chevron-compact-left.svg"); mask-image: url("../libs/svg/chevron-compact-left.svg"); }
+      .bi-chevron-compact-right { -webkit-mask-image: url("../libs/svg/chevron-compact-right.svg"); mask-image: url("../libs/svg/chevron-compact-right.svg"); }
+      .bi-circle                { -webkit-mask-image: url("../libs/svg/circle.svg"); mask-image: url("../libs/svg/circle.svg"); }
+      .bi-cloud-download        { -webkit-mask-image: url("../libs/svg/cloud-download.svg"); mask-image: url("../libs/svg/cloud-download.svg"); }
+      .bi-eye                   { -webkit-mask-image: url("../libs/svg/eye.svg"); mask-image: url("../libs/svg/eye.svg"); }
+      .bi-eye-slash             { -webkit-mask-image: url("../libs/svg/eye-slash.svg"); mask-image: url("../libs/svg/eye-slash.svg"); }
+      .bi-file-earmark-plus     { -webkit-mask-image: url("../libs/svg/file-earmark-plus.svg"); mask-image: url("../libs/svg/file-earmark-plus.svg"); }
+      .bi-freehand-closed       { -webkit-mask-image: url("../libs/svg/freehand-area-svgrepo-com.svg"); mask-image: url("../libs/svg/freehand-area-svgrepo-com.svg"); }
+      .bi-freehand-line         { -webkit-mask-image: url("../libs/svg/freehand-svgrepo-com.svg"); mask-image: url("../libs/svg/freehand-svgrepo-com.svg"); }
+      .bi-geo-alt               { -webkit-mask-image: url("../libs/svg/geo-alt.svg"); mask-image: url("../libs/svg/geo-alt.svg"); }
+      .bi-hand-index            { -webkit-mask-image: url("../libs/svg/hand-index.svg"); mask-image: url("../libs/svg/hand-index.svg"); }
+      .bi-pen                   { -webkit-mask-image: url("../libs/svg/pen.svg"); mask-image: url("../libs/svg/pen.svg"); }
+      .bi-pentagon              { -webkit-mask-image: url("../libs/svg/pentagon.svg"); mask-image: url("../libs/svg/pentagon.svg"); }
+      .bi-share                 { -webkit-mask-image: url("../libs/svg/share.svg"); mask-image: url("../libs/svg/share.svg"); }
+      .bi-square                { -webkit-mask-image: url("../libs/svg/square.svg"); mask-image: url("../libs/svg/square.svg"); }
+      .bi-trash                 { -webkit-mask-image: url("../libs/svg/trash.svg"); mask-image: url("../libs/svg/trash.svg"); }
+
+
+      .ol-scale-magnification {
+          color: #000;
+          font-size: 12px;
+          text-align: center;
+          margin-top: 2px;
+      }
+
     </style>
 
   </head>
   <body>
-    <div id="map">
-    </div>
+    <div id="app">
+      <div id="map" :style="{ background: mapBackground }">
+        <div id="toolbar-top" style="display:none" v-show="toolbarsVisible">
+          <div class="btn-group" role="group" v-if="workspaceInfo.enabled">
+            <button type="button" class="btn btn-outline-secondary icon-btn"
+                    :class="{ active: activeDrawTool === 'select' }"
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Select annotation"
+                    v-on:click="ToggleSelectTool()">
+              <i class="bi bi-hand-index"></i>
+            </button>
 
-    <div style="display:none">
-      <div id="popover-content">
-        <div class="container">
-          <div class="row mb-2">
-            <div class="btn-group btn-group-sm" role="group">
-              <button type="button" class="btn btn-outline-dark" id="rotation-reset">Reset</button>
-              <button type="button" class="btn btn-outline-dark" id="rotation-plus90">+90&deg;</button>
-              <button type="button" class="btn btn-outline-dark" id="rotation-minus90">-90&deg;</button>
+            <button type="button" class="btn btn-outline-secondary icon-btn"
+                    :class="{ active: activeDrawTool === 'line' }"
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draw line"
+                    v-on:click="ToggleDrawTool('line')">
+              <i class="bi bi-arrows"></i>
+            </button>
+
+            <button type="button" class="btn btn-outline-secondary icon-btn"
+                    :class="{ active: activeDrawTool === 'point' }"
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draw point"
+                    v-on:click="ToggleDrawTool('point')">
+              <i class="bi bi-geo-alt"></i>
+            </button>
+
+            <button type="button" class="btn btn-outline-secondary icon-btn"
+                    :class="{ active: activeDrawTool === 'circle' }"
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draw circle"
+                    v-on:click="ToggleDrawTool('circle')">
+              <i class="bi bi-circle"></i>
+            </button>
+
+            <button type="button" class="btn btn-outline-secondary icon-btn"
+                    :class="{ active: activeDrawTool === 'rectangle' }"
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draw rectangle"
+                    v-on:click="ToggleDrawTool('rectangle')">
+              <i class="bi bi-square"></i>
+            </button>
+
+            <button type="button" class="btn btn-outline-secondary icon-btn"
+                    :class="{ active: activeDrawTool === 'closed-polygon' }"
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draw closed polygon"
+                    v-on:click="ToggleDrawTool('closed-polygon')">
+              <i class="bi bi-pentagon"></i>
+            </button>
+
+            <button type="button" class="btn btn-outline-secondary icon-btn"
+                    :class="{ active: activeDrawTool === 'freehand-line' }"
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draw freehand line"
+                    v-on:click="ToggleDrawTool('freehand-line')">
+              <i class="bi bi-freehand-line"></i>
+            </button>
+
+            <button type="button" class="btn btn-outline-secondary icon-btn"
+                    :class="{ active: activeDrawTool === 'freehand' }"
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draw freehand closed polygon"
+                    v-on:click="ToggleDrawTool('freehand')">
+              <i class="bi bi-freehand-closed"></i>
+            </button>
+
+            <button type="button" class="btn btn-outline-secondary icon-btn"
+                    :class="{ active: activeDrawTool === 'arrow' }"
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draw arrow"
+                    v-on:click="ToggleDrawTool('arrow')">
+              <i class="bi bi-arrow-up-right"></i>
+            </button>
+          </div>
+
+          <div class="btn-group" role="group" v-if="workspaceInfo.enabled">
+            <button type="button" class="btn btn-outline-secondary icon-btn"
+                    :class="{ active: activeDrawTool === 'move' }"
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Move annotation"
+                    v-on:click="ToggleDrawTool('move')">
+              <i class="bi bi-arrows-move"></i>
+            </button>
+
+            <button type="button" class="btn btn-outline-secondary icon-btn"
+                    :class="{ active: activeDrawTool === 'modify' }"
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Modify points"
+                    v-on:click="ToggleDrawTool('modify')">
+              <i class="bi bi-pen"></i>
+            </button>
+
+            <button type="button" class="btn btn-outline-secondary icon-btn"
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Delete selected annotation"
+                    v-bind:disabled="selectedFeature === null || selectedFeature.get('layer-id') !== activeUserLayerId"
+                    v-on:click="DeleteSelectedAnnotation()">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+
+          <div class="alert alert-danger alert-dismissible d-inline-block py-0" role="alert"
+               v-if="workspaceInfo.enabled && !workspaceInfo.persistent">
+            Your annotations will not be saved
+            <button type="button" class="btn-close top-50 translate-middle-y" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        </div>
+
+        <div id="toolbar-left" style="display:none" v-show="toolbarsVisible">
+          <div id="toolbar-left-content" style="position:absolute; display:flex; flex-direction:column; align-items:center;">
+            <div class="btn-group-vertical" role="group" style="padding-top: 1em">
+              <button type="button" class="btn btn-outline-secondary p-0" v-if="showMagnificationButtons"
+                      data-bs-toggle="tooltip" data-bs-placement="right" title="Set magnification level to 1x"
+                      v-on:click="SetMagnification(map, referenceMagnification, 1)">
+                <small>1x</small>
+              </button>
+
+              <button type="button" class="btn btn-outline-secondary p-0" v-if="showMagnificationButtons"
+                      data-bs-toggle="tooltip" data-bs-placement="right" title="Set magnification level to 4x"
+                      v-on:click="SetMagnification(map, referenceMagnification, 4)">
+                <small>4x</small>
+              </button>
+
+              <button type="button" class="btn btn-outline-secondary p-0" v-if="showMagnificationButtons"
+                      data-bs-toggle="tooltip" data-bs-placement="right" title="Set magnification level to 10x"
+                      v-on:click="SetMagnification(map, referenceMagnification, 10)">
+                <small>10x</small>
+              </button>
+
+              <button type="button" class="btn btn-outline-secondary p-0" v-if="showMagnificationButtons"
+                      data-bs-toggle="tooltip" data-bs-placement="right" title="Set magnification level to 20x"
+                      v-on:click="SetMagnification(map, referenceMagnification, 20)">
+                <small>20x</small>
+              </button>
+
+              <button type="button" class="btn btn-outline-secondary p-0" v-if="showMagnificationButtons"
+                      data-bs-toggle="tooltip" data-bs-placement="right" title="Set magnification level to 40x"
+                      v-on:click="SetMagnification(map, referenceMagnification, 40)">
+                <small>40x</small>
+              </button>
+
+              <button type="button" class="btn btn-outline-secondary d-inline-flex" id="button-adjustments">
+                <i class="bi bi-brightness-high"></i>
+              </button>
+
+              <button type="button" class="btn btn-outline-secondary d-inline-flex"
+                      data-bs-toggle="tooltip" data-bs-placement="right" title="Take a screenshot"
+                      v-on:click="TakeScreenshot()">
+                <i class="bi bi-camera"></i>
+              </button>
+            </div>
+            <div id="toolbar-spinner" v-show="showSpinner" style="padding-top:1em;">
+              <div class="spinner-border spinner-border-sm text-secondary" role="status">
+                <span class="visually-hidden">Saving...</span>
+              </div>
             </div>
           </div>
-          <div class="row">
-            <input type="range" class="form-range" min="-180" max="180" id="rotation-slider">
+        </div>
+      </div>
+
+      <div class="offcanvas offcanvas-end" data-bs-backdrop="false" data-bs-scroll="true"
+           tabindex="-1" id="right-panel" v-show="workspaceInfo.enabled">
+        <div class="offcanvas-header">
+          <h5 class="offcanvas-title">Annotations</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body p-2">
+          <h5 v-if="workspaceInfo.name !== ''">{{ workspaceInfo.name }}</h5>
+
+          <p v-if="workspaceInfo.description !== ''">
+            <small>{{ workspaceInfo.description }}</small>
+          </p>
+
+          <p v-if="workspaceInfo.user !== ''">
+            <small>Logged as:</small>
+            <span class="badge bg-secondary">{{ workspaceInfo.user }}</span>
+          </p>
+
+          <div class="d-flex align-items-center mb-1">
+            <h5>User layers</h5>
+            <button type="button" class="btn btn-primary btn-sm ms-auto"
+                    v-on:click="CreateUserLayer()">
+              <i class="bi bi-file-earmark-plus"></i>
+              Create
+            </button>
+          </div>
+          <table class="table table-sm table-borderless mb-0 align-middle">
+            <thead class="small text-muted">
+              <tr>
+                <th class="p-0 text-center fw-normal" title="Editing layer">E</th>
+                <th class="p-0 text-center fw-normal" title="Visible">V</th>
+                <th class="p-0 text-center fw-normal" title="Color">C</th>
+                <th class="px-1 py-0 fw-normal">Name</th>
+                <th class="p-0 text-center fw-normal" title="Share layer with other users"
+                    v-if="workspaceInfo.sharing">S</th>
+                <th class="p-0"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="layer in userLayers">
+                <td class="text-center align-middle p-0">
+                  <input type="radio" class="form-check-input m-0"
+                         v-bind:checked="activeUserLayerId === layer.id"
+                         v-on:change="activeUserLayerId = layer.id">
+                </td>
+                <td class="text-center align-middle p-0">
+                  <button type="button" class="btn btn-link p-1" style="color:inherit">
+                    <i class="bi"
+                       :class="layer.visible ? 'bi-eye' : 'bi-eye-slash'"
+                       v-on:click="layer.visible = !layer.visible; drawLayer.changed(); SaveUserLayer(layer)"
+                       ></i>
+                  </button>
+                </td>
+                <td class="text-center align-middle p-0">
+                  <input type="color" style="width:22px;height:22px;padding:1px;border:none;cursor:pointer;border-radius:3px"
+                         v-model:value="layer.color"
+                         v-on:input="drawLayer.changed()"
+                         v-on:change="SaveUserLayer(layer)">
+                </td>
+                <td class="align-middle px-1 py-0">
+                  <input type="text" class="form-control form-control-sm py-0"
+                         v-model:value="layer.name"
+                         v-on:change="SaveUserLayer(layer)">
+                </td>
+                <td class="text-center align-middle p-0" v-if="workspaceInfo.sharing">
+                  <button type="button" class="btn btn-link p-1"
+                          v-on:click="ShowShareUserLayerModal(layer)">
+                    <i class="bi bi-share"></i>
+                  </button>
+                </td>
+                <td class="text-center align-middle p-0">
+                  <button type="button" class="btn btn-link p-0"
+                          :class="userLayers.length <= 1 ? 'text-muted' : 'text-danger'"
+                          v-bind:disabled="userLayers.length <= 1"
+                          v-on:click="DeleteUserLayer(layer.id)">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <hr class="my-4">
+
+          <div class="d-flex align-items-center mb-1" v-if="workspaceInfo.sharing">
+            <h5>Imported layers</h5>
+            <button type="button" class="btn btn-primary btn-sm ms-auto"
+                    v-on:click="ShowImportLayerModal()">
+              <i class="bi bi-cloud-download"></i>
+              Import
+            </button>
+          </div>
+
+          <table class="table table-sm table-borderless mb-3 align-middle" v-if="workspaceInfo.sharing">
+            <thead class="small text-muted">
+              <tr>
+                <th class="p-0 text-center fw-normal" title="Visible">V</th>
+                <th class="p-0 text-center fw-normal" title="Color">C</th>
+                <th class="px-1 py-0 fw-normal" style="width:100%">Name</th>
+                <th class="p-0"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="layer in importedLayers">
+                <td class="text-center align-middle p-0">
+                  <button type="button" class="btn btn-link p-1" style="color:inherit">
+                    <i class="bi"
+                       :class="layer.visible ? 'bi-eye' : 'bi-eye-slash'"
+                       v-on:click="layer.visible = !layer.visible; drawImportedLayer.changed(); SaveImportedLayer(layer)"
+                       ></i>
+                  </button>
+                </td>
+                <td class="text-center align-middle p-0">
+                  <input type="color" style="width:22px;height:22px;padding:1px;border:none;cursor:pointer;border-radius:3px"
+                         v-model:value="layer.color"
+                         v-on:input="drawImportedLayer.changed()"
+                         v-on:change="SaveImportedLayer(layer)">
+                </td>
+                <td class="align-middle px-1 py-0">
+                  <span class="small d-block">{{layer.name}}</span>
+                  <span class="badge bg-secondary">{{ layer.author.name }}</span>
+                </td>
+                <td class="text-center align-middle p-0">
+                  <button type="button" class="btn btn-link p-0"
+                          v-on:click="DeleteImportedLayer(layer.id)">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <button class="btn btn-sm btn-primary w-100 mb-2" v-on:click="ReloadImportedFeatures()"
+                  v-if="workspaceInfo.sharing && importedLayers.length > 0">
+            <i class="bi bi-arrow-clockwise me-2 align-middle"></i> Reload imported content
+          </button>
+
+          <hr class="my-4" v-if="workspaceInfo.sharing">
+
+          <div v-show="selectedFeature !== null" class="mb-3">
+            <h5>Current selection</h5>
+            <button class="btn btn-sm btn-primary w-100 mb-2" v-on:click="FocusAnnotation()">
+              <i class="bi bi-arrows-fullscreen me-2 align-middle"></i> Focus on annotation
+            </button>
+            <div>
+              <template v-for="prop in annotationProperties">
+                <div v-if="prop.type === 'readonly'" class="d-flex align-items-baseline border-bottom py-1 gap-2">
+                  <span class="text-muted small flex-shrink-0" style="width:5em">{{prop.label}}</span>
+                  <span class="text-break small">{{prop.value}}</span>
+                </div>
+                <div v-else-if="prop.type === 'readonly-textarea'" class="d-flex align-items-start border-bottom py-1 gap-2">
+                  <label class="text-muted small flex-shrink-0 mt-1 mb-0" style="width:5em">{{prop.label}}</label>
+                  <textarea class="form-control form-control-sm small flex-grow-1"
+                            rows="3"
+                            readonly
+                            style="background-color: transparent;"
+                            v-model="prop.value"></textarea>
+                </div>
+                <div v-else-if="prop.type === 'editable'" class="d-flex align-items-center border-bottom py-1 gap-2">
+                  <label class="text-muted small flex-shrink-0 mb-0" style="width:5em">{{prop.label}}</label>
+                  <input type="text" class="form-control form-control-sm small flex-grow-1"
+                         v-model="prop.value"
+                         v-on:change="UpdateAnnotationProperty(prop)">
+                </div>
+                <div v-else-if="prop.type === 'editable-textarea'" class="d-flex align-items-start border-bottom py-1 gap-2">
+                  <label class="text-muted small flex-shrink-0 mt-1 mb-0" style="width:5em">{{prop.label}}</label>
+                  <textarea class="form-control form-control-sm small flex-grow-1"
+                            rows="3"
+                            v-model="prop.value"
+                            v-on:change="UpdateAnnotationProperty(prop)"></textarea>
+                </div>
+                <div v-else-if="prop.type === 'dropdown'" class="d-flex align-items-center border-bottom py-1 gap-2">
+                  <label class="text-muted small flex-shrink-0 mb-0" style="width:5em">{{prop.label}}</label>
+                  <select class="form-select form-select-sm small flex-grow-1"
+                          v-model="prop.value"
+                          v-on:change="UpdateAnnotationProperty(prop)">
+                    <option v-for="opt in prop.options" :value="opt.value">{{opt.label}}</option>
+                  </select>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button id="right-panel-toggle" type="button" class="btn btn-secondary"
+              style="display:none" v-show="workspaceInfo.enabled && toolbarsVisible"
+              data-bs-toggle="offcanvas" data-bs-target="#right-panel">
+        <i class="bi" :class="panelOpen ? 'bi-chevron-compact-right' : 'bi-chevron-compact-left'"></i>
+      </button>
+
+
+      <!-- Confirmation modal for annotation deletion -->
+      <div class="modal fade" id="modal-delete-annotation" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+          <div class="modal-content">
+            <div class="modal-body">
+              Delete this annotation?
+            </div>
+            <div class="modal-footer py-1">
+              <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-sm btn-danger" v-on:click="ConfirmDeleteAnnotation()">Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- Confirmation modal for user layer deletion -->
+      <div class="modal fade" id="modal-delete-user-layer" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+          <div class="modal-content">
+            <div class="modal-body">
+              Delete this layer and all its annotations?
+            </div>
+            <div class="modal-footer py-1">
+              <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-sm btn-danger" v-on:click="UserLayerDeleteConfirmed()">Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- Confirmation modal for imported layer deletion -->
+      <div class="modal fade" id="modal-delete-imported-layer" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+          <div class="modal-content">
+            <div class="modal-body">
+              Remove this imported layer?
+            </div>
+            <div class="modal-footer py-1">
+              <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-sm btn-danger" v-on:click="ImportedLayerDeleteConfirmed()">Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- Modal to configure the sharing of a user layer -->
+      <div class="modal fade" id="modal-share-user-layer" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+          <div class="modal-content">
+            <div class="modal-header py-2">
+              <h5 class="modal-title fs-6">Sharing parameters of layer "{{shareLayerTarget.name}}"</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+
+              <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="share-layer-public"
+                       v-model="shareLayerPublic">
+                <label class="form-check-label" for="share-layer-public">
+                  <span v-if="workspaceInfo.is_instructor">Make this layer public (accessible to any instructor or learner)</span>
+                  <span v-if="workspaceInfo.is_learner">Make this layer visible to instructors</span>
+                </label>
+              </div>
+
+              <label class="form-label small mb-1">
+                <span v-if="shareLayerCanAddLearner">Shared with specific learners or instructors:</span>
+                <span v-if="!shareLayerCanAddLearner">Shared with specific instructors (learners in this list are ignored):</span>
+              </label>
+              <div class="mb-3 border rounded p-2" style="min-height:2.5em; max-height:8em; overflow-y:auto">
+                <span v-if="shareLayerUsers.length === 0" class="text-muted small">No users added</span>
+                <span v-for="(user, index) in shareLayerUsers" :key="user.name"
+                      class="badge bg-secondary me-1 mb-1"
+                      style="cursor:pointer"
+                      v-on:click="shareLayerUsers.splice(index, 1); shareLayerSearchQuery = ''; shareLayerSearchResults = [];"
+                      :title="'Remove ' + user.name">
+                  {{ user.name }} &times;
+                </span>
+              </div>
+
+              <label class="form-label small mb-1">
+                <span v-if="shareLayerCanAddLearner">Add learner or instructor:</span>
+                <span v-if="!shareLayerCanAddLearner">Add instructor:</span>
+              </label>
+              <div class="input-group input-group-sm mb-1">
+                <input type="text" class="form-control" placeholder="Type to search or enter a user ID..."
+                       v-model="shareLayerSearchQuery"
+                       v-on:input="ShareLayerSearchUsers()"
+                       v-on:keydown.enter="ShareLayerAddStandardUser(shareLayerSearchQuery)">
+                <button class="btn btn-outline-secondary" type="button"
+                        v-on:click="ShareLayerAddStandardUser(shareLayerSearchQuery)">Add</button>
+              </div>
+              <div v-if="shareLayerSearchResults.length > 0"
+                   class="list-group list-group-flush mt-1 border rounded"
+                   style="max-height:8em; overflow-y:auto">
+                <button type="button"
+                        class="list-group-item list-group-item-action py-1 small"
+                        v-for="user in shareLayerSearchResults"
+                        :key="user.name"
+                        v-on:click="ShareLayerAddUser(user)">
+                  {{ user.name }}
+                </button>
+              </div>
+
+            </div>
+            <div class="modal-footer py-1">
+              <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-sm btn-primary" v-on:click="ShareLayerSave()">Save</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- Modal to import a layer from another user -->
+      <div class="modal fade" id="modal-import-layer" tabindex="-1">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header py-2">
+              <h5 class="modal-title fs-6">Import shared layer</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-2">
+                <label class="form-label small mb-1">User</label>
+                <input type="text" class="form-control form-control-sm"
+                       placeholder="Type to search a user..."
+                       v-model="importUserSearchQuery"
+                       v-on:input="ImportUserSearchChanged()">
+                <div v-if="importUserSearchResults.length > 0"
+                     class="list-group list-group-flush mt-1 border rounded"
+                     style="max-height:8em; overflow-y:auto">
+                  <button type="button"
+                          class="list-group-item list-group-item-action py-1 small"
+                          v-for="user in importUserSearchResults"
+                          :key="user.name"
+                          v-on:click="ImportUserSelect(user)">
+                    {{ user.name }}
+                  </button>
+                </div>
+                <div v-if="importSelectedUser" class="mt-1 small text-muted">
+                  Selected: <strong>{{ importSelectedUser.name }}</strong>
+                </div>
+              </div>
+              <div v-show="importSelectedUser !== ''">
+                <label class="form-label small mb-1">Layer</label>
+                <select class="form-select form-select-sm" v-model="importSelectedLayer">
+                  <option value="">Select a layer...</option>
+                  <option v-for="layer in importAvailableLayers" :value="layer.id">{{layer.name}}</option>
+                </select>
+              </div>
+            </div>
+            <div class="modal-footer py-1">
+              <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-sm btn-primary"
+                      :disabled="!importSelectedLayer"
+                      v-on:click="ImportLayerConfirmed()">Import</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <div style="display:none">
+        <div id="popover-rotate">
+          <div class="container">
+            <div class="row mb-2">
+              <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-outline-dark" v-on:click="ResetRotation()">Reset</button>
+                <button type="button" class="btn btn-outline-dark" v-on:click="RotateBy(90)">+90&deg;</button>
+                <button type="button" class="btn btn-outline-dark" v-on:click="RotateBy(-90)">-90&deg;</button>
+              </div>
+            </div>
+            <div class="row">
+              <input type="range" class="form-range" min="-180" max="180"
+                     v-model.number="rotationDeg"
+                     v-on:input="SetMapRotation()" v-on:change="SetMapRotation()">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:none">
+        <div id="popover-adjustments">
+          <div class="container">
+            <div class="mb-1">
+              <label for="range-brightness" class="form-label">Brightness: <b class="ps-2">{{brightness}}</b></label>
+              <input id="range-brightness" type="range" class="form-range" min="-100" max="100" step="1"
+                     v-model.number="brightness" v-on:input="map.render()">
+            </div>
+            <div class="mb-1">
+              <label for="range-contrast" class="form-label">Contrast: <b class="ps-2">{{contrast}}</b></label>
+              <input id="range-contrast" type="range" class="form-range" min="-100" max="100" step="1"
+                     v-model.number="contrast" v-on:input="map.render()">
+            </div>
+            <div class="mb-1">
+              <label for="range-saturation" class="form-label">Saturation: <b class="ps-2">{{saturation}}</b></label>
+              <input id="range-saturation" type="range" class="form-range" min="-100" max="100" step="1"
+                     v-model.number="saturation" v-on:input="map.render()">
+            </div>
+            <div class="d-grid">
+              <button class="btn btn-primary" type="button" v-on:click="ResetAdjustments()">
+                Reset
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- This is the version of jQuery that is used by Orthanc Explorer -->
-    <script src="../../app/libs/jquery.min.js"></script>
 
-    <script src="../libs/js/popper.min.js"></script>
+    <script src="../libs/js/axios.min.js"></script>
+    <script src="../libs/js/vue.min.js"></script>
+    <script src="../libs/js/popper.min.js"></script>   <!-- Popper is needed by Bootstrap (for popovers) -->
     <script src="../libs/js/bootstrap.min.js"></script>
     <script src="../libs/js/ol.js"></script>
+    <script src="../libs/js/modern-screenshot.js"></script>
+
     <script src="viewer.js"></script>
   </body>
 </html>

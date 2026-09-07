@@ -177,6 +177,10 @@ if (ORTHANC_FRAMEWORK_SOURCE STREQUAL "hg" OR
         set(ORTHANC_FRAMEWORK_MD5 "66b5a2ee60706c4a502896083b9e1a01")
       elseif (ORTHANC_FRAMEWORK_VERSION STREQUAL "1.12.10")
         set(ORTHANC_FRAMEWORK_MD5 "d5e1ba442104c89a24013cb859a9d6bf")
+      elseif (ORTHANC_FRAMEWORK_VERSION STREQUAL "1.12.11")
+        set(ORTHANC_FRAMEWORK_MD5 "389b273b64b513ba8fc3233f34201cc1")
+      elseif (ORTHANC_FRAMEWORK_VERSION STREQUAL "1.13.0")
+        set(ORTHANC_FRAMEWORK_MD5 "cc95d3e509612b541e10e91c831fbfe3")
 
       # Below this point are development snapshots that were used to
       # release some plugin, before an official release of the Orthanc
@@ -231,6 +235,16 @@ if (ORTHANC_FRAMEWORK_SOURCE STREQUAL "hg" OR
         # for BlockingSharedMessageQueue.WaitEmpty()
         set(ORTHANC_FRAMEWORK_PRE_RELEASE ON)
         set(ORTHANC_FRAMEWORK_MD5 "c037cd2ddbe1b65b431692855483161b")
+      elseif (ORTHANC_FRAMEWORK_VERSION STREQUAL "56eb61c86f93")
+        # OE2 1.11.0 (framework post-1.12.10)
+        # for HttpClient that returns the answer body in case of HTTP error
+        set(ORTHANC_FRAMEWORK_PRE_RELEASE ON)
+        set(ORTHANC_FRAMEWORK_MD5 "665f8aa70d7c5091bc20da37cf664910")
+      elseif (ORTHANC_FRAMEWORK_VERSION STREQUAL "004b351797fe")
+        # PixelsMasker 0.1.2 (framework post-1.12.11)
+        # for ScopedThreadNameSetter
+        set(ORTHANC_FRAMEWORK_PRE_RELEASE ON)
+        set(ORTHANC_FRAMEWORK_MD5 "f078ca997217b831ab3f6741f08a8c07")
       endif()
     endif()
   endif()
@@ -250,7 +264,7 @@ endif()
 
 if (ORTHANC_FRAMEWORK_SOURCE STREQUAL "hg")
   find_program(ORTHANC_FRAMEWORK_HG hg)
-  
+
   if (${ORTHANC_FRAMEWORK_HG} MATCHES "ORTHANC_FRAMEWORK_HG-NOTFOUND")
     message(FATAL_ERROR "Please install Mercurial")
   endif()
@@ -260,8 +274,8 @@ endif()
 if (ORTHANC_FRAMEWORK_SOURCE STREQUAL "archive" OR
     ORTHANC_FRAMEWORK_SOURCE STREQUAL "web")
   if ("${CMAKE_HOST_SYSTEM_NAME}" STREQUAL "Windows")
-    find_program(ORTHANC_FRAMEWORK_7ZIP 7z 
-      PATHS 
+    find_program(ORTHANC_FRAMEWORK_7ZIP 7z
+      PATHS
       "$ENV{ProgramFiles}/7-Zip"
       "$ENV{ProgramW6432}/7-Zip"
       )
@@ -289,7 +303,7 @@ if (ORTHANC_FRAMEWORK_SOURCE STREQUAL "path")
       ORTHANC_FRAMEWORK_ROOT STREQUAL "")
     message(FATAL_ERROR "The variable ORTHANC_FRAMEWORK_ROOT must provide the path to the sources of Orthanc")
   endif()
-  
+
   if (NOT EXISTS ${ORTHANC_FRAMEWORK_ROOT})
     message(FATAL_ERROR "Non-existing directory: ${ORTHANC_FRAMEWORK_ROOT}")
   endif()
@@ -314,14 +328,14 @@ if (ORTHANC_FRAMEWORK_SOURCE STREQUAL "hg")
       COMMAND ${ORTHANC_FRAMEWORK_HG} pull
       WORKING_DIRECTORY ${ORTHANC_ROOT}
       RESULT_VARIABLE Failure
-      )    
+      )
   else()
     message("Forking the Orthanc source repository using Mercurial")
     execute_process(
       COMMAND ${ORTHANC_FRAMEWORK_HG} clone "https://orthanc.uclouvain.be/hg/orthanc/"
       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
       RESULT_VARIABLE Failure
-      )    
+      )
   endif()
 
   if (Failure OR NOT EXISTS ${ORTHANC_ROOT})
@@ -384,14 +398,14 @@ if (ORTHANC_FRAMEWORK_SOURCE STREQUAL "web")
     message("Downloading: ${ORTHANC_FRAMEWORK_URL}")
 
     file(DOWNLOAD
-      "${ORTHANC_FRAMEWORK_URL}" "${ORTHANC_FRAMEWORK_ARCHIVE}" 
+      "${ORTHANC_FRAMEWORK_URL}" "${ORTHANC_FRAMEWORK_ARCHIVE}"
       SHOW_PROGRESS EXPECTED_MD5 "${ORTHANC_FRAMEWORK_MD5}"
       TIMEOUT 60
       INACTIVITY_TIMEOUT 60
       )
   else()
     message("Using local copy of: ${ORTHANC_FRAMEWORK_URL}")
-  endif()  
+  endif()
 endif()
 
 
@@ -427,7 +441,7 @@ if (ORTHANC_FRAMEWORK_SOURCE STREQUAL "archive" OR
     if (NOT ORTHANC_FRAMEWORK_ARCHIVE MATCHES ".tar.gz$")
       message(FATAL_ERROR "Archive should have the \".tar.gz\" extension: ${ORTHANC_FRAMEWORK_ARCHIVE}")
     endif()
-    
+
     message("Uncompressing: ${ORTHANC_FRAMEWORK_ARCHIVE}")
 
     if ("${CMAKE_HOST_SYSTEM_NAME}" STREQUAL "Windows")
@@ -440,7 +454,7 @@ if (ORTHANC_FRAMEWORK_SOURCE STREQUAL "archive" OR
         RESULT_VARIABLE Failure
         OUTPUT_QUIET
         )
-      
+
       if (Failure)
         message(FATAL_ERROR "Error while running the uncompression tool")
       endif()
@@ -462,7 +476,7 @@ if (ORTHANC_FRAMEWORK_SOURCE STREQUAL "archive" OR
         RESULT_VARIABLE Failure
         )
     endif()
-   
+
     if (Failure)
       message(FATAL_ERROR "Error while running the uncompression tool")
     endif()
@@ -528,10 +542,10 @@ if (ORTHANC_FRAMEWORK_SOURCE STREQUAL "system")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static-libstdc++")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libstdc++")
   endif()
-  
+
   include(CheckIncludeFile)
   include(CheckIncludeFileCXX)
-  
+
   if(CMAKE_VERSION VERSION_GREATER "3.11")
     find_package(Python REQUIRED COMPONENTS Interpreter)
     set(PYTHON_EXECUTABLE ${Python_EXECUTABLE})
@@ -539,7 +553,7 @@ if (ORTHANC_FRAMEWORK_SOURCE STREQUAL "system")
     include(FindPythonInterp)
     find_package(PythonInterp REQUIRED)
   endif()
-  
+
   include(${CMAKE_CURRENT_LIST_DIR}/Compiler.cmake)
   include(${CMAKE_CURRENT_LIST_DIR}/DownloadPackage.cmake)
   include(${CMAKE_CURRENT_LIST_DIR}/AutoGeneratedCode.cmake)
@@ -600,19 +614,19 @@ if (ORTHANC_FRAMEWORK_SOURCE STREQUAL "system")
   if (${ORTHANC_FRAMEWORK_INCLUDE_DIR} STREQUAL "ORTHANC_FRAMEWORK_INCLUDE_DIR-NOTFOUND")
     message(FATAL_ERROR "Cannot locate the OrthancFramework.h header")
   endif()
-  
+
   message("Orthanc framework include dir: ${ORTHANC_FRAMEWORK_INCLUDE_DIR}")
   include_directories(${ORTHANC_FRAMEWORK_INCLUDE_DIR})
 
   if (ORTHANC_FRAMEWORK_USE_SHARED)
     set(CMAKE_REQUIRED_INCLUDES "${ORTHANC_FRAMEWORK_INCLUDE_DIR}")
     set(CMAKE_REQUIRED_LIBRARIES "${ORTHANC_FRAMEWORK_LIBRARIES}")
-    
+
     check_cxx_symbol_exists("Orthanc::InitializeFramework" "OrthancFramework.h" HAVE_ORTHANC_FRAMEWORK)
     if (NOT HAVE_ORTHANC_FRAMEWORK)
       message(FATAL_ERROR "Cannot find the Orthanc framework")
     endif()
-    
+
     unset(CMAKE_REQUIRED_INCLUDES)
     unset(CMAKE_REQUIRED_LIBRARIES)
   endif()

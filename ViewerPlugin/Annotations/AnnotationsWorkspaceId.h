@@ -23,53 +23,50 @@
 
 #pragma once
 
+#include "UserId.h"
+
 #include <Enumerations.h>
 
-#include <stdint.h>
-#include <string>
 
 namespace OrthancWSI
 {
-  static const char* const VL_WHOLE_SLIDE_MICROSCOPY_IMAGE_STORAGE_IOD = "1.2.840.10008.5.1.4.1.1.77.1.6";
-
-  // WARNING - Don't change the enum values below, as this would break
-  // serialization of "DicomPyramidInstance"
-  enum ImageCompression
+  class AnnotationsWorkspaceId
   {
-    ImageCompression_Unknown = 1,
-    ImageCompression_None = 2,
-    ImageCompression_Dicom = 3,
-    ImageCompression_Png = 4,
-    ImageCompression_Jpeg = 5,
-    ImageCompression_Jpeg2000 = 6,
-    ImageCompression_Tiff = 7,
-    ImageCompression_UseOrthancPreview = 8,
-    ImageCompression_JpegLS = 9
-  };
+  private:
+    std::string            projectId_;
+    Orthanc::ResourceType  level_;
+    std::string            resourceId_;
+    unsigned int           frameNumber_;
 
-  enum OpticalPath
-  {
-    OpticalPath_None,
-    OpticalPath_Brightfield
-  };
+    std::string GetKeyPrefix() const;
 
-  const char* EnumerationToString(ImageCompression compression);
+  public:
+    AnnotationsWorkspaceId(const std::string& projectId,
+                           Orthanc::ResourceType level,
+                           const std::string& resourceId,
+                           unsigned int frameNumber);
 
-  ImageCompression DetectFormatFromFile(const std::string& path);
-
-  ImageCompression DetectFormatFromMemory(const void* buffer,
-                                          size_t size);
-
-  inline unsigned int CeilingDivision(unsigned int a,
-                                      unsigned int b)
-  {
-    if (a % b == 0)
+    const std::string& GetProjectId() const
     {
-      return a / b;
+      return projectId_;
     }
-    else
+
+    Orthanc::ResourceType GetLevel() const
     {
-      return a / b + 1;
+      return level_;
     }
-  }
+
+    const std::string& GetResourceId() const
+    {
+      return resourceId_;
+    }
+
+    unsigned int GetFrameNumber() const;
+
+    std::string GetInfoKey() const;
+
+    std::string GetSettingsKey(const UserId& user) const;
+
+    std::string GetFeaturesKey(const UserId& user) const;
+  };
 }

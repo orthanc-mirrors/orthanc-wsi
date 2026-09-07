@@ -243,7 +243,7 @@ namespace OrthancWSI
 #endif
 
     public:
-      OpenJpegInput(OpenJpegDecoder& decoder,
+      OpenJpegInput(const OpenJpegDecoder& decoder,
                     const void* buffer,
                     size_t size) :
         buffer_(reinterpret_cast<const uint8_t*>(buffer)),

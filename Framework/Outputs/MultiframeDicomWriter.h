@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "../Enumerations.h"
+#include "../FrameworkEnumerations.h"
 
 #include <Compatibility.h>  // For std::unique_ptr
 #include <ChunkedBuffer.h>

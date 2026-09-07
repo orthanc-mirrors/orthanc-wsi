@@ -74,6 +74,8 @@ namespace OrthancWSI
 
     std::string Format() const;
 
+    std::string ToHexadecimalString() const;  // Will throw if absent
+
     std::string ToHexadecimalString(uint8_t defaultRed,
                                     uint8_t defaultGreen,
                                     uint8_t defaultBlue) const;

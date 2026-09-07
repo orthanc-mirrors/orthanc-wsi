@@ -139,7 +139,15 @@ namespace OrthancWSI
     while (!cache_.IsEmpty())
     {
       DicomPyramid* pyramid = NULL;
-      std::string seriesId = cache_.RemoveOldest(pyramid);
+
+      try
+      {
+        /* std::string seriesId = */ cache_.RemoveOldest(pyramid);
+      }
+      catch (Orthanc::OrthancException&)
+      {
+        // Should never happen, don't throw exceptions in destructor
+      }
 
       if (pyramid != NULL)
       {
@@ -154,7 +162,7 @@ namespace OrthancWSI
   {
     if (singleton_.get() == NULL)
     {
-      singleton_.reset(new DicomPyramidCache(new OrthancWSI::OrthancPluginConnection, maxSize, useMetadataCache));
+      singleton_.reset(new DicomPyramidCache(new OrthancPluginConnection, maxSize, useMetadataCache));
     }
     else
     {

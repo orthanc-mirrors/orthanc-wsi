@@ -86,7 +86,7 @@ namespace OrthancWSI
           }
           else
           {
-            printf("ICI\n");
+            // TODO
           }
         }
       }

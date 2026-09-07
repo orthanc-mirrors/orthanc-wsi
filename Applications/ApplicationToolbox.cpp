@@ -91,7 +91,7 @@ namespace OrthancWSI
 
 
     static void PrintProgress(BagOfTasksProcessor::Handle* handle,
-                              bool* done)
+                              const bool* done)
     {
       unsigned int previous = 0;
 

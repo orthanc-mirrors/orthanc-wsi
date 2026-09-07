@@ -37,7 +37,7 @@ SET(STANDALONE_BUILD ON CACHE BOOL "Standalone build (all the resources are embe
 # Advanced parameters to fine-tune linking against system libraries
 SET(USE_SYSTEM_OPENJPEG ON CACHE BOOL "Use the system version of OpenJpeg")
 SET(USE_SYSTEM_ORTHANC_SDK ON CACHE BOOL "Use the system version of the Orthanc plugin SDK")
-set(ORTHANC_SDK_VERSION "1.7.0" CACHE STRING "Version of the Orthanc plugin SDK to use, if not using the system version (can be \"framework\" or \"1.7.0\")")
+SET(ORTHANC_SDK_VERSION "1.12.9" CACHE STRING "Version of the Orthanc plugin SDK to use, if not using the system version (can be \"framework\", \"1.7.0\", or \"1.12.9\")")
 
 
 #####################################################################
@@ -99,6 +99,8 @@ include(${ORTHANC_WSI_DIR}/Resources/CMake/OpenJpegConfiguration.cmake)
 if (STATIC_BUILD OR NOT USE_SYSTEM_ORTHANC_SDK)
   if (ORTHANC_SDK_VERSION STREQUAL "1.7.0")
     include_directories(${CMAKE_SOURCE_DIR}/../Resources/Orthanc/Sdk-1.7.0)
+  elseif (ORTHANC_SDK_VERSION STREQUAL "1.12.9")
+    include_directories(${CMAKE_SOURCE_DIR}/../Resources/Orthanc/Sdk-1.12.9)
   elseif (ORTHANC_SDK_VERSION STREQUAL "framework")
     include_directories(${ORTHANC_FRAMEWORK_ROOT}/../../OrthancServer/Plugins/Include/)
   else()
@@ -183,17 +185,33 @@ EmbedResources(
 #####################################################################
 
 set(ORTHANC_WSI_SOURCES
+  Annotations/AnnotationsRestApi.cpp
+  Annotations/AnnotationsWorkspace.cpp
+  Annotations/AnnotationsWorkspaceId.cpp
+  Annotations/CachedAnnotationsWorkspace.cpp
+  Annotations/CachedUserFeatures.cpp
+  Annotations/IAuthenticatedUser.cpp
+  Annotations/ISerializable.cpp
+  Annotations/ImportedLayer.cpp
+  Annotations/LayersCollection.cpp
+  Annotations/ProjectInformation.cpp
+  Annotations/UserAnnotationsSettings.cpp
+  Annotations/UserFeatures.cpp
+  Annotations/UserId.cpp
+  Annotations/UserLayer.cpp
   DicomPyramidCache.cpp
   IIIF.cpp
   OrthancPluginConnection.cpp
   OrthancPyramidFrameFetcher.cpp
   Plugin.cpp
   RawTile.cpp
+  ViewerConfiguration.cpp
+  ViewerToolbox.cpp
 
   ${ORTHANC_WSI_DIR}/Framework/BackgroundColor.cpp
   ${ORTHANC_WSI_DIR}/Framework/ColorSpaces.cpp
   ${ORTHANC_WSI_DIR}/Framework/DicomToolbox.cpp
-  ${ORTHANC_WSI_DIR}/Framework/Enumerations.cpp
+  ${ORTHANC_WSI_DIR}/Framework/FrameworkEnumerations.cpp
   ${ORTHANC_WSI_DIR}/Framework/ImageToolbox.cpp
   ${ORTHANC_WSI_DIR}/Framework/Inputs/DecodedPyramidCache.cpp
   ${ORTHANC_WSI_DIR}/Framework/Inputs/DecodedTiledPyramid.cpp

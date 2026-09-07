@@ -39,14 +39,14 @@ namespace OrthancWSI
   OpenSlideLibrary::OpenSlideLibrary(const std::string& path) :
     library_(path)
   {
-    close_ = (FunctionClose) library_.GetFunction("openslide_close");
-    getLevelCount_ = (FunctionGetLevelCount) library_.GetFunction("openslide_get_level_count");
-    getLevelDimensions_ = (FunctionGetLevelDimensions) library_.GetFunction("openslide_get_level_dimensions");
-    getLevelDownsample_ = (FunctionGetLevelDownsample) library_.GetFunction("openslide_get_level_downsample");
-    open_ = (FunctionOpen) library_.GetFunction("openslide_open");
-    readRegion_ = (FunctionReadRegion) library_.GetFunction("openslide_read_region");
-    getPropertyNames_ = (FunctionGetPropertyNames) library_.GetFunction("openslide_get_property_names");
-    getPropertyValue_ = (FunctionGetPropertyValue) library_.GetFunction("openslide_get_property_value");
+    close_ = reinterpret_cast<FunctionClose>(library_.GetFunction("openslide_close"));
+    getLevelCount_ = reinterpret_cast<FunctionGetLevelCount>(library_.GetFunction("openslide_get_level_count"));
+    getLevelDimensions_ = reinterpret_cast<FunctionGetLevelDimensions>(library_.GetFunction("openslide_get_level_dimensions"));
+    getLevelDownsample_ = reinterpret_cast<FunctionGetLevelDownsample>(library_.GetFunction("openslide_get_level_downsample"));
+    open_ = reinterpret_cast<FunctionOpen>(library_.GetFunction("openslide_open"));
+    readRegion_ = reinterpret_cast<FunctionReadRegion>(library_.GetFunction("openslide_read_region"));
+    getPropertyNames_ = reinterpret_cast<FunctionGetPropertyNames>(library_.GetFunction("openslide_get_property_names"));
+    getPropertyValue_ = reinterpret_cast<FunctionGetPropertyValue>(library_.GetFunction("openslide_get_property_value"));
   }
 
 

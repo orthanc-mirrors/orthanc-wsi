@@ -79,7 +79,7 @@ namespace OrthancWSI
                        const ImagedVolumeParameters&  volume,
                        Orthanc::PhotometricInterpretation photometric);
 
-    virtual ~DicomPyramidWriter();
+    virtual ~DicomPyramidWriter() ORTHANC_OVERRIDE;
 
     virtual void Flush() ORTHANC_OVERRIDE;
   };

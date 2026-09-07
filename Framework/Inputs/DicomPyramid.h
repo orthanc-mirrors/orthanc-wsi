@@ -54,7 +54,7 @@ namespace OrthancWSI
                  const std::string& seriesId,
                  bool useCache);
 
-    virtual ~DicomPyramid()
+    virtual ~DicomPyramid() ORTHANC_OVERRIDE
     {
       Clear();
     }

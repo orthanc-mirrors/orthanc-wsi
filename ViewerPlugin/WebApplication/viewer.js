@@ -21,191 +21,1651 @@
  **/
 
 
+var app = new Vue({
+  el: '#app',
+
+  data() {
+    return {
+      projectId: '',
+      level: '',
+      resourceId: '',
+      frameNumber: 0,
+      brightness: 0, // In the range between [-100,100]
+      contrast: 0,   // In the range between [-100,100]
+      saturation: 0, // In the range between [-100,100]
+      // hue: 0,        // Degrees, in the range between [-180,180]
+
+      // Main state for annotations
+      workspaceInfo: {},
+      imageDescription: '',
+      userLayers: [],
+      importedLayers: [],
+      activeUserLayerId: null,
+
+      // UI state
+      toolbarsVisible: false,
+      panelOpen: false,
+      mapBackground: '',
+      rotationDeg: 0,
+      activeDrawTool: null,
+      showMagnificationButtons: false,
+
+      // Bootstrap modals
+      modalDeleteUserLayer: null,
+      modalDeleteImportedLayer: null,
+      modalDeleteAnnotation: null,
+      pendingDelete: null,
+
+      // Loading/saving using the backend
+      isPendingChange: false,
+      isSaving: false,
+      showSpinner: false,
+
+      // Annotation selection panel
+      annotationProperties: [],
+      selectedFeature: null,
+
+      // OpenLayers objects
+      map: null,
+      drawSource: null,
+      drawLayer: null,  // Used in HTML
+      drawImportedSource: null,
+      drawImportedLayer: null,
+      drawLine: null,
+      drawPoint: null,
+      drawCircle: null,
+      drawRectangle: null,
+      drawClosedPolygon: null,
+      drawFreehand: null,
+      drawFreehandLine: null,
+      drawArrow: null,
+      moveFeature: null,
+      modifyFeature: null,
+      modifyFeatureCollection: null,
+      selectAnnotation: null,
+
+      /**
+       * Magnification at full-resolution image pixels, convention
+       * commonly used for pathology WSI: 40x scan = 0.25 µm/pixel
+       **/
+      referenceMagnification: 40,  // TODO - Could be read from pyramid
+
+      // Share layer modal
+      modalShareUserLayer: null,
+      shareLayerTarget: {},
+      shareLayerPublic: false,
+      shareLayerUsers: [],
+      shareLayerSearchQuery: '',
+      shareLayerSearchResults: [],
+
+      // Import layer modal
+      modalImportLayer: null,
+      importAvailableUsers: [],
+      importUserSearchQuery: '',
+      importUserSearchResults: [],
+      importSelectedUser: '',
+      importSelectedLayer: '',
+      importAvailableLayers: []
+    };
+  },
+
+  computed: {
+    shareLayerCanAddLearner: function() {
+      return (this.workspaceInfo.is_instructor === true ||
+              (this.workspaceInfo.is_learner === true &&
+               this.workspaceInfo.learner_to_learner_sharing === true));
+    }
+  },
+
+  watch: {
+    activeUserLayerId: function() {
+      if (this.activeDrawTool === 'modify') {
+        this.RefreshModifyFeatureCollection();
+      }
+    }
+  },
+
+  mounted: function() {
+    this.InitializePanelAnimation();
+
+    this.modalDeleteUserLayer = new bootstrap.Modal(document.getElementById('modal-delete-user-layer'));
+    this.modalDeleteImportedLayer = new bootstrap.Modal(document.getElementById('modal-delete-imported-layer'));
+    this.modalDeleteAnnotation = new bootstrap.Modal(document.getElementById('modal-delete-annotation'));
+    this.modalShareUserLayer = new bootstrap.Modal(document.getElementById('modal-share-user-layer'));
+    this.modalImportLayer = new bootstrap.Modal(document.getElementById('modal-import-layer'));
+
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) {
+      new bootstrap.Tooltip(el, { trigger: 'hover' });
+    });
+
+    // document.getElementById('right-panel-toggle').click();  // Open the side menu at startup
+
+    const params = new URLSearchParams(document.location.search);
+
+    if (params.has('project')) {
+      this.projectId = params.get('project');
+    }
+
+    if (params.has('description')) {
+      this.imageDescription = params.get('description');
+    }
+
+    if (params.has('series')) {
+      this.level = 'series';
+      this.resourceId = params.get('series');
+    } else if (params.has('instance')) {
+      this.level = 'instance';
+      this.resourceId = params.get('instance');
+
+      if (params.has('frame')) {
+        this.frameNumber = params.get('frame');
+      }
+    } else {
+      alert('Error - No series ID and no instance ID specified!');
+      return;
+    }
+
+    this.LoadPyramid();
+  },
+
+  methods: {
+
+    // -----------------------------------------------------------------------
+    // Persistence of layers and annotations
+    // -----------------------------------------------------------------------
+
+    CreatePostPayload: function(args) {
+      args['project'] = this.projectId;
+      args['level'] = this.level;
+      args['resource'] = this.resourceId;
+      args['frame'] = this.frameNumber;
+      return JSON.stringify(args);
+    },
+
+    LoadLayers: function(activeLayerId) {
+      var that = this;
+      axios.post('../api/list-user-layers',
+                 this.CreatePostPayload({}))
+        .then(function(response) {
+          that.userLayers = response.data['user-layers'];
+          that.importedLayers = response.data['imported-layers'];
+
+          if (that.userLayers.length == 0) {
+            that.CreateUserLayer();
+          } else if (activeLayerId !== undefined) {
+            that.activeUserLayerId = activeLayerId;
+          } else {
+            that.activeUserLayerId = that.userLayers[0].id;
+          }
+
+          that.LoadUserFeatures();
+          that.ReloadImportedFeatures();
+        })
+        .catch(function() {
+          console.error('Cannot load the saved annotations');
+        });
+    },
+
+    CreateUserLayer: function() {
+      var that = this;
+      axios.post('../api/create-user-layer',
+                 this.CreatePostPayload({}))
+        .then(function(response) {
+          that.LoadLayers(response.data.id);
+        })
+        .catch(function() {
+          console.error('Cannot create a new user layer');
+        });
+    },
+
+    SaveUserLayer: function(layer) {
+      var that = this;
+      axios.post('../api/save-user-layer',
+                 this.CreatePostPayload({
+                   'layer': layer
+                 }))
+        .catch(function() {
+          console.error('Cannot save user layer');
+        });
+    },
+
+    LoadUserFeatures: function() {
+      console.assert(this.drawSource !== null);  // InitializeAnnotations() must have been invoked
+      console.assert(this.workspaceInfo.enabled !== undefined);  // LoadLayers() must have been invoked
+
+      if (!this.workspaceInfo.enabled) {
+        return;
+      }
+
+      this.showSpinner = true;
+
+      var that = this;
+      axios.post('../api/load-user-features',
+                 this.CreatePostPayload({}))
+        .then(function(response) {
+          that.drawSource.clear();
+
+          // We check that the original layer is still available (could have been some write error)
+          var availableLayerIds = [];
+          for (let i = 0; i < that.userLayers.length; i++) {
+            availableLayerIds.push(that.userLayers[i].id);
+          }
+
+          for (let i = 0; i < response.data.features.length; i++) {
+            var layerId = response.data.features[i]['layer-id'];
+
+            if (availableLayerIds.includes(layerId)) {
+              UnserializeFeatureOntoMap(that.drawSource, response.data.features[i]);
+            }
+          }
+
+          // Now that the user features are loaded, we can install the save callback
+          that.drawSource.on('addfeature', function (e) {
+            that.SaveUserFeatures();
+          });
+          that.drawSource.on('removefeature', function (e) {
+            that.SaveUserFeatures();
+          });
+        })
+        .catch(function() {
+          console.error('Cannot load user features');
+        })
+        .finally(function() {
+          that.showSpinner = false;
+        });
+    },
+
+    SaveUserFeatures: function()
+    {
+      var that = this;
+
+      function Execute()
+      {
+        var features = [];
+
+        that.drawSource.getFeatures().forEach(function (feature, index) {
+          var item = SerializeFeature(feature);
+
+          if (item !== null) {
+            item['layer-id'] = feature.get('layer-id');
+
+            var label = feature.get('label');
+            if (label !== undefined) {
+              item['label'] = label;
+            }
+
+            var date = feature.get('creation-datetime');
+            if (date !== undefined) {
+              item['creation-datetime'] = date.getTime();
+            }
+
+            features.push(item);
+          }
+        });
+
+        that.isPendingChange = false;
+        that.isSaving = true;
+        that.showSpinner = true;
+        window.addEventListener('beforeunload', BeforeUnloadHandler);
+
+        axios.post('../api/save-user-features',
+                   that.CreatePostPayload({
+                     'features': features
+                   }))
+          .then(function() {
+            // Success
+          })
+          .catch(function() {
+            console.error('Cannot save the annotations');
+          })
+          .finally(function() {
+            console.assert(that.isSaving === true);
+
+            if (that.isPendingChange) {
+              Execute();
+            } else {
+              that.isSaving = false;
+              that.showSpinner = false;
+              window.removeEventListener('beforeunload', BeforeUnloadHandler);
+            }
+          });
+      }
+
+      this.isPendingChange = true;
+
+      if (!this.isSaving) {
+        Execute();
+      }
+    },
+
+    DeleteUserLayer: function(id) {
+      this.pendingDelete = id;
+      this.modalDeleteUserLayer.show();
+    },
+
+    UserLayerDeleteConfirmed: function() {
+      var layerId = this.pendingDelete;   // The ID of the layer to be removed
+
+      this.modalDeleteUserLayer.hide();
+      var that = this;
+      axios.post('../api/delete-user-layer',
+                 this.CreatePostPayload({
+                   'layer-id': layerId
+                 })
+                )
+        .then(function(response) {
+          that.LoadLayers();
+
+          // Remove the features that were part of this layer
+          that.drawSource.getFeatures().forEach(function(feature) {
+            if (feature.get('layer-id') === layerId) {
+              that.drawSource.removeFeature(feature);
+            }
+          });
+        })
+        .catch(function(error) {
+          console.error('Cannot delete the layer');
+        });
+    },
+
+    TakeScreenshot: function() {
+      modernScreenshot.domToBlob(document.body, {
+        filter: function (element) {
+          if (element.classList === undefined) {
+            return true;
+          } else {
+            return (element.id !== 'toolbar-top' &&
+                    element.id !== 'toolbar-left' &&
+                    !element.classList.contains('tooltip') &&
+                    !element.classList.contains('ol-control'));  // "+", "-", and "rotate" buttons
+          }
+        }
+      })
+        .then(function (blob) {
+          navigator.clipboard.write([
+            new ClipboardItem({
+              'image/png': blob
+            })
+          ])
+            .then(function () {
+              alert('Screenshot copied to clipboard!');
+            })
+            .catch(function (error) {
+              alert('Could not copy screenshot\n\n(' + error + ')');
+            });
+        });
+    },
+
+    LoadAnnotationsInfo: function() {
+      var that = this;
+      axios.post('../api/workspace-info',
+                 this.CreatePostPayload({}))
+        .then(function(response) {
+          that.workspaceInfo = response.data;
+
+          if (that.workspaceInfo.enabled) {
+            that.LoadLayers();
+          }
+        })
+        .catch(function(error) {
+        });
+    },
+
+    // -----------------------------------------------------------------------
+    // Annotation selection panel
+    // -----------------------------------------------------------------------
+
+    AddReadOnlyProperty: function(label, value) {
+      this.annotationProperties.push({
+        type: 'readonly',
+        label: label,
+        value: value
+      });
+    },
+
+    AddReadOnlyTextAreaProperty: function(label, value) {
+      this.annotationProperties.push({
+        type: 'readonly-textarea',
+        label: label,
+        value: value
+      });
+    },
+
+    AddEditableProperty: function(label, value, featureProp) {
+      this.annotationProperties.push({
+        type: 'editable',
+        label: label,
+        value: value,
+        featureProp: featureProp
+      });
+    },
+
+    AddTextAreaProperty: function(label, value, featureProp) {
+      this.annotationProperties.push({
+        type: 'editable-textarea',
+        label: label,
+        value: value,
+        featureProp: featureProp
+      });
+    },
+
+    AddDropdownProperty: function(label, options, selectedValue, featureProp) {
+      this.annotationProperties.push({
+        type: 'dropdown',
+        label: label,
+        value: selectedValue,
+        options: options,
+        featureProp: featureProp
+      });
+    },
+
+    ClearAnnotationSelection: function(clearOlSelection) {
+      if (clearOlSelection === undefined) {
+        clearOlSelection = true;
+      }
+
+      if (clearOlSelection && this.selectAnnotation !== null) {
+        this.selectAnnotation.getFeatures().clear();
+      }
+
+      this.selectedFeature = null;
+      this.annotationProperties = [];
+    },
+
+    UpdateAnnotationProperty: function(prop) {
+      if (this.selectedFeature &&
+          prop.featureProp &&
+          this.drawSource !== null &&
+          this.drawSource.hasFeature(this.selectedFeature)) {
+        this.selectedFeature.set(prop.featureProp, prop.value);
+        this.SaveUserFeatures();
+      }
+    },
+
+    FocusAnnotation: function() {
+      if (this.selectedFeature) {
+        bootstrap.Offcanvas.getOrCreateInstance(document.getElementById('right-panel')).hide();
+        this.map.getView().fit(this.selectedFeature.getGeometry().getExtent(), { padding: [40, 40, 40, 40], duration: 300 });
+      }
+    },
+
+    // -----------------------------------------------------------------------
+    // Rotation controls (driven from the popover)
+    // -----------------------------------------------------------------------
+
+    ResetRotation: function() {
+      this.rotationDeg = 0;
+      this.SetMapRotation();
+    },
+
+    RotateBy: function(deg) {
+      this.rotationDeg = parseInt(this.rotationDeg) + deg;
+
+      while (this.rotationDeg > 180) {
+        this.rotationDeg -= 360;
+      }
+
+      while (this.rotationDeg < -180) {
+        this.rotationDeg += 360;
+      }
+
+      this.SetMapRotation();
+    },
+
+    SetMapRotation: function() {
+      this.map.getView().setRotation(this.rotationDeg / 180 * Math.PI);
+    },
+
+    // -----------------------------------------------------------------------
+    // Draw tool activation
+    // -----------------------------------------------------------------------
+
+    DeactivateAll: function() {
+      this.map.removeInteraction(this.drawLine);
+      this.map.removeInteraction(this.drawPoint);
+      this.map.removeInteraction(this.drawCircle);
+      this.map.removeInteraction(this.drawRectangle);
+      this.map.removeInteraction(this.drawClosedPolygon);
+      this.map.removeInteraction(this.drawFreehand);
+      this.map.removeInteraction(this.drawFreehandLine);
+      this.map.removeInteraction(this.drawArrow);
+      this.map.removeInteraction(this.moveFeature);
+      this.map.removeInteraction(this.modifyFeature);
+      this.map.removeInteraction(this.selectAnnotation);
+
+      this.activeDrawTool = null;
+      this.map.getViewport().style.cursor = '';
+      this.ClearAnnotationSelection(true);
+    },
+
+    ToggleSelectTool: function() {
+      var wasActive = this.activeDrawTool === 'select';
+      this.DeactivateAll();
+      if (!wasActive) {
+        this.map.addInteraction(this.selectAnnotation);
+        this.activeDrawTool = 'select';
+        this.map.getViewport().style.cursor = 'pointer';
+      }
+    },
+
+    ToggleDrawTool: function(toolName) {
+      var interactions = {
+        'line':           this.drawLine,
+        'point':          this.drawPoint,
+        'circle':         this.drawCircle,
+        'rectangle':      this.drawRectangle,
+        'closed-polygon': this.drawClosedPolygon,
+        'freehand':       this.drawFreehand,
+        'freehand-line':  this.drawFreehandLine,
+        'arrow':          this.drawArrow,
+        'move':           this.moveFeature,
+        'modify':         this.modifyFeature
+      };
+
+      var cursors = {
+        'freehand':      'crosshair',
+        'freehand-line': 'crosshair'
+      };
+
+      // Draw tools that keep selectAnnotation active to highlight the newly drawn feature
+      var drawTools = ['line', 'point', 'circle', 'rectangle', 'closed-polygon', 'freehand', 'freehand-line'];
+
+      var wasActive = this.activeDrawTool === toolName;
+      this.DeactivateAll();
+      if (!wasActive) {
+        if (toolName === 'modify') {
+          this.RefreshModifyFeatureCollection();
+        }
+        this.map.addInteraction(interactions[toolName]);
+        if (drawTools.indexOf(toolName) !== -1) {
+          this.map.addInteraction(this.selectAnnotation);  // kept active to show blue highlight
+        }
+        this.activeDrawTool = toolName;
+        var cursor = cursors[toolName];
+        if (cursor) {
+          this.map.getViewport().style.cursor = cursor;
+        }
+      }
+    },
+
+    RefreshModifyFeatureCollection: function() {
+      if (this.modifyFeatureCollection !== null &
+          this.drawSource !== null) {
+        var activeLayerId = this.activeUserLayerId;
+        this.modifyFeatureCollection.clear();
+        this.drawSource.getFeatures().forEach(function(feature) {
+          if (feature.get('layer-id') === activeLayerId) {
+            app.modifyFeatureCollection.push(feature);
+          }
+        });
+      }
+    },
+
+    DeleteSelectedAnnotation: function() {
+      var selected = this.selectAnnotation.getFeatures();
+      if (selected.getLength() > 0 &&
+          this.drawSource !== null &&
+          this.drawSource.hasFeature(selected.item(0))) {
+        this.modalDeleteAnnotation.show();
+      }
+    },
+
+    ConfirmDeleteAnnotation: function() {
+      var selected = this.selectAnnotation.getFeatures();
+
+      var that = this;
+      selected.forEach(function(feature) {
+        that.drawSource.removeFeature(feature);
+      });
+
+      selected.clear();
+      this.ClearAnnotationSelection(false);
+      this.modalDeleteAnnotation.hide();
+    },
+
+    // -----------------------------------------------------------------------
+    // Panel animation
+    // -----------------------------------------------------------------------
+
+    InitializePanelAnimation: function() {
+      var that = this;
+      var panel = document.getElementById('right-panel');
+      var toggle = document.getElementById('right-panel-toggle');
+      var isResizing = false;
+
+      // Ensure the initial chevron direction matches the real offcanvas state.
+      that.panelOpen = panel.classList.contains('show');
+
+      function ResizingLoop() {
+        // If the offcanvas is hidden (e.g. before workspace load), its left edge can be 0,
+        // which would incorrectly move the toggle off-screen. Clamp to [0, panelWidth].
+        var panelRect = panel.getBoundingClientRect();
+        var panelWidth = Math.max(0, panelRect.width || 0);
+        var right = window.innerWidth - panelRect.left;
+
+        if (!isFinite(right)) {
+          right = 0;
+        }
+
+        right = Math.max(0, Math.min(right, panelWidth));
+        toggle.style.right = right + 'px';
+
+        if (isResizing) {
+          requestAnimationFrame(ResizingLoop);
+        }
+      }
+
+      function StartResizing() {
+        isResizing = true;
+        requestAnimationFrame(ResizingLoop);
+      }
+
+      function StopResizing() {
+        isResizing = false;
+        ResizingLoop();
+      }
+
+      ResizingLoop();
+
+      panel.addEventListener('hide.bs.offcanvas', function() {
+        that.panelOpen = false;
+        StartResizing();
+      });
+      panel.addEventListener('hidden.bs.offcanvas', StopResizing);
+
+      panel.addEventListener('show.bs.offcanvas', function() {
+        that.panelOpen = true;
+        StartResizing();
+      });
+      panel.addEventListener('shown.bs.offcanvas', StopResizing);
+
+      // Keep the toggle aligned if viewport size changes.
+      window.addEventListener('resize', StopResizing);
+    },
+
+    // -----------------------------------------------------------------------
+    // Pyramid loading and map initialization
+    // -----------------------------------------------------------------------
+
+    LoadPyramid: function() {
+      var that = this;
+
+      if (this.level == 'series')
+      {
+        axios.get('../pyramids/' + this.resourceId)
+          .then(function(response) {
+            that.InitializePyramid(response.data, '../tiles/' + that.resourceId + '/');
+          })
+          .catch(function(error) {
+            alert('Error - Cannot get the pyramid structure of series: ' + that.resourceId);
+          });
+      }
+      else if (this.level == 'instance')
+      {
+        axios.get('../frames-pyramids/' + this.resourceId + '/' + this.frameNumber)
+          .then(function(response) {
+            that.InitializePyramid(response.data, '../frames-tiles/' + that.resourceId + '/' + that.frameNumber + '/');
+          })
+          .catch(function(error) {
+            alert('Error - Cannot get the pyramid structure of frame ' + that.frameNumber + ' of instance: ' + that.resourceId);
+          });
+      }
+    },
+
+    InitializePyramid: function(pyramid, tilesBaseUrl) {
+      this.mapBackground = pyramid['BackgroundColor'];  // New in WSI 2.1
+
+      var width = pyramid['TotalWidth'];
+      var height = pyramid['TotalHeight'];
+      var countLevels = pyramid['Resolutions'].length;
+
+      var metersPerUnit = null;
+      var imagedVolumeWidth = pyramid['ImagedVolumeWidth'];  // In millimeters
+      var imagedVolumeHeight = pyramid['ImagedVolumeHeight'];
+      if (imagedVolumeWidth !== undefined &&
+          imagedVolumeHeight !== undefined) {
+        var metersPerUnitX = parseFloat(imagedVolumeWidth) / (1000.0 * parseFloat(width));
+        var metersPerUnitY = parseFloat(imagedVolumeHeight) / (1000.0 * parseFloat(height));
+        if (IsNear(metersPerUnitX / metersPerUnitY, 1)) {
+          metersPerUnit = metersPerUnitX;
+        } else {
+          // Backward compatibility with OrthancWSIDicomizer <= 3.2, where X/Y were swapped
+          metersPerUnitX = parseFloat(imagedVolumeWidth) / (1000.0 * parseFloat(height));
+          metersPerUnitY = parseFloat(imagedVolumeHeight) / (1000.0 * parseFloat(width));
+          if (IsNear(metersPerUnitX / metersPerUnitY, 1)) {
+            metersPerUnit = metersPerUnitX;
+          } else {
+            console.error('Anisotropic pixel spacing (may result from an inconsistency ' +
+                          'in the imaged volume size), not showing the scale');
+          }
+        }
+      }
+
+      if (metersPerUnit) {
+        this.showMagnificationButtons = true;
+      }
+
+      // Maps always need a projection, but Zoomify layers are not geo-referenced, and
+      // are only measured in pixels.  So, we create a fake projection that the map
+      // can use to properly display the layer.
+      var proj = new ol.proj.Projection({
+        code: 'pixel',
+        units: 'pixel',
+        metersPerUnit: metersPerUnit,
+        extent: [0, 0, width, height]
+      });
+
+      var extent = [0, -height, width, 0];
+
+      var rotateControl = new ol.control.Rotate({
+        target: 'toolbar-left',
+        autoHide: false,  // Show the button even if rotation is 0
+        resetNorth: function() {  // Disable the default action
+        }
+      });
+
+      new bootstrap.Popover(rotateControl.element, {
+        placement: 'right',
+        container: 'body',
+        html: true,
+        content: document.getElementById('popover-rotate')
+      });
+
+      new bootstrap.Popover(document.getElementById('button-adjustments'), {
+        placement: 'right',
+        container: 'body',
+        html: true,
+        content: document.getElementById('popover-adjustments')
+      });
+
+      // Disable the rotation of the map, and inertia while panning
+      // http://stackoverflow.com/a/25682186
+      var interactions = ol.interaction.defaults.defaults({
+        //pinchRotate : false,
+        dragPan: false  // disable kinetics
+        //shiftDragZoom: false  // disable zoom box
+      }).extend([
+        new ol.interaction.DragPan(),
+        new ol.interaction.DragRotate({
+          //condition: ol.events.condition.shiftKeyOnly  // Rotate only when Shift key is pressed
+        })
+      ]);
+
+      var controls = ol.control.defaults.defaults({
+        attribution: false,
+        rotate: false        // remove the default rotate
+      }).extend([
+        rotateControl,
+
+        /*new ol.control.ScaleLine({
+          minWidth: 100
+          })*/
+        new MicroscopeScaleLine({
+          minWidth: 100,
+          referenceMagnification: this.referenceMagnification
+        })
+
+      ]);
+
+      if (this.imageDescription !== null) {
+        controls.extend([
+          new ol.control.Attribution({
+            attributions: this.imageDescription,
+            collapsible: false
+          })
+        ]);
+      }
+
+      var tileLayer = new ol.layer.Tile({
+        extent: extent,
+        source: new ol.source.TileImage({
+          projection: proj,
+          tileUrlFunction: function(tileCoord, pixelRatio, projection) {
+            return (tilesBaseUrl + (countLevels - 1 - tileCoord[0]) + '/' + tileCoord[1] + '/' + tileCoord[2]);
+          },
+          tileGrid: new ol.tilegrid.TileGrid({
+            extent: extent,
+            resolutions: pyramid['Resolutions'].reverse(),
+            tileSizes: pyramid['TilesSizes'].reverse()
+          })
+        }),
+        wrapX: false,
+        projection: proj
+      });
+
+      var that = this;
+      tileLayer.on('prerender', (event) => {
+        const context = event.context;
+
+        if (context) {
+          context.save();
+          var brightness = Math.pow(4, that.brightness / 100.0);  // Ranges between 0.25 and 4
+          var contrast = Math.pow(4, that.contrast / 100.0);      // Ranges between 0.25 and 4
+          var saturation = Math.pow(4, that.saturation / 100.0);  // Ranges between 0.25 and 4
+          context.filter =
+            'brightness(' + brightness.toFixed(4) + ') ' +
+            'contrast(' + contrast.toFixed(4) + ')' +
+            'saturate(' + saturation.toFixed(4) + ')';
+          // 'hue-rotate(' + that.hue + 'deg)';
+        }
+      });
+
+      tileLayer.on('postrender', (event) => {
+        const context = event.context;
+
+        if (context) {
+          context.restore();
+        }
+      });
+
+      this.map = new ol.Map({
+        target: 'map',
+        layers: [ tileLayer ],
+        view: new ol.View({
+          projection: proj,
+          center: [width / 2, -height / 2],
+          zoom: 0,
+          minResolution: 0.1   // "1" means "do not interpelate over pixels"
+        }),
+        interactions: interactions,
+        controls: controls
+      });
+
+      // Prevent toolbar pointer events from reaching OL interactions (e.g. Select)
+      [ 'toolbar-left', 'toolbar-top' ].forEach(function(id) {
+        var el = document.getElementById(id);
+        [ 'pointerdown', 'pointerup', 'pointermove', 'click' ].forEach(function(type) {
+          el.addEventListener(type, function(e) {
+            e.stopPropagation();
+          });
+        });
+      });
+
+      // Re-append toolbars inside the map viewport so they inherit OL's scaling
+      var viewport = this.map.getViewport();
+      viewport.appendChild(document.getElementById('toolbar-left'));
+      viewport.appendChild(document.getElementById('toolbar-top'));
+
+      this.map.once('postrender', function() {
+        // Match Bootstrap button size to OL button size
+        /*var olBtnSize = document.querySelector('.ol-zoom button').offsetWidth + 'px';
+          document.querySelectorAll('.icon-btn').forEach(function(el) {
+          el.style.width = olBtnSize;
+          el.style.height = olBtnSize;
+          });*/
+
+        // Move the top toolbar directly right to the zoom control, regardless of scaling
+        var zoomEl = document.querySelector('.ol-zoom');
+        document.getElementById('toolbar-top').style.left = (zoomEl.offsetLeft + zoomEl.offsetWidth) + 'px';
+        document.getElementById('toolbar-top').style.top = zoomEl.offsetTop + 'px';
+
+        // Move the left toolbar directly below the zoom control, regardless of scaling
+        document.getElementById('toolbar-left').style.left = zoomEl.offsetLeft + 'px';
+        document.getElementById('toolbar-left').style.top = (zoomEl.offsetTop + zoomEl.offsetHeight) + 'px';
+
+        // Move the vertical buttons below the rotate control, regardless of scaling
+        var rotateEl = document.querySelector('.ol-rotate');
+        document.getElementById('toolbar-left-content').style.top = (rotateEl.offsetTop + rotateEl.offsetHeight) + 'px';
+      });
+
+      this.map.getView().fit(extent, this.map.getSize());
+
+      this.toolbarsVisible = true;
+      this.InitializeAnnotations();
+    },
+
+    ResetAdjustments: function() {
+      this.brightness = 0;
+      this.contrast = 0;
+      this.saturation = 0;
+      this.map.render();
+    },
+
+    // -----------------------------------------------------------------------
+    // Drawing annotations
+    // -----------------------------------------------------------------------
+
+    InitializeAnnotations: function() {
+      function GetLayerById(id) {
+        for (var i = 0; i < app.userLayers.length; i++) {
+          if (app.userLayers[i].id == id) {
+            return app.userLayers[i];
+          }
+        }
+        return null;
+      }
+
+      function GetImportedLayerById(id) {
+        for (var i = 0; i < app.importedLayers.length; i++) {
+          if (app.importedLayers[i].id == id) {
+            return app.importedLayers[i];
+          }
+        }
+        return null;
+      }
+
+      function GetLayerOfFeature(feature) {
+        var layerId = feature.get('layer-id');
+        console.assert(layerId !== null);
+        var layer = GetLayerById(layerId);
+        console.assert(layer !== null);
+        return layer;
+      }
+
+      function IsFeatureVisible(feature) {
+        var layerId = feature.get('layer-id');
+        var userLayer = GetLayerById(layerId);
+        if (userLayer !== null) {
+          return userLayer.visible;
+        }
+
+        var importedLayer = GetImportedLayerById(layerId);
+        return importedLayer !== null && importedLayer.visible;
+      }
+
+      // Single vector source holding all features from all layers
+      this.drawSource = new ol.source.Vector();
+
+      this.drawLayer = new ol.layer.Vector({
+        source: this.drawSource,
+        style: function(feature, resolution) {
+          var layer = GetLayerOfFeature(feature);
+          if (layer.visible) {
+            return CreateFeatureStyle(feature, resolution, layer.color);
+          } else {
+            return null;
+          }
+        }
+      });
+
+      this.map.addLayer(this.drawLayer);
+
+      // Shared annotations: a separate read-only source for all imported layers
+      this.drawImportedSource = new ol.source.Vector();
+      this.drawImportedLayer = new ol.layer.Vector({
+        source: this.drawImportedSource,
+        style: function(feature, resolution) {
+          var entry = GetImportedLayerById(feature.get('layer-id'));
+          if (!entry || !entry.visible) {
+            return null;
+          }
+
+          return CreateFeatureStyle(feature, resolution, entry.color);
+        }
+      });
+      this.map.addLayer(this.drawImportedLayer);
+
+      // Draw interactions (inactive until toggled)
+      this.drawLine = new ol.interaction.Draw({
+        source: this.drawSource,
+        type: 'LineString',
+        maxPoints: 2
+      });
+      this.drawPoint = new ol.interaction.Draw({ source: this.drawSource, type: 'Point' });
+      this.drawCircle = new ol.interaction.Draw({ source: this.drawSource, type: 'Circle' });
+      this.drawRectangle = new ol.interaction.Draw({
+        source: this.drawSource,
+        type: 'Circle',
+        geometryFunction: ol.interaction.Draw.createBox()
+      });
+      this.drawClosedPolygon = new ol.interaction.Draw({ source: this.drawSource, type: 'Polygon' });
+      this.drawFreehand = new ol.interaction.Draw({ source: this.drawSource, type: 'Polygon', freehand: true });
+      this.drawFreehandLine = new ol.interaction.Draw({ source: this.drawSource, type: 'LineString', freehand: true });
+      this.drawArrow = new ol.interaction.Draw({
+        source: this.drawSource,
+        type: 'LineString',
+        maxPoints: 2
+      });
+
+      this.moveFeature = new ol.interaction.Translate({
+        source: this.drawSource,
+        filter: function(feature) {
+          return feature.get('layer-id') === app.activeUserLayerId;
+        }
+      });
+      this.modifyFeatureCollection = new ol.Collection();
+      this.modifyFeature = new ol.interaction.Modify({ features: this.modifyFeatureCollection });
+
+      // Select interaction (inactive until toggled).
+      // The condition restricts user-click selection to the dedicated select tool only,
+      // preventing spurious selection events when starting a draw near an existing feature.
+      this.selectAnnotation = new ol.interaction.Select({
+        layers: [ this.drawLayer, this.drawImportedLayer ],
+        filter: function(feature) {
+          return IsFeatureVisible(feature);
+        },
+        condition: function(e) {
+          return ol.events.condition.singleClick(e) && app.activeDrawTool === 'select';
+        },
+        hitTolerance: 5,  /* pixels around the feature that count as a hit */
+        style: function(feature, resolution) {
+          return CreateFeatureStyle(feature, resolution, '#0000ff');  /* selected annotations are in blue */
+        }
+      });
+
+
+      var that = this;
+
+      function preventDoubleClickZoom() {
+        that.map.getInteractions().forEach(function(interaction) {
+          if (interaction instanceof ol.interaction.DoubleClickZoom) {
+            interaction.setActive(false);
+            setTimeout(function() { interaction.setActive(true); }, 50);
+          }
+        });
+      }
+
+      function onDrawEnd(e, callPreventDoubleClickZoom) {
+        e.feature.set('layer-id', app.activeUserLayerId);
+        e.feature.set('creation-datetime', new Date());
+        if (callPreventDoubleClickZoom) {
+          preventDoubleClickZoom();
+        }
+        that.selectAnnotation.getFeatures().clear();
+        that.selectAnnotation.getFeatures().push(e.feature);
+        that.selectAnnotation.dispatchEvent({ type: 'select', selected: [e.feature], deselected: [] });
+      }
+
+      this.drawLine.on('drawend', function(e) { onDrawEnd(e, true); });
+      this.drawPoint.on('drawend', function(e) { onDrawEnd(e, true); });
+      this.drawCircle.on('drawend', function(e) { onDrawEnd(e, true); });
+      this.drawRectangle.on('drawend', function(e) { onDrawEnd(e, true); });
+      this.drawClosedPolygon.on('drawend', function(e) { onDrawEnd(e, true); });
+      this.drawFreehand.on('drawend', function(e) { onDrawEnd(e, false); });
+      this.drawFreehandLine.on('drawend', function(e) { onDrawEnd(e, false); });
+      this.drawArrow.on('drawend', function(e) {
+        e.feature.set('type', 'arrow');
+        onDrawEnd(e, false);
+      });
+
+      this.moveFeature.on('translateend', function(e) { that.SaveUserFeatures(); });
+      this.modifyFeature.on('modifyend', function(e) { that.SaveUserFeatures(); });
+
+      this.selectAnnotation.on('select', function(e) {
+        if (e.selected.length === 1) {
+          that.annotationProperties = [];
+
+          var feature = e.selected[0];
+          that.selectedFeature = feature;
+
+          var date = feature.get('creation-datetime');
+          if (date === undefined) {
+            that.AddReadOnlyProperty('Date', '');
+          } else {
+            that.AddReadOnlyProperty('Date', date.toLocaleString());
+          }
+
+          var geometry = feature.getGeometry();
+
+          if (geometry.getType() === 'LineString') {
+            // Line, freehand
+            that.AddReadOnlyProperty('Length', FormatLength(geometry.getLength(), that.map.getView().getProjection()));
+          } else if (geometry.getType() === 'Circle') {
+            // geometry.getArea() is not available on circles
+            var radius = geometry.getRadius();
+            var area = Math.PI * radius * radius;
+            that.AddReadOnlyProperty('Area', FormatArea(area, that.map.getView().getProjection()));
+          } else if (geometry.getType() === 'Polygon') {
+            // Rectangle, closed polygon, freehand polygon
+            that.AddReadOnlyProperty('Area', FormatArea(geometry.getArea(), that.map.getView().getProjection()));
+          }
+
+          if (that.drawSource !== null &&
+              that.drawSource.hasFeature(feature)) {
+            that.AddTextAreaProperty('Label', feature.get('label') || '', 'label');
+          } else {
+            that.AddReadOnlyTextAreaProperty('Label', feature.get('label') || '');
+          }
+
+          /*
+          // TODO
+          that.AddDropdownProperty('Category', [
+          { value: 'tumor',    label: 'Tumor' },
+          { value: 'stroma',   label: 'Stroma' },
+          { value: 'necrosis', label: 'Necrosis' }
+          ], feature.get('category') || '', 'category');
+          */
+
+          bootstrap.Offcanvas.getOrCreateInstance(document.getElementById('right-panel')).show();
+        } else {
+          that.ClearAnnotationSelection(false);
+        }
+      });
+
+      this.LoadAnnotationsInfo();
+    },
+
+    // -----------------------------------------------------------------------
+    // Imported layers
+    // -----------------------------------------------------------------------
+
+    ShowShareUserLayerModal: function(layer) {
+      this.shareLayerTarget = layer;
+      this.shareLayerPublic = layer.public;
+      this.shareLayerUsers = layer.shared_with;
+      this.shareLayerSearchQuery = '';
+      this.shareLayerSearchResults = [];
+      this.modalShareUserLayer.show();
+    },
+
+    ShareLayerIsUserSelected: function(user) {
+      for (var i = 0; i < this.shareLayerUsers.length; i++) {
+        if (this.shareLayerUsers[i].type == user.type &&
+            this.shareLayerUsers[i].name == user.name) {
+          return true;
+        }
+      }
+
+      return false;
+    },
+
+    ShareLayerAddUser: function(user) {
+      if (!this.ShareLayerIsUserSelected(user)) {
+        this.shareLayerUsers.push(user);
+      }
+
+      this.shareLayerSearchQuery = '';
+      this.shareLayerSearchResults = [];
+    },
+
+    ShareLayerAddStandardUser: function(name) {
+      var that = this;
+      axios.post('../api/create-standard-user',
+                 this.CreatePostPayload({ 'name': name }))
+        .then(function(response) {
+          that.ShareLayerAddUser(response.data);
+        })
+        .catch(function() {
+          console.error('Cannot create standard user');
+        });
+
+      this.shareLayerSearchQuery = '';
+      this.shareLayerSearchResults = [];
+    },
+
+    ShareLayerSearchUsers: function() {
+      var query = this.shareLayerSearchQuery.trim();
+      if (!query) {
+        this.shareLayerSearchResults = [];
+      } else {
+        var that = this;
+        axios.post('../api/search-active-users',
+                   this.CreatePostPayload({ 'query': query }))
+          .then(function(response) {
+            that.shareLayerSearchResults = [];
+            for (var i = 0; i < response.data.length; i++) {
+              if (!that.ShareLayerIsUserSelected(response.data[i])) {
+                that.shareLayerSearchResults.push(response.data[i]);
+              }
+            }
+          })
+          .catch(function() {
+            that.shareLayerSearchResults = [];
+          });
+      }
+    },
+
+    ShareLayerSave: function() {
+      this.shareLayerTarget.public = this.shareLayerPublic;
+      this.shareLayerTarget.shared_with = this.shareLayerUsers;
+      this.SaveUserLayer(this.shareLayerTarget);
+      this.modalShareUserLayer.hide();
+    },
+
+
+
+    ShowImportLayerModal: function() {
+      this.importUserSearchQuery = '';
+      this.importUserSearchResults = [];
+      this.importSelectedUser = '';
+      this.importSelectedLayer = '';
+      this.importAvailableUsers = [];
+      this.importAvailableLayers = [];
+      this.modalImportLayer.show();
+
+      var that = this;
+      axios.post('../api/list-sharing-users',
+                 this.CreatePostPayload({}))
+        .then(function(response) {
+          that.importAvailableUsers = response.data;
+        })
+        .catch(function() {
+          console.error('Cannot load users sharing layers');
+        });
+    },
+
+    ImportUserSearchChanged: function() {
+      this.importSelectedUser = '';
+      this.importSelectedLayer = '';
+      this.importAvailableLayers = [];
+      this.importUserSearchResults = [];
+
+      var query = this.importUserSearchQuery.trim().toLowerCase();
+
+      if (query !== '') {
+        for (var i = 0; i < this.importAvailableUsers.length; i++) {
+          if (this.importAvailableUsers[i].name.toLowerCase().indexOf(query) !== -1) {
+            this.importUserSearchResults.push(this.importAvailableUsers[i]);
+          }
+        }
+      }
+    },
+
+    ImportUserSelect: function(userId) {
+      this.importUserSearchQuery = '';
+      this.importUserSearchResults = [];
+      this.importSelectedUser = userId;
+      this.ImportUserChanged();
+    },
+
+    ImportUserChanged: function() {
+      this.importSelectedLayer = '';
+      this.importAvailableLayers = [];
+
+      var that = this;
+      axios.post('../api/list-shared-layers',
+                 this.CreatePostPayload({ 'author': this.importSelectedUser }))
+        .then(function(response) {
+          that.importAvailableLayers = response.data;
+        })
+        .catch(function() {
+          console.error('Cannot load imported layers');
+        });
+    },
+
+    ImportLayerConfirmed: function() {
+      this.modalImportLayer.hide();
+      var userId = this.importSelectedUser;
+      var layerId = this.importSelectedLayer;
+
+      var that = this;
+      axios.post('../api/import-layer',
+                 this.CreatePostPayload({
+                   'author': userId,
+                   'layer': layerId
+                 }))
+        .then(function(response) {
+          that.LoadLayers();
+        })
+        .catch(function() {
+          console.error('Cannot import layer');
+        });
+    },
+
+
+    DeleteImportedLayer: function(layerId) {
+      this.pendingDelete = layerId;
+      this.modalDeleteImportedLayer.show();
+    },
+
+    ImportedLayerDeleteConfirmed: function() {
+      this.modalDeleteImportedLayer.hide();
+      var layerId = this.pendingDelete;
+
+      var that = this;
+      axios.post('../api/remove-imported-layer',
+                 this.CreatePostPayload({
+                   'layer': layerId
+                 }))
+        .then(function(response) {
+          that.LoadLayers();
+        })
+        .catch(function() {
+          console.error('Cannot remove imported layer');
+        });
+    },
+
+    SaveImportedLayer: function(layer) {
+      var that = this;
+      axios.post('../api/save-imported-layer',
+                 this.CreatePostPayload({
+                   'layer': layer
+                 }))
+        .catch(function() {
+          console.error('Cannot save imported layer');
+        });
+    },
+
+
+    ReloadImportedFeatures: function() {
+      // Reset current selection when refreshing imported content.
+      this.ClearAnnotationSelection(true);
+
+      console.assert(this.drawImportedSource !== null);  // InitializeAnnotations() must have been invoked
+      console.assert(this.workspaceInfo.enabled !== undefined);  // LoadLayers() must have been invoked
+
+      if (!this.workspaceInfo.sharing) {
+        return;
+      }
+
+      var that = this;
+      axios.post('../api/load-imported-features',
+                 this.CreatePostPayload({}))
+        .then(function(response) {
+          that.drawImportedSource.clear();
+
+          for (let i = 0; i < response.data.features.length; i++) {
+            UnserializeFeatureOntoMap(that.drawImportedSource, response.data.features[i]);
+          }
+        })
+        .catch(function() {
+          console.error('Cannot load imported features');
+        });
+    }
+  }
+});
+
+
 function IsNear(a, b)
 {
   return Math.abs(a - b) <= 0.01;
 }
 
 
-function InitializePyramid(pyramid, tilesBaseUrl)
+function FormatUnit(value, units)
 {
-  $('#map').css('background', pyramid['BackgroundColor']);  // New in WSI 2.1
+  // Order by unit size ascending (factor descending)
+  for (var i = 0; i < units.length - 1; i++) {
+    var nextScaled = value * units[i + 1].factor;
 
-  var width = pyramid['TotalWidth'];
-  var height = pyramid['TotalHeight'];
-  var countLevels = pyramid['Resolutions'].length;
-
-  var metersPerUnit = null;
-  var imagedVolumeWidth = pyramid['ImagedVolumeWidth'];  // In millimeters
-  var imagedVolumeHeight = pyramid['ImagedVolumeHeight'];
-  if (imagedVolumeWidth !== undefined &&
-      imagedVolumeHeight !== undefined) {
-    var metersPerUnitX = parseFloat(imagedVolumeWidth) / (1000.0 * parseFloat(width));
-    var metersPerUnitY = parseFloat(imagedVolumeHeight) / (1000.0 * parseFloat(height));
-    if (IsNear(metersPerUnitX / metersPerUnitY, 1)) {
-      metersPerUnit = metersPerUnitX;
-    } else {
-      // Backward compatibility with OrthancWSIDicomizer <= 3.2, where X/Y were swapped
-      metersPerUnitX = parseFloat(imagedVolumeWidth) / (1000.0 * parseFloat(height));
-      metersPerUnitY = parseFloat(imagedVolumeHeight) / (1000.0 * parseFloat(width));
-      if (IsNear(metersPerUnitX / metersPerUnitY, 1)) {
-        metersPerUnit = metersPerUnitX;
-      } else {
-        console.error('Anisotropic pixel spacing (may result from an inconsistency ' +
-                      'in the imaged volume size), not showing the scale');
-      }
+    // Stop when the next larger unit would produce a value below 1
+    if (Math.abs(nextScaled) < 1) {
+      var scaled = value * units[i].factor;
+      return scaled.toFixed(2) + ' ' + units[i].label;
     }
   }
 
-  // Maps always need a projection, but Zoomify layers are not geo-referenced, and
-  // are only measured in pixels.  So, we create a fake projection that the map
-  // can use to properly display the layer.
-  var proj = new ol.proj.Projection({
-    code: 'pixel',
-    units: 'pixel',
-    metersPerUnit: metersPerUnit,
-    extent: [0, 0, width, height]
-  });
+  // Use the largest unit available
+  var largest = units[units.length - 1];
+  var scaled = value * largest.factor;
+  return scaled.toFixed(2) + ' ' + largest.label;
+}
 
-  var extent = [0, -height, width, 0];
 
-  var rotateControl = new ol.control.Rotate({
-    autoHide: false,  // Show the button even if rotation is 0
-    resetNorth: function() {  // Disable the default action
-    }
-  });
+function FormatLength(lengthPx, projection)
+{
+  var metersPerUnit = projection.getMetersPerUnit();
+  if (metersPerUnit) {
+    var meters = lengthPx * metersPerUnit;
 
-  new bootstrap.Popover(rotateControl.element, {
-    placement: 'right',
-    container: 'body',
-    html: true,
-    content: $('#popover-content')
-  });
-
-  // Disable the rotation of the map, and inertia while panning
-  // http://stackoverflow.com/a/25682186
-  var interactions = ol.interaction.defaults.defaults({
-    //pinchRotate : false,
-    dragPan: false  // disable kinetics
-    //shiftDragZoom: false  // disable zoom box
-  }).extend([
-    new ol.interaction.DragPan(),
-    new ol.interaction.DragRotate({
-      //condition: ol.events.condition.shiftKeyOnly  // Rotate only when Shift key is pressed
-    })
-  ]);
-
-  var controls = ol.control.defaults.defaults({
-    attribution: false
-  }).extend([
-    rotateControl,
-    new ol.control.ScaleLine({
-      minWidth: 100
-    })
-  ]);
-
-  const params = new URLSearchParams(document.location.search);
-  if (params.has('description')) {
-    controls.extend([
-      new ol.control.Attribution({
-        attributions: params.get('description'),
-        collapsible: false
-      })
+    return FormatUnit(meters, [
+      { label: 'μm', factor: 1e6 },
+      { label: 'mm', factor: 1e3 },
+      { label: 'cm', factor: 1e2 },
+      { label: 'm',  factor: 1 },
+      { label: 'km', factor: 1e-3 }
     ]);
+
+  } else {
+    return lengthPx.toFixed(0) + ' px';
+  }
+}
+
+
+function FormatArea(areaPx, projection)
+{
+  var metersPerUnit = projection.getMetersPerUnit();
+  if (metersPerUnit) {
+    var sqMeters = areaPx * metersPerUnit * metersPerUnit;
+
+    return FormatUnit(sqMeters, [
+      { label: 'μm²', factor: 1e12 },
+      { label: 'mm²', factor: 1e6 },
+      { label: 'cm²', factor: 1e4 },
+      { label: 'm²',  factor: 1 },
+      { label: 'km²', factor: 1e-6 }
+    ]);
+
+  } else {
+    return areaPx.toFixed(0) + ' px²';
+  }
+}
+
+
+function CreateLayerStyle(color)
+{
+  function HexToRGBA(hex, alpha)
+  {
+    var r = parseInt(hex.slice(1, 3), 16);
+    var g = parseInt(hex.slice(3, 5), 16);
+    var b = parseInt(hex.slice(5, 7), 16);
+    return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
   }
 
-
-  var layer = new ol.layer.Tile({
-    extent: extent,
-    source: new ol.source.TileImage({
-      projection: proj,
-      tileUrlFunction: function(tileCoord, pixelRatio, projection) {
-        return (tilesBaseUrl + (countLevels - 1 - tileCoord[0]) + '/' + tileCoord[1] + '/' + tileCoord[2]);
-      },
-      tileGrid: new ol.tilegrid.TileGrid({
-        extent: extent,
-        resolutions: pyramid['Resolutions'].reverse(),
-        tileSizes: pyramid['TilesSizes'].reverse()
-      })
-    }),
-    wrapX: false,
-    projection: proj
-  });
-
-
-  var map = new ol.Map({
-    target: 'map',
-    layers: [ layer ],
-    view: new ol.View({
-      projection: proj,
-      center: [width / 2, -height / 2],
-      zoom: 0,
-      minResolution: 0.1   // "1" means "do not interpelate over pixels"
-    }),
-    interactions: interactions,
-    controls: controls
-  });
-
-  map.getView().fit(extent, map.getSize());
-
-
-  $('#rotation-slider').on('input change', function() {
-    map.getView().setRotation(this.value / 180 * Math.PI);
-  });
-
-  $('#rotation-reset').click(function() {
-    $('#rotation-slider').val(0).change();
-  });
-
-  $('#rotation-minus90').click(function() {
-    var angle = parseInt($('#rotation-slider').val()) - 90;
-    if (angle < -180) {
-      angle += 360;
-    }
-    $('#rotation-slider').val(angle).change();
-  });
-
-  $('#rotation-plus90').click(function() {
-    var angle = parseInt($('#rotation-slider').val()) + 90;
-    if (angle > 180) {
-      angle -= 360;
-    }
-    $('#rotation-slider').val(angle).change();
+  return new ol.style.Style({
+    stroke: new ol.style.Stroke({ color: color, width: 2 }),
+    fill: new ol.style.Fill({ color: HexToRGBA(color, 0.2) }),
+    // The "image" style is used by point annotations
+    image: new ol.style.Circle({
+      radius: 5,
+      fill: new ol.style.Fill({ color: color })
+    })
   });
 }
 
 
-$(document).ready(function() {
-  const params = new URLSearchParams(document.location.search);
+function CreateArrowStyle(feature, resolution, color)
+{
+  const coordinates = feature.getGeometry().getCoordinates();
 
-  if (params.has('series')) {
-    var seriesId = params.get('series');
-    $.ajax({
-      url : '../pyramids/' + seriesId,
-      error: function() {
-        alert('Error - Cannot get the pyramid structure of series: ' + seriesId);
-      },
-      success : function(pyramid) {
-        InitializePyramid(pyramid, '../tiles/' + seriesId + '/');
-      }
-    });
-  } else if (params.has('instance')) {
-    var frameNumber = 0;
-    if (params.has('frame')) {
-      frameNumber = params.get('frame');
+  if (coordinates.length == 2) {
+    const start = coordinates[0];
+    const end = coordinates[1];
+
+    const angle = Math.atan2(
+      end[1] - start[1],
+      end[0] - start[0]
+    );
+
+    const headLength = 10 * resolution;
+    const headAngle = Math.PI / 6;
+
+    const p1 = [
+      end[0] - headLength * Math.cos(angle - headAngle),
+      end[1] - headLength * Math.sin(angle - headAngle)
+    ];
+
+    const p2 = [
+      end[0] - headLength * Math.cos(angle + headAngle),
+      end[1] - headLength * Math.sin(angle + headAngle)
+    ];
+
+    return [
+      // shaft
+      new ol.style.Style({
+        stroke: new ol.style.Stroke({
+          color: color,
+          width: 2
+        })
+      }),
+
+      // arrow head
+      new ol.style.Style({
+        geometry: new ol.geom.LineString([
+          p1, end, p2
+        ]),
+        stroke: new ol.style.Stroke({
+          color: color,
+          width: 2
+        })
+      })
+    ];
+  }
+}
+
+
+function IsArrowFeature(feature)
+{
+  return feature.get('type') === 'arrow';
+}
+
+
+function CreateFeatureStyle(feature, resolution, color)
+{
+  if (IsArrowFeature(feature)) {
+    return CreateArrowStyle(feature, resolution, color);
+  } else {
+    return CreateLayerStyle(color);
+  }
+}
+
+
+function SerializeFeature(feature)
+{
+  var type = feature.getGeometry().getType();
+
+  if (type === 'LineString') {
+    var s;
+    if (IsArrowFeature(feature)) {
+      s = 'arrow';
+    } else {
+      s = 'polyline';
     }
 
-    var instanceId = params.get('instance');
-    $.ajax({
-      url : '../frames-pyramids/' + instanceId + '/' + frameNumber,
-      error: function() {
-        alert('Error - Cannot get the pyramid structure of frame ' + frameNumber + ' of instance: ' + instanceId);
-      },
-      success : function(pyramid) {
-        InitializePyramid(pyramid, '../frames-tiles/' + instanceId + '/' + frameNumber + '/');
-      }
-    });
+    return {
+      'type' : s,
+      'coordinates' : feature.getGeometry().getCoordinates()
+    };
+  } else if (type === 'Point') {
+    return {
+      'type' : 'point',
+      'coordinates' : feature.getGeometry().getCoordinates()
+    };
+  } else if (type === 'Circle') {
+    return {
+      'type' : 'circle',
+      'center' : feature.getGeometry().getCenter(),
+      'radius' : feature.getGeometry().getRadius()
+    };
+  } else if (type === 'Polygon') {
+    return {
+      'type' : 'polygon',
+      'coordinates' : feature.getGeometry().getCoordinates()
+    };
   } else {
-    alert('Error - No series ID and no instance ID specified!');
+    console.error('Not implemented: ' + type);
+    return null;
   }
-});
+}
+
+
+function UnserializeGeometry(json)
+{
+  if (json.type === 'polyline') {
+    return new ol.geom.LineString(json['coordinates']);
+  } else if (json.type === 'arrow') {
+    var feature = new ol.geom.LineString(json['coordinates']);
+    feature.set('type', 'arrow');
+    return feature;
+  } else if (json.type === 'point') {
+    return new ol.geom.Point(json['coordinates']);
+  } else if (json.type === 'circle') {
+    return new ol.geom.Circle(json['center'], json['radius']);
+  } else if (json.type === 'polygon') {
+    return new ol.geom.Polygon(json['coordinates']);
+  } else {
+    console.error('Not implemented: ' + json.type);
+    return null;
+  }
+}
+
+
+function UnserializeFeatureOntoMap(mapSource, serialized)
+{
+  var geometry = UnserializeGeometry(serialized);
+
+  if (geometry !== null) {
+    var feature = new ol.Feature(geometry);
+
+    var layerId = serialized['layer-id'];
+    console.assert(layerId !== undefined);
+    feature.set('layer-id', layerId);
+
+    var type = serialized['type'];
+    if (type !== undefined) {
+      feature.set('type', type);
+    }
+
+    var label = serialized['label'];
+    if (label !== undefined) {
+      feature.set('label', label);
+    }
+
+    var date = serialized['creation-datetime'];  // This is a numerical timestamp
+    if (date !== undefined) {
+      feature.set('creation-datetime', new Date(date));
+    }
+
+    mapSource.addFeature(feature);
+  }
+}
+
+
+function BeforeUnloadHandler(event)
+{
+  event.preventDefault();
+
+  // Included for legacy support, e.g. Chrome/Edge < 119
+  event.returnValue = true;
+};
+
+
+
+
+function SetMagnification(map, referenceMagnification, magnification)
+{
+  var view = map.getView();
+  var projection = view.getProjection();
+
+  if (projection.getMetersPerUnit()) {  // Ensure that "metersPerUnit" is not null
+    var resolution = referenceMagnification / magnification;
+
+    view.animate({
+      resolution: view.getConstrainedResolution(resolution),
+      duration: 250
+    });
+  }
+}
+
+
+function GetMagnification(map, referenceMagnification)
+{
+  var view = map.getView();
+  var projection = view.getProjection();
+
+  if (projection.getMetersPerUnit() !== undefined) {  // Ensure that "metersPerUnit" is not null
+    var resolution = view.getResolution();
+
+    return referenceMagnification / resolution;
+  }
+}
+
+
+/**
+ * A ScaleLine control that also displays the equivalent microscope
+ * objective magnification (4x, 10x, 40x,...) for the current zoom level.
+ */
+class MicroscopeScaleLine extends ol.control.ScaleLine {
+  constructor(options = {}) {
+    super(options);
+
+    this.referenceMagnification_ = options.referenceMagnification;
+    console.assert(this.referenceMagnification_ !== undefined);
+
+    this.magnificationElement_ = document.createElement('div');
+    this.magnificationElement_.className = 'ol-scale-magnification';
+    this.element.appendChild(this.magnificationElement_);
+  }
+
+  updateElement_() {
+    super.updateElement_();
+
+    var map = this.getMap();
+    if (map && this.magnificationElement_) {
+      var magnification = GetMagnification(map, this.referenceMagnification_);
+      if (magnification) {
+        this.magnificationElement_.innerText = magnification.toFixed(2) + 'x';
+      }
+    }
+  }
+}

@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "Enumerations.h"
+#include "FrameworkEnumerations.h"
 
 #include <tiff.h>
 #include <tiffio.h>
