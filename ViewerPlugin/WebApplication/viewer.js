@@ -438,7 +438,10 @@ var app = new Vue({
     },
 
     UpdateAnnotationProperty: function(prop) {
-      if (this.selectedFeature && prop.featureProp) {
+      if (this.selectedFeature &&
+          prop.featureProp &&
+          this.drawSource !== null &&
+          this.drawSource.hasFeature(this.selectedFeature)) {
         this.selectedFeature.set(prop.featureProp, prop.value);
         this.SaveUserFeatures();
       }
@@ -570,7 +573,9 @@ var app = new Vue({
 
     DeleteSelectedAnnotation: function() {
       var selected = this.selectAnnotation.getFeatures();
-      if (selected.getLength() > 0) {
+      if (selected.getLength() > 0 &&
+          this.drawSource !== null &&
+          this.drawSource.hasFeature(selected.item(0))) {
         this.modalDeleteAnnotation.show();
       }
     },
@@ -900,6 +905,17 @@ var app = new Vue({
         return layer;
       }
 
+      function IsFeatureVisible(feature) {
+        var layerId = feature.get('layer-id');
+        var userLayer = GetLayerById(layerId);
+        if (userLayer !== null) {
+          return userLayer.visible;
+        }
+
+        var importedLayer = GetImportedLayerById(layerId);
+        return importedLayer !== null && importedLayer.visible;
+      }
+
       // Single vector source holding all features from all layers
       this.drawSource = new ol.source.Vector();
 
@@ -975,9 +991,9 @@ var app = new Vue({
       // The condition restricts user-click selection to the dedicated select tool only,
       // preventing spurious selection events when starting a draw near an existing feature.
       this.selectAnnotation = new ol.interaction.Select({
-        layers: [ this.drawLayer ],
+        layers: [ this.drawLayer, this.drawImportedLayer ],
         filter: function(feature) {
-          return GetLayerOfFeature(feature).visible;
+          return IsFeatureVisible(feature);
         },
         condition: function(e) {
           return ol.events.condition.singleClick(e) && app.activeDrawTool === 'select';
@@ -1053,7 +1069,12 @@ var app = new Vue({
             that.AddReadOnlyProperty('Area', FormatArea(geometry.getArea(), that.map.getView().getProjection()));
           }
 
-          that.AddEditableProperty('Label', feature.get('label') || '', 'label');
+          if (that.drawSource !== null &&
+              that.drawSource.hasFeature(feature)) {
+            that.AddEditableProperty('Label', feature.get('label') || '', 'label');
+          } else {
+            that.AddReadOnlyProperty('Label', feature.get('label') || '');
+          }
 
           /*
           // TODO
