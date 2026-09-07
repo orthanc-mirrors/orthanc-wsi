@@ -454,6 +454,19 @@ var app = new Vue({
       });
     },
 
+    ClearAnnotationSelection: function(clearOlSelection) {
+      if (clearOlSelection === undefined) {
+        clearOlSelection = true;
+      }
+
+      if (clearOlSelection && this.selectAnnotation !== null) {
+        this.selectAnnotation.getFeatures().clear();
+      }
+
+      this.selectedFeature = null;
+      this.annotationProperties = [];
+    },
+
     UpdateAnnotationProperty: function(prop) {
       if (this.selectedFeature &&
           prop.featureProp &&
@@ -517,12 +530,7 @@ var app = new Vue({
 
       this.activeDrawTool = null;
       this.map.getViewport().style.cursor = '';
-
-      if (this.selectAnnotation !== null) {
-        this.selectAnnotation.getFeatures().clear();
-      }
-
-      this.selectedFeature = null;
+      this.ClearAnnotationSelection(true);
     },
 
     ToggleSelectTool: function() {
@@ -606,8 +614,7 @@ var app = new Vue({
       });
 
       selected.clear();
-
-      this.selectedFeature = null;
+      this.ClearAnnotationSelection(false);
       this.modalDeleteAnnotation.hide();
     },
 
@@ -1070,9 +1077,9 @@ var app = new Vue({
       this.modifyFeature.on('modifyend', function(e) { that.SaveUserFeatures(); });
 
       this.selectAnnotation.on('select', function(e) {
-        that.annotationProperties = [];
-
         if (e.selected.length === 1) {
+          that.annotationProperties = [];
+
           var feature = e.selected[0];
           that.selectedFeature = feature;
 
@@ -1116,7 +1123,7 @@ var app = new Vue({
 
           bootstrap.Offcanvas.getOrCreateInstance(document.getElementById('right-panel')).show();
         } else {
-          that.selectedFeature = null;
+          that.ClearAnnotationSelection(false);
         }
       });
 
@@ -1316,6 +1323,9 @@ var app = new Vue({
 
 
     ReloadImportedFeatures: function() {
+      // Reset current selection when refreshing imported content.
+      this.ClearAnnotationSelection(true);
+
       console.assert(this.drawImportedSource !== null);  // InitializeAnnotations() must have been invoked
       console.assert(this.workspaceInfo.enabled !== undefined);  // LoadLayers() must have been invoked
 
