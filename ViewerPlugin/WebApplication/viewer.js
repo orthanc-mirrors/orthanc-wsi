@@ -1297,20 +1297,40 @@ function IsNear(a, b)
 }
 
 
+function FormatUnit(value, units)
+{
+  // Order by unit size ascending (factor descending)
+  for (var i = 0; i < units.length - 1; i++) {
+    var nextScaled = value * units[i + 1].factor;
+
+    // Stop when the next larger unit would produce a value below 1
+    if (Math.abs(nextScaled) < 1) {
+      var scaled = value * units[i].factor;
+      return scaled.toFixed(2) + ' ' + units[i].label;
+    }
+  }
+
+  // Use the largest unit available
+  var largest = units[units.length - 1];
+  var scaled = value * largest.factor;
+  return scaled.toFixed(2) + ' ' + largest.label;
+}
+
+
 function FormatLength(lengthPx, projection)
 {
   var metersPerUnit = projection.getMetersPerUnit();
   if (metersPerUnit) {
     var meters = lengthPx * metersPerUnit;
-    if (meters < 1e-3) {
-      return (meters * 1e6).toFixed(1) + ' μm';
-    } else if (meters < 1) {
-      return (meters * 1e3).toFixed(1) + ' mm';
-    } else if (meters < 1000) {
-      return meters.toFixed(2) + ' m';
-    } else {
-      return (meters / 1000).toFixed(3) + ' km';
-    }
+
+    return FormatUnit(meters, [
+      { label: 'μm', factor: 1e6 },
+      { label: 'mm', factor: 1e3 },
+      { label: 'cm', factor: 1e2 },
+      { label: 'm',  factor: 1 },
+      { label: 'km', factor: 1e-3 }
+    ]);
+
   } else {
     return lengthPx.toFixed(0) + ' px';
   }
@@ -1323,23 +1343,14 @@ function FormatArea(areaPx, projection)
   if (metersPerUnit) {
     var sqMeters = areaPx * metersPerUnit * metersPerUnit;
 
-    var units = [
+    return FormatUnit(sqMeters, [
       { label: 'μm²', factor: 1e12 },
       { label: 'mm²', factor: 1e6 },
       { label: 'cm²', factor: 1e4 },
       { label: 'm²',  factor: 1 },
       { label: 'km²', factor: 1e-6 }
-    ];
+    ]);
 
-    for (var i = 0; i < units.length; i++) {
-      var scaled = sqMeters * units[i].factor;
-      if (scaled < 1000) {
-        return scaled.toFixed(2) + ' ' + units[i].label;
-      }
-    }
-
-    var largest = units[units.length - 1];
-    return (sqMeters * largest.factor).toFixed(2) + ' ' + largest.label;
   } else {
     return areaPx.toFixed(0) + ' px²';
   }
