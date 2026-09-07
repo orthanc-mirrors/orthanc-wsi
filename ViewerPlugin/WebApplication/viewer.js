@@ -133,7 +133,7 @@ var app = new Vue({
       new bootstrap.Tooltip(el, { trigger: 'hover' });
     });
 
-    bootstrap.Offcanvas.getOrCreateInstance(document.getElementById('right-panel')).show();  // TODO - REMOVE
+    // bootstrap.Offcanvas.getOrCreateInstance(document.getElementById('right-panel')).show();  // Open side menu on startup
 
     const params = new URLSearchParams(document.location.search);
 
