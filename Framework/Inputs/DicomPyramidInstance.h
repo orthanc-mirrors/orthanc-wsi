@@ -54,6 +54,8 @@ namespace OrthancWSI
     double                              imagedVolumeHeight_;
     bool                                hasLevel_;
     unsigned int                        level_;
+    bool                                hasObjectiveLensPower_;
+    float                               objectiveLensPower_;
 
     void Load(OrthancStone::IOrthancConnection&  orthanc,
               const std::string& instanceId);
@@ -135,5 +137,7 @@ namespace OrthancWSI
     void SetLevel(unsigned int level);
 
     bool IsLevel(unsigned int level) const;
+
+    bool LookupObjectiveLensPower(float& power) const;
   };
 }

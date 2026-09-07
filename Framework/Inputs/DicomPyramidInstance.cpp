@@ -56,6 +56,8 @@ namespace OrthancWSI
   static const Orthanc::DicomTag DICOM_TAG_RECOMMENDED_ABSENT_PIXEL_CIELAB(0x0048, 0x0015);
   static const Orthanc::DicomTag DICOM_TAG_IMAGED_VOLUME_WIDTH(0x0048, 0x0001);
   static const Orthanc::DicomTag DICOM_TAG_IMAGED_VOLUME_HEIGHT(0x0048, 0x0002);
+  static const Orthanc::DicomTag DICOM_TAG_OPTICAL_PATH_SEQUENCE(0x0048, 0x0105);
+  static const Orthanc::DicomTag DICOM_TAG_OBJECTIVE_LENS_POWER(0x0048, 0x0112);
 
   static ImageCompression DetectImageCompression(OrthancStone::IOrthancConnection& orthanc,
                                                  const std::string& instanceId)
@@ -298,6 +300,20 @@ namespace OrthancWSI
     hasImagedVolumeSize_ = (
       reader.GetDoubleValue(imagedVolumeWidth_, Orthanc::DicomPath(DICOM_TAG_IMAGED_VOLUME_WIDTH)) &&
       reader.GetDoubleValue(imagedVolumeHeight_, Orthanc::DicomPath(DICOM_TAG_IMAGED_VOLUME_HEIGHT)));
+
+    // New in WSI 4.0
+    size_t countOpticalPaths;
+    if (reader.GetDataset().GetSequenceSize(countOpticalPaths, Orthanc::DicomPath(DICOM_TAG_OPTICAL_PATH_SEQUENCE)) &&
+        countOpticalPaths == 1)
+    {
+      hasObjectiveLensPower_ = reader.GetFloatValue(
+        objectiveLensPower_, Orthanc::DicomPath(DICOM_TAG_OPTICAL_PATH_SEQUENCE, 0,
+                                                DICOM_TAG_OBJECTIVE_LENS_POWER));
+    }
+    else
+    {
+      hasObjectiveLensPower_ = false;
+    }
   }
 
 
@@ -311,7 +327,9 @@ namespace OrthancWSI
     imagedVolumeWidth_(0),
     imagedVolumeHeight_(0),
     hasLevel_(false),
-    level_(0)
+    level_(0),
+    hasObjectiveLensPower_(false),
+    objectiveLensPower_(0)
   {
     if (useCache)
     {
@@ -554,5 +572,19 @@ namespace OrthancWSI
   {
     return (hasLevel_ &&
             level_ == level);
+  }
+
+
+  bool DicomPyramidInstance::LookupObjectiveLensPower(float& power) const
+  {
+    if (hasObjectiveLensPower_)
+    {
+      power = objectiveLensPower_;
+      return true;
+    }
+    else
+    {
+      return false;
+    }
   }
 }

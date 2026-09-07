@@ -92,5 +92,10 @@ namespace OrthancWSI
     {
       return source_.GetBackgroundColor();
     }
+
+    virtual bool LookupObjectiveLensPower(float& power) const ORTHANC_OVERRIDE
+    {
+      return source_.LookupObjectiveLensPower(power);
+    }
   };
 }

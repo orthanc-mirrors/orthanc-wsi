@@ -94,5 +94,7 @@ namespace OrthancWSI
 
     bool LookupImagedVolumeSize(double& width,
                                 double& height) const;
+
+    virtual bool LookupObjectiveLensPower(float& power) const ORTHANC_OVERRIDE;
   };
 }

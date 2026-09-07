@@ -93,5 +93,10 @@ namespace OrthancWSI
     }
 
     size_t GetMemoryUsage() const ORTHANC_OVERRIDE;
+
+    virtual bool LookupObjectiveLensPower(float& power) const ORTHANC_OVERRIDE
+    {
+      return false;
+    }
   };
 }

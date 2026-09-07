@@ -196,4 +196,10 @@ namespace OrthancWSI
       }
     }
   }
+
+
+  bool InMemoryTiledImage::LookupObjectiveLensPower(float& power) const
+  {
+    throw Orthanc::OrthancException(Orthanc::ErrorCode_NotImplemented);
+  }
 }
