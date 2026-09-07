@@ -925,12 +925,17 @@ var app = new Vue({
       this.drawImportedSource = new ol.source.Vector();
       this.drawImportedLayer = new ol.layer.Vector({
         source: this.drawImportedSource,
-        style: function(feature) {
+        style: function(feature, resolution) {
           var entry = GetImportedLayerById(feature.get('layer-id'));
           if (!entry || !entry.visible) {
             return null;
           }
-          return CreateLayerStyle(entry.color);
+
+          if (feature.get('type') === 'arrow') {
+            return CreateArrowStyle(feature, resolution, entry.color);
+          } else {
+            return CreateLayerStyle(entry.color);
+          }
         }
       });
       this.map.addLayer(this.drawImportedLayer);
