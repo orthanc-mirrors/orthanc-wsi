@@ -44,7 +44,7 @@ var app = new Vue({
 
       // UI state
       toolbarsVisible: false,
-      panelOpen: true,
+      panelOpen: false,
       mapBackground: '',
       rotationDeg: 0,
       activeDrawTool: null,
@@ -604,8 +604,23 @@ var app = new Vue({
       var toggle = document.getElementById('right-panel-toggle');
       var isResizing = false;
 
+      // Ensure the initial chevron direction matches the real offcanvas state.
+      that.panelOpen = panel.classList.contains('show');
+
       function ResizingLoop() {
-        toggle.style.right = (window.innerWidth - panel.getBoundingClientRect().left) + 'px';
+        // If the offcanvas is hidden (e.g. before workspace load), its left edge can be 0,
+        // which would incorrectly move the toggle off-screen. Clamp to [0, panelWidth].
+        var panelRect = panel.getBoundingClientRect();
+        var panelWidth = Math.max(0, panelRect.width || 0);
+        var right = window.innerWidth - panelRect.left;
+
+        if (!isFinite(right)) {
+          right = 0;
+        }
+
+        right = Math.max(0, Math.min(right, panelWidth));
+        toggle.style.right = right + 'px';
+
         if (isResizing) {
           requestAnimationFrame(ResizingLoop);
         }
@@ -634,6 +649,9 @@ var app = new Vue({
         StartResizing();
       });
       panel.addEventListener('shown.bs.offcanvas', StopResizing);
+
+      // Keep the toggle aligned if viewport size changes.
+      window.addEventListener('resize', StopResizing);
     },
 
     // -----------------------------------------------------------------------
