@@ -568,8 +568,8 @@
               </label>
               <div class="input-group input-group-sm mb-1">
                 <input type="text" class="form-control" placeholder="Type to search or enter a user ID..."
-                       v-model="shareLayerSearchQuery"
-                       v-on:input="ShareLayerSearchUsers()"
+                       :value="shareLayerSearchQuery"
+                       v-on:input="ShareLayerSearchUsers($event.target.value)"
                        v-on:keydown.enter="ShareLayerAddStandardUser(shareLayerSearchQuery)">
                 <button class="btn btn-outline-secondary" type="button"
                         v-on:click="ShareLayerAddStandardUser(shareLayerSearchQuery)">Add</button>
@@ -609,8 +609,8 @@
                 <label class="form-label small mb-1">User</label>
                 <input type="text" class="form-control form-control-sm"
                        placeholder="Type to search a user..."
-                       v-model="importUserSearchQuery"
-                       v-on:input="ImportUserSearchChanged()">
+                       :value="importUserSearchQuery"
+                       v-on:input="ImportUserSearchChanged($event.target.value)">
                 <div v-if="importUserSearchResults.length > 0"
                      class="list-group list-group-flush mt-1 border rounded"
                      style="max-height:8em; overflow-y:auto">

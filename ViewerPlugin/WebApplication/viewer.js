@@ -1183,7 +1183,10 @@ var app = new Vue({
       this.shareLayerSearchResults = [];
     },
 
-    ShareLayerSearchUsers: function() {
+    ShareLayerSearchUsers: function(newQuery) {
+      if (newQuery !== undefined) {
+        this.shareLayerSearchQuery = newQuery;
+      }
       var query = this.shareLayerSearchQuery.trim();
       if (!query) {
         this.shareLayerSearchResults = [];
@@ -1228,13 +1231,18 @@ var app = new Vue({
                  this.CreatePostPayload({}))
         .then(function(response) {
           that.importAvailableUsers = response.data;
+          that.ImportUserSearchChanged();
         })
         .catch(function() {
           console.error('Cannot load users sharing layers');
         });
     },
 
-    ImportUserSearchChanged: function() {
+    ImportUserSearchChanged: function(newQuery) {
+      if (newQuery !== undefined) {
+        this.importUserSearchQuery = newQuery;
+      }
+
       this.importSelectedUser = '';
       this.importSelectedLayer = '';
       this.importAvailableLayers = [];
