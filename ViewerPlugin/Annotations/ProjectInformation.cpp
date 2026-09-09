@@ -41,6 +41,7 @@ namespace OrthancWSI
   {
     Json::Value info;
 
+    // The route below was introduced in education plugin 1.2
     if (OrthancPlugins::RestApiGet(info, "/education/api-plugins/project?id=" + projectId_, true) &&
         info.isObject())
     {

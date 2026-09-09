@@ -298,7 +298,7 @@ namespace OrthancWSI
       {
         const std::string source = Orthanc::SerializationToolbox::ReadString(authentication, "source", "(none)");
 
-        if (source == "orthanc-education")
+        if (source == "orthanc-education")  // This necessitate education plugin 1.2
         {
           return new EducationPluginUser(authentication);
         }
