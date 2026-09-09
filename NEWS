@@ -11,15 +11,18 @@ Configuration
 -------------
 
 * New configuration option "EnableAnnotations" to enable annotations
+  ("true" by default)
 * New configuration option "AuthenticationSource" to enable per-user annotations:
   - "None" uses the administrative Orthanc user (default)
   - "RegisteredUsers" relies on the HTTP basic authentication that is built in Orthanc
   - "HttpHeader" takes the user out of the HTTP header specified in "AuthenticationHttpHeader" option
-  - "Plugin" can be used if the "orthanc-education" plugin is installed
+  - "Plugin" to use authentication implemented by a plugin (notably for "orthanc-education")
 * New configuration option "Instructors" to distinguish between learners
   and instructors, only if the authentication source is "HttpHeader"
-* New configuration option "EnableAnnotationsSharing" to enable sharing of annotations
-* New configuration option "EnableLearnerToLearnerSharing" to enable sharing between learners
+* New configuration option "EnableAnnotationsSharing" to enable
+  sharing of annotations ("false" by default)
+* New configuration option "EnableLearnerToLearnerSharing" to enable
+  sharing between learners ("false" by default)
 
 Maintenance
 -----------
@@ -32,6 +35,7 @@ Maintenance
     by the measurement tools in the OHIF microscopy viewer
   - Support DICOM-ization of tiled TIFF with no compression
 * Viewer plugin:
+  - Added URL option "no-scaling" to disable conversion to physical units
   - Added CMake option "ORTHANC_SDK_VERSION"
 
 

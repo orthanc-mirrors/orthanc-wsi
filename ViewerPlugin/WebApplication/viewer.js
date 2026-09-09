@@ -41,6 +41,7 @@ var app = new Vue({
       userLayers: [],
       importedLayers: [],
       activeUserLayerId: null,
+      scaling: true,
 
       // UI state
       toolbarsVisible: false,
@@ -148,6 +149,10 @@ var app = new Vue({
 
     if (params.has('description')) {
       this.imageDescription = params.get('description');
+    }
+
+    if (params.has('no-scaling')) {
+      this.scaling = false;
     }
 
     if (params.has('series')) {
@@ -720,23 +725,25 @@ var app = new Vue({
       var countLevels = pyramid['Resolutions'].length;
 
       var metersPerUnit = null;
-      var imagedVolumeWidth = pyramid['ImagedVolumeWidth'];  // In millimeters
-      var imagedVolumeHeight = pyramid['ImagedVolumeHeight'];
-      if (imagedVolumeWidth !== undefined &&
-          imagedVolumeHeight !== undefined) {
-        var metersPerUnitX = parseFloat(imagedVolumeWidth) / (1000.0 * parseFloat(width));
-        var metersPerUnitY = parseFloat(imagedVolumeHeight) / (1000.0 * parseFloat(height));
-        if (IsNear(metersPerUnitX / metersPerUnitY, 1)) {
-          metersPerUnit = metersPerUnitX;
-        } else {
-          // Backward compatibility with OrthancWSIDicomizer <= 3.2, where X/Y were swapped
-          metersPerUnitX = parseFloat(imagedVolumeWidth) / (1000.0 * parseFloat(height));
-          metersPerUnitY = parseFloat(imagedVolumeHeight) / (1000.0 * parseFloat(width));
+      if (this.scaling) {
+        var imagedVolumeWidth = pyramid['ImagedVolumeWidth'];  // In millimeters
+        var imagedVolumeHeight = pyramid['ImagedVolumeHeight'];
+        if (imagedVolumeWidth !== undefined &&
+            imagedVolumeHeight !== undefined) {
+          var metersPerUnitX = parseFloat(imagedVolumeWidth) / (1000.0 * parseFloat(width));
+          var metersPerUnitY = parseFloat(imagedVolumeHeight) / (1000.0 * parseFloat(height));
           if (IsNear(metersPerUnitX / metersPerUnitY, 1)) {
             metersPerUnit = metersPerUnitX;
           } else {
-            console.error('Anisotropic pixel spacing (may result from an inconsistency ' +
-                          'in the imaged volume size), not showing the scale');
+            // Backward compatibility with OrthancWSIDicomizer <= 3.2, where X/Y were swapped
+            metersPerUnitX = parseFloat(imagedVolumeWidth) / (1000.0 * parseFloat(height));
+            metersPerUnitY = parseFloat(imagedVolumeHeight) / (1000.0 * parseFloat(width));
+            if (IsNear(metersPerUnitX / metersPerUnitY, 1)) {
+              metersPerUnit = metersPerUnitX;
+            } else {
+              console.error('Anisotropic pixel spacing (may result from an inconsistency ' +
+                            'in the imaged volume size), not showing the scale');
+            }
           }
         }
       }
