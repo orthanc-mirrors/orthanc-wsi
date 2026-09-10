@@ -19,7 +19,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
-set(ORTHANC_WSI_VERSION "mainline")
+set(ORTHANC_WSI_VERSION "4.0")
 
 set(ORTHANC_WSI_ANNOTATIONS_VERSION "1")  # Must be an integer
 
