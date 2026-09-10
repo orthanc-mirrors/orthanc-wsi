@@ -25,7 +25,7 @@
 
 #include <string>
 
-void InitializeIIIF(const std::string& iiifPublicUrl);
+void InitializeIIIF();
 
 /**
  * Filter pyramids whose level sizes don't follow a powers-of-two

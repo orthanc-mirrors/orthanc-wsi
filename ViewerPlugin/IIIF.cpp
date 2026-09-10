@@ -28,6 +28,7 @@
 #include "../Resources/Orthanc/Plugins/OrthancPluginCppWrapper.h"
 #include "DicomPyramidCache.h"
 #include "RawTile.h"
+#include "ViewerConfiguration.h"
 
 #include <CompatibilityMath.h>
 #include <Images/Image.h>
@@ -935,9 +936,9 @@ void ServeIIIFFramePyramidTile(OrthancPluginRestOutput* output,
 }
 
 
-void InitializeIIIF(const std::string& iiifPublicUrl)
+void InitializeIIIF()
 {
-  iiifPublicUrl_ = iiifPublicUrl;
+  iiifPublicUrl_ = OrthancWSI::ViewerConfiguration::GetInstance().GetIIIFPublicUrl();
 
   OrthancPlugins::RegisterRestCallback<ServeIIIFSeriesPyramidInfo>("/wsi/iiif/tiles/([0-9a-f-]+)/info.json", true);
   OrthancPlugins::RegisterRestCallback<ServeIIIFTiledImageTile>("/wsi/iiif/tiles/([0-9a-f-]+)/([0-9a-z,:]+)/([0-9a-z,!:]+)/([0-9,!]+)/([a-z]+)\\.([a-z]+)", true);
