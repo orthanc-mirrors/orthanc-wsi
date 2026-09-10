@@ -90,7 +90,7 @@ namespace OrthancWSI
       offsetY_ = offset;
     }
 
-    std::string GetImageOrientationSlide() const;
+    static std::string GetImageOrientationSlide();
 
     void GetLocation(float& physicalX,
                      float& physicalY,

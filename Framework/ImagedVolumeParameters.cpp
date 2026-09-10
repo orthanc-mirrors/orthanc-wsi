@@ -110,7 +110,7 @@ namespace OrthancWSI
   }
 
 
-  std::string ImagedVolumeParameters::GetImageOrientationSlide() const
+  std::string ImagedVolumeParameters::GetImageOrientationSlide()
   {
     return "0\\-1\\0\\-1\\0\\0";
   }
